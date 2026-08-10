@@ -1,0 +1,318 @@
+"use client";
+
+import Link from "next/link";
+import { FormEvent, useEffect, useState } from "react";
+
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { Modal } from "@/components/ui/Modal";
+import { api, apiError } from "@/lib/api";
+
+type LateFeeType = "none" | "percent" | "fixed";
+
+type FeeHead = {
+  id: number;
+  name: string;
+  code: string;
+  is_recurring: boolean;
+  late_fee_type: LateFeeType;
+  late_fee_value: string;
+  late_fee_after_days: number;
+  is_active: boolean;
+};
+
+export default function FeeHeadsPage() {
+  const [items, setItems] = useState<FeeHead[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<FeeHead | null>(null);
+
+  async function load() {
+    try {
+      const { data } = await api.get<FeeHead[]>("/api/v1/school/fees/heads");
+      setItems(data);
+      setError(null);
+    } catch (e) {
+      setError(apiError(e));
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function remove(h: FeeHead) {
+    if (!window.confirm(`Delete fee head "${h.name}"?`)) return;
+    try {
+      await api.delete(`/api/v1/school/fees/heads/${h.id}`);
+      setNotice(`Deleted ${h.name}.`);
+      load();
+    } catch (e) {
+      setError(apiError(e));
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <Link href="/school/fees" className="text-sm text-brand-700 hover:underline">
+        ← Back to Fees
+      </Link>
+
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Fee heads</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Categories of fees you charge. Recurring heads auto-generate monthly;
+            one-time heads (e.g. Admission Fee) generate when a student is admitted.
+          </p>
+        </div>
+        <Button onClick={() => setOpen(true)}>+ New head</Button>
+      </div>
+
+      {error && (
+        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+      )}
+      {notice && (
+        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+      )}
+
+      <Card>
+        <table className="min-w-full divide-y divide-slate-100 text-sm">
+          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+            <tr>
+              <th className="px-3 py-2 font-medium">Code</th>
+              <th className="px-3 py-2 font-medium">Name</th>
+              <th className="px-3 py-2 font-medium">Recurring</th>
+              <th className="px-3 py-2 font-medium">Late fee</th>
+              <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-3 py-2 text-right font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {items.map((h) => (
+              <tr key={h.id} className="hover:bg-slate-50">
+                <td className="px-3 py-2 font-mono text-xs">{h.code}</td>
+                <td className="px-3 py-2 font-medium text-slate-900">{h.name}</td>
+                <td className="px-3 py-2">
+                  {h.is_recurring ? (
+                    <Badge tone="brand">monthly</Badge>
+                  ) : (
+                    <Badge tone="neutral">one-time</Badge>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-slate-600">
+                  {h.late_fee_type === "none" ? (
+                    "—"
+                  ) : (
+                    <>
+                      {h.late_fee_type === "percent"
+                        ? `${h.late_fee_value}%`
+                        : `₹${h.late_fee_value}`}
+                      <span className="text-xs text-slate-500">
+                        {" "}
+                        after {h.late_fee_after_days}d
+                      </span>
+                    </>
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  {h.is_active ? (
+                    <Badge tone="emerald">active</Badge>
+                  ) : (
+                    <Badge tone="neutral">inactive</Badge>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-right space-x-2">
+                  <Button size="sm" variant="secondary" onClick={() => setEditing(h)}>
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="danger" onClick={() => remove(h)}>
+                    Delete
+                  </Button>
+                </td>
+              </tr>
+            ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-3 py-8 text-center text-slate-500">
+                  No fee heads yet — click <strong>+ New head</strong>.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
+
+      <FormModal
+        open={open}
+        onClose={() => setOpen(false)}
+        onSaved={(name) => {
+          setOpen(false);
+          setNotice(`Created ${name}.`);
+          load();
+        }}
+      />
+      {editing && (
+        <FormModal
+          open
+          head={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(name) => {
+            setEditing(null);
+            setNotice(`Updated ${name}.`);
+            load();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function FormModal({
+  open,
+  head,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  head?: FeeHead;
+  onClose: () => void;
+  onSaved: (name: string) => void;
+}) {
+  const [form, setForm] = useState({
+    name: head?.name ?? "",
+    code: head?.code ?? "",
+    is_recurring: head?.is_recurring ?? true,
+    late_fee_type: (head?.late_fee_type ?? "none") as LateFeeType,
+    late_fee_value: Number(head?.late_fee_value ?? "0"),
+    late_fee_after_days: head?.late_fee_after_days ?? 0,
+    is_active: head?.is_active ?? true,
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const editing = !!head;
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    try {
+      const payload = {
+        name: form.name,
+        code: form.code,
+        is_recurring: form.is_recurring,
+        late_fee_type: form.late_fee_type,
+        late_fee_value: form.late_fee_value,
+        late_fee_after_days: form.late_fee_after_days,
+        ...(editing ? { is_active: form.is_active } : {}),
+      };
+      if (editing && head) {
+        await api.patch(`/api/v1/school/fees/heads/${head.id}`, payload);
+      } else {
+        await api.post("/api/v1/school/fees/heads", payload);
+      }
+      onSaved(form.name);
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={editing ? `Edit ${head?.name}` : "New fee head"}>
+      <form onSubmit={submit} className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input
+            label="Name *"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+          />
+          <Input
+            label="Code *"
+            value={form.code}
+            onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
+            placeholder="e.g. TUI, ADM, TRA"
+            required
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={form.is_recurring}
+            onChange={(e) => setForm({ ...form, is_recurring: e.target.checked })}
+            className="rounded border-slate-300"
+          />
+          Recurring (charged every month) — uncheck for one-time fees
+        </label>
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+          Late fee rules below are <strong>stored but not auto-applied</strong> at runtime in this
+          MVP. Future scope: compute and add to amount_due when overdue.
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-slate-700">Late fee type</span>
+            <select
+              value={form.late_fee_type}
+              onChange={(e) =>
+                setForm({ ...form, late_fee_type: e.target.value as LateFeeType })
+              }
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            >
+              <option value="none">None</option>
+              <option value="percent">% of amount</option>
+              <option value="fixed">Fixed ₹</option>
+            </select>
+          </label>
+          <Input
+            label="Late fee value"
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.late_fee_value}
+            onChange={(e) =>
+              setForm({ ...form, late_fee_value: Number(e.target.value) })
+            }
+            disabled={form.late_fee_type === "none"}
+          />
+          <Input
+            label="Grace days"
+            type="number"
+            min="0"
+            value={form.late_fee_after_days}
+            onChange={(e) =>
+              setForm({ ...form, late_fee_after_days: Number(e.target.value) })
+            }
+            disabled={form.late_fee_type === "none"}
+          />
+        </div>
+        {editing && (
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.is_active}
+              onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+              className="rounded border-slate-300"
+            />
+            Active
+          </label>
+        )}
+        {error && (
+          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        )}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" loading={submitting}>
+            {editing ? "Save" : "Create"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}

@@ -1,0 +1,98 @@
+"use client";
+
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useState } from "react";
+
+import { Button } from "@/components/ui/Button";
+import { Card, CardBody } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { api, apiError } from "@/lib/api";
+import { auth } from "@/lib/auth";
+
+export default function SchoolAdminLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <SchoolAdminLoginForm />
+    </Suspense>
+  );
+}
+
+function SchoolAdminLoginForm() {
+  const router = useRouter();
+  const search = useSearchParams();
+  const next = search.get("next") || "/school";
+
+  const [email, setEmail] = useState("school@sms.local");
+  const [password, setPassword] = useState("SchoolPass123!");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const { data } = await api.post("/api/v1/school/auth/login", {
+        email,
+        password,
+      });
+      if (data.user.role !== "school_admin") {
+        throw new Error("This account is not a school admin.");
+      }
+      auth.setSession(data.access_token, data.refresh_token, data.user);
+      router.push(next);
+    } catch (err) {
+      setError(apiError(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <div className="w-full max-w-md">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-brand-700">SMS · School Admin</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Sign in to manage your school.
+          </p>
+        </div>
+        <Card>
+          <CardBody>
+            <form onSubmit={submit} className="space-y-4">
+              <Input
+                label="Email"
+                type="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="username"
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                name="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              {error && (
+                <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                  {error}
+                </div>
+              )}
+              <Button type="submit" loading={loading} className="w-full">
+                {loading ? "Signing in…" : "Sign in"}
+              </Button>
+            </form>
+          </CardBody>
+        </Card>
+        <p className="mt-4 text-center text-xs text-slate-500">
+          Dev default: <code>school@sms.local</code> / <code>SchoolPass123!</code>
+        </p>
+      </div>
+    </main>
+  );
+}

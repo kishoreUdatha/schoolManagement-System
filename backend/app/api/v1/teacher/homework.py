@@ -1,0 +1,145 @@
+from typing import Annotated, Optional
+
+from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import Response
+from sqlalchemy.orm import Session
+
+from app.core.deps import TeacherUser
+from app.database import get_db
+from app.schemas.homework import (
+    HomeworkCreate,
+    HomeworkRead,
+    HomeworkUpdate,
+    SubmissionRead,
+    SubmissionReview,
+)
+from app.services import homework_service
+
+
+router = APIRouter()
+
+
+@router.post(
+    "",
+    response_model=HomeworkRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create(
+    payload: HomeworkCreate,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    h = homework_service.create(
+        db, current_user.tenant_id, current_user.school_id, current_user.id, payload
+    )
+    return HomeworkRead.model_validate(
+        homework_service._to_read_dict(db, h, viewer_id=current_user.id)
+    )
+
+
+@router.get(
+    "",
+    response_model=list[HomeworkRead],
+    summary="My homework — filter by class-subject and date window",
+)
+def list_(
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+    class_subject_id: Optional[int] = Query(None),
+    include_past: bool = Query(True),
+    limit: int = Query(100, ge=1, le=200),
+):
+    items = homework_service.list_for_teacher(
+        db,
+        current_user.id,
+        current_user.school_id,
+        class_subject_id=class_subject_id,
+        include_past=include_past,
+        limit=limit,
+    )
+    return [
+        HomeworkRead.model_validate(
+            homework_service._to_read_dict(db, h, viewer_id=current_user.id)
+        )
+        for h in items
+    ]
+
+
+@router.get("/{homework_id}", response_model=HomeworkRead)
+def get(
+    homework_id: int,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    h = homework_service.get(db, homework_id, current_user.school_id)
+    return HomeworkRead.model_validate(
+        homework_service._to_read_dict(db, h, viewer_id=current_user.id)
+    )
+
+
+@router.patch("/{homework_id}", response_model=HomeworkRead)
+def update(
+    homework_id: int,
+    payload: HomeworkUpdate,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    h = homework_service.update(
+        db, homework_id, current_user.school_id, current_user.id, payload
+    )
+    return HomeworkRead.model_validate(
+        homework_service._to_read_dict(db, h, viewer_id=current_user.id)
+    )
+
+
+@router.delete(
+    "/{homework_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete(
+    homework_id: int,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    homework_service.delete(
+        db, homework_id, current_user.school_id, current_user.id
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# --- Story 9.3 — Submissions ---
+
+@router.get(
+    "/{homework_id}/submissions",
+    response_model=list[SubmissionRead],
+    summary="List all submissions for a homework assignment",
+)
+def list_submissions(
+    homework_id: int,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    items = homework_service.teacher_list_submissions(
+        db, homework_id, current_user.id, current_user.school_id
+    )
+    return [
+        SubmissionRead.model_validate(homework_service.submission_to_dict(db, s))
+        for s in items
+    ]
+
+
+@router.patch(
+    "/submissions/{submission_id}/review",
+    response_model=SubmissionRead,
+    summary="Approve or reject a submission and attach an optional remark",
+)
+def review_submission(
+    submission_id: int,
+    payload: SubmissionReview,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    sub = homework_service.teacher_review_submission(
+        db, submission_id, current_user.id, current_user.school_id, payload
+    )
+    return SubmissionRead.model_validate(homework_service.submission_to_dict(db, sub))

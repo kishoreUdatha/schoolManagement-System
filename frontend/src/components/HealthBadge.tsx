@@ -1,0 +1,31 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+
+export function HealthBadge() {
+  const [status, setStatus] = useState<"checking" | "ok" | "down">("checking");
+
+  useEffect(() => {
+    api
+      .get("/api/v1/health")
+      .then(() => setStatus("ok"))
+      .catch(() => setStatus("down"));
+  }, []);
+
+  const color =
+    status === "ok"
+      ? "bg-emerald-100 text-emerald-700"
+      : status === "down"
+      ? "bg-rose-100 text-rose-700"
+      : "bg-slate-100 text-slate-600";
+
+  const label =
+    status === "ok" ? "API online" : status === "down" ? "API offline" : "Checking…";
+
+  return (
+    <span className={`rounded-full px-3 py-1 text-xs font-medium ${color}`}>
+      {label}
+    </span>
+  );
+}
