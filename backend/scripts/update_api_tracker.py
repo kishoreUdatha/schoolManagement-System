@@ -356,6 +356,46 @@ MAP = {
     },
 }
 
+
+# APIs we built that the spec catalog doesn't list. Appended to "API Catalog" as
+# API-X### rows (Release = "Added"), rebuilt on every run.
+# (module, resource, operation, method, path, purpose, roles)
+EXTRA = [
+    ("Online Exams & Question Bank", "questions", "List", "GET", "/school/questions", "Search the bank (subject, class level, chapter, Bloom, difficulty, kind)", "School Admin, Principal, Teacher"),
+    ("Online Exams & Question Bank", "questions", "Create", "POST", "/school/questions", "Add a question (single/multiple/true-false/numeric/short)", "School Admin, Teacher (own subjects)"),
+    ("Online Exams & Question Bank", "questions", "Get", "GET", "/school/questions/{id}", "Get a question", "School Admin, Principal, Teacher"),
+    ("Online Exams & Question Bank", "questions", "Update", "PUT", "/school/questions/{id}", "Edit (answer locked once used in a published test)", "School Admin, Teacher (own subjects)"),
+    ("Online Exams & Question Bank", "questions", "Action", "POST", "/school/questions/{id}/active", "Activate / deactivate", "School Admin, Teacher (own subjects)"),
+    ("Online Exams & Question Bank", "questions", "Delete", "DELETE", "/school/questions/{id}", "Delete an unused question", "School Admin, Teacher (own subjects)"),
+    ("Online Exams & Question Bank", "online_tests", "List", "GET", "/school/online-tests", "List tests", "School Admin, Principal, Teacher"),
+    ("Online Exams & Question Bank", "online_tests", "Create", "POST", "/school/online-tests", "Create a timed test for a class-subject", "School Admin, Subject Teacher"),
+    ("Online Exams & Question Bank", "online_tests", "Get", "GET", "/school/online-tests/{id}", "Test with questions, marks and Bloom mix", "School Admin, Principal, Teacher"),
+    ("Online Exams & Question Bank", "online_tests", "Update", "PUT", "/school/online-tests/{id}", "Edit until students start", "School Admin, Subject Teacher"),
+    ("Online Exams & Question Bank", "online_tests", "Delete", "DELETE", "/school/online-tests/{id}", "Delete if nobody attempted", "School Admin, Subject Teacher"),
+    ("Online Exams & Question Bank", "online_tests", "Action", "POST", "/school/online-tests/{id}/questions", "Add bank questions", "School Admin, Subject Teacher"),
+    ("Online Exams & Question Bank", "online_tests", "Action", "POST", "/school/online-tests/{id}/auto-pick", "Random pick by Bloom level / difficulty / chapter", "School Admin, Subject Teacher"),
+    ("Online Exams & Question Bank", "online_tests", "Action", "PUT", "/school/online-tests/{id}/question-order", "Reorder questions", "School Admin, Subject Teacher"),
+    ("Online Exams & Question Bank", "online_tests", "Action", "POST", "/school/online-tests/{id}/publish", "Publish + notify parents", "School Admin, Subject Teacher"),
+    ("Online Exams & Question Bank", "online_tests", "Action", "POST", "/school/online-tests/{id}/close", "Close; submit in-progress attempts", "School Admin, Subject Teacher"),
+    ("Online Exams & Question Bank", "online_tests", "Action", "GET", "/school/online-tests/{id}/results", "Scores, per-question and per-Bloom analysis", "School Admin, Principal, Teacher"),
+    ("Online Exams & Question Bank", "test_attempts", "Get", "GET", "/school/test-attempts/{id}", "One student's answers", "School Admin, Principal, Teacher"),
+    ("Online Exams & Question Bank", "test_attempts", "Action", "PUT", "/school/test-attempts/{id}/answers/{question_id}/grade", "Mark a short answer", "School Admin, Subject Teacher"),
+    ("Online Exams & Question Bank", "test_attempts", "List", "GET", "/parent/me/children/{id}/tests", "Child's tests with state and score", "Parent"),
+    ("Online Exams & Question Bank", "test_attempts", "Create", "POST", "/parent/me/children/{id}/tests/{test_id}/start", "Start / resume (server-timed)", "Parent"),
+    ("Online Exams & Question Bank", "test_attempts", "Update", "PUT", "/parent/me/test-attempts/{id}/answers", "Autosave answers", "Parent"),
+    ("Online Exams & Question Bank", "test_attempts", "Action", "POST", "/parent/me/test-attempts/{id}/submit", "Submit and auto-mark", "Parent"),
+    ("Online Exams & Question Bank", "test_attempts", "Action", "GET", "/parent/me/test-attempts/{id}/result", "Result (per visibility setting)", "Parent"),
+    ("Events, PTM & Communication", "event_consents", "Action", "GET", "/school/events/{id}/consents", "Consent report (yes / no / pending)", "School Admin"),
+    ("Events, PTM & Communication", "event_consents", "Create", "POST", "/parent/me/events/{id}/consent", "Give or decline consent for a child", "Parent"),
+    ("Events, PTM & Communication", "gallery_albums", "List", "GET", "/school/gallery; /parent/me/gallery", "Photo albums", "All school users, Parent"),
+    ("Events, PTM & Communication", "gallery_albums", "Create", "POST", "/school/gallery", "Create album", "School Admin"),
+    ("Events, PTM & Communication", "gallery_albums", "Action", "POST", "/school/gallery/{id}/photos", "Upload photos", "School Admin"),
+    ("Events, PTM & Communication", "gallery_albums", "Action", "POST", "/school/gallery/{id}/publish", "Publish / unpublish + notify", "School Admin"),
+    ("Events, PTM & Communication", "calendar", "List", "GET", "/school/calendar; /parent/me/calendar", "Events, holidays, exams, meetings", "All school users, Parent"),
+    ("Academics & Curriculum", "topic_coverage", "Action", "PUT", "/school/syllabus/topics/{id}/coverage", "Mark a topic taught in a section", "School Admin, Subject Teacher"),
+    ("Academics & Curriculum", "topic_coverage", "List", "GET", "/parent/me/children/{id}/syllabus", "Child's syllabus progress", "Parent"),
+]
+
 FILLS = {
     D: PatternFill("solid", fgColor="C6EFCE"),
     P: PatternFill("solid", fgColor="FFEB9C"),
@@ -393,13 +433,28 @@ def main():
     ws.column_dimensions[get_column_letter(cols["Last Updated"])].width = 12
 
     today = datetime.now().strftime("%Y-%m-%d")
+    extra_rows: dict[int, tuple] = {}
+    # rebuild the API-X rows
+    for row in range(ws.max_row, 1, -1):
+        if str(ws.cell(row, 1).value or "").startswith("API-X"):
+            ws.delete_rows(row)
+    template = ws.max_row
+    for i, (module, res, op, method, path, purpose, roles) in enumerate(EXTRA, start=1):
+        r = ws.max_row + 1
+        values = {1: f"API-X{i:03d}", 2: module, 3: res, 4: op, 5: method, 6: "/api/v1" + path.split("; ")[0],
+                  7: purpose, 8: roles, 16: "Added"}
+        for c in range(1, len(header) + 1):
+            cell = ws.cell(r, c, values.get(c))
+            src = ws.cell(template, c)
+            cell.font, cell.border, cell.alignment = copy(src.font), copy(src.border), copy(src.alignment)
+        extra_rows[r] = (D, f"{method} {path}", "Beyond the spec catalog")
     unknown = set()
     for row in range(2, ws.max_row + 1):
         table, op, path = ws.cell(row, 3).value, ws.cell(row, 4).value, ws.cell(row, 6).value
         if not table:
             continue
         key = op if op != "Action" else path.rstrip("/").rsplit("/", 1)[-1]
-        entry = MAP.get(table, {}).get(key)
+        entry = extra_rows.get(row) or MAP.get(table, {}).get(key)
         if entry is None:
             unknown.add(f"{table}:{key}")
             entry = (N, "", "")

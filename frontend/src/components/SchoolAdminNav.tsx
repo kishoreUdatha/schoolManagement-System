@@ -29,6 +29,8 @@ import {
   FileText,
   Award,
   Library,
+  FileQuestion,
+  MonitorCheck,
   ListChecks,
   NotebookPen,
   DoorOpen,
@@ -88,6 +90,8 @@ const sections: NavSection[] = [
     items: [
       { href: "/school/syllabus", label: "Syllabus", icon: ListChecks },
       { href: "/school/lesson-plans", label: "Lesson plans", icon: NotebookPen },
+      { href: "/school/question-bank", label: "Question bank", icon: FileQuestion },
+      { href: "/school/online-tests", label: "Online tests", icon: MonitorCheck },
       { href: "/school/timetable", label: "Timetable", icon: CalendarDays },
       { href: "/school/exams", label: "Exams", icon: ClipboardCheck },
       { href: "/school/videos", label: "Videos", icon: PlayCircle },

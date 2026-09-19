@@ -72,6 +72,13 @@ from app.models.online_payment import (
     FeePaymentOrderItem,
     SchoolPaymentGateway,
 )
+from app.models.online_exam import (
+    AttemptAnswer,
+    OnlineTest,
+    OnlineTestQuestion,
+    Question,
+    TestAttempt,
+)
 from app.models.parent import ParentStudent
 from app.models.payroll import PayrollRun, PayrollSettings, Payslip, StaffSalary
 from app.models.plan import Plan, PlanModule
@@ -212,6 +219,11 @@ __all__ = [
     "User",
     "UserOtp",
     "Visit",
+    "AttemptAnswer",
+    "OnlineTest",
+    "OnlineTestQuestion",
+    "Question",
+    "TestAttempt",
     "LessonPlan",
     "LessonPlanTopic",
     "SyllabusChapter",

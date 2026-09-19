@@ -13,6 +13,8 @@ import {
   GraduationCap,
   LayoutDashboard,
   Library,
+  FileQuestion,
+  MonitorCheck,
   ListChecks,
   NotebookPen,
   BedDouble,
@@ -45,6 +47,8 @@ const sections: NavSection[] = [
     items: [
       { href: "/teacher/syllabus", label: "Syllabus", icon: ListChecks },
       { href: "/teacher/lesson-plans", label: "Lesson plans", icon: NotebookPen },
+      { href: "/teacher/question-bank", label: "Question bank", icon: FileQuestion },
+      { href: "/teacher/online-tests", label: "Online tests", icon: MonitorCheck },
       { href: "/teacher/homework", label: "Homework", icon: BookOpen },
       { href: "/teacher/marks", label: "Marks", icon: ClipboardCheck },
       { href: "/teacher/behaviour", label: "Behaviour", icon: Star },

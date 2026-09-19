@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, ClipboardCheck, LayoutDashboard, ListChecks, NotebookPen, ReceiptText } from "lucide-react";
+import { BarChart3, ClipboardCheck, FileQuestion, LayoutDashboard, ListChecks, MonitorCheck, NotebookPen, ReceiptText } from "lucide-react";
 
 import { Sidebar, type NavSection } from "@/components/Sidebar";
 
@@ -13,6 +13,8 @@ const sections: NavSection[] = [
       { href: "/principal/approvals", label: "Approvals", icon: ClipboardCheck },
       { href: "/principal/syllabus", label: "Syllabus", icon: ListChecks },
       { href: "/principal/lesson-plans", label: "Lesson plans", icon: NotebookPen },
+      { href: "/principal/question-bank", label: "Question bank", icon: FileQuestion },
+      { href: "/principal/online-tests", label: "Online tests", icon: MonitorCheck },
       { href: "/principal/payslips", label: "My payslips", icon: ReceiptText },
     ],
   },

@@ -578,6 +578,47 @@ class ConsentResponse(str, enum.Enum):
     no = "no"
 
 
+class QuestionKind(str, enum.Enum):
+    single = "single"  # one correct option
+    multiple = "multiple"  # several correct options, all-or-nothing
+    true_false = "true_false"
+    numeric = "numeric"  # exact value within a tolerance
+    short = "short"  # free text, graded by the teacher
+
+
+class BloomLevel(str, enum.Enum):
+    remember = "remember"
+    understand = "understand"
+    apply = "apply"
+    analyze = "analyze"
+    evaluate = "evaluate"
+    create = "create"
+
+
+class Difficulty(str, enum.Enum):
+    easy = "easy"
+    medium = "medium"
+    hard = "hard"
+
+
+class OnlineTestStatus(str, enum.Enum):
+    draft = "draft"
+    published = "published"
+    closed = "closed"
+
+
+class ResultVisibility(str, enum.Enum):
+    on_submit = "on_submit"  # score + answers right after submitting
+    after_close = "after_close"  # once the test window ends / teacher closes it
+    hidden = "hidden"
+
+
+class AttemptStatus(str, enum.Enum):
+    in_progress = "in_progress"
+    submitted = "submitted"  # waiting for teacher to grade short answers
+    graded = "graded"
+
+
 class LessonPlanStatus(str, enum.Enum):
     draft = "draft"
     submitted = "submitted"

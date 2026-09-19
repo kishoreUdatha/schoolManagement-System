@@ -42,6 +42,7 @@ from app.api.v1.school import (
     inventory as school_inventory,
     library as school_library,
     notices as school_notices,
+    online_exams as school_online_exams,
     online_payments as school_online_payments,
     parents as school_parents,
     payroll as school_payroll,
@@ -83,6 +84,7 @@ from app.api.v1.parent import (
     library as parent_library,
     messages as parent_messages,
     notices as parent_notices,
+    online_exams as parent_online_exams,
     payments as parent_payments,
     profile as parent_profile,
     projects as parent_projects,
@@ -715,6 +717,18 @@ app.include_router(
     parent_syllabus.router,
     prefix="/api/v1/parent/me/children",
     tags=["parent / syllabus"],
+)
+
+app.include_router(
+    school_online_exams.router,
+    prefix="/api/v1/school",
+    tags=["school / question bank, online tests"],
+)
+
+app.include_router(
+    parent_online_exams.router,
+    prefix="/api/v1/parent/me",
+    tags=["parent / online tests"],
 )
 
 
