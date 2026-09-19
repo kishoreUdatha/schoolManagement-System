@@ -2,7 +2,6 @@
 photo gallery and the combined calendar feed for every portal."""
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Optional
-from zoneinfo import ZoneInfo
 
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import and_, false, func, or_, select
@@ -17,7 +16,7 @@ from app.core.enums import (
     PtmSlotStatus,
     UserRole,
 )
-from app.core.scoping import require_linked_child, section_labels
+from app.core.scoping import require_linked_child, school_today, section_labels
 from app.models.academic import SchoolClass, Section
 from app.models.events import (
     EventConsent,
@@ -32,7 +31,6 @@ from app.models.holiday import Holiday
 from app.models.parent import ParentStudent
 from app.models.student import Student
 from app.models.subject import ClassSubject
-from app.models.tenant import School
 from app.models.user import User
 from app.schemas.events import AlbumIn, EventIn, PtmSessionIn, SlotOutcomeIn
 
@@ -47,11 +45,6 @@ def _400(msg: str) -> HTTPException:
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
-
-
-def school_today(db: Session, school_id: int) -> date:
-    s = db.get(School, school_id)
-    return datetime.now(ZoneInfo(s.timezone if s and s.timezone else "Asia/Kolkata")).date()
 
 
 # ---------- audiences ----------

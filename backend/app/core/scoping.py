@@ -53,3 +53,14 @@ def section_label(db: Session, section_id: Optional[int]) -> Optional[str]:
     if section_id is None:
         return None
     return section_labels(db, {section_id}).get(section_id)
+
+
+def school_today(db: Session, school_id: int):
+    """Today's date in the school's timezone."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    from app.models.tenant import School
+
+    s = db.get(School, school_id)
+    return datetime.now(ZoneInfo(s.timezone if s and s.timezone else "Asia/Kolkata")).date()

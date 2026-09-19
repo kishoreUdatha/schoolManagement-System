@@ -54,6 +54,7 @@ from app.api.v1.school import (
     staff_leaves as school_staff_leaves,
     students as school_students,
     subjects as school_subjects,
+    syllabus as school_syllabus,
     timetable as school_timetable,
     transport as school_transport,
     videos as school_videos,
@@ -85,6 +86,7 @@ from app.api.v1.parent import (
     payments as parent_payments,
     profile as parent_profile,
     projects as parent_projects,
+    syllabus as parent_syllabus,
     timetable as parent_timetable,
     transport as parent_transport,
     videos as parent_videos,
@@ -701,6 +703,18 @@ app.include_router(
     parent_events.router,
     prefix="/api/v1/parent/me",
     tags=["parent / events, meetings, gallery"],
+)
+
+app.include_router(
+    school_syllabus.router,
+    prefix="/api/v1/school",
+    tags=["school / syllabus, lesson plans"],
+)
+
+app.include_router(
+    parent_syllabus.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / syllabus"],
 )
 
 

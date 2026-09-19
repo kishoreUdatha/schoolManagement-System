@@ -13,6 +13,8 @@ import {
   GraduationCap,
   LayoutDashboard,
   Library,
+  ListChecks,
+  NotebookPen,
   BedDouble,
   Lock,
   MessageSquare,
@@ -41,6 +43,8 @@ const sections: NavSection[] = [
     heading: "Teaching",
     icon: Sparkles,
     items: [
+      { href: "/teacher/syllabus", label: "Syllabus", icon: ListChecks },
+      { href: "/teacher/lesson-plans", label: "Lesson plans", icon: NotebookPen },
       { href: "/teacher/homework", label: "Homework", icon: BookOpen },
       { href: "/teacher/marks", label: "Marks", icon: ClipboardCheck },
       { href: "/teacher/behaviour", label: "Behaviour", icon: Star },

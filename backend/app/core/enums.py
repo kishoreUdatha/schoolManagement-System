@@ -578,6 +578,13 @@ class ConsentResponse(str, enum.Enum):
     no = "no"
 
 
+class LessonPlanStatus(str, enum.Enum):
+    draft = "draft"
+    submitted = "submitted"
+    approved = "approved"
+    returned = "returned"  # sent back for changes
+
+
 class PtmSlotStatus(str, enum.Enum):
     open = "open"
     booked = "booked"
