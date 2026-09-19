@@ -17,6 +17,11 @@ from app.models.learning_video import LearningVideo, LearningVideoCompletion
 from app.models.mark import Mark
 from app.models.messaging import Conversation, Message
 from app.models.notice import Notice, NoticeRecipient
+from app.models.online_payment import (
+    FeePaymentOrder,
+    FeePaymentOrderItem,
+    SchoolPaymentGateway,
+)
 from app.models.parent import ParentStudent
 from app.models.plan import Plan, PlanModule
 from app.models.project import Project, ProjectProgress
@@ -57,6 +62,8 @@ __all__ = [
     "ExamSubject",
     "FeeHead",
     "FeeReminderLog",
+    "FeePaymentOrder",
+    "FeePaymentOrderItem",
     "FeeStructure",
     "Holiday",
     "Homework",
@@ -74,6 +81,7 @@ __all__ = [
     "Project",
     "ProjectProgress",
     "School",
+    "SchoolPaymentGateway",
     "SchoolClass",
     "Section",
     "Staff",

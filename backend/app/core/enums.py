@@ -305,3 +305,9 @@ class BoardingStatus(str, enum.Enum):
     boarded = "boarded"
     dropped = "dropped"
     absent = "absent"
+
+
+class OnlinePaymentStatus(str, enum.Enum):
+    created = "created"
+    paid = "paid"
+    failed = "failed"

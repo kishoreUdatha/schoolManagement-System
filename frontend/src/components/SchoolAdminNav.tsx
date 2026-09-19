@@ -21,6 +21,7 @@ import {
   Sparkles,
   Download,
   Bus,
+  CreditCard,
   User,
   UserCheck,
   UserPlus,
@@ -93,7 +94,10 @@ const sections: NavSection[] = [
   {
     heading: "Finance",
     icon: Wallet,
-    items: [{ href: "/school/fees", label: "Fees", icon: IndianRupee }],
+    items: [
+      { href: "/school/fees", label: "Fees", icon: IndianRupee },
+      { href: "/school/fees/online", label: "Online payments", icon: CreditCard },
+    ],
   },
   {
     heading: "Security",

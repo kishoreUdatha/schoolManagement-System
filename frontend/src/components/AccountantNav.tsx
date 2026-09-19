@@ -1,6 +1,6 @@
 "use client";
 
-import { IndianRupee, LayoutDashboard, Wallet } from "lucide-react";
+import { CreditCard, IndianRupee, LayoutDashboard, Wallet } from "lucide-react";
 
 import { Sidebar, type NavSection } from "@/components/Sidebar";
 
@@ -14,7 +14,10 @@ const sections: NavSection[] = [
   {
     heading: "Finance",
     icon: Wallet,
-    items: [{ href: "/accountant/fees", label: "Fees", icon: IndianRupee }],
+    items: [
+      { href: "/accountant/fees", label: "Fees", icon: IndianRupee },
+      { href: "/accountant/online-payments", label: "Online payments", icon: CreditCard },
+    ],
   },
 ];
 

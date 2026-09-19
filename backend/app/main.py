@@ -13,6 +13,7 @@ from app.api.v1.super_admin import (
     usage as super_admin_usage,
 )
 from app.api.v1.public import admissions as public_admissions
+from app.api.v1.public import payments as public_payments
 from app.api.v1.public import transport as public_transport
 from app.api.v1.school import (
     academic_years as school_academic_years,
@@ -22,15 +23,15 @@ from app.api.v1.school import (
     audit_log as school_audit_log,
     auth as school_auth,
     class_subjects as school_class_subjects,
-    fee_reminders as school_fee_reminders,
-    staff_leaves as school_staff_leaves,
     classes as school_classes,
     dashboard as school_dashboard,
     exams as school_exams,
     exports as school_exports,
+    fee_reminders as school_fee_reminders,
     fees as school_fees,
     holidays as school_holidays,
     notices as school_notices,
+    online_payments as school_online_payments,
     parents as school_parents,
     periods as school_periods,
     profile as school_profile,
@@ -38,6 +39,7 @@ from app.api.v1.school import (
     sections as school_sections,
     staff as school_staff,
     staff_attendance as school_staff_attendance,
+    staff_leaves as school_staff_leaves,
     students as school_students,
     subjects as school_subjects,
     timetable as school_timetable,
@@ -58,6 +60,7 @@ from app.api.v1.parent import (
     homework as parent_homework,
     messages as parent_messages,
     notices as parent_notices,
+    payments as parent_payments,
     profile as parent_profile,
     projects as parent_projects,
     timetable as parent_timetable,
@@ -519,6 +522,24 @@ app.include_router(
     public_transport.router,
     prefix="/api/v1/public/transport",
     tags=["public / transport"],
+)
+
+app.include_router(
+    school_online_payments.router,
+    prefix="/api/v1/school/payments",
+    tags=["school / payments"],
+)
+
+app.include_router(
+    parent_payments.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / payments"],
+)
+
+app.include_router(
+    public_payments.router,
+    prefix="/api/v1/public/payments",
+    tags=["public / payments"],
 )
 
 
