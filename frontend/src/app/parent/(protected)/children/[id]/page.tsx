@@ -122,6 +122,18 @@ export default function ChildDetailPage() {
             >
               Library →
             </Link>
+            <Link
+              href={`/parent/children/${params.id}/health`}
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Health →
+            </Link>
+            <Link
+              href={`/parent/children/${params.id}/pickup`}
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Early pickup →
+            </Link>
           </div>
         </CardBody>
       </Card>

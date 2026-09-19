@@ -31,6 +31,8 @@ from app.api.v1.school import (
     exports as school_exports,
     fee_reminders as school_fee_reminders,
     fees as school_fees,
+    front_desk as school_front_desk,
+    health as school_health,
     holidays as school_holidays,
     library as school_library,
     notices as school_notices,
@@ -52,6 +54,7 @@ from app.api.v1.school import (
 )
 from app.api.v1.staff import (
     attendance as staff_attendance_routes,
+    auth as staff_auth,
     leaves as staff_leaves_routes,
     library as staff_library,
     payslips as staff_payslips,
@@ -63,6 +66,8 @@ from app.api.v1.parent import (
     documents as parent_documents,
     exams as parent_exams,
     fees as parent_fees,
+    gate_passes as parent_gate_passes,
+    health as parent_health,
     holidays as parent_holidays,
     homework as parent_homework,
     library as parent_library,
@@ -596,6 +601,36 @@ app.include_router(
     staff_library.router,
     prefix="/api/v1/staff/library",
     tags=["staff / library"],
+)
+
+app.include_router(
+    school_health.router,
+    prefix="/api/v1/school/health",
+    tags=["school / health"],
+)
+
+app.include_router(
+    parent_health.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / health"],
+)
+
+app.include_router(
+    school_front_desk.router,
+    prefix="/api/v1/school/front-desk",
+    tags=["school / front desk"],
+)
+
+app.include_router(
+    parent_gate_passes.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / gate passes"],
+)
+
+app.include_router(
+    staff_auth.router,
+    prefix="/api/v1/staff/auth",
+    tags=["staff / auth"],
 )
 
 

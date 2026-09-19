@@ -214,3 +214,21 @@ def require_school_admin_or_accountant(current_user: CurrentUser) -> User:
 SchoolAdminOrAccountant = Annotated[
     User, Depends(require_school_admin_or_accountant)
 ]
+
+
+def require_front_desk(current_user: CurrentUser) -> User:
+    """Gate / reception work: school admin, principal, or non-teaching staff
+    (security guard, receptionist)."""
+    if current_user.role not in (UserRole.school_admin, UserRole.principal, UserRole.staff):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Front desk access required"
+        )
+    if current_user.tenant_id is None or current_user.school_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User must be linked to a tenant and school",
+        )
+    return current_user
+
+
+FrontDeskUser = Annotated[User, Depends(require_front_desk)]

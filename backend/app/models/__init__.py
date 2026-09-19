@@ -17,6 +17,7 @@ from app.models.document import (
 from app.models.exam import Exam, ExamSubject
 from app.models.fee import FeeHead, FeeStructure, StudentFee
 from app.models.fee_reminder import FeeReminderLog
+from app.models.health import ClinicVisit, HealthCheckup, Immunization, MedicalProfile
 from app.models.holiday import Holiday
 from app.models.homework import Homework, HomeworkSubmission
 from app.models.learning_video import LearningVideo, LearningVideoCompletion
@@ -53,6 +54,7 @@ from app.models.transport import (
     VehicleLog,
 )
 from app.models.usage import TenantUsage
+from app.models.visitor import GatePass, SecurityIncident, Visit
 from app.models.user import User, UserOtp
 from app.models.weekly_report import WeeklyReport
 
@@ -70,6 +72,7 @@ __all__ = [
     "CertificateSequence",
     "CertificateTemplate",
     "ClassSubject",
+    "ClinicVisit",
     "Conversation",
     "Document",
     "Exam",
@@ -79,14 +82,18 @@ __all__ = [
     "FeePaymentOrder",
     "FeePaymentOrderItem",
     "FeeStructure",
+    "GatePass",
+    "HealthCheckup",
     "Holiday",
     "Homework",
+    "Immunization",
     "HomeworkSubmission",
     "LearningVideo",
     "LearningVideoCompletion",
     "LibrarySettings",
     "Loan",
     "Mark",
+    "MedicalProfile",
     "Message",
     "Notice",
     "NoticeRecipient",
@@ -102,6 +109,7 @@ __all__ = [
     "ProjectProgress",
     "School",
     "SchoolPaymentGateway",
+    "SecurityIncident",
     "SchoolClass",
     "Section",
     "Staff",
@@ -128,5 +136,6 @@ __all__ = [
     "TenantUsage",
     "User",
     "UserOtp",
+    "Visit",
     "WeeklyReport",
 ]

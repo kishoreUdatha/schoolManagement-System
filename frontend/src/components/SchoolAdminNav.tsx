@@ -26,6 +26,8 @@ import {
   FileText,
   Award,
   Library,
+  DoorOpen,
+  HeartPulse,
   User,
   UserCheck,
   UserPlus,
@@ -96,6 +98,8 @@ const sections: NavSection[] = [
     items: [
       { href: "/school/transport", label: "Transport", icon: Bus },
       { href: "/school/library", label: "Library", icon: Library },
+      { href: "/school/health", label: "Health", icon: HeartPulse },
+      { href: "/school/front-desk", label: "Front desk", icon: DoorOpen },
       { href: "/school/documents", label: "Documents", icon: FileText },
       { href: "/school/certificates", label: "Certificates", icon: Award },
     ],

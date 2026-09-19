@@ -392,3 +392,45 @@ class ReservationStatus(str, enum.Enum):
     fulfilled = "fulfilled"
     cancelled = "cancelled"
     expired = "expired"
+
+
+class ClinicOutcome(str, enum.Enum):
+    back_to_class = "back_to_class"
+    rested = "rested"
+    sent_home = "sent_home"
+    parent_picked_up = "parent_picked_up"
+    referred_hospital = "referred_hospital"
+
+
+class VisitPurpose(str, enum.Enum):
+    meeting = "meeting"
+    parent_visit = "parent_visit"
+    admission_enquiry = "admission_enquiry"
+    delivery = "delivery"
+    vendor = "vendor"
+    interview = "interview"
+    event = "event"
+    maintenance = "maintenance"
+    other = "other"
+
+
+class VisitStatus(str, enum.Enum):
+    expected = "expected"
+    checked_in = "checked_in"
+    checked_out = "checked_out"
+    denied = "denied"
+    cancelled = "cancelled"
+
+
+class GatePassStatus(str, enum.Enum):
+    requested = "requested"
+    approved = "approved"
+    rejected = "rejected"
+    departed = "departed"
+    cancelled = "cancelled"
+
+
+class IncidentSeverity(str, enum.Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"

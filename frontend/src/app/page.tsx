@@ -40,6 +40,12 @@ export default function LandingPage() {
             Teacher
           </Link>
           <Link
+            href="/staff/login"
+            className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Staff
+          </Link>
+          <Link
             href="/parent/login"
             className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-700 hover:bg-slate-50"
           >
