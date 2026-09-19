@@ -1,4 +1,9 @@
 from app.models.academic import AcademicYear, SchoolClass, Section
+from app.models.admission import (
+    AdmissionActivity,
+    AdmissionCampaign,
+    AdmissionEnquiry,
+)
 from app.models.approval import ApprovalRequest
 from app.models.audit import AuditLog
 from app.models.attendance import StudentAttendance
@@ -29,6 +34,9 @@ from app.models.weekly_report import WeeklyReport
 
 __all__ = [
     "AcademicYear",
+    "AdmissionActivity",
+    "AdmissionCampaign",
+    "AdmissionEnquiry",
     "ApprovalRequest",
     "AuditLog",
     "BehaviourRating",

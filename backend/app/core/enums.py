@@ -226,3 +226,35 @@ class ModuleKey(str, enum.Enum):
     ai_chatbot = "ai_chatbot"
     whatsapp = "whatsapp"
     sms = "sms"
+
+
+class AdmissionStage(str, enum.Enum):
+    enquiry = "enquiry"
+    contacted = "contacted"
+    visit_scheduled = "visit_scheduled"
+    visited = "visited"
+    applied = "applied"
+    test_scheduled = "test_scheduled"
+    offered = "offered"
+    enrolled = "enrolled"
+    lost = "lost"
+
+
+class AdmissionSource(str, enum.Enum):
+    walk_in = "walk_in"
+    website = "website"
+    phone = "phone"
+    referral = "referral"
+    social_media = "social_media"
+    advertisement = "advertisement"
+    campaign = "campaign"
+    other = "other"
+
+
+class AdmissionActivityKind(str, enum.Enum):
+    note = "note"
+    call = "call"
+    visit = "visit"
+    email = "email"
+    whatsapp = "whatsapp"
+    stage_change = "stage_change"

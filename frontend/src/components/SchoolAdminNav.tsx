@@ -22,6 +22,7 @@ import {
   Download,
   User,
   UserCheck,
+  UserPlus,
   Users,
   Wallet,
 } from "lucide-react";
@@ -44,6 +45,14 @@ const sections: NavSection[] = [
       { href: "/school/classes", label: "Classes", icon: GraduationCap },
       { href: "/school/subjects", label: "Subjects", icon: BookOpen },
       { href: "/school/periods", label: "Periods", icon: Clock },
+    ],
+  },
+  {
+    heading: "Admissions",
+    icon: UserPlus,
+    items: [
+      { href: "/school/admissions", label: "Enquiries", icon: UserPlus, exact: true },
+      { href: "/school/admissions/campaigns", label: "Campaigns", icon: BarChart3 },
     ],
   },
   {

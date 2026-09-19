@@ -12,8 +12,10 @@ from app.api.v1.super_admin import (
     tenants as super_admin_tenants,
     usage as super_admin_usage,
 )
+from app.api.v1.public import admissions as public_admissions
 from app.api.v1.school import (
     academic_years as school_academic_years,
+    admissions as school_admissions,
     approvals as school_approvals,
     attendance_reports as school_attendance_reports,
     audit_log as school_audit_log,
@@ -489,6 +491,16 @@ app.include_router(
     accountant_auth.router,
     prefix="/api/v1/accountant/auth",
     tags=["accountant / auth"],
+)
+app.include_router(
+    school_admissions.router,
+    prefix="/api/v1/school/admissions",
+    tags=["school / admissions"],
+)
+app.include_router(
+    public_admissions.router,
+    prefix="/api/v1/public/admissions",
+    tags=["public / admissions"],
 )
 
 
