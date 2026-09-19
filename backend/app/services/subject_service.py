@@ -12,6 +12,7 @@ from app.schemas.subject import (
     SubjectCreate,
     SubjectUpdate,
 )
+from app.services import foundation_service
 
 
 # --- Subject CRUD ---
@@ -32,6 +33,7 @@ def _normalize_code(code: str) -> str:
 def create_subject(
     db: Session, tenant_id: int, school_id: int, data: SubjectCreate
 ) -> Subject:
+    foundation_service.check_department(db, school_id, data.department_id)
     s = Subject(
         tenant_id=tenant_id,
         school_id=school_id,
@@ -39,6 +41,7 @@ def create_subject(
         code=_normalize_code(data.code),
         kind=data.kind,
         display_order=data.display_order,
+        department_id=data.department_id,
         is_active=True,
     )
     db.add(s)
@@ -76,6 +79,8 @@ def update_subject(
 ) -> Subject:
     s = _get_subject(db, subject_id, school_id)
     updates = data.model_dump(exclude_unset=True)
+    if updates.get("department_id") is not None:
+        foundation_service.check_department(db, school_id, updates["department_id"])
     if "code" in updates and updates["code"]:
         updates["code"] = _normalize_code(updates["code"])
     if "name" in updates and updates["name"]:

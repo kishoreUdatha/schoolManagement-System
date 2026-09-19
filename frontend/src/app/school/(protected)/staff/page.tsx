@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { DepartmentSelect } from "@/components/foundation/DepartmentSelect";
 import { api, apiError } from "@/lib/api";
 
 type StaffRole = "teacher" | "staff" | "principal" | "accountant";
@@ -34,6 +35,8 @@ type Staff = {
   employee_no: string;
   designation: string | null;
   joining_date: string | null;
+  department_id: number | null;
+  department_name: string | null;
   is_active: boolean;
   last_login_at: string | null;
 };
@@ -195,6 +198,7 @@ export default function StaffPage() {
                 </td>
                 <td className="px-4 py-3 text-slate-600">
                   {s.designation ?? "—"}
+                  {s.department_name && <div className="text-xs text-ink-subtle">{s.department_name}</div>}
                 </td>
                 <td className="px-4 py-3 text-slate-600">
                   <div>{s.email ?? "—"}</div>
@@ -290,6 +294,7 @@ function CreateStaffModal({
     employee_no: "",
     designation: "",
     joining_date: "",
+    department_id: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -304,6 +309,7 @@ function CreateStaffModal({
         joining_date: form.joining_date || null,
         designation: form.designation || null,
         phone: form.phone || null,
+        department_id: form.department_id ? Number(form.department_id) : null,
       };
       const { data } = await api.post("/api/v1/school/staff", payload);
       onCreated({
@@ -319,6 +325,7 @@ function CreateStaffModal({
         employee_no: "",
         designation: "",
         joining_date: "",
+        department_id: "",
       });
     } catch (e) {
       setError(apiError(e));
@@ -377,6 +384,7 @@ function CreateStaffModal({
             onChange={(e) => setForm({ ...form, designation: e.target.value })}
             placeholder="e.g. Math Teacher, Office Clerk"
           />
+          <DepartmentSelect value={form.department_id} onChange={(v) => setForm({ ...form, department_id: v })} />
           <Input
             label="Joining date"
             type="date"
@@ -417,6 +425,7 @@ function EditStaffModal({
     employee_no: staff.employee_no,
     designation: staff.designation ?? "",
     joining_date: staff.joining_date ?? "",
+    department_id: staff.department_id ? String(staff.department_id) : "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -432,6 +441,7 @@ function EditStaffModal({
         employee_no: form.employee_no,
         designation: form.designation || null,
         joining_date: form.joining_date || null,
+        department_id: form.department_id ? Number(form.department_id) : null,
       });
       onSaved();
     } catch (e) {
@@ -467,6 +477,7 @@ function EditStaffModal({
             value={form.designation}
             onChange={(e) => setForm({ ...form, designation: e.target.value })}
           />
+          <DepartmentSelect value={form.department_id} onChange={(v) => setForm({ ...form, department_id: v })} />
           <Input
             label="Joining date"
             type="date"

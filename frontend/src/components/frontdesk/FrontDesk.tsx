@@ -45,6 +45,7 @@ type GatePass = {
   status: "requested" | "approved" | "rejected" | "departed" | "cancelled";
   requested_by_name: string | null;
   requested_by_parent: boolean;
+  pickup_listed: boolean | null;
   departed_at: string | null;
 };
 
@@ -432,6 +433,13 @@ function Passes({ office, onChange, onError }: Handlers & { office: boolean }) {
             <div className="rounded-lg border border-surface-border p-4 text-sm">
               <div className="text-lg font-semibold text-ink">{found.student_name}</div>
               <div className="text-ink-muted">{found.section_label}</div>
+              <div className="mt-2">
+                {found.pickup_listed ? (
+                  <Badge tone="emerald">on the family&apos;s pickup list</Badge>
+                ) : (
+                  <Badge tone="rose">not on the pickup list: check ID and call a parent</Badge>
+                )}
+              </div>
               <div className="mt-2 text-ink">
                 To be collected by <b>{found.pickup_name}</b>
                 {found.pickup_relation && ` (${found.pickup_relation})`}
@@ -468,6 +476,7 @@ function Passes({ office, onChange, onError }: Handlers & { office: boolean }) {
                 <td className={td}>
                   {g.pickup_name}
                   {g.pickup_relation && ` (${g.pickup_relation})`}
+                  {g.pickup_listed === false && <div className="text-xs text-rose-400">not on the pickup list</div>}
                 </td>
                 <td className={td}>{g.reason}</td>
                 <td className="space-x-1 whitespace-nowrap px-3 py-2 text-right">

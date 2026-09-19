@@ -57,6 +57,9 @@ class Exam(Base, PrimaryKeyMixin, TimestampMixin):
 
     is_published: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    term_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("terms.id", ondelete="SET NULL")
+    )
 
     created_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.core import notify
 from app.core.enums import GatePassStatus, UserRole, VisitStatus
 from app.core.scoping import get_school_student, require_linked_child, section_label
+from app.services import foundation_service
 from app.models.student import Student
 from app.models.tenant import School
 from app.models.user import User
@@ -360,6 +361,7 @@ def pass_to_read(db: Session, g: GatePass, *, show_code: bool = True) -> dict:
         "section_label": section_label(db, s.section_id) if s else None,
         "requested_by_name": req.full_name if req else None,
         "requested_by_parent": bool(req and req.role == UserRole.parent),
+        "pickup_listed": foundation_service.pickup_allowed(db, g.student_id, g.pickup_name) is not None,
     }
 
 

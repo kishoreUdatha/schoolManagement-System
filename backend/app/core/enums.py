@@ -534,3 +534,22 @@ class ChequeStatus(str, enum.Enum):
 class ConcessionKind(str, enum.Enum):
     percent = "percent"
     fixed = "fixed"
+
+
+class EnrollmentOutcome(str, enum.Enum):
+    studying = "studying"
+    promoted = "promoted"
+    repeated = "repeated"
+    left = "left"
+
+
+class GuardianRelation(str, enum.Enum):
+    father = "father"
+    mother = "mother"
+    guardian = "guardian"
+    grandparent = "grandparent"
+    uncle = "uncle"
+    aunt = "aunt"
+    sibling = "sibling"
+    driver = "driver"
+    other = "other"

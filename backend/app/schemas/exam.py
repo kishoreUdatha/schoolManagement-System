@@ -86,6 +86,7 @@ class ExamBase(BaseModel):
 
 class ExamCreate(ExamBase):
     academic_year_id: int
+    term_id: Optional[int] = None
 
 
 class ExamUpdate(BaseModel):
@@ -93,6 +94,7 @@ class ExamUpdate(BaseModel):
     kind: Optional[ExamKind] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
+    term_id: Optional[int] = None
 
 
 class ExamRead(BaseModel):
@@ -107,6 +109,7 @@ class ExamRead(BaseModel):
     end_date: date
     is_published: bool
     published_at: Optional[datetime] = None
+    term_id: Optional[int] = None
     created_at: datetime
     papers: list[ExamPaperRead] = []
     papers_count: int = 0

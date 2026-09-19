@@ -15,6 +15,7 @@ from app.schemas.exam import (
     ExamPaperUpdate,
     ExamUpdate,
 )
+from app.services import foundation_service
 
 
 def _get_exam(db: Session, exam_id: int, school_id: int) -> Exam:
@@ -78,6 +79,7 @@ def _exam_to_read_dict(db: Session, e: Exam) -> dict:
         "end_date": e.end_date,
         "is_published": e.is_published,
         "published_at": e.published_at,
+        "term_id": e.term_id,
         "created_at": e.created_at,
         "papers": paper_dicts,
         "papers_count": len(papers),
@@ -106,10 +108,12 @@ def create_exam(
             detail="Cannot create exam in an archived academic year",
         )
 
+    foundation_service.check_term(db, school_id, year.id, data.term_id)
     e = Exam(
         tenant_id=tenant_id,
         school_id=school_id,
         academic_year_id=year.id,
+        term_id=data.term_id,
         name=data.name.strip(),
         kind=data.kind,
         start_date=data.start_date,
@@ -167,6 +171,8 @@ def update_exam(
             detail="Unpublish the exam before editing it",
         )
     updates = data.model_dump(exclude_unset=True)
+    if updates.get("term_id") is not None:
+        foundation_service.check_term(db, school_id, e.academic_year_id, updates["term_id"])
     if "name" in updates and updates["name"]:
         updates["name"] = updates["name"].strip()
     # Cross-field date check using merged values

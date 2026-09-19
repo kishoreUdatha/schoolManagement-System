@@ -11,6 +11,7 @@ from app.models.plan import Plan
 from app.models.student import Student
 from app.models.subscription import TenantSubscription
 from app.schemas.student import StudentBase, StudentBulkRow, StudentCreate, StudentUpdate
+from app.services import foundation_service
 
 
 # --- Quota ---
@@ -181,6 +182,8 @@ def create_student(
             ),
         )
     db.refresh(s)
+    foundation_service.sync_enrollment(db, s, note="Admitted")
+    db.commit()
 
     # Story 2.9 hook: generate one-time fees (e.g. Admission Fee) for this student
     from app.services import fee_service  # local to avoid cycle
@@ -286,6 +289,8 @@ def bulk_create(
     db.commit()
     for s in created:
         db.refresh(s)
+        foundation_service.sync_enrollment(db, s, note="Admitted (bulk import)")
+    db.commit()
 
     # Story 2.9 hook: one-time fees for each newly-admitted student
     from app.services import fee_service
@@ -388,6 +393,8 @@ def promote_students(
                 }
             )
 
+    for s in promoted:
+        foundation_service.sync_enrollment(db, s, note=f"Promoted from {src_cls.name} {src_sec.name}")
     db.commit()
     for s in promoted:
         db.refresh(s)
@@ -463,6 +470,9 @@ def update_student(
         setattr(s, field, value)
 
     try:
+        db.flush()
+        if "section_id" in updates or "roll_no" in updates:
+            foundation_service.sync_enrollment(db, s)
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -479,6 +489,7 @@ def set_active(
 ) -> Student:
     s = _get_student(db, student_id, school_id)
     s.is_active = active
+    foundation_service.sync_enrollment(db, s)
     db.commit()
     db.refresh(s)
     return s

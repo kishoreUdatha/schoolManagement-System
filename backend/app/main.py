@@ -33,6 +33,7 @@ from app.api.v1.school import (
     exports as school_exports,
     fee_reminders as school_fee_reminders,
     fees as school_fees,
+    foundation as school_foundation,
     front_desk as school_front_desk,
     health as school_health,
     holidays as school_holidays,
@@ -71,6 +72,7 @@ from app.api.v1.parent import (
     exams as parent_exams,
     fees as parent_fees,
     gate_passes as parent_gate_passes,
+    guardians as parent_guardians,
     health as parent_health,
     holidays as parent_holidays,
     homework as parent_homework,
@@ -666,6 +668,18 @@ app.include_router(
     school_accounts.router,
     prefix="/api/v1/school/accounts",
     tags=["school / accounts"],
+)
+
+app.include_router(
+    school_foundation.router,
+    prefix="/api/v1/school",
+    tags=["school / enrolment, guardians, terms, departments"],
+)
+
+app.include_router(
+    parent_guardians.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / guardians"],
 )
 
 

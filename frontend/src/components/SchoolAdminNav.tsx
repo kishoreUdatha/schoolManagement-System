@@ -56,6 +56,8 @@ const sections: NavSection[] = [
       { href: "/school/classes", label: "Classes", icon: GraduationCap },
       { href: "/school/subjects", label: "Subjects", icon: BookOpen },
       { href: "/school/periods", label: "Periods", icon: Clock },
+      { href: "/school/terms", label: "Terms", icon: CalendarDays },
+      { href: "/school/departments", label: "Departments", icon: Users },
     ],
   },
   {

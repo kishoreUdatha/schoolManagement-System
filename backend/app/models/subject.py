@@ -48,6 +48,9 @@ class Subject(Base, PrimaryKeyMixin, TimestampMixin):
     )
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    department_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("departments.id", ondelete="SET NULL")
+    )
 
 
 class ClassSubject(Base, PrimaryKeyMixin, TimestampMixin):

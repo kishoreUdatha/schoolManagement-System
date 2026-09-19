@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { DepartmentSelect } from "@/components/foundation/DepartmentSelect";
 import { api, apiError } from "@/lib/api";
 
 type SubjectKind = "core" | "elective";
@@ -18,6 +19,7 @@ type Subject = {
   kind: SubjectKind;
   display_order: number;
   is_active: boolean;
+  department_id: number | null;
 };
 
 type BulkResult = {
@@ -200,6 +202,7 @@ function SubjectFormModal({
   const [kind, setKind] = useState<SubjectKind>(subject?.kind ?? "core");
   const [order, setOrder] = useState(subject?.display_order ?? 0);
   const [active, setActive] = useState(subject?.is_active ?? true);
+  const [dept, setDept] = useState(subject?.department_id ? String(subject.department_id) : "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -210,12 +213,14 @@ function SubjectFormModal({
       setKind(subject.kind);
       setOrder(subject.display_order);
       setActive(subject.is_active);
+      setDept(subject.department_id ? String(subject.department_id) : "");
     } else {
       setName("");
       setCode("");
       setKind("core");
       setOrder(0);
       setActive(true);
+      setDept("");
     }
   }, [subject]);
 
@@ -231,6 +236,7 @@ function SubjectFormModal({
           kind,
           display_order: order,
           is_active: active,
+          department_id: dept ? Number(dept) : null,
         });
       } else {
         await api.post("/api/v1/school/subjects", {
@@ -238,6 +244,7 @@ function SubjectFormModal({
           code,
           kind,
           display_order: order,
+          department_id: dept ? Number(dept) : null,
         });
       }
       onSaved(name);
@@ -287,6 +294,7 @@ function SubjectFormModal({
             value={order}
             onChange={(e) => setOrder(Number(e.target.value))}
           />
+          <DepartmentSelect value={dept} onChange={setDept} />
         </div>
         {editing && (
           <label className="flex items-center gap-2 text-sm text-slate-700">

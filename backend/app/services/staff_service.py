@@ -14,6 +14,7 @@ from app.models.staff import Staff
 from app.models.subscription import TenantSubscription
 from app.models.user import User
 from app.schemas.staff import StaffCreate, StaffUpdate
+from app.services import foundation_service
 
 
 def _generate_password(length: int = 12) -> str:
@@ -106,6 +107,7 @@ def create_staff(
             detail="A user with this email or phone already exists for this tenant",
         )
 
+    foundation_service.check_department(db, school_id, data.department_id)
     staff = Staff(
         tenant_id=tenant_id,
         school_id=school_id,
@@ -113,6 +115,7 @@ def create_staff(
         employee_no=data.employee_no.strip(),
         designation=data.designation.strip() if data.designation else None,
         joining_date=data.joining_date,
+        department_id=data.department_id,
     )
     db.add(staff)
     try:
@@ -184,6 +187,8 @@ def update_staff(
         v = updates.pop("phone")
         user.phone = v.strip() if v else None
 
+    if updates.get("department_id") is not None:
+        foundation_service.check_department(db, staff.school_id, updates["department_id"])
     for field, value in updates.items():
         if field == "designation" and isinstance(value, str):
             value = value.strip()
@@ -268,6 +273,8 @@ def staff_to_read_dict(s: Staff) -> dict:
         "employee_no": s.employee_no,
         "designation": s.designation,
         "joining_date": s.joining_date,
+        "department_id": s.department_id,
+        "department_name": s.department.name if s.department_id and s.department else None,
         "created_at": s.created_at,
         "full_name": u.full_name,
         "email": u.email,

@@ -18,6 +18,7 @@ from app.schemas.parent import (
     ParentCreate,
     ParentUpdate,
 )
+from app.services import foundation_service
 
 
 def _generate_password(length: int = 12) -> str:
@@ -152,6 +153,7 @@ def create_parent(
         relation=data.relation,
     )
     db.add(link)
+    foundation_service.on_parent_linked(db, user, student, data.relation)
     db.commit()
     db.refresh(user)
     return user, raw_password
@@ -245,6 +247,7 @@ def link_child(
         relation=data.relation,
     )
     db.add(link)
+    foundation_service.on_parent_linked(db, parent, student, data.relation)
     db.commit()
     db.refresh(link)
     return link
@@ -269,6 +272,7 @@ def unlink_child(
             status_code=status.HTTP_404_NOT_FOUND, detail="Link not found"
         )
     db.delete(link)
+    foundation_service.on_parent_unlinked(db, parent.id, student_id)
     db.commit()
 
 

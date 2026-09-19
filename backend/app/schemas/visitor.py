@@ -89,6 +89,7 @@ class GatePassRead(BaseModel):
     status: GatePassStatus
     requested_by_name: Optional[str] = None
     requested_by_parent: bool = False
+    pickup_listed: Optional[bool] = None  # named collector is a guardian allowed to pick up
     decision_note: Optional[str] = None
     departed_at: Optional[datetime] = None
     created_at: datetime

@@ -46,5 +46,9 @@ class Staff(Base, PrimaryKeyMixin, TimestampMixin):
     employee_no: Mapped[str] = mapped_column(String(40), nullable=False)
     designation: Mapped[Optional[str]] = mapped_column(String(120))
     joining_date: Mapped[Optional[date]] = mapped_column(Date)
+    department_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("departments.id", ondelete="SET NULL")
+    )
+    department = relationship("Department", lazy="joined")
 
     user: Mapped[User] = relationship()

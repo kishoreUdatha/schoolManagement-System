@@ -25,6 +25,13 @@ from app.models.document import (
 from app.models.exam import Exam, ExamSubject
 from app.models.fee import FeeHead, FeeStructure, StudentFee
 from app.models.fee_reminder import FeeReminderLog
+from app.models.foundation import (
+    Department,
+    Guardian,
+    StudentEnrollment,
+    StudentGuardian,
+    Term,
+)
 from app.models.health import ClinicVisit, HealthCheckup, Immunization, MedicalProfile
 from app.models.holiday import Holiday
 from app.models.hostel import (
@@ -105,6 +112,7 @@ __all__ = [
     "ClinicVisit",
     "Concession",
     "Conversation",
+    "Department",
     "Document",
     "Exam",
     "Expense",
@@ -117,6 +125,7 @@ __all__ = [
     "FeePaymentOrderItem",
     "FeeStructure",
     "GatePass",
+    "Guardian",
     "HealthCheckup",
     "Holiday",
     "Homework",
@@ -165,11 +174,14 @@ __all__ = [
     "StoreSaleLine",
     "Student",
     "StudentAttendance",
+    "StudentEnrollment",
     "StudentFee",
+    "StudentGuardian",
     "Subject",
     "Supplier",
     "SubscriptionPayment",
     "Tenant",
+    "Term",
     "TenantSubscription",
     "TimetableEntry",
     "TransportAssignment",

@@ -372,6 +372,9 @@ def _issue(
 
     if template.kind == CertificateKind.transfer and tc and tc.deactivate_student:
         student.is_active = False
+        from app.services import foundation_service  # local: avoids an import cycle
+
+        foundation_service.sync_enrollment(db, student, note=f"Left: {tc.reason_for_leaving}")
         from app.models.transport import TransportAssignment  # local: optional module
 
         for a in db.execute(

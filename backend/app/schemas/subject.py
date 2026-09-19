@@ -13,6 +13,7 @@ class SubjectBase(BaseModel):
     code: str = Field(..., min_length=1, max_length=20)
     kind: SubjectKind = SubjectKind.core
     display_order: int = Field(0, ge=0)
+    department_id: Optional[int] = None
 
 
 class SubjectCreate(SubjectBase):
@@ -25,6 +26,7 @@ class SubjectUpdate(BaseModel):
     kind: Optional[SubjectKind] = None
     display_order: Optional[int] = Field(None, ge=0)
     is_active: Optional[bool] = None
+    department_id: Optional[int] = None
 
 
 class SubjectRead(BaseModel):
@@ -37,6 +39,7 @@ class SubjectRead(BaseModel):
     kind: SubjectKind
     display_order: int
     is_active: bool
+    department_id: Optional[int] = None
     created_at: datetime
 
 

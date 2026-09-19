@@ -15,6 +15,7 @@ class StaffCreate(BaseModel):
     employee_no: str = Field(..., min_length=1, max_length=40)
     designation: Optional[str] = Field(None, max_length=120)
     joining_date: Optional[date] = None
+    department_id: Optional[int] = None
 
 
 class StaffUpdate(BaseModel):
@@ -23,6 +24,7 @@ class StaffUpdate(BaseModel):
     employee_no: Optional[str] = Field(None, min_length=1, max_length=40)
     designation: Optional[str] = Field(None, max_length=120)
     joining_date: Optional[date] = None
+    department_id: Optional[int] = None
 
 
 class StaffRead(BaseModel):
@@ -33,6 +35,8 @@ class StaffRead(BaseModel):
     employee_no: str
     designation: Optional[str] = None
     joining_date: Optional[date] = None
+    department_id: Optional[int] = None
+    department_name: Optional[str] = None
     created_at: datetime
 
     # Flattened user fields (handy for tables)
