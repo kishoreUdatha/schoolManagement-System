@@ -20,6 +20,7 @@ import {
   Shield,
   Sparkles,
   Download,
+  Bus,
   User,
   UserCheck,
   UserPlus,
@@ -83,6 +84,11 @@ const sections: NavSection[] = [
       { href: "/school/staff-leaves", label: "Staff leaves", icon: ClipboardCheck },
       { href: "/school/reports/attendance", label: "Reports", icon: BarChart3 },
     ],
+  },
+  {
+    heading: "Operations",
+    icon: Bus,
+    items: [{ href: "/school/transport", label: "Transport", icon: Bus }],
   },
   {
     heading: "Finance",

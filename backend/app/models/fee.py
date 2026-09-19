@@ -14,6 +14,7 @@ from sqlalchemy import (
     SmallInteger,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -118,6 +119,12 @@ class StudentFee(Base, PrimaryKeyMixin, TimestampMixin):
         Index("ix_student_fees_student_id", "student_id"),
         Index("ix_student_fees_period", "period"),
         Index("ix_student_fees_status", "status"),
+        Index(
+            "uq_student_fee_per_source_period",
+            "student_id", "source", "source_id", "period",
+            unique=True,
+            postgresql_where=text("source IS NOT NULL"),
+        ),
     )
 
     tenant_id: Mapped[int] = mapped_column(
@@ -129,8 +136,16 @@ class StudentFee(Base, PrimaryKeyMixin, TimestampMixin):
     student_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("students.id", ondelete="CASCADE"), nullable=False
     )
-    fee_structure_id: Mapped[int] = mapped_column(
-        BigInteger, ForeignKey("fee_structures.id", ondelete="RESTRICT"), nullable=False
+    # NULL for fees raised by other modules (transport, hostel, library fines);
+    # those carry `source` + `source_id` instead.
+    fee_structure_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("fee_structures.id", ondelete="RESTRICT"), nullable=True
+    )
+    source: Mapped[Optional[str]] = mapped_column(
+        String(30), comment="Module that raised the fee: 'transport', 'hostel', ..."
+    )
+    source_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, comment="Row id in the source module, e.g. transport_assignments.id"
     )
     # Denormalized for fast filtering / display
     fee_head_id: Mapped[int] = mapped_column(

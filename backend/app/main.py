@@ -13,6 +13,7 @@ from app.api.v1.super_admin import (
     usage as super_admin_usage,
 )
 from app.api.v1.public import admissions as public_admissions
+from app.api.v1.public import transport as public_transport
 from app.api.v1.school import (
     academic_years as school_academic_years,
     admissions as school_admissions,
@@ -40,6 +41,7 @@ from app.api.v1.school import (
     students as school_students,
     subjects as school_subjects,
     timetable as school_timetable,
+    transport as school_transport,
     videos as school_videos,
 )
 from app.api.v1.staff import (
@@ -59,6 +61,7 @@ from app.api.v1.parent import (
     profile as parent_profile,
     projects as parent_projects,
     timetable as parent_timetable,
+    transport as parent_transport,
     videos as parent_videos,
     weekly_reports as parent_weekly_reports,
 )
@@ -501,6 +504,21 @@ app.include_router(
     public_admissions.router,
     prefix="/api/v1/public/admissions",
     tags=["public / admissions"],
+)
+app.include_router(
+    school_transport.router,
+    prefix="/api/v1/school/transport",
+    tags=["school / transport"],
+)
+app.include_router(
+    parent_transport.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / transport"],
+)
+app.include_router(
+    public_transport.router,
+    prefix="/api/v1/public/transport",
+    tags=["public / transport"],
 )
 
 

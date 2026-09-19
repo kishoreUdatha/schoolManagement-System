@@ -28,6 +28,17 @@ from app.models.subject import ClassSubject, Subject
 from app.models.subscription import SubscriptionPayment, TenantSubscription
 from app.models.tenant import School, Tenant
 from app.models.timetable import Period, TimetableEntry
+from app.models.transport import (
+    TransportAssignment,
+    TransportCrew,
+    TransportRoute,
+    TransportStop,
+    Trip,
+    TripBoarding,
+    Vehicle,
+    VehicleLocation,
+    VehicleLog,
+)
 from app.models.usage import TenantUsage
 from app.models.user import User, UserOtp
 from app.models.weekly_report import WeeklyReport
@@ -76,6 +87,15 @@ __all__ = [
     "Tenant",
     "TenantSubscription",
     "TimetableEntry",
+    "TransportAssignment",
+    "TransportCrew",
+    "TransportRoute",
+    "TransportStop",
+    "Trip",
+    "TripBoarding",
+    "Vehicle",
+    "VehicleLocation",
+    "VehicleLog",
     "TenantUsage",
     "User",
     "UserOtp",

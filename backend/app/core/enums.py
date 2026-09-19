@@ -258,3 +258,50 @@ class AdmissionActivityKind(str, enum.Enum):
     email = "email"
     whatsapp = "whatsapp"
     stage_change = "stage_change"
+
+
+class VehicleKind(str, enum.Enum):
+    bus = "bus"
+    mini_bus = "mini_bus"
+    van = "van"
+    car = "car"
+    other = "other"
+
+
+class CrewRole(str, enum.Enum):
+    driver = "driver"
+    conductor = "conductor"
+    attendant = "attendant"
+
+
+class VehicleLogKind(str, enum.Enum):
+    fuel = "fuel"
+    service = "service"
+    repair = "repair"
+    tyre = "tyre"
+    insurance = "insurance"
+    other = "other"
+
+
+class TransportDirection(str, enum.Enum):
+    both = "both"
+    pickup = "pickup"
+    drop = "drop"
+
+
+class TripDirection(str, enum.Enum):
+    pickup = "pickup"
+    drop = "drop"
+
+
+class TripStatus(str, enum.Enum):
+    scheduled = "scheduled"
+    in_progress = "in_progress"
+    completed = "completed"
+    cancelled = "cancelled"
+
+
+class BoardingStatus(str, enum.Enum):
+    boarded = "boarded"
+    dropped = "dropped"
+    absent = "absent"
