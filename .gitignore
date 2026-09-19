@@ -57,3 +57,6 @@ uploads/
 
 # OS
 desktop.ini
+
+# Uploaded files (local storage backend)
+backend/storage/

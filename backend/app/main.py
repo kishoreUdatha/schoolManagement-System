@@ -22,9 +22,11 @@ from app.api.v1.school import (
     attendance_reports as school_attendance_reports,
     audit_log as school_audit_log,
     auth as school_auth,
+    certificates as school_certificates,
     class_subjects as school_class_subjects,
     classes as school_classes,
     dashboard as school_dashboard,
+    documents as school_documents,
     exams as school_exams,
     exports as school_exports,
     fee_reminders as school_fee_reminders,
@@ -54,6 +56,7 @@ from app.api.v1.parent import (
     auth as parent_auth,
     behaviour as parent_behaviour,
     children as parent_children,
+    documents as parent_documents,
     exams as parent_exams,
     fees as parent_fees,
     holidays as parent_holidays,
@@ -540,6 +543,24 @@ app.include_router(
     public_payments.router,
     prefix="/api/v1/public/payments",
     tags=["public / payments"],
+)
+
+app.include_router(
+    school_documents.router,
+    prefix="/api/v1/school/documents",
+    tags=["school / documents"],
+)
+
+app.include_router(
+    school_certificates.router,
+    prefix="/api/v1/school/certificates",
+    tags=["school / certificates"],
+)
+
+app.include_router(
+    parent_documents.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / documents & certificates"],
 )
 
 

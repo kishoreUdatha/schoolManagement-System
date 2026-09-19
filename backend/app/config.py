@@ -42,6 +42,10 @@ class Settings(BaseSettings):
     # Set to 0 to disable the in-process daily tick (useful in tests).
     fee_reminder_interval_seconds: int = 24 * 60 * 60  # 24 h
 
+    # Uploaded documents. Local disk under the backend volume by default.
+    storage_dir: str = "/app/storage"
+    max_upload_mb: int = 10
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]

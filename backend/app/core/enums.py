@@ -311,3 +311,48 @@ class OnlinePaymentStatus(str, enum.Enum):
     created = "created"
     paid = "paid"
     failed = "failed"
+
+
+class DocumentOwner(str, enum.Enum):
+    student = "student"
+    staff = "staff"
+    school = "school"
+
+
+class DocumentCategory(str, enum.Enum):
+    birth_certificate = "birth_certificate"
+    aadhaar = "aadhaar"
+    photo = "photo"
+    address_proof = "address_proof"
+    transfer_certificate = "transfer_certificate"
+    previous_marksheet = "previous_marksheet"
+    medical = "medical"
+    caste_certificate = "caste_certificate"
+    qualification = "qualification"
+    experience = "experience"
+    id_proof = "id_proof"
+    policy = "policy"
+    circular = "circular"
+    other = "other"
+
+
+class VerificationStatus(str, enum.Enum):
+    pending = "pending"
+    verified = "verified"
+    rejected = "rejected"
+
+
+class CertificateKind(str, enum.Enum):
+    bonafide = "bonafide"
+    character = "character"
+    transfer = "transfer"
+    study = "study"
+    fee_paid = "fee_paid"
+    custom = "custom"
+
+
+class CertificateStatus(str, enum.Enum):
+    requested = "requested"
+    issued = "issued"
+    rejected = "rejected"
+    cancelled = "cancelled"

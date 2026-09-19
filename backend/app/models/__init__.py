@@ -8,6 +8,12 @@ from app.models.approval import ApprovalRequest
 from app.models.audit import AuditLog
 from app.models.attendance import StudentAttendance
 from app.models.behaviour import BehaviourRating
+from app.models.document import (
+    CertificateIssue,
+    CertificateSequence,
+    CertificateTemplate,
+    Document,
+)
 from app.models.exam import Exam, ExamSubject
 from app.models.fee import FeeHead, FeeStructure, StudentFee
 from app.models.fee_reminder import FeeReminderLog
@@ -56,8 +62,12 @@ __all__ = [
     "ApprovalRequest",
     "AuditLog",
     "BehaviourRating",
+    "CertificateIssue",
+    "CertificateSequence",
+    "CertificateTemplate",
     "ClassSubject",
     "Conversation",
+    "Document",
     "Exam",
     "ExamSubject",
     "FeeHead",
