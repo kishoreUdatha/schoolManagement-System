@@ -11,7 +11,7 @@ export type BorrowerValue =
   | { borrower_type: "staff"; user_id: number; label: string }
   | null;
 
-type StaffOption = { user_id: number; full_name: string; is_active: boolean };
+type StaffOption = { user_id: number; full_name: string };
 
 /** Pick a student (search) or a staff member (dropdown). */
 export function BorrowerPicker({ value, onChange }: { value: BorrowerValue; onChange: (v: BorrowerValue) => void }) {
@@ -21,8 +21,8 @@ export function BorrowerPicker({ value, onChange }: { value: BorrowerValue; onCh
 
   useEffect(() => {
     api
-      .get<StaffOption[]>("/api/v1/school/staff")
-      .then((r) => setStaff(r.data.filter((s) => s.is_active)))
+      .get<StaffOption[]>("/api/v1/school/directory/staff")
+      .then((r) => setStaff(r.data))
       .catch(() => undefined);
   }, []);
 

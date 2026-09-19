@@ -728,7 +728,7 @@ function HostelModal({ existing, onClose, onSaved }: { existing: Hostel | null; 
   });
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-    api.get<{ user_id: number; full_name: string }[]>("/api/v1/school/front-desk/hosts").then((r) => setStaff(r.data)).catch(() => undefined);
+    api.get<{ user_id: number; full_name: string }[]>("/api/v1/school/directory/staff").then((r) => setStaff(r.data)).catch(() => undefined);
   }, []);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
   return (

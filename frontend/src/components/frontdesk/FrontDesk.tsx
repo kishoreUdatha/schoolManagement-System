@@ -266,7 +266,7 @@ function VisitModal({ expected, onClose, onSaved }: { expected: boolean; onClose
   const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });
 
   useEffect(() => {
-    api.get<{ user_id: number; full_name: string }[]>(`${base}/hosts`).then((r) => setStaff(r.data)).catch(() => undefined);
+    api.get<{ user_id: number; full_name: string }[]>("/api/v1/school/directory/staff").then((r) => setStaff(r.data)).catch(() => undefined);
   }, []);
 
   async function submit(e: FormEvent) {

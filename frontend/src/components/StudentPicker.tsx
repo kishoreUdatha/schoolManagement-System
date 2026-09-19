@@ -28,10 +28,8 @@ export function StudentPicker({
     }
     const t = setTimeout(() => {
       api
-        .get<{ items: PickedStudent[] }>("/api/v1/school/students", {
-          params: { search: q.trim(), status: "active", page_size: 10 },
-        })
-        .then((r) => setResults(r.data.items))
+        .get<PickedStudent[]>("/api/v1/school/directory/students", { params: { search: q.trim() } })
+        .then((r) => setResults(r.data))
         .catch(() => setResults([]));
     }, 250);
     return () => clearTimeout(t);

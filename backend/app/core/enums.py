@@ -478,3 +478,36 @@ class ComplaintStatus(str, enum.Enum):
     open = "open"
     in_progress = "in_progress"
     resolved = "resolved"
+
+
+class StockMoveKind(str, enum.Enum):
+    purchase = "purchase"  # in, from a supplier
+    return_in = "return_in"  # in, returned by whoever it was issued to
+    adjustment_in = "adjustment_in"  # in, stock-take correction
+    issue = "issue"  # out, to a department / staff member
+    sale = "sale"  # out, sold through the school store
+    damage = "damage"  # out, written off
+    adjustment_out = "adjustment_out"  # out, stock-take correction
+
+
+class AssetStatus(str, enum.Enum):
+    in_store = "in_store"
+    in_use = "in_use"
+    under_repair = "under_repair"
+    disposed = "disposed"
+
+
+class AssetEventKind(str, enum.Enum):
+    assigned = "assigned"
+    returned = "returned"
+    moved = "moved"
+    maintenance = "maintenance"
+    repaired = "repaired"
+    disposed = "disposed"
+
+
+class StorePayment(str, enum.Enum):
+    cash = "cash"
+    upi = "upi"
+    card = "card"
+    add_to_fees = "add_to_fees"

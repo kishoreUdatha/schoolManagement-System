@@ -30,6 +30,15 @@ from app.models.hostel import (
     MessMenu,
 )
 from app.models.homework import Homework, HomeworkSubmission
+from app.models.inventory import (
+    Asset,
+    AssetEvent,
+    InventoryItem,
+    StockMove,
+    StoreSale,
+    StoreSaleLine,
+    Supplier,
+)
 from app.models.learning_video import LearningVideo, LearningVideoCompletion
 from app.models.library import Book, BookCopy, LibrarySettings, Loan, Reservation
 from app.models.mark import Mark
@@ -74,6 +83,8 @@ __all__ = [
     "AdmissionCampaign",
     "AdmissionEnquiry",
     "ApprovalRequest",
+    "Asset",
+    "AssetEvent",
     "AuditLog",
     "BehaviourRating",
     "Book",
@@ -96,6 +107,7 @@ __all__ = [
     "HealthCheckup",
     "Holiday",
     "Homework",
+    "InventoryItem",
     "Hostel",
     "HostelAllocation",
     "HostelAttendance",
@@ -134,10 +146,14 @@ __all__ = [
     "StaffAttendance",
     "StaffLeave",
     "StaffSalary",
+    "StockMove",
+    "StoreSale",
+    "StoreSaleLine",
     "Student",
     "StudentAttendance",
     "StudentFee",
     "Subject",
+    "Supplier",
     "SubscriptionPayment",
     "Tenant",
     "TenantSubscription",

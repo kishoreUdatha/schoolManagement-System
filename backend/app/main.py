@@ -26,6 +26,7 @@ from app.api.v1.school import (
     class_subjects as school_class_subjects,
     classes as school_classes,
     dashboard as school_dashboard,
+    directory as school_directory,
     documents as school_documents,
     exams as school_exams,
     exports as school_exports,
@@ -35,6 +36,7 @@ from app.api.v1.school import (
     health as school_health,
     holidays as school_holidays,
     hostel as school_hostel,
+    inventory as school_inventory,
     library as school_library,
     notices as school_notices,
     online_payments as school_online_payments,
@@ -645,6 +647,18 @@ app.include_router(
     parent_hostel.router,
     prefix="/api/v1/parent/me/children",
     tags=["parent / hostel"],
+)
+
+app.include_router(
+    school_inventory.router,
+    prefix="/api/v1/school/inventory",
+    tags=["school / inventory & store"],
+)
+
+app.include_router(
+    school_directory.router,
+    prefix="/api/v1/school/directory",
+    tags=["school / directory"],
 )
 
 
