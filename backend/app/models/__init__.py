@@ -20,6 +20,7 @@ from app.models.fee_reminder import FeeReminderLog
 from app.models.holiday import Holiday
 from app.models.homework import Homework, HomeworkSubmission
 from app.models.learning_video import LearningVideo, LearningVideoCompletion
+from app.models.library import Book, BookCopy, LibrarySettings, Loan, Reservation
 from app.models.mark import Mark
 from app.models.messaging import Conversation, Message
 from app.models.notice import Notice, NoticeRecipient
@@ -63,6 +64,8 @@ __all__ = [
     "ApprovalRequest",
     "AuditLog",
     "BehaviourRating",
+    "Book",
+    "BookCopy",
     "CertificateIssue",
     "CertificateSequence",
     "CertificateTemplate",
@@ -81,6 +84,8 @@ __all__ = [
     "HomeworkSubmission",
     "LearningVideo",
     "LearningVideoCompletion",
+    "LibrarySettings",
+    "Loan",
     "Mark",
     "Message",
     "Notice",
@@ -92,6 +97,7 @@ __all__ = [
     "Period",
     "Plan",
     "PlanModule",
+    "Reservation",
     "Project",
     "ProjectProgress",
     "School",

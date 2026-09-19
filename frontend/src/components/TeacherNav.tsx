@@ -9,6 +9,7 @@ import {
   ClipboardList,
   GraduationCap,
   LayoutDashboard,
+  Library,
   Lock,
   MessageSquare,
   ReceiptText,
@@ -57,6 +58,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/teacher/leaves", label: "My leaves", icon: ClipboardList },
       { href: "/teacher/payslips", label: "My payslips", icon: ReceiptText },
+      { href: "/teacher/library", label: "Library books", icon: Library },
       { href: "/teacher/change-password", label: "Change password", icon: Lock },
     ],
   },

@@ -362,3 +362,33 @@ class PayrollRunStatus(str, enum.Enum):
     draft = "draft"
     finalized = "finalized"
     paid = "paid"
+
+
+class CopyStatus(str, enum.Enum):
+    available = "available"
+    issued = "issued"
+    on_hold = "on_hold"  # set aside for a reservation
+    lost = "lost"
+    damaged = "damaged"
+    withdrawn = "withdrawn"
+
+
+class BorrowerType(str, enum.Enum):
+    student = "student"
+    staff = "staff"
+
+
+class FineStatus(str, enum.Enum):
+    none = "none"
+    pending = "pending"
+    billed = "billed"  # added to the student's fees
+    paid = "paid"
+    waived = "waived"
+
+
+class ReservationStatus(str, enum.Enum):
+    waiting = "waiting"
+    ready = "ready"
+    fulfilled = "fulfilled"
+    cancelled = "cancelled"
+    expired = "expired"

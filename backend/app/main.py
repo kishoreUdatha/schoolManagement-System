@@ -32,6 +32,7 @@ from app.api.v1.school import (
     fee_reminders as school_fee_reminders,
     fees as school_fees,
     holidays as school_holidays,
+    library as school_library,
     notices as school_notices,
     online_payments as school_online_payments,
     parents as school_parents,
@@ -52,6 +53,7 @@ from app.api.v1.school import (
 from app.api.v1.staff import (
     attendance as staff_attendance_routes,
     leaves as staff_leaves_routes,
+    library as staff_library,
     payslips as staff_payslips,
 )
 from app.api.v1.parent import (
@@ -63,6 +65,7 @@ from app.api.v1.parent import (
     fees as parent_fees,
     holidays as parent_holidays,
     homework as parent_homework,
+    library as parent_library,
     messages as parent_messages,
     notices as parent_notices,
     payments as parent_payments,
@@ -575,6 +578,24 @@ app.include_router(
     staff_payslips.router,
     prefix="/api/v1/staff/payslips",
     tags=["staff / payslips"],
+)
+
+app.include_router(
+    school_library.router,
+    prefix="/api/v1/school/library",
+    tags=["school / library"],
+)
+
+app.include_router(
+    parent_library.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / library"],
+)
+
+app.include_router(
+    staff_library.router,
+    prefix="/api/v1/staff/library",
+    tags=["staff / library"],
 )
 
 

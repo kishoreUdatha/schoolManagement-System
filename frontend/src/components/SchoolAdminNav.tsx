@@ -25,6 +25,7 @@ import {
   Banknote,
   FileText,
   Award,
+  Library,
   User,
   UserCheck,
   UserPlus,
@@ -94,6 +95,7 @@ const sections: NavSection[] = [
     icon: Bus,
     items: [
       { href: "/school/transport", label: "Transport", icon: Bus },
+      { href: "/school/library", label: "Library", icon: Library },
       { href: "/school/documents", label: "Documents", icon: FileText },
       { href: "/school/certificates", label: "Certificates", icon: Award },
     ],
