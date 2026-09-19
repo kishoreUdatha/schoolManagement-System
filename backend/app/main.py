@@ -26,6 +26,7 @@ from app.api.v1.school import (
     certificates as school_certificates,
     class_subjects as school_class_subjects,
     classes as school_classes,
+    cover as school_cover,
     dashboard as school_dashboard,
     directory as school_directory,
     documents as school_documents,
@@ -88,6 +89,7 @@ from app.api.v1.parent import (
     payments as parent_payments,
     profile as parent_profile,
     projects as parent_projects,
+    student_leaves as parent_student_leaves,
     syllabus as parent_syllabus,
     timetable as parent_timetable,
     transport as parent_transport,
@@ -729,6 +731,18 @@ app.include_router(
     parent_online_exams.router,
     prefix="/api/v1/parent/me",
     tags=["parent / online tests"],
+)
+
+app.include_router(
+    school_cover.router,
+    prefix="/api/v1/school",
+    tags=["school / cover, student leave"],
+)
+
+app.include_router(
+    parent_student_leaves.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / student leave"],
 )
 
 

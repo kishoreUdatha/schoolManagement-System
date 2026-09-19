@@ -26,6 +26,7 @@ type Row = {
   full_name: string;
   status: Status | null;
   remark: string | null;
+  on_leave?: string | null;
 };
 
 type View = {
@@ -119,7 +120,8 @@ export default function AttendancePage() {
   }
 
   function bulkSet(status: Status) {
-    setRows((prev) => prev.map((r) => ({ ...r, status })));
+    // students on approved leave stay absent when everyone is marked present
+    setRows((prev) => prev.map((r) => (status === "present" && r.on_leave ? { ...r, status: "absent" } : { ...r, status })));
   }
 
   const counts = useMemo(() => {
@@ -272,6 +274,11 @@ export default function AttendancePage() {
                         </td>
                         <td className="px-4 py-2">
                           <div className="font-medium text-slate-900">{r.full_name}</div>
+                          {r.on_leave && (
+                            <span className="inline-block rounded bg-sky-100 px-1.5 py-0.5 text-[11px] font-medium text-sky-800">
+                              {r.on_leave} (approved)
+                            </span>
+                          )}
                           <div className="text-xs text-slate-500">{r.admission_no}</div>
                         </td>
                         <td className="px-4 py-2">

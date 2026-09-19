@@ -91,6 +91,9 @@ def get_view(
         )
     ).scalars().all()
     by_student = {a.student_id: a for a in existing_rows}
+    from app.services.cover_service import leave_map
+
+    on_leave = leave_map(db, [s.id for s in students], on_date)
 
     rows = []
     summary = {
@@ -118,6 +121,7 @@ def get_view(
                 "remark": a.remark if a else None,
                 "marked_by_user_id": a.marked_by_user_id if a else None,
                 "marked_at": a.updated_at if a else None,
+                "on_leave": on_leave.get(s.id),
             }
         )
 
@@ -192,6 +196,10 @@ def save(
     skipped = 0
     errors = []
     newly_absent: list[int] = []
+    from app.services.cover_service import leave_map
+
+    # Parents who applied for leave don't need an "absent" alert.
+    on_leave = leave_map(db, valid_student_ids, on_date)
 
     for e in entries:
         student_id = e.get("student_id") if isinstance(e, dict) else e.student_id
@@ -209,7 +217,9 @@ def save(
         else:
             status_value = status_val
 
-        if (
+        if status_value == AttendanceStatus.absent.value and student_id in on_leave:
+            remark = remark or on_leave[student_id]
+        elif (
             status_value == AttendanceStatus.absent.value
             and prior_status.get(student_id) != AttendanceStatus.absent.value
         ):

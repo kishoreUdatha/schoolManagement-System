@@ -578,6 +578,21 @@ class ConsentResponse(str, enum.Enum):
     no = "no"
 
 
+class StudentLeaveKind(str, enum.Enum):
+    sick = "sick"
+    family = "family"
+    travel = "travel"
+    religious = "religious"
+    other = "other"
+
+
+class StudentLeaveStatus(str, enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+    cancelled = "cancelled"
+
+
 class QuestionKind(str, enum.Enum):
     single = "single"  # one correct option
     multiple = "multiple"  # several correct options, all-or-nothing

@@ -16,6 +16,7 @@ from app.models.approval import ApprovalRequest
 from app.models.audit import AuditLog
 from app.models.attendance import StudentAttendance
 from app.models.behaviour import BehaviourRating
+from app.models.cover import StudentLeave, Substitution, TeacherUnavailability
 from app.models.document import (
     CertificateIssue,
     CertificateSequence,
@@ -219,6 +220,9 @@ __all__ = [
     "User",
     "UserOtp",
     "Visit",
+    "StudentLeave",
+    "Substitution",
+    "TeacherUnavailability",
     "AttemptAnswer",
     "OnlineTest",
     "OnlineTestQuestion",

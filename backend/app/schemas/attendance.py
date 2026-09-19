@@ -29,6 +29,8 @@ class AttendanceRow(BaseModel):
     photo_url: Optional[str] = None
     status: Optional[AttendanceStatus] = None  # None = not yet marked
     remark: Optional[str] = None
+    # e.g. "Sick leave" when the parent's leave request was approved for this date
+    on_leave: Optional[str] = None
     marked_by_user_id: Optional[int] = None
     marked_at: Optional[datetime] = None
 

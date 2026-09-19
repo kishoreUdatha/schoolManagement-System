@@ -133,7 +133,13 @@ MAP = {
         "mark": (D, "POST /teacher/attendance/save", ""),
         "lock": (N, "", ""), "reopen": (N, "", ""),
     },
-    "student_leave_requests": {**none("Next in queue"), "approve": (N, "", ""), "reject": (N, "", "")},
+    "student_leave_requests": {
+        **crud("GET /school/student-leaves; GET /parent/me/children/{id}/leaves", "POST /parent/me/children/{id}/leaves", None,
+               (P, "POST /parent/me/children/{id}/leaves/{leave_id}/cancel", "Cancel only; re-apply to change dates"),
+               get_via_list=True),
+        "approve": (D, "POST /school/student-leaves/{id}/decide", "approve = true; class teacher or admin"),
+        "reject": (D, "POST /school/student-leaves/{id}/decide", "approve = false, note required"),
+    },
     # ---------------- Timetable & Substitution ----------------
     "timetables": {
         **crud("GET /school/sections/{id}/timetable; GET /teacher/timetable", "PUT /school/sections/{id}/timetable/{period_id}",
@@ -143,7 +149,9 @@ MAP = {
     },
     "timetable_slots": crud((D, "GET /school/sections/{id}/timetable", ""), "PUT /school/sections/{id}/timetable/{period_id}",
                             None, "PUT /school/sections/{id}/timetable/{period_id}", get_via_list=True),
-    "substitutions": none("Next in queue"),
+    "substitutions": crud((D, "GET /school/cover/day?date=", "Slots needing cover (staff leave / marked absent)"),
+                          "POST /school/cover/assign", None, (D, "POST /school/cover/assign; DELETE /school/cover/{id}", ""),
+                          get_via_list=True),
     # ---------------- Homework ----------------
     "learning_tasks": {
         **crud("GET /teacher/homework", "POST /teacher/homework", "GET /teacher/homework/{id}", "PATCH /teacher/homework/{id}"),
@@ -392,6 +400,13 @@ EXTRA = [
     ("Events, PTM & Communication", "gallery_albums", "Action", "POST", "/school/gallery/{id}/photos", "Upload photos", "School Admin"),
     ("Events, PTM & Communication", "gallery_albums", "Action", "POST", "/school/gallery/{id}/publish", "Publish / unpublish + notify", "School Admin"),
     ("Events, PTM & Communication", "calendar", "List", "GET", "/school/calendar; /parent/me/calendar", "Events, holidays, exams, meetings", "All school users, Parent"),
+    ("Timetable & Substitution", "substitutions", "Action", "GET", "/school/cover/candidates", "Ranked substitutes for a slot (free / unavailable / busy)", "School Admin, Principal"),
+    ("Timetable & Substitution", "substitutions", "Action", "POST", "/school/cover/auto-assign", "Fill uncovered slots with the best free teacher", "School Admin, Principal"),
+    ("Timetable & Substitution", "substitutions", "List", "GET", "/school/cover/mine", "Periods I'm covering", "Teacher, Principal"),
+    ("Timetable & Substitution", "substitutions", "List", "GET", "/school/cover/stats", "Covers per teacher (fairness)", "School Admin, Principal"),
+    ("Timetable & Substitution", "teacher_availability", "List", "GET", "/school/cover/unavailability", "Weekly blocks when a teacher can't cover", "School Admin, Principal"),
+    ("Timetable & Substitution", "teacher_availability", "Create", "POST", "/school/cover/unavailability", "Add a block (day or single period)", "School Admin, Principal"),
+    ("Timetable & Substitution", "teacher_availability", "Delete", "DELETE", "/school/cover/unavailability/{id}", "Remove a block", "School Admin, Principal"),
     ("Academics & Curriculum", "topic_coverage", "Action", "PUT", "/school/syllabus/topics/{id}/coverage", "Mark a topic taught in a section", "School Admin, Subject Teacher"),
     ("Academics & Curriculum", "topic_coverage", "List", "GET", "/parent/me/children/{id}/syllabus", "Child's syllabus progress", "Parent"),
 ]
