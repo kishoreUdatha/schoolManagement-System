@@ -553,3 +553,33 @@ class GuardianRelation(str, enum.Enum):
     sibling = "sibling"
     driver = "driver"
     other = "other"
+
+
+class EventKind(str, enum.Enum):
+    academic = "academic"
+    cultural = "cultural"
+    sports = "sports"
+    trip = "trip"
+    celebration = "celebration"
+    meeting = "meeting"
+    other = "other"
+
+
+class EventAudience(str, enum.Enum):
+    everyone = "everyone"  # parents + staff
+    staff = "staff"
+    parents = "parents"
+    class_parents = "class_parents"
+    section_parents = "section_parents"
+
+
+class ConsentResponse(str, enum.Enum):
+    yes = "yes"
+    no = "no"
+
+
+class PtmSlotStatus(str, enum.Enum):
+    open = "open"
+    booked = "booked"
+    done = "done"
+    no_show = "no_show"

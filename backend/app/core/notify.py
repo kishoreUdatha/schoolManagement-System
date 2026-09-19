@@ -78,3 +78,17 @@ def staff_users(db: Session, *, tenant_id: int, school_id: int, user_ids: list[i
         db, tenant_id=tenant_id, school_id=school_id, user_ids=user_ids, title=title, body=body,
         audience=NoticeAudience.all_staff,
     )
+
+
+def broadcast(db: Session, *, tenant_id: int, school_id: int, audience: NoticeAudience, title: str, body: str,
+              class_id=None, section_id=None, student_id=None) -> int:
+    """Send to a notice audience (all parents, a class, a section...) using the
+    notices module's own recipient rules. Caller commits."""
+    from app.services.notice_service import _resolve_recipients
+
+    probe = Notice(tenant_id=tenant_id, school_id=school_id, title=title, body=body, audience=audience,
+                   audience_class_id=class_id, audience_section_id=section_id, audience_student_id=student_id,
+                   channels=[NoticeChannel.in_app.value], status=NoticeStatus.sent)
+    users = [u.id for u in _resolve_recipients(db, probe)]
+    return _send(db, tenant_id=tenant_id, school_id=school_id, user_ids=users, title=title, body=body,
+                 audience=audience, student_id=student_id) if users else 0

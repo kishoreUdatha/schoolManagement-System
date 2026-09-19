@@ -29,6 +29,7 @@ from app.api.v1.school import (
     dashboard as school_dashboard,
     directory as school_directory,
     documents as school_documents,
+    events as school_events,
     exams as school_exams,
     exports as school_exports,
     fee_reminders as school_fee_reminders,
@@ -69,6 +70,7 @@ from app.api.v1.parent import (
     behaviour as parent_behaviour,
     children as parent_children,
     documents as parent_documents,
+    events as parent_events,
     exams as parent_exams,
     fees as parent_fees,
     gate_passes as parent_gate_passes,
@@ -99,6 +101,7 @@ from app.api.v1.teacher import (
     my_classes as teacher_my_classes,
     notices as teacher_notices,
     projects as teacher_projects,
+    ptm as teacher_ptm,
     students as teacher_students,
     timetable as teacher_timetable,
     videos as teacher_videos,
@@ -680,6 +683,24 @@ app.include_router(
     parent_guardians.router,
     prefix="/api/v1/parent/me/children",
     tags=["parent / guardians"],
+)
+
+app.include_router(
+    school_events.router,
+    prefix="/api/v1/school",
+    tags=["school / events, meetings, gallery"],
+)
+
+app.include_router(
+    teacher_ptm.router,
+    prefix="/api/v1/teacher/ptm",
+    tags=["teacher / parent-teacher meetings"],
+)
+
+app.include_router(
+    parent_events.router,
+    prefix="/api/v1/parent/me",
+    tags=["parent / events, meetings, gallery"],
 )
 
 

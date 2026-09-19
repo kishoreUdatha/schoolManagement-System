@@ -6,6 +6,9 @@ import {
   BookOpen,
   Calendar,
   CalendarDays,
+  CalendarRange,
+  Handshake,
+  Images,
   CheckSquare,
   ClipboardCheck,
   Clock,
@@ -95,6 +98,16 @@ const sections: NavSection[] = [
       { href: "/school/staff-attendance", label: "Staff attendance", icon: CheckSquare },
       { href: "/school/staff-leaves", label: "Staff leaves", icon: ClipboardCheck },
       { href: "/school/reports/attendance", label: "Reports", icon: BarChart3 },
+    ],
+  },
+  {
+    heading: "Events",
+    icon: CalendarRange,
+    items: [
+      { href: "/school/calendar", label: "Calendar", icon: CalendarRange },
+      { href: "/school/events", label: "Events", icon: PartyPopper },
+      { href: "/school/ptm", label: "Parent-teacher meetings", icon: Handshake },
+      { href: "/school/gallery", label: "Photo gallery", icon: Images },
     ],
   },
   {

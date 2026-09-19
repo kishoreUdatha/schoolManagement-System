@@ -22,6 +22,14 @@ from app.models.document import (
     CertificateTemplate,
     Document,
 )
+from app.models.events import (
+    EventConsent,
+    GalleryAlbum,
+    GalleryPhoto,
+    PtmSession,
+    PtmSlot,
+    SchoolEvent,
+)
 from app.models.exam import Exam, ExamSubject
 from app.models.fee import FeeHead, FeeStructure, StudentFee
 from app.models.fee_reminder import FeeReminderLog
@@ -197,5 +205,11 @@ __all__ = [
     "User",
     "UserOtp",
     "Visit",
+    "EventConsent",
+    "GalleryAlbum",
+    "GalleryPhoto",
+    "PtmSession",
+    "PtmSlot",
+    "SchoolEvent",
     "WeeklyReport",
 ]
