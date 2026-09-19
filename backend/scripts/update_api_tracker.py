@@ -1,0 +1,467 @@
+"""Mark implemented APIs in School_ERP_Database_and_API_Design.xlsx.
+
+Adds/refreshes three columns on the "API Catalog" sheet — Status, Our Endpoint(s),
+Notes — and an "API Progress" sheet with per-module counts (COUNTIFS formulas,
+so hand edits to Status are counted too).
+
+Status values:
+    Done         the spec'd operation exists (possibly under a different path/shape)
+    Partial      some of it exists; Notes says what's missing
+    Not Started  nothing yet
+    N/A          intentionally not offered (e.g. receipts are immutable)
+
+Update MAP below when a module lands, then run on the host (Excel must be closed):
+    python backend/scripts/update_api_tracker.py
+"""
+import shutil
+import sys
+from copy import copy
+import sys
+from datetime import datetime
+from pathlib import Path
+
+from openpyxl import load_workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.utils import get_column_letter
+
+ROOT = Path(__file__).resolve().parents[2]
+XLSX = ROOT / "School_ERP_Database_and_API_Design.xlsx"
+
+D, P, N, NA = "Done", "Partial", "Not Started", "N/A"
+VIA_LIST = "No single-GET; the record comes back in the list"
+
+
+def crud(lst=None, create=None, get=None, update=None, note=None, get_via_list=False):
+    """Shorthand for the four CRUD rows. Each arg: path string, (status, path, note) or None."""
+    out = {}
+    for op, v in (("List", lst), ("Create", create), ("Get", get), ("Update", update)):
+        if v is None:
+            if op == "Get" and get_via_list and lst:
+                out[op] = (D, lst if isinstance(lst, str) else lst[1], VIA_LIST)
+            else:
+                out[op] = (N, "", note or "")
+        elif isinstance(v, str):
+            out[op] = (D, v, "")
+        else:
+            out[op] = v
+    return out
+
+
+def none(note=""):
+    return crud(note=note)
+
+
+# (resource/table) -> {operation or action name: (status, our endpoint(s), notes)}
+MAP = {
+    # ---------------- Identity & Access ----------------
+    "users": {
+        **crud("GET /school/staff; GET /school/parents", "POST /school/staff; POST /school/parents",
+               "GET /school/staff/{id}; GET /school/parents/{id}", "PATCH /school/staff/{id}; PATCH /school/parents/{id}"),
+        "activate": (D, "POST /school/staff/{id}/activate; POST /school/parents/{id}/activate", ""),
+        "suspend": (D, "POST /school/staff/{id}/deactivate; POST /school/parents/{id}/deactivate", ""),
+        "reset-password": (D, "POST /school/staff/{id}/reset-password; POST /school/parents/{id}/reset-password", ""),
+    },
+    "roles": none("Fixed roles today (UserRole enum); configurable RBAC is queued"),
+    "permissions": none("Fixed roles today (UserRole enum); configurable RBAC is queued"),
+    "user_role_assignments": none("One role per user today; configurable RBAC is queued"),
+    # ---------------- School & Academic Setup ----------------
+    "schools": crud("GET /super-admin/tenants", "POST /super-admin/tenants",
+                    "GET /super-admin/tenants/{id}; GET /school/profile", "PATCH /school/profile"),
+    "branches": none("Queued with group view across schools"),
+    "academic_years": crud("GET /school/academic-years", "POST /school/academic-years",
+                           "GET /school/academic-years/{id}", "PATCH /school/academic-years/{id}"),
+    "terms": crud("GET /school/academic-years/{id}/terms", "POST /school/academic-years/{id}/terms", None,
+                  "PUT /school/academic-years/{id}/terms/{term_id}", get_via_list=True),
+    "departments": crud("GET /school/departments", "POST /school/departments", None, "PUT /school/departments/{id}",
+                        get_via_list=True),
+    "grades": crud("GET /school/classes", "POST /school/classes", "GET /school/classes/{id}", "PATCH /school/classes/{id}",
+                   note="Called 'classes' here"),
+    "sections": crud((D, "GET /school/classes", "Sections are returned inside each class"),
+                     "POST /school/classes/{id}/sections", (D, "GET /school/classes/{id}", "Returned inside the class"),
+                     "PATCH /school/sections/{id}"),
+    "subjects": crud("GET /school/subjects", "POST /school/subjects", "GET /school/subjects/{id}", "PATCH /school/subjects/{id}"),
+    "rooms": none("Queued with labs & lab bookings"),
+    # ---------------- Admissions ----------------
+    "admission_enquiries": {
+        **crud("GET /school/admissions/enquiries", "POST /school/admissions/enquiries; POST /public/admissions/{tenant}/{school}/enquiries",
+               "GET /school/admissions/enquiries/{id}", "PATCH /school/admissions/enquiries/{id}"),
+        "convert": (D, "POST /school/admissions/enquiries/{id}/convert", "Creates the student record"),
+    },
+    "admission_applications": {
+        **none("Enquiry pipeline covers pre-admission; no separate application form yet"),
+        "submit": (N, "", ""), "approve": (N, "", ""), "reject": (P, "POST /school/admissions/enquiries/{id}/stage", "Enquiry can be marked lost"),
+        "confirm-admission": (P, "POST /school/admissions/enquiries/{id}/convert", "Converting an enquiry admits the student"),
+    },
+    "admission_assessments": none("Entrance tests not built"),
+    # ---------------- Students & Guardians ----------------
+    "students": {
+        **crud("GET /school/students", "POST /school/students; POST /school/students/bulk", "GET /school/students/{id}",
+               "PATCH /school/students/{id}"),
+        "promote": (D, "POST /school/students/promote", ""),
+        "transfer": (P, "POST /school/certificates (TC); POST /school/students/{id}/deactivate", "TC issue + deactivate; no inter-school transfer"),
+        "exit": (D, "POST /school/students/{id}/deactivate", "Enrolment closed as 'left'"),
+    },
+    "student_enrollments": crud("GET /school/enrollments; GET /school/students/{id}/enrollments",
+                                (D, "(automatic)", "Created on admission / promotion"), None,
+                                "PATCH /school/enrollments/{id}", get_via_list=True),
+    "guardians": crud("GET /school/students/{id}/guardians", "POST /school/students/{id}/guardians", None,
+                      "PATCH /school/students/{id}/guardians/{guardian_id}", get_via_list=True),
+    # ---------------- Staff & Teachers ----------------
+    "employees": crud("GET /school/staff", "POST /school/staff", "GET /school/staff/{id}", "PATCH /school/staff/{id}"),
+    "teacher_assignments": crud("GET /school/classes/{id}/subjects; GET /teacher/my-classes", "POST /school/classes/{id}/subjects",
+                                None, "PATCH /school/class-subjects/{id}; PATCH /school/sections/{id} (class teacher)",
+                                get_via_list=True),
+    # ---------------- Academics & Curriculum ----------------
+    "curricula": crud("GET /school/syllabus", (D, "POST /school/syllabus/{cs_id}/chapters", "A syllabus exists per class-subject"),
+                      "GET /school/syllabus/{cs_id}", (D, "POST /school/syllabus/{cs_id}/copy; PUT /school/syllabus/{cs_id}/chapter-order", "")),
+    "curriculum_units": crud((D, "GET /school/syllabus/{cs_id}", "Chapters + topics"), "POST /school/syllabus/{cs_id}/chapters",
+                             (D, "GET /school/syllabus/{cs_id}", "Returned inside the syllabus"), "PUT /school/syllabus/chapters/{id}"),
+    "learning_outcomes": none(),
+    "lesson_plans": {
+        **crud("GET /school/lesson-plans", "POST /school/lesson-plans", None, "PUT /school/lesson-plans/{id}", get_via_list=True),
+        "submit": (D, "POST /school/lesson-plans/{id}/submit", ""),
+        "approve": (D, "POST /school/lesson-plans/{id}/review", "decision approve | return"),
+        "complete": (D, "POST /school/lesson-plans/{id}/deliver", "Marks the plan's topics as covered"),
+    },
+    "academic_calendar_events": crud("GET /school/events; GET /school/calendar", "POST /school/events", None,
+                                     "PUT /school/events/{id}", get_via_list=True),
+    "teaching_resources": crud((P, "GET /teacher/videos", "Learning videos only"), (P, "POST /teacher/videos", "Videos only"),
+                               None, (P, "PATCH /teacher/videos/{id}", "Videos only")),
+    # ---------------- Attendance ----------------
+    "attendance_sessions": {
+        **crud("GET /teacher/attendance", "POST /teacher/attendance/save", "GET /teacher/attendance", "POST /teacher/attendance/save"),
+        "mark": (D, "POST /teacher/attendance/save", ""),
+        "lock": (N, "", ""), "reopen": (N, "", ""),
+    },
+    "student_leave_requests": {**none("Next in queue"), "approve": (N, "", ""), "reject": (N, "", "")},
+    # ---------------- Timetable & Substitution ----------------
+    "timetables": {
+        **crud("GET /school/sections/{id}/timetable; GET /teacher/timetable", "PUT /school/sections/{id}/timetable/{period_id}",
+               "GET /school/sections/{id}/timetable", "PUT /school/sections/{id}/timetable/{period_id}"),
+        "validate": (D, "GET /school/sections/clashes", "Teacher clash check"),
+        "publish": (D, "POST /school/sections/{id}/timetable/publish", ""),
+    },
+    "timetable_slots": crud((D, "GET /school/sections/{id}/timetable", ""), "PUT /school/sections/{id}/timetable/{period_id}",
+                            None, "PUT /school/sections/{id}/timetable/{period_id}", get_via_list=True),
+    "substitutions": none("Next in queue"),
+    # ---------------- Homework ----------------
+    "learning_tasks": {
+        **crud("GET /teacher/homework", "POST /teacher/homework", "GET /teacher/homework/{id}", "PATCH /teacher/homework/{id}"),
+        "publish": (D, "POST /teacher/homework", "Published on create"),
+        "close": (N, "", ""),
+    },
+    "task_submissions": {
+        **crud("GET /teacher/homework/{id}/submissions", "POST /parent/me/children/{id}/homework/{hw}/submission",
+               "GET /parent/me/children/{id}/homework/{hw}/submission", "PATCH /parent/me/children/{id}/homework/{hw}/submission"),
+        "evaluate": (D, "PATCH /teacher/homework/submissions/{id}/review", ""),
+        "return": (D, "PATCH /teacher/homework/submissions/{id}/review", "status = rejected"),
+    },
+    "rubrics": none(),
+    # ---------------- Examinations & Results ----------------
+    "exam_types": crud((P, "(fixed ExamKind list)", "Fixed kinds, not configurable")),
+    "exams": {
+        **crud("GET /school/exams", "POST /school/exams", "GET /school/exams/{id}", "PATCH /school/exams/{id}"),
+        "schedule": (D, "POST /school/exams/{id}/papers", ""),
+        "open-marks": (P, "", "Marks entry is open as soon as papers exist"),
+        "publish-results": (D, "POST /school/exams/{id}/publish", ""),
+    },
+    "exam_schedules": crud((D, "GET /school/exams/{id}", "Papers returned inside the exam"), "POST /school/exams/{id}/papers",
+                           (D, "GET /school/exams/{id}", ""), "PATCH /school/exams/papers/{id}"),
+    "mark_entries": {
+        **crud("GET /teacher/marks/papers/{id}", "POST /teacher/marks/papers/{id}/save", "GET /teacher/marks/papers/{id}",
+               "POST /teacher/marks/papers/{id}/save"),
+        "bulk": (D, "POST /teacher/marks/papers/{id}/save", "Whole paper in one call"),
+        "verify": (P, "POST /school/approvals (marks correction)", "Correction approvals exist; no verification step"),
+    },
+    "grade_scales": none("Fixed grade bands in code; queued"),
+    "results": {
+        **crud((D, "GET /parent/me/children/{id}/exams/{exam_id}", "Computed from marks"), (N, "", "Computed on the fly"),
+               "GET /parent/me/children/{id}/exams/{exam_id}", (N, "", "")),
+        "calculate": (D, "(computed on read)", ""),
+        "approve": (N, "", ""),
+        "publish": (D, "POST /school/exams/{id}/publish", ""),
+        "revise": (P, "POST /school/exams/{id}/unpublish", "Unpublish, correct, republish"),
+    },
+    "report_cards": crud("GET /school/exams/{id}/sections/{section_id}/report-cards.pdf", (D, "(generated PDF)", ""),
+                         "GET /parent/me/children/{id}/exams/{exam_id}/report-card.pdf", (N, "", "Queued with grade scales")),
+    # ---------------- Fees & Finance ----------------
+    "fee_heads": crud("GET /school/fees/heads", "POST /school/fees/heads", None, "PATCH /school/fees/heads/{id}", get_via_list=True),
+    "fee_structures": crud("GET /school/fees/structures", "POST /school/fees/structures", None, "PATCH /school/fees/structures/{id}",
+                           get_via_list=True),
+    "student_fee_charges": crud("GET /school/fees/student-fees; GET /parent/me/children/{id}/fees", "POST /school/fees/generate",
+                                None, (P, "POST /school/fees/student-fees/{id}/waive", "Waive only"), get_via_list=True),
+    "concessions": crud("GET /school/accounts/concessions", "POST /school/accounts/concessions", None,
+                        (P, "POST /school/accounts/concessions/{id}/end", "End only"), get_via_list=True),
+    "fine_rules": none("Late-fee rules queued (library fines exist separately)"),
+    "payments": {
+        **crud("GET /school/accounts/collections; GET /school/payments/online", "POST /school/fees/student-fees/{id}/record-payment",
+               (P, "GET /school/payments/online/{id}/receipt.pdf", "Via receipt"), (NA, "", "Payments are reversed, not edited")),
+        "create-intent": (D, "POST /parent/me/children/{id}/fees/pay", "Razorpay order"),
+        "confirm": (D, "POST /parent/me/children/{id}/fees/pay/verify; POST /public/payments/razorpay/{school_id}/webhook", ""),
+        "reconcile": (P, "POST /public/payments/razorpay/{school_id}/webhook", "Webhook settles late payments; no report"),
+    },
+    "receipts": crud("GET /school/accounts/collections", (D, "(automatic)", "Receipt no. FRyymm-nnnnn on every collection"),
+                     "GET /school/payments/online/{id}/receipt.pdf; GET /parent/me/children/{id}/payments/{order_id}/receipt.pdf",
+                     (NA, "", "Receipts are immutable")),
+    "refunds": {**none("Queued"), "approve": (N, "", ""), "process": (N, "", "")},
+    "finance_transactions": crud("GET /school/accounts/cash-book; GET /school/accounts/expenses; GET /school/accounts/income",
+                                 "POST /school/accounts/expenses; POST /school/accounts/income", None,
+                                 (P, "POST /school/accounts/expenses/{id}/void", "Void only"), get_via_list=True),
+    "vendors": crud("GET /school/inventory/suppliers", "POST /school/inventory/suppliers", None, "PUT /school/inventory/suppliers/{id}",
+                    get_via_list=True),
+    # ---------------- HR & Payroll ----------------
+    "job_openings": none("Recruitment queued"),
+    "candidate_applications": none("Recruitment queued"),
+    "interview_schedules": none("Recruitment queued"),
+    "offers": none("Recruitment queued"),
+    "leave_types": none("Fixed leave types; balances queued"),
+    "leave_requests": {
+        **crud("GET /school/staff-leaves; GET /staff/leaves", "POST /staff/leaves", None, (N, "", ""), get_via_list=True),
+        "submit": (D, "POST /staff/leaves", ""),
+        "approve": (D, "POST /school/staff-leaves/{id}/decide", ""),
+        "reject": (D, "POST /school/staff-leaves/{id}/decide", ""),
+        "cancel": (D, "POST /staff/leaves/{id}/cancel", ""),
+    },
+    "payroll_runs": {
+        **crud("GET /school/payroll/runs", "POST /school/payroll/runs", "GET /school/payroll/runs/{id}",
+               "PATCH /school/payroll/runs/{id}/payslips/{slip_id}"),
+        "calculate": (D, "POST /school/payroll/runs/{id}/recalculate", ""),
+        "approve": (D, "POST /school/payroll/runs/{id}/finalize", ""),
+        "post": (D, "POST /school/payroll/runs/{id}/paid", "Plus bank file CSV"),
+    },
+    # ---------------- Transport ----------------
+    "vehicles": crud("GET /school/transport/vehicles", "POST /school/transport/vehicles", "GET /school/transport/vehicles/{id}",
+                     "PATCH /school/transport/vehicles/{id}"),
+    "transport_routes": crud("GET /school/transport/routes", "POST /school/transport/routes", "GET /school/transport/routes/{id}",
+                             "PATCH /school/transport/routes/{id}"),
+    "transport_stops": crud((D, "GET /school/transport/routes/{id}", "Stops live inside the route"),
+                            (D, "PATCH /school/transport/routes/{id}", ""), (D, "GET /school/transport/routes/{id}", ""),
+                            (D, "PATCH /school/transport/routes/{id}", "")),
+    "transport_assignments": crud("GET /school/transport/assignments", "POST /school/transport/assignments", None,
+                                  (P, "POST /school/transport/assignments/{id}/end", "End only"), get_via_list=True),
+    "trips": {
+        **crud("GET /school/transport/trips", "POST /school/transport/trips; POST /school/transport/trips/generate",
+               "GET /school/transport/trips/{id}", "PATCH /school/transport/trips/{id}"),
+        "start": (D, "PATCH /school/transport/trips/{id}", "status = in_progress"),
+        "complete": (D, "PATCH /school/transport/trips/{id}", "status = completed"),
+        "cancel": (D, "PATCH /school/transport/trips/{id}", "status = cancelled"),
+    },
+    # ---------------- Library ----------------
+    "book_titles": crud("GET /school/library/books", "POST /school/library/books", "GET /school/library/books/{id}",
+                        "PATCH /school/library/books/{id}"),
+    "book_copies": crud((D, "GET /school/library/books/{id}", "Copies inside the book"), "POST /school/library/books/{id}/copies",
+                        (D, "GET /school/library/books/{id}", ""), "PATCH /school/library/copies/{id}"),
+    "circulation_transactions": {
+        **crud("GET /school/library/loans", "POST /school/library/loans", None,
+               (P, "POST /school/library/loans/{id}/lost", "Via actions"), get_via_list=True),
+        "issue": (D, "POST /school/library/loans", ""),
+        "return": (D, "POST /school/library/loans/{id}/return", ""),
+        "renew": (D, "POST /school/library/loans/{id}/renew", ""),
+    },
+    "reservations": crud("GET /school/library/reservations", "POST /school/library/reservations", None,
+                         (P, "POST /school/library/reservations/{id}/cancel", "Cancel only"), get_via_list=True),
+    "library_fines": crud((P, "GET /school/library/loans", "Fines shown on loans"), "POST /school/library/loans/{id}/fine",
+                          (P, "GET /school/library/loans", ""), (P, "POST /school/library/loans/{id}/fine", "Collect / waive")),
+    # ---------------- Hostel ----------------
+    "hostels": crud("GET /school/hostels", "POST /school/hostels", None, "PUT /school/hostels/{id}", get_via_list=True),
+    "hostel_rooms": crud("GET /school/hostels/{id}/rooms", "POST /school/hostels/{id}/rooms", None, "PATCH /school/hostels/rooms/{id}",
+                         get_via_list=True),
+    "hostel_allocations": {
+        **crud("GET /school/hostels/{id}/residents", "POST /school/hostels/allocations", None,
+               (P, "POST /school/hostels/allocations/{id}/vacate", "Vacate only"), get_via_list=True),
+        "allocate": (D, "POST /school/hostels/allocations", ""),
+        "transfer": (P, "vacate + allocate", "No single transfer action"),
+        "vacate": (D, "POST /school/hostels/allocations/{id}/vacate", ""),
+    },
+    "outing_requests": crud("GET /school/hostels/{id}/outings; GET /parent/me/children/{id}/hostel/outings",
+                            "POST /school/hostels/outings; POST /parent/me/children/{id}/hostel/outings", None,
+                            "POST /school/hostels/outings/{id}/decide | out | returned", get_via_list=True),
+    # ---------------- Health, Counselling & Discipline ----------------
+    "medical_profiles": crud((P, "GET /school/health/alerts", "Alert list only"), "PUT /school/health/students/{id}/profile",
+                             "GET /school/health/students/{id}", "PUT /school/health/students/{id}/profile; PUT /parent/me/children/{id}/health/profile"),
+    "clinic_visits": crud("GET /school/health/visits", "POST /school/health/visits", None, (P, "DELETE /school/health/visits/{id}", "Delete only"),
+                          get_via_list=True),
+    "counselling_cases": none("Queued"),
+    "discipline_incidents": none("Queued (behaviour ratings exist: /teacher/behaviour)"),
+    # ---------------- Visitor & Security ----------------
+    "visitors": crud((P, "GET /school/front-desk/visits", "Visitor details are stored on each visit"), (P, "POST /school/front-desk/visits", ""),
+                     None, None),
+    "visits": {
+        **crud("GET /school/front-desk/visits", "POST /school/front-desk/visits", None,
+               (P, "POST /school/front-desk/visits/{id}/cancel", "Cancel only"), get_via_list=True),
+        "approve": (P, "POST /school/front-desk/visits/{id}/deny", "Pre-registration + deny; no host approval step"),
+        "check-in": (D, "POST /school/front-desk/visits/{id}/check-in", ""),
+        "check-out": (D, "POST /school/front-desk/visits/{id}/check-out", ""),
+    },
+    "security_incidents": crud("GET /school/front-desk/incidents", "POST /school/front-desk/incidents", None,
+                               "PATCH /school/front-desk/incidents/{id}", get_via_list=True),
+    # ---------------- Inventory, Assets & Labs ----------------
+    "inventory_items": crud("GET /school/inventory/items", "POST /school/inventory/items", None, "PUT /school/inventory/items/{id}",
+                            get_via_list=True),
+    "stock_transactions": {
+        **crud("GET /school/inventory/moves", "POST /school/inventory/moves", None, (NA, "", "Stock moves are immutable"),
+               get_via_list=True),
+        "receive": (D, "POST /school/inventory/moves", "kind = purchase"),
+        "issue": (D, "POST /school/inventory/moves", "kind = issue"),
+        "adjust": (D, "POST /school/inventory/moves", "kind = adjustment"),
+    },
+    "assets": crud("GET /school/inventory/assets", "POST /school/inventory/assets", "GET /school/inventory/assets/{id}",
+                   "PATCH /school/inventory/assets/{id}"),
+    "asset_assignments": crud((P, "GET /school/inventory/assets/{id}", "History inside the asset"), "POST /school/inventory/assets/{id}/events",
+                              (P, "GET /school/inventory/assets/{id}", ""), (NA, "", "Recorded as events")),
+    "labs": none("Queued"),
+    "lab_bookings": none("Queued"),
+    # ---------------- Events, PTM & Communication ----------------
+    "events": crud("GET /school/events; GET /parent/me/events", "POST /school/events", None, "PUT /school/events/{id}",
+                   get_via_list=True),
+    "ptm_schedules": crud("GET /school/ptm", "POST /school/ptm", "GET /school/ptm/{id}", "PUT /school/ptm/{id}"),
+    "ptm_slots": crud("GET /school/ptm/{id}; GET /parent/me/ptm; GET /teacher/ptm", (D, "POST /school/ptm/{id}/teachers", "Slots generated per teacher"),
+                      None, (D, "POST /parent/me/ptm/book; PUT /teacher/ptm/slots/{id}", "Book / cancel / outcome"), get_via_list=True),
+    "announcements": {
+        **crud("GET /school/notices", "POST /school/notices", "GET /school/notices/{id}", "PATCH /school/notices/{id}"),
+        "schedule": (D, "PATCH /school/notices/{id}", "scheduled_at"),
+        "publish": (D, "POST /school/notices/{id}/send", ""),
+    },
+    "message_threads": crud("GET /parent/me/conversations; GET /teacher/conversations", "POST /parent/me/conversations",
+                            "GET /teacher/conversations/{id}/messages", (P, "POST /teacher/conversations/{id}/mark-read", "Mark read only")),
+    "messages": crud("GET /teacher/conversations/{id}/messages", "POST /teacher/conversations/{id}/messages", None,
+                     (NA, "", "Messages aren't editable"), get_via_list=True),
+    # ---------------- Documents & Certificates ----------------
+    "documents": crud("GET /school/documents", "POST /school/documents; POST /parent/me/children/{id}/documents",
+                      "GET /school/documents/{id}/file", "PATCH /school/documents/{id}; POST /school/documents/{id}/verify"),
+    "certificate_templates": crud("GET /school/certificates/templates", "POST /school/certificates/templates", None,
+                                  "PATCH /school/certificates/templates/{id}", get_via_list=True),
+    "certificate_issues": {
+        **crud("GET /school/certificates", "POST /school/certificates; POST /parent/me/children/{id}/certificates",
+               "GET /school/certificates/{id}/pdf", "POST /school/certificates/{id}/decide"),
+        "generate": (D, "GET /school/certificates/{id}/pdf; POST /school/certificates/preview", ""),
+        "revoke": (D, "POST /school/certificates/{id}/cancel", ""),
+    },
+    # ---------------- Reports, Settings & Audit ----------------
+    "report_definitions": crud((P, "GET /school/reports/attendance/*", "Fixed reports, not user-defined")),
+    "export_jobs": {
+        **crud((P, "GET /school/exports/*.csv", "Synchronous CSV exports"), (P, "GET /school/exports/*.csv", ""), None, (NA, "", "")),
+        "run": (D, "GET /school/exports/{students|staff|fees|marks|homework|behaviour}.csv", ""),
+        "download": (D, "GET /school/exports/*.csv", ""),
+    },
+    "system_settings": crud((P, "GET /school/profile; GET /school/library/settings; GET /school/payroll/settings", "Per-module settings"),
+                            (NA, "", ""), "GET /school/profile", "PATCH /school/profile; PATCH /school/library/settings; PATCH /school/payroll/settings"),
+    "integration_configs": crud((P, "GET /school/payments/gateway", "Payment gateway only"), "PUT /school/payments/gateway",
+                                "GET /school/payments/gateway", "PUT /school/payments/gateway"),
+    "import_jobs": {
+        **none("Students bulk import is synchronous"),
+        "upload": (P, "POST /school/students/bulk; GET /school/students/import-template.csv", "Students only"),
+        "validate": (P, "POST /school/students/bulk", "Validates and reports row errors"),
+        "commit": (P, "POST /school/students/bulk", ""),
+    },
+}
+
+FILLS = {
+    D: PatternFill("solid", fgColor="C6EFCE"),
+    P: PatternFill("solid", fgColor="FFEB9C"),
+    N: PatternFill("solid", fgColor="F2F2F2"),
+    NA: PatternFill("solid", fgColor="DDEBF7"),
+}
+NEW_HEADERS = ["Status", "Our Endpoint(s)", "Notes", "Last Updated"]
+
+
+def main():
+    if not XLSX.exists():
+        sys.exit(f"missing {XLSX}")
+    lock = XLSX.with_name("~$" + XLSX.name)
+    if lock.exists():
+        sys.exit("The workbook is open in Excel; close it first.")
+    wb = load_workbook(XLSX)
+    ws = wb["API Catalog"]
+    header = [c.value for c in ws[1]]
+    # find or append our columns
+    cols = {}
+    for h in NEW_HEADERS:
+        if h in header:
+            cols[h] = header.index(h) + 1
+        else:
+            header.append(h)
+            cols[h] = len(header)
+            cell = ws.cell(row=1, column=cols[h], value=h)
+            src = ws.cell(row=1, column=cols[h] - 1)
+            cell.font, cell.fill, cell.alignment, cell.border = (
+                copy(src.font), copy(src.fill), copy(src.alignment), copy(src.border)
+            )
+    ws.column_dimensions[get_column_letter(cols["Status"])].width = 13
+    ws.column_dimensions[get_column_letter(cols["Our Endpoint(s)"])].width = 60
+    ws.column_dimensions[get_column_letter(cols["Notes"])].width = 45
+    ws.column_dimensions[get_column_letter(cols["Last Updated"])].width = 12
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    unknown = set()
+    for row in range(2, ws.max_row + 1):
+        table, op, path = ws.cell(row, 3).value, ws.cell(row, 4).value, ws.cell(row, 6).value
+        if not table:
+            continue
+        key = op if op != "Action" else path.rstrip("/").rsplit("/", 1)[-1]
+        entry = MAP.get(table, {}).get(key)
+        if entry is None:
+            unknown.add(f"{table}:{key}")
+            entry = (N, "", "")
+        status_, ep, note = entry
+        prev = ws.cell(row, cols["Status"]).value
+        ws.cell(row, cols["Status"], status_).fill = FILLS[status_]
+        ws.cell(row, cols["Our Endpoint(s)"], ep)
+        ws.cell(row, cols["Notes"], note)
+        if prev != status_:
+            ws.cell(row, cols["Last Updated"], today)
+        for h in ("Our Endpoint(s)", "Notes"):
+            ws.cell(row, cols[h]).alignment = Alignment(wrap_text=True, vertical="top")
+    if ws.auto_filter.ref:
+        ws.auto_filter.ref = f"A1:{get_column_letter(len(header))}{ws.max_row}"
+
+    # ---- progress sheet ----
+    if "API Progress" in wb.sheetnames:
+        del wb["API Progress"]
+    ps = wb.create_sheet("API Progress", index=wb.sheetnames.index("API Catalog") + 1)
+    status_col = get_column_letter(cols["Status"])
+    modules = []
+    for row in range(2, ws.max_row + 1):
+        m = ws.cell(row, 2).value
+        if m and m not in modules:
+            modules.append(m)
+    heads = ["Module", "Total", D, P, N, NA, "% Done"]
+    ps.append(heads)
+    for c in ps[1]:
+        c.font = Font(bold=True, color="FFFFFF")
+        c.fill = PatternFill("solid", fgColor="1F4E78")
+    for i, m in enumerate(modules, start=2):
+        ps.append([m, f"=COUNTIF('API Catalog'!B:B,A{i})"]
+                  + [f"=COUNTIFS('API Catalog'!B:B,A{i},'API Catalog'!{status_col}:{status_col},\"{s}\")" for s in (D, P, N, NA)]
+                  + [f"=IF(B{i}-F{i}=0,0,(C{i}+0.5*D{i})/(B{i}-F{i}))"])
+        ps.cell(i, 7).number_format = "0%"
+    t = len(modules) + 2
+    ps.append(["TOTAL"] + [f"=SUM({c}2:{c}{t - 1})" for c in "BCDEF"] + [f"=IF(B{t}-F{t}=0,0,(C{t}+0.5*D{t})/(B{t}-F{t}))"])
+    ps.cell(t, 7).number_format = "0%"
+    for c in ps[t]:
+        c.font = Font(bold=True)
+    ps.append([])
+    ps.append([f"% Done counts Partial as half and ignores N/A. Endpoint paths are under /api/v1."])
+    ps.append([f"Refreshed {today} by backend/scripts/update_api_tracker.py."])
+    ps.column_dimensions["A"].width = 34
+    for c in "BCDEFG":
+        ps.column_dimensions[c].width = 12
+    ps.freeze_panes = "A2"
+
+    backup = XLSX.with_suffix(".backup.xlsx")
+    if not backup.exists():
+        shutil.copy2(XLSX, backup)
+    wb.save(XLSX)
+
+    counts = {}
+    for row in range(2, ws.max_row + 1):
+        s = ws.cell(row, cols["Status"]).value
+        if s:
+            counts[s] = counts.get(s, 0) + 1
+    print("saved", XLSX.name, counts)
+    if unknown:
+        print("rows with no mapping (marked Not Started):", ", ".join(sorted(unknown)))
+
+
+if __name__ == "__main__":
+    main()
