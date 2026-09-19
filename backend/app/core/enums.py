@@ -356,3 +356,9 @@ class CertificateStatus(str, enum.Enum):
     issued = "issued"
     rejected = "rejected"
     cancelled = "cancelled"
+
+
+class PayrollRunStatus(str, enum.Enum):
+    draft = "draft"
+    finalized = "finalized"
+    paid = "paid"

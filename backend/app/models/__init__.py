@@ -29,6 +29,7 @@ from app.models.online_payment import (
     SchoolPaymentGateway,
 )
 from app.models.parent import ParentStudent
+from app.models.payroll import PayrollRun, PayrollSettings, Payslip, StaffSalary
 from app.models.plan import Plan, PlanModule
 from app.models.project import Project, ProjectProgress
 from app.models.staff import Staff
@@ -85,6 +86,9 @@ __all__ = [
     "Notice",
     "NoticeRecipient",
     "ParentStudent",
+    "PayrollRun",
+    "PayrollSettings",
+    "Payslip",
     "Period",
     "Plan",
     "PlanModule",
@@ -97,6 +101,7 @@ __all__ = [
     "Staff",
     "StaffAttendance",
     "StaffLeave",
+    "StaffSalary",
     "Student",
     "StudentAttendance",
     "StudentFee",

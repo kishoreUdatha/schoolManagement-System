@@ -22,6 +22,7 @@ import {
   Download,
   Bus,
   CreditCard,
+  Banknote,
   FileText,
   Award,
   User,
@@ -103,6 +104,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/school/fees", label: "Fees", icon: IndianRupee },
       { href: "/school/fees/online", label: "Online payments", icon: CreditCard },
+      { href: "/school/payroll", label: "Payroll", icon: Banknote },
     ],
   },
   {

@@ -35,6 +35,7 @@ from app.api.v1.school import (
     notices as school_notices,
     online_payments as school_online_payments,
     parents as school_parents,
+    payroll as school_payroll,
     periods as school_periods,
     profile as school_profile,
     report_cards as school_report_cards,
@@ -51,6 +52,7 @@ from app.api.v1.school import (
 from app.api.v1.staff import (
     attendance as staff_attendance_routes,
     leaves as staff_leaves_routes,
+    payslips as staff_payslips,
 )
 from app.api.v1.parent import (
     auth as parent_auth,
@@ -561,6 +563,18 @@ app.include_router(
     parent_documents.router,
     prefix="/api/v1/parent/me/children",
     tags=["parent / documents & certificates"],
+)
+
+app.include_router(
+    school_payroll.router,
+    prefix="/api/v1/school/payroll",
+    tags=["school / payroll"],
+)
+
+app.include_router(
+    staff_payslips.router,
+    prefix="/api/v1/staff/payslips",
+    tags=["staff / payslips"],
 )
 
 

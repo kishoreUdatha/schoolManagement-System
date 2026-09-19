@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   Lock,
   MessageSquare,
+  ReceiptText,
   PlayCircle,
   Sparkles,
   Star,
@@ -55,6 +56,7 @@ const sections: NavSection[] = [
     icon: UserCog,
     items: [
       { href: "/teacher/leaves", label: "My leaves", icon: ClipboardList },
+      { href: "/teacher/payslips", label: "My payslips", icon: ReceiptText },
       { href: "/teacher/change-password", label: "Change password", icon: Lock },
     ],
   },
