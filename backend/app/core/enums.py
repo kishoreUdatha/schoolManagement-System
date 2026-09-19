@@ -434,3 +434,47 @@ class IncidentSeverity(str, enum.Enum):
     low = "low"
     medium = "medium"
     high = "high"
+
+
+class HostelKind(str, enum.Enum):
+    boys = "boys"
+    girls = "girls"
+    mixed = "mixed"
+
+
+class RollCallSession(str, enum.Enum):
+    morning = "morning"
+    night = "night"
+
+
+class HostelAttendanceStatus(str, enum.Enum):
+    present = "present"
+    absent = "absent"
+    on_leave = "on_leave"
+
+
+class OutingKind(str, enum.Enum):
+    outing = "outing"  # same day
+    home_leave = "home_leave"  # overnight / weekend
+
+
+class OutingStatus(str, enum.Enum):
+    requested = "requested"
+    approved = "approved"
+    rejected = "rejected"
+    out = "out"
+    returned = "returned"
+    cancelled = "cancelled"
+
+
+class MealKind(str, enum.Enum):
+    breakfast = "breakfast"
+    lunch = "lunch"
+    snacks = "snacks"
+    dinner = "dinner"
+
+
+class ComplaintStatus(str, enum.Enum):
+    open = "open"
+    in_progress = "in_progress"
+    resolved = "resolved"

@@ -134,6 +134,12 @@ export default function ChildDetailPage() {
             >
               Early pickup →
             </Link>
+            <Link
+              href={`/parent/children/${params.id}/hostel`}
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Hostel →
+            </Link>
           </div>
         </CardBody>
       </Card>

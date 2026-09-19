@@ -34,6 +34,7 @@ from app.api.v1.school import (
     front_desk as school_front_desk,
     health as school_health,
     holidays as school_holidays,
+    hostel as school_hostel,
     library as school_library,
     notices as school_notices,
     online_payments as school_online_payments,
@@ -70,6 +71,7 @@ from app.api.v1.parent import (
     health as parent_health,
     holidays as parent_holidays,
     homework as parent_homework,
+    hostel as parent_hostel,
     library as parent_library,
     messages as parent_messages,
     notices as parent_notices,
@@ -631,6 +633,18 @@ app.include_router(
     staff_auth.router,
     prefix="/api/v1/staff/auth",
     tags=["staff / auth"],
+)
+
+app.include_router(
+    school_hostel.router,
+    prefix="/api/v1/school/hostels",
+    tags=["school / hostel"],
+)
+
+app.include_router(
+    parent_hostel.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / hostel"],
 )
 
 

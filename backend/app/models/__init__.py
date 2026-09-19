@@ -19,6 +19,16 @@ from app.models.fee import FeeHead, FeeStructure, StudentFee
 from app.models.fee_reminder import FeeReminderLog
 from app.models.health import ClinicVisit, HealthCheckup, Immunization, MedicalProfile
 from app.models.holiday import Holiday
+from app.models.hostel import (
+    Hostel,
+    HostelAllocation,
+    HostelAttendance,
+    HostelBed,
+    HostelComplaint,
+    HostelOuting,
+    HostelRoom,
+    MessMenu,
+)
 from app.models.homework import Homework, HomeworkSubmission
 from app.models.learning_video import LearningVideo, LearningVideoCompletion
 from app.models.library import Book, BookCopy, LibrarySettings, Loan, Reservation
@@ -86,6 +96,13 @@ __all__ = [
     "HealthCheckup",
     "Holiday",
     "Homework",
+    "Hostel",
+    "HostelAllocation",
+    "HostelAttendance",
+    "HostelBed",
+    "HostelComplaint",
+    "HostelOuting",
+    "HostelRoom",
     "Immunization",
     "HomeworkSubmission",
     "LearningVideo",
@@ -95,6 +112,7 @@ __all__ = [
     "Mark",
     "MedicalProfile",
     "Message",
+    "MessMenu",
     "Notice",
     "NoticeRecipient",
     "ParentStudent",
