@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.core import crypto
-from app.core.enums import FeeStatus, OnlinePaymentStatus
+from app.core.enums import FeeStatus, MoneyMode, OnlinePaymentStatus
 from app.core.scoping import require_linked_child, section_label
 from app.models.fee import FeeHead, StudentFee
 from app.models.online_payment import (
@@ -231,6 +231,12 @@ def _apply_paid(db: Session, order: FeePaymentOrder, payment_id: str) -> FeePaym
             if sf.amount_paid >= sf.amount_due:
                 sf.status = FeeStatus.paid
                 sf.paid_at = now
+            from app.services import ledger_service  # local: avoids an import cycle via fee_service
+
+            ledger_service.record_collection(
+                db, sf, applied, MoneyMode.online, reference=payment_id,
+                actor_id=order.parent_user_id, notes=f"Online order {order.id}",
+            )
     order.status = OnlinePaymentStatus.paid
     order.provider_payment_id = payment_id
     order.paid_at = now

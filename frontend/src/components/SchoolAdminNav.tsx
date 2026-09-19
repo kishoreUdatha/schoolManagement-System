@@ -30,6 +30,7 @@ import {
   HeartPulse,
   BedDouble,
   Package,
+  Calculator,
   User,
   UserCheck,
   UserPlus,
@@ -113,6 +114,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/school/fees", label: "Fees", icon: IndianRupee },
       { href: "/school/fees/online", label: "Online payments", icon: CreditCard },
+      { href: "/school/accounts", label: "Accounts", icon: Calculator },
       { href: "/school/payroll", label: "Payroll", icon: Banknote },
       { href: "/school/inventory", label: "Inventory & store", icon: Package },
     ],

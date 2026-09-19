@@ -17,6 +17,7 @@ from app.api.v1.public import payments as public_payments
 from app.api.v1.public import transport as public_transport
 from app.api.v1.school import (
     academic_years as school_academic_years,
+    accounts as school_accounts,
     admissions as school_admissions,
     approvals as school_approvals,
     attendance_reports as school_attendance_reports,
@@ -659,6 +660,12 @@ app.include_router(
     school_directory.router,
     prefix="/api/v1/school/directory",
     tags=["school / directory"],
+)
+
+app.include_router(
+    school_accounts.router,
+    prefix="/api/v1/school/accounts",
+    tags=["school / accounts"],
 )
 
 

@@ -511,3 +511,26 @@ class StorePayment(str, enum.Enum):
     upi = "upi"
     card = "card"
     add_to_fees = "add_to_fees"
+
+
+class MoneyMode(str, enum.Enum):
+    cash = "cash"
+    bank_transfer = "bank_transfer"
+    upi = "upi"
+    card = "card"
+    cheque = "cheque"
+    online = "online"  # payment gateway
+    other = "other"
+
+
+class ChequeStatus(str, enum.Enum):
+    received = "received"
+    deposited = "deposited"
+    cleared = "cleared"
+    bounced = "bounced"
+    returned = "returned"  # handed back uncashed
+
+
+class ConcessionKind(str, enum.Enum):
+    percent = "percent"
+    fixed = "fixed"

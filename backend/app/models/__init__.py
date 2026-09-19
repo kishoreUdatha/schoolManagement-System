@@ -1,4 +1,12 @@
 from app.models.academic import AcademicYear, SchoolClass, Section
+from app.models.accounts import (
+    Cheque,
+    Concession,
+    Expense,
+    ExpenseCategory,
+    FeeCollection,
+    OtherIncome,
+)
 from app.models.admission import (
     AdmissionActivity,
     AdmissionCampaign,
@@ -92,12 +100,17 @@ __all__ = [
     "CertificateIssue",
     "CertificateSequence",
     "CertificateTemplate",
+    "Cheque",
     "ClassSubject",
     "ClinicVisit",
+    "Concession",
     "Conversation",
     "Document",
     "Exam",
+    "Expense",
+    "ExpenseCategory",
     "ExamSubject",
+    "FeeCollection",
     "FeeHead",
     "FeeReminderLog",
     "FeePaymentOrder",
@@ -126,6 +139,7 @@ __all__ = [
     "Message",
     "MessMenu",
     "Notice",
+    "OtherIncome",
     "NoticeRecipient",
     "ParentStudent",
     "PayrollRun",

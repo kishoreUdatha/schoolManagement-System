@@ -20,6 +20,7 @@ from app.schemas.fee import (
     GenerateMonthlyRequest,
     RecordPayment,
 )
+from app.services import ledger_service
 
 
 # ----- Fee heads -----
@@ -266,6 +267,7 @@ def generate_monthly(
         ).scalars().all()
 
         for student in students:
+            amount, note = ledger_service.discounted(db, student.id, head.id, structure.amount, due_date)
             try:
                 with db.begin_nested():
                     db.add(
@@ -276,10 +278,12 @@ def generate_monthly(
                             fee_structure_id=structure.id,
                             fee_head_id=head.id,
                             period=data.period,
-                            amount_due=structure.amount,
+                            amount_due=amount,
                             amount_paid=Decimal("0"),
                             due_date=due_date,
-                            status=FeeStatus.pending,
+                            # A 100% concession leaves nothing to collect.
+                            status=FeeStatus.pending if amount > 0 else FeeStatus.waived,
+                            notes=note,
                         )
                     )
                     db.flush()
@@ -326,6 +330,7 @@ def generate_one_time_for_student(
             today.year, today.month,
             min(structure.due_day_of_month, monthrange(today.year, today.month)[1]),
         )
+        amount, note = ledger_service.discounted(db, student.id, head.id, structure.amount, today)
         try:
             with db.begin_nested():
                 db.add(
@@ -336,10 +341,11 @@ def generate_one_time_for_student(
                         fee_structure_id=structure.id,
                         fee_head_id=head.id,
                         period="ONETIME",
-                        amount_due=structure.amount,
+                        amount_due=amount,
                         amount_paid=Decimal("0"),
                         due_date=due_date,
-                        status=FeeStatus.pending,
+                        status=FeeStatus.pending if amount > 0 else FeeStatus.waived,
+                        notes=note,
                     )
                 )
                 db.flush()
@@ -495,6 +501,17 @@ def record_payment(
     if new_paid >= sf.amount_due:
         sf.status = FeeStatus.paid
         sf.paid_at = data.paid_at or datetime.now(timezone.utc)
+    # Keep each payment as its own receipt (amount_paid is only the total).
+    ledger_service.record_collection(
+        db,
+        sf,
+        data.amount_paid,
+        ledger_service.mode_from_text(data.payment_mode),
+        reference=data.payment_ref,
+        on=(data.paid_at.date() if data.paid_at else None),
+        actor_id=recorded_by_user_id,
+        notes=data.notes,
+    )
     db.commit()
     return get_student_fee(db, sf.id, school_id)
 
