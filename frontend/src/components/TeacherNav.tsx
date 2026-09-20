@@ -13,6 +13,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   Library,
+  FlaskConical,
   Gavel,
   HeartHandshake,
   FileBadge,
@@ -83,6 +84,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/teacher/leaves", label: "My leaves", icon: ClipboardList },
       { href: "/teacher/payslips", label: "My payslips", icon: ReceiptText },
+      { href: "/teacher/labs", label: "Labs", icon: FlaskConical },
       { href: "/teacher/library", label: "Library books", icon: Library },
       { href: "/teacher/hostel", label: "Hostel (warden)", icon: BedDouble },
       { href: "/teacher/change-password", label: "Change password", icon: Lock },

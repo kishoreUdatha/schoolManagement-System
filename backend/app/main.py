@@ -35,6 +35,7 @@ from app.api.v1.school import (
     events as school_events,
     exams as school_exams,
     exports as school_exports,
+    facilities as school_facilities,
     fee_extras as school_fee_extras,
     fee_reminders as school_fee_reminders,
     fees as school_fees,
@@ -799,6 +800,12 @@ app.include_router(
     school_rbac.router,
     prefix="/api/v1/school",
     tags=["school / roles, permissions, branches"],
+)
+
+app.include_router(
+    school_facilities.router,
+    prefix="/api/v1/school",
+    tags=["school / rooms, labs, bookings"],
 )
 
 

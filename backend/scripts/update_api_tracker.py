@@ -85,7 +85,7 @@ MAP = {
                      "POST /school/classes/{id}/sections", (D, "GET /school/classes/{id}", "Returned inside the class"),
                      "PATCH /school/sections/{id}"),
     "subjects": crud("GET /school/subjects", "POST /school/subjects", "GET /school/subjects/{id}", "PATCH /school/subjects/{id}"),
-    "rooms": none("Queued with labs & lab bookings"),
+    "rooms": crud("GET /school/rooms", "POST /school/rooms", None, "PUT /school/rooms/{id}", get_via_list=True),
     # ---------------- Admissions ----------------
     "admission_enquiries": {
         **crud("GET /school/admissions/enquiries", "POST /school/admissions/enquiries; POST /public/admissions/{tenant}/{school}/enquiries",
@@ -346,8 +346,9 @@ MAP = {
                    "PATCH /school/inventory/assets/{id}"),
     "asset_assignments": crud((P, "GET /school/inventory/assets/{id}", "History inside the asset"), "POST /school/inventory/assets/{id}/events",
                               (P, "GET /school/inventory/assets/{id}", ""), (NA, "", "Recorded as events")),
-    "labs": none("Queued"),
-    "lab_bookings": none("Queued"),
+    "labs": crud("GET /school/labs", "POST /school/labs", None, "PUT /school/labs/{id}", get_via_list=True),
+    "lab_bookings": crud("GET /school/lab-bookings", "POST /school/lab-bookings", None,
+                         (D, "POST /school/lab-bookings/{id}/cancel", "Cancel; rebook for a change"), get_via_list=True),
     # ---------------- Events, PTM & Communication ----------------
     "events": crud("GET /school/events; GET /parent/me/events", "POST /school/events", None, "PUT /school/events/{id}",
                    get_via_list=True),
@@ -429,6 +430,9 @@ EXTRA = [
     ("Events, PTM & Communication", "gallery_albums", "Action", "POST", "/school/gallery/{id}/photos", "Upload photos", "School Admin"),
     ("Events, PTM & Communication", "gallery_albums", "Action", "POST", "/school/gallery/{id}/publish", "Publish / unpublish + notify", "School Admin"),
     ("Events, PTM & Communication", "calendar", "List", "GET", "/school/calendar; /parent/me/calendar", "Events, holidays, exams, meetings", "All school users, Parent"),
+    ("Inventory, Assets & Labs", "lab_bookings", "Action", "GET", "/school/lab-availability", "Which labs are free in each period that day", "All school staff"),
+    ("Inventory, Assets & Labs", "rooms", "Delete", "DELETE", "/school/rooms/{id}", "Delete a room no lab uses", "School Admin, settings.manage"),
+    ("Inventory, Assets & Labs", "labs", "Delete", "DELETE", "/school/labs/{id}", "Delete a lab with no bookings", "School Admin, settings.manage"),
     ("Identity & Access", "user_role_assignments", "Action", "GET", "/school/me/access", "My roles and what they let me do", "Any signed-in user"),
     ("Identity & Access", "roles", "Delete", "DELETE", "/school/roles/{id}", "Delete an unused custom role", "School Admin, roles.manage"),
     ("School & Academic Setup", "branches", "Action", "PUT", "/school/branches/{id}/sections", "Set which sections are at a branch", "School Admin, branches.manage"),

@@ -578,6 +578,24 @@ class ConsentResponse(str, enum.Enum):
     no = "no"
 
 
+class RoomKind(str, enum.Enum):
+    classroom = "classroom"
+    lab = "lab"
+    computer_lab = "computer_lab"
+    library = "library"
+    hall = "hall"
+    sports = "sports"
+    staff_room = "staff_room"
+    office = "office"
+    other = "other"
+
+
+class BookingStatus(str, enum.Enum):
+    booked = "booked"
+    cancelled = "cancelled"
+    done = "done"
+
+
 class ApplicationStatus(str, enum.Enum):
     draft = "draft"
     submitted = "submitted"

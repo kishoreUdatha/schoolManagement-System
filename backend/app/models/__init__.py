@@ -38,6 +38,7 @@ from app.models.events import (
     SchoolEvent,
 )
 from app.models.exam import Exam, ExamSubject
+from app.models.facility import Lab, LabBooking, Room
 from app.models.fee import FeeHead, FeeStructure, StudentFee
 from app.models.fee_extra import LateFeeRule, Refund
 from app.models.fee_reminder import FeeReminderLog
@@ -250,6 +251,9 @@ __all__ = [
     "User",
     "UserOtp",
     "Visit",
+    "Lab",
+    "LabBooking",
+    "Room",
     "Branch",
     "Permission",
     "Role",
