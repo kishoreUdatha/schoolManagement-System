@@ -631,12 +631,26 @@ def main() -> int:
         for n, child in enumerate(children):
             code = "RT-SOUTH" if n < 5 else "RT-NORTH"
             route = routes[code]
-            if db.execute(
+            open_row = db.execute(
                 select(TransportAssignment).where(
                     TransportAssignment.student_id == child.id,
                     TransportAssignment.end_date.is_(None),
                 )
-            ).scalar_one_or_none():
+            ).scalar_one_or_none()
+            if open_row is not None:
+                if open_row.route_id == route.id:
+                    continue
+                # Already riding, but on the wrong route for what this fixture
+                # is meant to show. Move them rather than skip: otherwise a
+                # change to the rule above quietly stops the over-capacity
+                # warning ever firing, and the data no longer demonstrates the
+                # thing it exists to demonstrate.
+                open_row.route_id = route.id
+                open_row.stop_id = db.execute(
+                    select(TransportStop).where(TransportStop.route_id == route.id)
+                    .order_by(TransportStop.sequence)
+                ).scalars().first().id
+                riding += 1
                 continue
             stop = db.execute(
                 select(TransportStop).where(TransportStop.route_id == route.id)

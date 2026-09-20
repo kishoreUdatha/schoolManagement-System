@@ -1,0 +1,243 @@
+"""Getting back in, and proving it is you.
+
+Three things: a forgotten password, a one-time code as a second factor, and
+the first sign-in after somebody else has typed your password for you.
+
+Two rules run through all of it.
+
+Nothing here tells an anonymous caller whether an account exists. "No such
+email" is a sentence that turns a login form into a way of finding out who
+banks, studies or works somewhere, so every path below answers the same way
+whether the address was real or not.
+
+And a code is a secret. It is stored hashed, checked in constant time, dies
+after a few minutes, dies on first use, and dies after a handful of wrong
+guesses — otherwise six digits is a number you can simply count up to.
+"""
+from __future__ import annotations
+
+import hmac
+import secrets
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
+from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.core.enums import NoticeChannel, OtpPurpose, UserRole
+from app.core.security import hash_password, verify_password
+from app.models.user import User, UserOtp
+
+# Short enough that a stolen code is stale before it is useful, long enough
+# that somebody can finish reading an email and type it.
+CODE_MINUTES = 10
+RESET_MINUTES = 30
+MAX_ATTEMPTS = 5
+
+# Six digits is what people expect and can read over a phone. The guess limit
+# is what makes it safe, not the length.
+CODE_DIGITS = 6
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _new_code() -> str:
+    return f"{secrets.randbelow(10 ** CODE_DIGITS):0{CODE_DIGITS}d}"
+
+
+def _new_token() -> str:
+    """A reset link's secret. Long and random, because unlike a typed code it
+    is never read aloud, so there is no reason to make it short."""
+    return secrets.token_urlsafe(32)
+
+
+def _issue(db: Session, user: User, purpose: OtpPurpose, minutes: int) -> str:
+    """Make a code, store only its hash, and retire anything outstanding.
+
+    Retiring the old one matters: two live reset codes means a code somebody
+    was sent an hour ago still works after they asked for another because the
+    first never arrived.
+    """
+    db.execute(
+        UserOtp.__table__.update()
+        .where(
+            UserOtp.user_id == user.id,
+            UserOtp.purpose == purpose,
+            UserOtp.used_at.is_(None),
+        )
+        .values(used_at=_now())
+    )
+    secret = _new_token() if purpose == OtpPurpose.password_reset else _new_code()
+    db.add(UserOtp(
+        user_id=user.id,
+        otp_hash=hash_password(secret),
+        purpose=purpose,
+        expires_at=_now() + timedelta(minutes=minutes),
+    ))
+    db.commit()
+    return secret
+
+
+def _spend(db: Session, user: User, secret: str, purpose: OtpPurpose) -> bool:
+    """Check a code and use it up. Returns False for every kind of failure.
+
+    Counting wrong guesses on the row rather than in memory means the limit
+    survives a restart, and survives the attacker moving to another process.
+    """
+    row = db.execute(
+        select(UserOtp)
+        .where(
+            UserOtp.user_id == user.id,
+            UserOtp.purpose == purpose,
+            UserOtp.used_at.is_(None),
+        )
+        .order_by(UserOtp.created_at.desc())
+    ).scalars().first()
+
+    if row is None or row.expires_at < _now():
+        return False
+    if row.attempts >= MAX_ATTEMPTS:
+        # Burn it rather than leave it lying there being guessed at.
+        row.used_at = _now()
+        db.commit()
+        return False
+
+    if not verify_password(secret, row.otp_hash):
+        row.attempts += 1
+        db.commit()
+        return False
+
+    row.used_at = _now()
+    db.commit()
+    return True
+
+
+def _find(db: Session, email: str, role: Optional[UserRole] = None) -> Optional[User]:
+    stmt = select(User).where(
+        User.email.is_not(None),
+        User.is_active.is_(True),
+    )
+    users = list(db.execute(stmt).scalars())
+    # Compared in constant time so the lookup does not leak which addresses
+    # exist through how long it took to answer.
+    match = None
+    for u in users:
+        if u.email and hmac.compare_digest(u.email.lower(), email.strip().lower()):
+            if role is None or u.role == role:
+                match = u
+    return match
+
+
+# ---------- forgotten password ----------
+
+
+def request_reset(db: Session, email: str, role: Optional[UserRole] = None) -> Optional[tuple[User, str]]:
+    """Start a reset. Returns the token for the caller to deliver, or None.
+
+    The route above this must answer the same way either way. Returning None
+    for an unknown address is for the sender's benefit, not the caller's.
+    """
+    user = _find(db, email, role)
+    if user is None:
+        return None
+    token = _issue(db, user, OtpPurpose.password_reset, RESET_MINUTES)
+    return user, token
+
+
+def complete_reset(db: Session, email: str, token: str, new_password: str) -> None:
+    user = _find(db, email)
+    if not user:
+        # Same refusal as a bad token, for the same reason.
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That reset link is not valid any more.")
+    if len(new_password) < 8:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A password needs at least eight characters.")
+    if not _spend(db, user, token, OtpPurpose.password_reset):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That reset link is not valid any more.")
+
+    user.password_hash = hash_password(new_password)
+    user.must_change_password = False
+    db.commit()
+
+
+# ---------- second factor ----------
+
+
+def issue_login_code(db: Session, user: User) -> str:
+    return _issue(db, user, OtpPurpose.login_2fa, CODE_MINUTES)
+
+
+def check_login_code(db: Session, user: User, code: str) -> None:
+    if not _spend(db, user, code, OtpPurpose.login_2fa):
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            "That code is wrong or has expired. Ask for a new one.",
+        )
+
+
+# ---------- the first sign-in after somebody else typed your password ----------
+
+
+def change_password(db: Session, user: User, current: str, new: str) -> None:
+    """Used by every role's own settings page, and by the forced change."""
+    if not user.password_hash or not verify_password(current, user.password_hash):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That is not your current password.")
+    if len(new) < 8:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A password needs at least eight characters.")
+    if hmac.compare_digest(current, new):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The new password is the same as the old one.")
+    user.password_hash = hash_password(new)
+    user.must_change_password = False
+    db.commit()
+
+
+def require_change(db: Session, user: User) -> None:
+    """Mark an account as needing a new password at next sign-in. Called
+    wherever somebody sets a password on another person's behalf."""
+    user.must_change_password = True
+    db.commit()
+
+
+# ---------- delivery ----------
+
+
+def deliver(db: Session, user: User, subject: str, body: str) -> str:
+    """Hand a message to whatever can carry it, and say what happened.
+
+    There is no mailer or SMS gateway wired into this deployment yet, which
+    the rest of the system already models honestly — an email recipient is
+    recorded as skipped rather than pretended to be sent. This does the same
+    and returns the channel used, so a caller can tell the person which way
+    to look, or the office that nothing left the building.
+    """
+    from app.models.notice import Notice, NoticeRecipient
+    from app.core.enums import NoticeAudience, NoticeStatus, RecipientStatus
+    from app.config import settings
+
+    can_email = bool(getattr(settings, "smtp_host", "")) and bool(user.email)
+    channel = NoticeChannel.email if can_email else NoticeChannel.in_app
+
+    notice = Notice(
+        tenant_id=user.tenant_id,
+        school_id=user.school_id,
+        title=subject,
+        body=body,
+        audience=NoticeAudience.single_parent if user.role == UserRole.parent else NoticeAudience.all_staff,
+        channels=[channel.value],
+        status=NoticeStatus.sent,
+        sent_at=_now(),
+    )
+    db.add(notice)
+    db.flush()
+    db.add(NoticeRecipient(
+        tenant_id=user.tenant_id,
+        school_id=user.school_id,
+        notice_id=notice.id,
+        user_id=user.id,
+        channel=channel,
+        status=RecipientStatus.sent if channel == NoticeChannel.in_app else RecipientStatus.skipped,
+    ))
+    db.commit()
+    return channel.value

@@ -10,6 +10,9 @@ export type SmsUser = {
   role: string;
   tenant_id: number | null;
   school_id: number | null;
+  /** Somebody else chose this password. The guards send them to
+   *  pick their own before anything else. */
+  must_change_password?: boolean;
 };
 
 export const auth = {

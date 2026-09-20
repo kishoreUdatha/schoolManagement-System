@@ -868,3 +868,13 @@ class ResultStatus(str, enum.Enum):
     withheld = "withheld"    # not shown to parents until released
     pass_by_grace = "pass_by_grace"
     failed = "failed"        # overridden to fail (e.g. malpractice)
+
+class OtpPurpose(str, enum.Enum):
+    """What a one-time code is allowed to do.
+
+    Checked on the way in, so a code sent to finish a login cannot be spent
+    on resetting the password instead.
+    """
+
+    login_2fa = "login_2fa"
+    password_reset = "password_reset"

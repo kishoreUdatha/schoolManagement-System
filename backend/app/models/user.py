@@ -1,10 +1,19 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import BigInteger, DateTime, Enum as SAEnum, ForeignKey, String, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    Boolean,
+    DateTime,
+    Enum as SAEnum,
+    ForeignKey,
+    SmallInteger,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.enums import UserRole
+from app.core.enums import OtpPurpose, UserRole
 from app.database import Base
 from app.models.base import PrimaryKeyMixin, SoftDeleteMixin, TimestampMixin
 
@@ -36,6 +45,12 @@ class User(Base, PrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     )
 
     last_login_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # Set when the office hands over a password it has seen. Cleared the
+    # moment the person chooses their own, so a password somebody else typed
+    # never becomes the one they keep.
+    must_change_password: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false", default=False
+    )
 
 
 class UserOtp(Base, PrimaryKeyMixin, TimestampMixin):
@@ -45,5 +60,16 @@ class UserOtp(Base, PrimaryKeyMixin, TimestampMixin):
         BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     otp_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    # What the code is for. One table rather than two, because a one-time code
+    # that expires and is used once is the same thing whether it is finishing a
+    # login or starting a password reset — but a reset code must never be
+    # accepted as a second factor, so the purpose is checked on the way in.
+    purpose: Mapped[OtpPurpose] = mapped_column(
+        SAEnum(OtpPurpose, name="otp_purpose"),
+        nullable=False,
+        server_default=OtpPurpose.login_2fa.value,
+        default=OtpPurpose.login_2fa,
+    )
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    attempts: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="0", default=0)

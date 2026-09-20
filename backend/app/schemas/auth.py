@@ -13,6 +13,9 @@ class UserPublic(BaseModel):
     role: str
     tenant_id: Optional[int] = None
     school_id: Optional[int] = None
+    # True when somebody else set this password. The app sends them to
+    # choose their own before letting them get on with anything.
+    must_change_password: bool = False
 
 
 class LoginRequest(BaseModel):

@@ -20,6 +20,12 @@ export function SchoolAdminGuard({ children }: { children: ReactNode }) {
       router.replace(`/school/login?next=${next}`);
       return;
     }
+    // A password somebody else typed is not a password. Until they choose
+    // their own, the only page they can reach is the one that changes it.
+    if (user.must_change_password && !window.location.pathname.startsWith("/account/change-password")) {
+      router.replace("/account/change-password?first=1");
+      return;
+    }
     setReady(true);
   }, [router]);
 

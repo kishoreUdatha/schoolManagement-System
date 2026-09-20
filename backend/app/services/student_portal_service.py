@@ -106,6 +106,7 @@ def create_login(db: Session, school_id: int, student_id: int) -> dict:
         if user:
             user.password_hash = hash_password(password)
             user.is_active = True
+            user.must_change_password = True
             db.commit()
             return {
                 "student_id": student.id,
@@ -123,6 +124,7 @@ def create_login(db: Session, school_id: int, student_id: int) -> dict:
         role=UserRole.student,
         password_hash=hash_password(password),
         is_active=True,
+        must_change_password=True,
     )
     db.add(user)
     db.flush()
@@ -215,17 +217,15 @@ def revoke_login(db: Session, school_id: int, student_id: int) -> dict:
 
 
 def change_own_password(db: Session, user: User, current: str, new: str) -> None:
-    """A student changing the password the office gave them."""
-    from app.core.security import verify_password
+    """A student changing the password the office gave them.
 
-    if not user.password_hash or not verify_password(current, user.password_hash):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "That is not your current password.")
-    if len(new) < 8:
-        raise _400("A password needs at least eight characters.")
-    if new == current:
-        raise _400("The new password is the same as the old one.")
-    user.password_hash = hash_password(new)
-    db.commit()
+    Delegates, so a child gets the same rules as everybody else and the
+    same clearing of the must-change flag. Two implementations of changing
+    a password is one more than anybody can keep correct.
+    """
+    from app.services import account_access_service
+
+    account_access_service.change_password(db, user, current, new)
 
 
 # ---------- the portal ----------

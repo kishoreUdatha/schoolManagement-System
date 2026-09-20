@@ -2,13 +2,13 @@
 # Partial ('In progress') = a real shortfall. A complete feature in a tab or modal counts as Done.
 # id	frontend	api	where	note
 SCR-001	Done	Not required	/	Hero, feature cards, portal links, health badge
-SCR-002	Partial	Not required	/	Role buttons on landing, no workspace chooser
+SCR-002	Done	Not required	/workspace	Every portal, with a line on picking the right one
 SCR-003	Done	Done	/school/login and six other portals	Seven sign-in pages, each posts auth/login
-SCR-004	Missing	Missing	-	No forgot-password UI or endpoint anywhere
-SCR-005	Missing	Partial	-	Only an admin-issued temporary password
+SCR-004	Done	Done	/account/forgot-password	Same answer whether the account exists or not
+SCR-005	Done	Done	/account/reset-password	Code dies on use, on reissue and after five guesses
 SCR-006	Missing	Missing	-	Parent login says OTP coming soon
-SCR-007	Partial	Partial	/teacher/change-password	Missing for admin, principal, accountant, parent
-SCR-008	Missing	Not required	-	Guards redirect on 401; no screen
+SCR-007	Done	Done	/account/change-password	Every guard forces it when somebody else set the password
+SCR-008	Done	Not required	/account/denied	Expired and forbidden, and the 401 interceptor routes here
 SCR-009	Done	Done	/super-admin	Usage counters, renewals, CSV export
 SCR-010	Done	Done	/super-admin/tenants	Paginated table with search and status
 SCR-011	Done	Done	/super-admin/tenants	Creates tenant, school and admin
@@ -38,11 +38,11 @@ SCR-034	Done	Done	/principal	Principal overview dashboard
 SCR-035	Done	Done	/teacher	Today classes and stat cards
 SCR-036	Done	Done	/student	Homework due, today's lessons, attendance, notices
 SCR-037	Done	Done	/parent	Children cards, notices, holidays
-SCR-038	Partial	Missing	/accountant	Forty-line stub with one link
-SCR-039	Missing	Partial	-	No HR portal; pipeline endpoint unused
-SCR-040	Partial	Done	/school/admissions	Pipeline exists, no officer portal
-SCR-041	Partial	Done	/school/transport	Real dashboard, school-admin only
-SCR-042	Partial	Done	/school/library	Library dashboard is school-admin only
+SCR-038	Done	Done	/accountant	Collected today and this month against what is owed
+SCR-039	Done	Done	/staff	Staff and leave panel, shown to whoever holds hr.manage
+SCR-040	Done	Done	/staff	Admissions panel, shown to whoever holds admissions.manage
+SCR-041	Done	Done	/staff	Transport panel, shown to whoever holds transport.manage
+SCR-042	Done	Done	/staff	Library panel, shown to whoever holds library.manage
 SCR-043	Partial	Done	/school/admissions	Stat cards atop the list; no dashboard page
 SCR-044	Done	Done	/school/admissions	Stage, source and follow-up filters with paging
 SCR-045	Done	Done	/school/admissions	New enquiry modal, full field set
@@ -188,16 +188,16 @@ SCR-184	Done	Done	/school/payroll/runs/[id]	Recalculate, finalise, adjust, bank 
 SCR-185	Done	Done	/school/payroll	Payslip PDF and month history
 SCR-186	Done	Done	/school/transport/vehicles	Fleet table with document expiry and CRUD
 SCR-187	Done	Done	/school/transport/vehicles	Create and edit with four document expiries
-SCR-188	Partial	Done	/school/transport/vehicles	No vehicle detail page; endpoint unused
+SCR-188	Done	Done	/school/transport/vehicles/[id]	Expiries flagged, fuel and service log
 SCR-189	Done	Done	/school/transport/routes	Route cards with stop table
 SCR-190	Done	Done	/school/transport/routes	Route editor with reorderable stops
-SCR-191	Partial	Partial	/school/transport/routes	Stops only inside the route modal
+SCR-191	Done	Done	/school/transport/routes/[id]	Stops in order with times, and the riders
 SCR-192	Done	Done	/school/transport/crew	Drivers and conductors with licence expiry
 SCR-193	Done	Done	/school/transport/students	Assign, move, end with route and stop
 SCR-194	Done	Done	/school/transport/trips/[id]	Generate sheets, start, complete, odometer
-SCR-195	Partial	Done	/school/transport/vehicles	Last-seen link only; no live map
+SCR-195	Done	Done	/school/transport/live	Last reported position, staleness stated
 SCR-196	Done	Done	/school/transport/trips/[id]	Per-student boarded, dropped, absent
-SCR-197	Partial	Done	/school/transport/vehicles	Fuel and service log in a modal
+SCR-197	Done	Done	/school/transport/vehicles/[id]	Fuel and service entries with odometer
 SCR-198	Done	Done	/school/library/catalogue	Search with category and shelf filters
 SCR-199	Done	Done	/school/library/catalogue	Book form with initial copies and price
 SCR-200	Done	Done	/school/library/catalogue/[id]	Copies table, statuses, add copies
@@ -257,8 +257,8 @@ SCR-253	Partial	Partial	/teacher/messages	Teacher and parent only; admin has no 
 SCR-254	Partial	Partial	/school/notices	SMS and email skipped; schedule not wired
 SCR-255	Partial	Partial	/school/notices	Per-notice delivery only, no history log
 SCR-256	Done	Done	/school/documents	Owner, category, verification and expiry
-SCR-257	Partial	Done	/school/documents	A filter, not a student documents view
-SCR-258	Partial	Done	/school/documents	Same repository filtered for staff
+SCR-257	Done	Done	/school/documents/students	Expiring and unverified visible at a glance
+SCR-258	Done	Done	/school/documents/staff	Same view, filtered to staff
 SCR-259	Done	Done	/school/documents	Upload, verify, reject with reason
 SCR-260	Done	Done	/school/certificates/templates	Six kinds with placeholders and serials
 SCR-261	Done	Done	/school/certificates	Template and student with live preview

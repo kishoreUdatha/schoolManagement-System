@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 
@@ -90,9 +92,12 @@ function ParentLoginForm() {
           </CardBody>
         </Card>
         <p className="mt-4 text-center text-xs text-slate-500">
-          Lost your password? Contact the school office.
+          Forgotten your password?{" "}
+          <Link href="/account/forgot-password?role=parent" className="font-bold text-brand-600 hover:underline">
+            Get a reset link
+          </Link>
+          .
           <br />
-          OTP-based login coming soon.
         </p>
       </div>
     </main>

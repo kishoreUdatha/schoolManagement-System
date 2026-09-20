@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 
@@ -93,6 +95,13 @@ function StaffLoginForm() {
             </form>
           </CardBody>
         </Card>
+        <p className="mt-4 text-center text-[12px] text-ink-subtle">
+          Forgotten your password?{" "}
+          <Link href="/account/forgot-password?role=staff" className="font-bold text-brand-600 hover:underline">
+            Get a reset link
+          </Link>
+        </p>
+
         <p className="mt-4 text-center text-xs text-slate-500">
           Lost your password? Ask your school admin to reset it from the Staff page.
         </p>

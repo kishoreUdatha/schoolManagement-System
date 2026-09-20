@@ -50,3 +50,17 @@ export const hhmm = (t: string): string => t.slice(0, 5);
 export function dateTime(iso: string): string {
   return readableDate(iso.slice(0, 10));
 }
+
+/** Days until a date, negative once it has passed. Null for no date.
+ *
+ *  Both sides are floored to local midnight, so "expires today" is 0 rather
+ *  than a fraction that rounds either way depending on the time of day — a
+ *  certificate should not appear to expire tomorrow because it is 11pm.
+ */
+export function daysLeft(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const then = localDate(iso).getTime();
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  return Math.round((then - midnight) / 86_400_000);
+}

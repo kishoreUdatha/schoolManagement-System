@@ -149,6 +149,7 @@ const sections: NavSection[] = [
     icon: Bus,
     items: [
       { href: "/school/transport", label: "Transport", icon: Bus },
+      { href: "/school/transport/live", label: "Live buses", icon: Bus },
       { href: "/school/library", label: "Library", icon: Library },
       { href: "/school/library/members", label: "Library members", icon: Users },
       { href: "/school/hostel", label: "Hostel", icon: BedDouble },
@@ -157,6 +158,8 @@ const sections: NavSection[] = [
       { href: "/school/counselling", label: "Counselling", icon: HeartHandshake },
       { href: "/school/front-desk", label: "Front desk", icon: DoorOpen },
       { href: "/school/documents", label: "Documents", icon: FileText },
+      { href: "/school/documents/students", label: "Student documents", icon: FileText },
+      { href: "/school/documents/staff", label: "Staff documents", icon: FileText },
       { href: "/school/certificates", label: "Certificates", icon: Award },
     ],
   },

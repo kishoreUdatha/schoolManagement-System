@@ -12,6 +12,7 @@ from app.api.v1.super_admin import (
     tenants as super_admin_tenants,
     usage as super_admin_usage,
 )
+from app.api.v1.public import account_access as public_account_access
 from app.api.v1.public import admissions as public_admissions
 from app.api.v1.public import careers as public_careers
 from app.api.v1.public import payments as public_payments
@@ -78,7 +79,9 @@ from app.api.v1.school import (
     transport as school_transport,
     videos as school_videos,
 )
+from app.api.v1.accountant import dashboard as accountant_dashboard
 from app.api.v1.staff import (
+    dashboard as staff_dashboard,
     attendance as staff_attendance_routes,
     auth as staff_auth,
     leaves as staff_leaves_routes,
@@ -585,6 +588,21 @@ app.include_router(
     school_admissions.router,
     prefix="/api/v1/school/admissions",
     tags=["school / admissions"],
+)
+app.include_router(
+    accountant_dashboard.router,
+    prefix="/api/v1/accountant",
+    tags=["accountant / dashboard"],
+)
+app.include_router(
+    staff_dashboard.router,
+    prefix="/api/v1/staff",
+    tags=["staff / dashboard"],
+)
+app.include_router(
+    public_account_access.router,
+    prefix="/api/v1/account",
+    tags=["account access"],
 )
 app.include_router(
     public_admissions.router,
