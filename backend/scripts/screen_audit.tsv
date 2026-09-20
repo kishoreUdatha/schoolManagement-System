@@ -138,22 +138,22 @@ SCR-134	Done	Done	/teacher/projects	Project list with progress counts
 SCR-135	Done	Done	/teacher/projects	Create modal with dates and attachment
 SCR-136	Done	Done	/parent/children/[id]/projects	Progress with status, file and note
 SCR-137	Done	Done	/teacher/projects	Per-student remark and rating in a modal (in a tab, complete)
-SCR-138	Partial	Partial	/school/exams	Paper counts only; no exam dashboard
+SCR-138	Done	Done	/school/exams/[id]	Readiness checklist per paper, with what blocks publication
 SCR-139	Done	Done	/school/grading	Exam types are one card among three (in a tab, complete)
 SCR-140	Done	Done	/school/exams	Create exam and add papers with marks
-SCR-141	Partial	Partial	/school/exams	Per-paper date only; no datesheet screen
-SCR-142	Missing	Missing	-	No exam hall or seat allocation anywhere
-SCR-143	Missing	Missing	-	No invigilation assignment anywhere
-SCR-144	Missing	Missing	-	No admit card UI or endpoint
+SCR-141	Done	Done	/school/exams/[id]/datesheet	Papers by day, with per-class clash detection
+SCR-142	Done	Done	/school/exams/[id]/halls	Room allocation, fills in order, move a child
+SCR-143	Done	Done	/school/exams/[id]/invigilation	Per-room duty with double-booking refused, plus roster
+SCR-144	Done	Done	/school/exams/[id]/admit-cards	Per class, with room per paper, prints as PDF
 SCR-145	Done	Done	/teacher/marks/papers/[id]	Roster, status, marks, live grade, save
-SCR-146	Missing	Missing	-	One max mark per paper; no internal split
-SCR-147	Partial	Done	/school/data-desk	Marks import exists but admin-only
+SCR-146	Done	Done	/school/exams/papers/[paperId]/components	Parts must add up; the total is their sum
+SCR-147	Done	Done	/teacher/marks/papers/[id]/import	Teacher uploads for their own paper, checked before written
 SCR-148	Done	Done	/school/exams	Sign off a paper; refuses whoever entered the marks
 SCR-149	Done	Done	/school/grading	Scale CRUD, bands, seed, default
-SCR-150	Partial	Done	/school/exams	Publish is admin-only; principal approves
+SCR-150	Done	Done	/principal/exams	Principal publishes, told what is outstanding first
 SCR-151	Partial	Done	/parent/children/[id]/exams/[examId]	Full result, but parent login only
 SCR-152	Partial	Done	/school/report-cards	Report card PDF; no student login
-SCR-153	Partial	Partial	/school/students	Section move, not a result-driven decision
+SCR-153	Done	Done	/school/exams/[id]/promotion	Result-driven suggestion, review kept apart from fail
 SCR-154	Partial	Done	/accountant	Accountant dashboard is a placeholder
 SCR-155	Done	Done	/school/fees/structures	Per class, head and year
 SCR-156	Done	Done	/school/fees/structures	Amount, due day, recurring flag

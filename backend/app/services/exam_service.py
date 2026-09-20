@@ -61,6 +61,7 @@ def _paper_to_read_dict(db: Session, p: ExamSubject) -> dict:
         "max_marks": p.max_marks,
         "pass_marks": p.pass_marks,
         "exam_date": p.exam_date,
+        "start_time": p.start_time,
         "duration_minutes": p.duration_minutes,
         "marks_entered_count": _marks_entered_for_paper(db, p.id),
         "marks_verified_at": p.marks_verified_at,
@@ -404,6 +405,7 @@ def create_paper(
         max_marks=data.max_marks,
         pass_marks=data.pass_marks,
         exam_date=data.exam_date,
+        start_time=data.start_time,
         duration_minutes=data.duration_minutes,
     )
     db.add(p)

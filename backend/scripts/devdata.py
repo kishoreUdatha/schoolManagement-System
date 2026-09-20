@@ -72,6 +72,27 @@ def year_id(name: str = CURRENT_YEAR) -> int:
     ).id
 
 
+
+def class_subject_ids() -> list[int]:
+    """Every subject the dev class is taught, oldest first.
+
+    A test that needs two papers needs two subjects, because a paper is
+    unique per subject within an exam.
+    """
+    class_id = klass().id
+    db = SessionLocal()
+    try:
+        ids = list(db.execute(
+            select(ClassSubject.id)
+            .where(ClassSubject.class_id == class_id)
+            .order_by(ClassSubject.id)
+        ).scalars())
+    finally:
+        db.close()
+    if not ids:
+        raise NotSeeded(f"subjects for {CLASS_NAME}")
+    return ids
+
 def klass() -> SchoolClass:
     return _one(
         select(SchoolClass).where(

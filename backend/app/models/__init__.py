@@ -38,6 +38,12 @@ from app.models.events import (
     SchoolEvent,
 )
 from app.models.exam import Exam, ExamSubject
+from app.models.exam_ops import (
+    ExamRoomAllocation,
+    ExamSubjectComponent,
+    Invigilation,
+    MarkComponent,
+)
 from app.models.facility import Lab, LabBooking, Room
 from app.models.fee import FeeHead, FeeStructure, StudentFee
 from app.models.fee_extra import LateFeeRule, Refund

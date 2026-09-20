@@ -241,6 +241,15 @@ export default function MarksEntryPage() {
             {view.class_name} · {view.exam_date} · max {view.max_marks} · pass{" "}
             {view.pass_marks}
           </p>
+          {/* Forty scripts and a spreadsheet beats forty trips to a text box. */}
+          <Link
+            href={`/teacher/marks/papers/${params.id}/import${
+              classIdParam ? `?class_id=${classIdParam}` : ""
+            }`}
+            className="mt-2 inline-block text-[13px] font-bold text-brand-600 hover:underline"
+          >
+            Upload marks from a spreadsheet
+          </Link>
         </div>
       )}
 

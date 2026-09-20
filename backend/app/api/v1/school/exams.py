@@ -126,20 +126,25 @@ def revise(
     return ExamRead.model_validate(exam_service._exam_to_read_dict(db, e))
 
 
-@router.post("/{exam_id}/publish", response_model=ExamRead)
+@router.post("/{exam_id}/publish", response_model=ExamRead,
+             summary="Release results to families")
 def publish(
     exam_id: int,
-    current_user: SchoolAdminUser,
+    # A principal is the person who answers for a result once it is out, so
+    # the release is theirs to make as much as the office's. Taking it back
+    # is the same decision in reverse and carries the same permission.
+    current_user: SchoolAdminOrPrincipal,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.publish(db, exam_id, current_user.school_id)
     return ExamRead.model_validate(exam_service._exam_to_read_dict(db, e))
 
 
-@router.post("/{exam_id}/unpublish", response_model=ExamRead)
+@router.post("/{exam_id}/unpublish", response_model=ExamRead,
+             summary="Take results back off the family portal")
 def unpublish(
     exam_id: int,
-    current_user: SchoolAdminUser,
+    current_user: SchoolAdminOrPrincipal,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.unpublish(db, exam_id, current_user.school_id)

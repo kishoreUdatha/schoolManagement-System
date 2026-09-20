@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -33,6 +33,7 @@ class ExamPaperBase(BaseModel):
     max_marks: int = Field(..., ge=1, le=999)
     pass_marks: int = Field(..., ge=0, le=999)
     exam_date: date
+    start_time: Optional[time] = None
     duration_minutes: Optional[int] = Field(None, ge=1, le=600)
 
     @model_validator(mode="after")
@@ -50,6 +51,7 @@ class ExamPaperUpdate(BaseModel):
     max_marks: Optional[int] = Field(None, ge=1, le=999)
     pass_marks: Optional[int] = Field(None, ge=0, le=999)
     exam_date: Optional[date] = None
+    start_time: Optional[time] = None
     duration_minutes: Optional[int] = Field(None, ge=1, le=600)
 
 
@@ -65,6 +67,7 @@ class ExamPaperRead(BaseModel):
     max_marks: int
     pass_marks: int
     exam_date: date
+    start_time: Optional[time] = None
     duration_minutes: Optional[int] = None
     marks_entered_count: int = 0
     marks_verified_at: Optional[datetime] = None

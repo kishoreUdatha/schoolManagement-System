@@ -34,6 +34,7 @@ from app.api.v1.school import (
     directory as school_directory,
     documents as school_documents,
     events as school_events,
+    exam_ops as school_exam_ops,
     exams as school_exams,
     exports as school_exports,
     facilities as school_facilities,
@@ -119,6 +120,7 @@ from app.api.v1.teacher import (
     behaviour as teacher_behaviour,
     dashboard as teacher_dashboard,
     homework as teacher_homework,
+    mark_imports as teacher_mark_imports,
     marks as teacher_marks,
     messages as teacher_messages,
     my_classes as teacher_my_classes,
@@ -445,6 +447,11 @@ app.include_router(
     tags=["teacher / behaviour"],
 )
 app.include_router(
+    teacher_mark_imports.router,
+    prefix="/api/v1/teacher/mark-imports",
+    tags=["teacher / marks import"],
+)
+app.include_router(
     teacher_marks.router,
     prefix="/api/v1/teacher/marks",
     tags=["teacher / marks"],
@@ -463,6 +470,11 @@ app.include_router(
     school_attendance_reports.router,
     prefix="/api/v1/school/reports/attendance",
     tags=["school / reports / attendance"],
+)
+app.include_router(
+    school_exam_ops.router,
+    prefix="/api/v1/school/exam-ops",
+    tags=["school / exam operations"],
 )
 app.include_router(
     school_analytics.router,

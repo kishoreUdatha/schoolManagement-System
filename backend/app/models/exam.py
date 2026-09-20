@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import Optional
 
 from sqlalchemy import (
@@ -12,6 +12,7 @@ from sqlalchemy import (
     Integer,
     SmallInteger,
     String,
+    Time,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -125,6 +126,10 @@ class ExamSubject(Base, PrimaryKeyMixin, TimestampMixin):
     max_marks: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     pass_marks: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     exam_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # A datesheet without times cannot say whether two papers clash, and an
+    # admit card without one tells a child to turn up on the right day and
+    # guess the hour. Nullable, because every existing paper predates it.
+    start_time: Mapped[Optional[time]] = mapped_column(Time)
     duration_minutes: Mapped[Optional[int]] = mapped_column(SmallInteger)
     # a second pair of eyes on this paper's marks before results go out
     marks_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))

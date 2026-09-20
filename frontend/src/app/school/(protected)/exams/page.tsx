@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -202,7 +203,12 @@ export default function ExamsPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-slate-900">{e.name}</h3>
+                  <Link
+                    href={`/school/exams/${e.id}`}
+                    className="text-lg font-semibold text-slate-900 hover:text-brand-600 hover:underline"
+                  >
+                    {e.name}
+                  </Link>
                   <Badge tone="brand">{kindLabel[e.kind]}</Badge>
                   {e.is_published ? (
                     <Badge tone="emerald">published</Badge>
@@ -215,6 +221,27 @@ export default function ExamsPage() {
                   {e.total_marks_entered > 0 && (
                     <> · {e.total_marks_entered} marks entered</>
                   )}
+                </div>
+
+                <div className="mt-2 flex flex-wrap gap-3 text-[12px] font-bold text-brand-600">
+                  <Link href={`/school/exams/${e.id}`} className="hover:underline">
+                    Overview
+                  </Link>
+                  <Link href={`/school/exams/${e.id}/datesheet`} className="hover:underline">
+                    Datesheet
+                  </Link>
+                  <Link href={`/school/exams/${e.id}/halls`} className="hover:underline">
+                    Halls
+                  </Link>
+                  <Link href={`/school/exams/${e.id}/invigilation`} className="hover:underline">
+                    Invigilation
+                  </Link>
+                  <Link href={`/school/exams/${e.id}/admit-cards`} className="hover:underline">
+                    Admit cards
+                  </Link>
+                  <Link href={`/school/exams/${e.id}/promotion`} className="hover:underline">
+                    Promotion
+                  </Link>
                 </div>
 
                 {e.papers.length > 0 && (
@@ -238,7 +265,15 @@ export default function ExamsPage() {
                               ({p.subject_code})
                             </span>
                           </td>
-                          <td className="py-2 text-slate-600">{p.class_name}</td>
+                          <td className="py-2 text-slate-600">
+                            {p.class_name}
+                            <Link
+                              href={`/school/exams/papers/${p.id}/components`}
+                              className="block text-[11px] font-bold text-brand-600 hover:underline"
+                            >
+                              Parts
+                            </Link>
+                          </td>
                           <td className="py-2 text-slate-600">{p.exam_date}</td>
                           <td className="py-2">
                             {p.max_marks}/{p.pass_marks}
