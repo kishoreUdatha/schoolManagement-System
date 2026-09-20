@@ -64,6 +64,24 @@ def sync_enrollment(db: Session, s: Student, *, previous_outcome: EnrollmentOutc
     return current
 
 
+def close_enrollment(db: Session, s: Student, *, outcome: EnrollmentOutcome,
+                     end_date: date, note: Optional[str] = None) -> StudentEnrollment:
+    """End the current enrolment on a particular day, with a reason.
+
+    sync_enrollment closes an enrolment as of today when a student goes
+    inactive, which is right for most cases. A child leaving mid-term left on a
+    known date and went somewhere known, and that is what the certificate has
+    to say, so this records the day and the note instead of assuming today.
+    """
+    current = sync_enrollment(db, s, note=note)
+    current.end_date = end_date
+    current.outcome = outcome
+    if note:
+        current.notes = "; ".join(x for x in (current.notes, note) if x)[:300]
+    db.flush()
+    return current
+
+
 def history(db: Session, student: Student) -> list[dict]:
     rows = list(db.execute(
         select(StudentEnrollment, AcademicYear.name)

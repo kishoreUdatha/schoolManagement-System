@@ -10,6 +10,7 @@ from app.models.academic import AcademicYear, SchoolClass
 from app.models.exam import Exam, ExamSubject
 from app.models.grading import ExamType, GradeScale
 from app.models.subject import ClassSubject, Subject
+from app.models.user import User
 from app.schemas.exam import (
     ExamCreate,
     ExamPaperCreate,
@@ -62,6 +63,11 @@ def _paper_to_read_dict(db: Session, p: ExamSubject) -> dict:
         "exam_date": p.exam_date,
         "duration_minutes": p.duration_minutes,
         "marks_entered_count": _marks_entered_for_paper(db, p.id),
+        "marks_verified_at": p.marks_verified_at,
+        "marks_verified_by_name": (
+            db.get(User, p.marks_verified_by_user_id).full_name if p.marks_verified_by_user_id else None
+        ),
+        "marks_verified_count": p.marks_verified_count,
     }
 
 
@@ -85,6 +91,11 @@ def _exam_to_read_dict(db: Session, e: Exam) -> dict:
         "exam_type_name": db.get(ExamType, e.exam_type_id).name if e.exam_type_id else None,
         "grade_scale_id": e.grade_scale_id,
         "results_approved_at": e.results_approved_at,
+        "marks_open": e.marks_open,
+        "marks_closed_at": e.marks_closed_at,
+        "revision_no": e.revision_no,
+        "revised_at": e.revised_at,
+        "revision_reason": e.revision_reason,
         "created_at": e.created_at,
         "papers": paper_dicts,
         "papers_count": len(papers),
@@ -252,6 +263,105 @@ def unpublish(db: Session, exam_id: int, school_id: int) -> Exam:
     e = _get_exam(db, exam_id, school_id)
     e.is_published = False
     e.published_at = None
+    db.commit()
+    db.refresh(e)
+    return e
+
+
+# ----- Marks window, verification and revisions -----
+
+
+def set_marks_window(db: Session, exam_id: int, school_id: int, user_id: int, open_: bool) -> Exam:
+    """Open or close marks entry for a whole exam.
+
+    Closing is how the office says "that's everything in" — teachers stop being
+    able to change marks without asking, and the school knows what it is
+    publishing. It can be opened again; that is a decision someone makes, not a
+    side effect of the calendar.
+    """
+    e = _get_exam(db, exam_id, school_id)
+    if e.is_published and open_:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Results are published — unpublish or revise the exam before reopening marks",
+        )
+    e.marks_open = open_
+    e.marks_closed_at = None if open_ else datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(e)
+    return e
+
+
+def verify_paper(db: Session, paper_id: int, school_id: int, user_id: int, verified: bool) -> ExamSubject:
+    """A second pair of eyes signing off one paper's marks.
+
+    Whoever entered the marks can't verify them — that would make the check
+    ceremonial. Verification is cleared whenever the marks change, so a
+    signed-off paper always reflects the marks that were actually checked.
+    """
+    paper = db.get(ExamSubject, paper_id)
+    if not paper or paper.school_id != school_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Paper not found")
+    if not verified:
+        paper.marks_verified_at = None
+        paper.marks_verified_by_user_id = None
+        paper.marks_verified_count = None
+        db.commit()
+        db.refresh(paper)
+        return paper
+
+    from app.models.mark import Mark
+
+    rows = list(db.execute(select(Mark).where(Mark.exam_subject_id == paper.id)).scalars())
+    if not rows:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No marks have been entered for this paper yet"
+        )
+    entered_by = {m.marked_by_user_id for m in rows if m.marked_by_user_id}
+    if entered_by == {user_id}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Marks are verified by someone other than whoever entered them",
+        )
+    paper.marks_verified_at = datetime.now(timezone.utc)
+    paper.marks_verified_by_user_id = user_id
+    paper.marks_verified_count = len(rows)
+    db.commit()
+    db.refresh(paper)
+    return paper
+
+
+def clear_verification(db: Session, paper_id: int) -> None:
+    """Called when marks change: a checked paper that moves is unchecked."""
+    paper = db.get(ExamSubject, paper_id)
+    if paper and paper.marks_verified_at is not None:
+        paper.marks_verified_at = None
+        paper.marks_verified_by_user_id = None
+        paper.marks_verified_count = None
+
+
+def revise(db: Session, exam_id: int, school_id: int, user_id: int, reason: str) -> Exam:
+    """Take a published result set back for correction, on the record.
+
+    Parents have already seen these results, so this isn't a quiet unpublish:
+    the reason is kept, the revision number goes up, and report cards issued
+    afterwards say which revision they are. Marks entry reopens so the
+    correction can actually be made.
+    """
+    e = _get_exam(db, exam_id, school_id)
+    if not e.is_published:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This exam isn't published — correct the marks and publish when ready",
+        )
+    e.is_published = False
+    e.published_at = None
+    e.marks_open = True
+    e.marks_closed_at = None
+    e.revision_no = (e.revision_no or 1) + 1
+    e.revised_at = datetime.now(timezone.utc)
+    e.revised_by_user_id = user_id
+    e.revision_reason = reason.strip()[:500]
     db.commit()
     db.refresh(e)
     return e

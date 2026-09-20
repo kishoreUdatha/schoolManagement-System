@@ -214,6 +214,11 @@ def save_marks(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Exam is published — marks are locked. Ask school admin to unpublish.",
         )
+    if not exam.marks_open:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Marks entry is closed for this exam. Ask the office to open it.",
+        )
 
     sec = db.get(Section, section_id)
     if not sec or sec.class_id != cs.class_id:
@@ -305,6 +310,10 @@ def save_marks(
         db.execute(stmt)
         saved += 1
 
+    if saved:
+        from app.services import exam_service
+
+        exam_service.clear_verification(db, paper.id)
     db.commit()
     return {"saved": saved, "skipped": skipped, "errors": errors}
 

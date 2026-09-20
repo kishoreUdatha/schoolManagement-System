@@ -91,8 +91,10 @@ def cleanup(ctx=None):
         db.execute(Visitor.__table__.delete().where(Visitor.phone == PHONE))
         if ctx:
             today = date.today()
-            db.execute(AttendanceSession.__table__.delete().where(
-                AttendanceSession.section_id == ctx["section_id"], AttendanceSession.date == today))
+            # lock-day locks every marked register that day, not only ours, so
+            # clear the lot — otherwise the next test to mark attendance finds
+            # the register locked and fails for a reason that isn't its own
+            db.execute(AttendanceSession.__table__.delete().where(AttendanceSession.date == today))
             sec = db.get(Section, ctx["section_id"])
             sec.class_teacher_user_id = ctx["saved_ct"]
             row = db.execute(

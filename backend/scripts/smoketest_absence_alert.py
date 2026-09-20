@@ -25,6 +25,7 @@ from sqlalchemy import select
 
 from app.core.security import hash_password
 from app.models.attendance import StudentAttendance
+from app.models.register import AttendanceSession
 from app.database import SessionLocal
 from app.models.user import User
 from scripts import devdata
@@ -88,6 +89,10 @@ def clear_todays_attendance():
                 StudentAttendance.student_id == STUDENT_ID,
                 StudentAttendance.date == date.today(),
             )
+        )
+        # and any lock another test left on today's register
+        db.execute(
+            AttendanceSession.__table__.delete().where(AttendanceSession.date == date.today())
         )
         db.commit()
     finally:

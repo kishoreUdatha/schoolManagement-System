@@ -67,6 +67,9 @@ class ExamPaperRead(BaseModel):
     exam_date: date
     duration_minutes: Optional[int] = None
     marks_entered_count: int = 0
+    marks_verified_at: Optional[datetime] = None
+    marks_verified_by_name: Optional[str] = None
+    marks_verified_count: Optional[int] = None
 
 
 # ----- Exam schemas -----
@@ -116,6 +119,11 @@ class ExamRead(BaseModel):
     exam_type_name: Optional[str] = None
     grade_scale_id: Optional[int] = None
     results_approved_at: Optional[datetime] = None
+    marks_open: bool = True
+    marks_closed_at: Optional[datetime] = None
+    revision_no: int = 1
+    revised_at: Optional[datetime] = None
+    revision_reason: Optional[str] = None
     created_at: datetime
     papers: list[ExamPaperRead] = []
     papers_count: int = 0
@@ -130,3 +138,22 @@ class UpcomingExamRead(BaseModel):
     end_date: date
     is_published: bool
     papers_count: int
+
+
+class MarksWindowIn(BaseModel):
+    """Open or close marks entry for an exam."""
+
+    open: bool = True
+
+
+class VerifyMarksIn(BaseModel):
+    """Sign a paper's marks off, or take the sign-off back."""
+
+    verified: bool = True
+
+
+class ReviseIn(BaseModel):
+    """Take published results back for correction. Parents have seen them, so
+    the reason is part of the record."""
+
+    reason: str = Field(..., min_length=5, max_length=500)

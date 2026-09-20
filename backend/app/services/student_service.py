@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Optional
 
 from fastapi import HTTPException, status
@@ -5,12 +6,14 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.enums import SubscriptionStatus
+from decimal import Decimal
+
+from app.core.enums import EnrollmentOutcome, FeeStatus, SubscriptionStatus
 from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.plan import Plan
 from app.models.student import Student
 from app.models.subscription import TenantSubscription
-from app.schemas.student import StudentBase, StudentBulkRow, StudentCreate, StudentUpdate
+from app.schemas.student import StudentBase, StudentBulkRow, StudentCreate, StudentUpdate, TransferOut
 from app.services import foundation_service
 
 
@@ -493,6 +496,64 @@ def set_active(
     db.commit()
     db.refresh(s)
     return s
+
+
+def transfer_out(db: Session, student_id: int, school_id: int, user, data: TransferOut) -> dict:
+    """A child leaving for another school.
+
+    Leaving is not the same as being deactivated: the school has to say where
+    the child went and when, the enrolment closes as 'left' rather than just
+    stopping, and anything still owed is reported so the office can settle it
+    before the transfer certificate goes out. The record stays — a school that
+    is asked for a duplicate TC in five years has to be able to answer.
+    """
+    s = _get_student(db, student_id, school_id)
+    if not s.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{s.full_name} has already left",
+        )
+    left_on = data.left_on or date.today()
+    if left_on > date.today():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="The leaving date is in the future"
+        )
+
+    from app.models.fee import StudentFee
+
+    dues = db.execute(
+        select(func.coalesce(func.sum(StudentFee.amount_due - StudentFee.amount_paid), 0))
+        .where(
+            StudentFee.student_id == s.id,
+            StudentFee.status.notin_([FeeStatus.paid, FeeStatus.waived]),
+        )
+    ).scalar_one()
+    if dues and dues > 0 and not data.ignore_dues:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"{s.full_name} still owes {dues}. Settle or waive it first, "
+                "or confirm the transfer anyway."
+            ),
+        )
+
+    s.is_active = False
+    note = f"Left on {left_on:%d %b %Y} for {data.to_school.strip()}"
+    if data.reason:
+        note += f" — {data.reason.strip()}"
+    s.address = s.address  # untouched; the note belongs on the enrolment
+    foundation_service.close_enrollment(db, s, outcome=EnrollmentOutcome.left, end_date=left_on, note=note)
+    db.commit()
+    db.refresh(s)
+    return {
+        "student_id": s.id,
+        "student_name": s.full_name,
+        "admission_no": s.admission_no,
+        "left_on": left_on,
+        "to_school": data.to_school.strip(),
+        "outstanding_dues": Decimal(dues or 0),
+        "note": note,
+    }
 
 
 # --- Helpers exposed to other services ---

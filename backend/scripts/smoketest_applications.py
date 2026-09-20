@@ -28,7 +28,7 @@ from sqlalchemy import func, select
 from app.core.enums import AdmissionStage, AdmissionSource
 from app.core.security import hash_password
 from app.database import SessionLocal
-from app.models.academic import AcademicYear, Section
+from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.admission import AdmissionEnquiry
 from app.models.application import (
     AdmissionApplication,
@@ -102,7 +102,15 @@ def setup():
         year = db.execute(
             select(AcademicYear).where(AcademicYear.school_id == admin.school_id, AcademicYear.is_current.is_(True))
         ).scalar_one()
-        sec = db.execute(select(Section).where(Section.school_id == admin.school_id).limit(1)).scalar_one()
+        # the section has to belong to the year we admit into, and an unordered
+        # pick can land on a class from another year
+        sec = db.execute(
+            select(Section)
+            .join(SchoolClass, SchoolClass.id == Section.class_id)
+            .where(Section.school_id == admin.school_id, SchoolClass.academic_year_id == year.id)
+            .order_by(Section.id)
+            .limit(1)
+        ).scalar_one()
         enq = AdmissionEnquiry(
             tenant_id=admin.tenant_id, school_id=admin.school_id, student_name=f"{MARK} Two",
             parent_name="Smoke App Parent", parent_phone="9800000456", source=AdmissionSource.walk_in,

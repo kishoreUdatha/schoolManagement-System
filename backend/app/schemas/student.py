@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -104,3 +105,23 @@ class StudentPromoteResult(BaseModel):
     source_section_id: int
     target_section_id: int
     target_academic_year_id: int
+
+
+class TransferOut(BaseModel):
+    """A child leaving for another school."""
+
+    to_school: str = Field(..., min_length=2, max_length=200)
+    left_on: Optional[date] = None  # defaults to today
+    reason: Optional[str] = Field(None, max_length=300)
+    # the office confirming they know money is still owed
+    ignore_dues: bool = False
+
+
+class TransferResult(BaseModel):
+    student_id: int
+    student_name: str
+    admission_no: str
+    left_on: date
+    to_school: str
+    outstanding_dues: Decimal
+    note: str

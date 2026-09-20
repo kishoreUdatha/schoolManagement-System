@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query, status
@@ -7,12 +8,24 @@ from sqlalchemy.orm import Session
 from app.core.deps import SchoolAdminOrAccountant, SchoolAdminUser
 from app.core.enums import OnlinePaymentStatus
 from app.database import get_db
-from app.schemas.online_payment import GatewayRead, GatewayUpdate, OrderRead
+from app.schemas.online_payment import GatewayRead, GatewayUpdate, OrderRead, Reconciliation
 from app.services import online_payment_service as svc
 
 
 router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
+
+
+@router.get("/reconciliation", response_model=Reconciliation,
+            summary="Gateway orders against the fees they settled")
+def reconciliation(
+    current_user: SchoolAdminUser,
+    db: Db,
+    frm: Optional[date] = Query(None, alias="from"),
+    to: Optional[date] = Query(None),
+):
+    today = date.today()
+    return svc.reconciliation(db, current_user.school_id, frm or today.replace(day=1), to or today)
 
 
 @router.get("/gateway", response_model=GatewayRead)

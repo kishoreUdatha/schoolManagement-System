@@ -9,6 +9,7 @@ from sqlalchemy import (
     Enum as SAEnum,
     ForeignKey,
     Index,
+    Integer,
     SmallInteger,
     String,
     UniqueConstraint,
@@ -71,6 +72,16 @@ class Exam(Base, PrimaryKeyMixin, TimestampMixin):
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
     results_approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # marks entry is open by default and closed when the school has them all in
+    marks_open: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    marks_closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # a published result set that had to be corrected and issued again
+    revision_no: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    revised_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    revision_reason: Mapped[Optional[str]] = mapped_column(String(500))
+    revised_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
 
     created_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
@@ -115,5 +126,11 @@ class ExamSubject(Base, PrimaryKeyMixin, TimestampMixin):
     pass_marks: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     exam_date: Mapped[date] = mapped_column(Date, nullable=False)
     duration_minutes: Mapped[Optional[int]] = mapped_column(SmallInteger)
+    # a second pair of eyes on this paper's marks before results go out
+    marks_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    marks_verified_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
+    marks_verified_count: Mapped[Optional[int]] = mapped_column(Integer)
 
     exam: Mapped[Exam] = relationship(back_populates="papers")

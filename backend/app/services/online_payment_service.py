@@ -9,13 +9,13 @@ import hmac
 import io
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Optional
 
 import httpx
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -45,6 +45,71 @@ def test_mode_available() -> bool:
 
 
 # --- Gateway settings ---
+
+def reconciliation(db: Session, school_id: int, frm: date, to: date) -> dict:
+    """Does what the gateway says match what the school has banked?
+
+    Three things go wrong in practice and each needs a different person to act:
+    an order the parent started and abandoned (nothing to do), money the
+    gateway took that never reached a fee row (the office must chase it), and
+    money received beyond what was owed (a refund). This lists them rather
+    than quietly totalling everything up.
+    """
+    orders = list(db.execute(
+        select(FeePaymentOrder)
+        .where(
+            FeePaymentOrder.school_id == school_id,
+            func.date(FeePaymentOrder.created_at) >= frm,
+            func.date(FeePaymentOrder.created_at) <= to,
+        )
+        .order_by(FeePaymentOrder.created_at.desc())
+    ).scalars())
+
+    settled = [o for o in orders if o.status == OnlinePaymentStatus.paid]
+    unsettled, excess = [], []
+    for o in settled:
+        applied = db.execute(
+            select(func.coalesce(func.sum(FeePaymentOrderItem.applied_amount), 0))
+            .where(FeePaymentOrderItem.order_id == o.id)
+        ).scalar_one()
+        student = db.get(Student, o.student_id)
+        row = {
+            "order_id": o.id,
+            "provider_order_id": o.provider_order_id,
+            "provider_payment_id": o.provider_payment_id,
+            "student_id": o.student_id,
+            "student_name": student.full_name if student else None,
+            "amount": o.amount,
+            "applied": Decimal(applied),
+            "difference": o.amount - Decimal(applied),
+            "paid_at": o.paid_at,
+            "receipt_no": o.receipt_no,
+        }
+        if Decimal(applied) < o.amount and not o.excess_amount:
+            unsettled.append(row)
+        if o.excess_amount:
+            excess.append({**row, "excess": o.excess_amount})
+
+    def total(rows, key="amount"):
+        return sum((r[key] for r in rows), Decimal("0"))
+
+    started = [o for o in orders if o.status == OnlinePaymentStatus.created]
+    failed = [o for o in orders if o.status == OnlinePaymentStatus.failed]
+    return {
+        "from_date": frm,
+        "to_date": to,
+        "orders": len(orders),
+        "settled": len(settled),
+        "settled_amount": sum((o.amount for o in settled), Decimal("0")),
+        "abandoned": len(started),
+        "failed": len(failed),
+        "unapplied": unsettled,
+        "unapplied_amount": total(unsettled, "difference"),
+        "excess": excess,
+        "excess_amount": total(excess, "excess"),
+        "clean": not unsettled and not excess,
+    }
+
 
 def get_gateway(db: Session, school_id: int) -> Optional[SchoolPaymentGateway]:
     return db.execute(

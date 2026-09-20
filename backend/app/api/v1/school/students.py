@@ -8,6 +8,8 @@ from app.core.deps import SchoolAdminUser
 from app.database import get_db
 from app.schemas.common import PaginatedResponse
 from app.schemas.student import (
+    TransferOut,
+    TransferResult,
     StudentBulkCreate,
     StudentBulkResult,
     StudentCreate,
@@ -145,6 +147,22 @@ def activate(
 ):
     s = student_service.set_active(db, student_id, current_user.school_id, active=True)
     return StudentRead.model_validate(s)
+
+
+@router.post(
+    "/{student_id}/transfer",
+    response_model=TransferResult,
+    summary="A child leaving for another school",
+)
+def transfer(
+    student_id: int,
+    payload: TransferOut,
+    current_user: SchoolAdminUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return TransferResult.model_validate(
+        student_service.transfer_out(db, student_id, current_user.school_id, current_user, payload)
+    )
 
 
 @router.post(

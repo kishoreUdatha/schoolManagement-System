@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -76,3 +76,34 @@ class OrderRead(BaseModel):
     excess_amount: Decimal
     created_at: datetime
     items: list[OrderItemRead]
+
+
+class ReconRow(BaseModel):
+    order_id: int
+    provider_order_id: str
+    provider_payment_id: Optional[str] = None
+    student_id: int
+    student_name: Optional[str] = None
+    amount: Decimal
+    applied: Decimal
+    difference: Decimal
+    excess: Optional[Decimal] = None
+    paid_at: Optional[datetime] = None
+    receipt_no: Optional[str] = None
+
+
+class Reconciliation(BaseModel):
+    """What the gateway says against what the school banked."""
+
+    from_date: date
+    to_date: date
+    orders: int
+    settled: int
+    settled_amount: Decimal
+    abandoned: int
+    failed: int
+    unapplied: list[ReconRow]
+    unapplied_amount: Decimal
+    excess: list[ReconRow]
+    excess_amount: Decimal
+    clean: bool

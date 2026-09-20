@@ -19,7 +19,7 @@ import urllib.request
 from datetime import date, timedelta
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.core.enums import FeeStatus
 from app.core.security import hash_password
@@ -83,7 +83,8 @@ def cleanup_smoke_state(today: date):
         # Find smoke fees by notes prefix
         fees = db.execute(
             select(StudentFee).where(
-                StudentFee.notes.like("SMOKE 13.3 -%"),
+                or_(StudentFee.notes.like("SMOKE 13.3 -%"),
+                    StudentFee.period.in_(list(_SMOKE_PERIODS.values()))),
             )
         ).scalars().all()
         fee_ids = [f.id for f in fees]

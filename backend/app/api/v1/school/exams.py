@@ -4,9 +4,12 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser
 from app.database import get_db
 from app.schemas.exam import (
+    MarksWindowIn,
+    ReviseIn,
+    VerifyMarksIn,
     ExamCreate,
     ExamPaperCreate,
     ExamPaperRead,
@@ -85,6 +88,42 @@ def delete(
 ):
     exam_service.delete_exam(db, exam_id, current_user.school_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{exam_id}/marks-window", response_model=ExamRead,
+             summary="Open or close marks entry for this exam")
+def marks_window(
+    exam_id: int,
+    payload: MarksWindowIn,
+    current_user: SchoolAdminUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    e = exam_service.set_marks_window(db, exam_id, current_user.school_id, current_user.id, payload.open)
+    return ExamRead.model_validate(exam_service._exam_to_read_dict(db, e))
+
+
+@router.post("/papers/{paper_id}/verify", response_model=ExamPaperRead,
+             summary="Sign off a paper's marks (not the person who entered them)")
+def verify_paper(
+    paper_id: int,
+    payload: VerifyMarksIn,
+    current_user: SchoolAdminOrPrincipal,
+    db: Annotated[Session, Depends(get_db)],
+):
+    paper = exam_service.verify_paper(db, paper_id, current_user.school_id, current_user.id, payload.verified)
+    return ExamPaperRead.model_validate(exam_service._paper_to_read_dict(db, paper))
+
+
+@router.post("/{exam_id}/revise", response_model=ExamRead,
+             summary="Take published results back for correction, on the record")
+def revise(
+    exam_id: int,
+    payload: ReviseIn,
+    current_user: SchoolAdminUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    e = exam_service.revise(db, exam_id, current_user.school_id, current_user.id, payload.reason)
+    return ExamRead.model_validate(exam_service._exam_to_read_dict(db, e))
 
 
 @router.post("/{exam_id}/publish", response_model=ExamRead)
