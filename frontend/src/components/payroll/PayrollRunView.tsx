@@ -76,8 +76,8 @@ export function PayrollRunView({ runId, basePath }: { runId: string; basePath: s
       </Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink">Payroll · {monthLabel(run.period)}</h1>
-          <div className="mt-1 text-sm text-ink-muted">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Payroll · {monthLabel(run.period)}</h1>
+          <div className="mt-1.5 text-[13px] text-ink-muted">
             <Badge tone={runTone[run.status]}>{run.status}</Badge>
             {run.paid_on && ` · paid on ${run.paid_on}${run.payment_ref ? ` (${run.payment_ref})` : ""}`}
           </div>

@@ -64,9 +64,9 @@ export default function ChildTestsPage() {
       <Link href={`/parent/children/${id}`} className="text-sm text-brand-700 hover:underline">
         ← Back
       </Link>
-      <h1 className="text-2xl font-bold text-slate-900">Online tests</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Online tests</h1>
       <p className="text-sm text-slate-500">Let your child take each test on this device while it&apos;s open. Answers save automatically.</p>
-      {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
       {items.length === 0 && !error && <p className="text-sm text-slate-500">No tests yet.</p>}
       {items.map((t) => (
         <Card key={t.id}>

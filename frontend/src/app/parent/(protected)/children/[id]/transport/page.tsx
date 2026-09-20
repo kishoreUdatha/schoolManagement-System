@@ -55,8 +55,8 @@ export default function ChildTransportPage() {
       <Link href={`/parent/children/${params.id}`} className="text-sm text-brand-700 hover:underline">
         ← Back
       </Link>
-      <h1 className="text-2xl font-bold text-slate-900">School transport</h1>
-      {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">School transport</h1>
+      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
       {data === null && (
         <Card className="p-6 text-sm text-slate-500">Your child isn’t using school transport.</Card>
       )}

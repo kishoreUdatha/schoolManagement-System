@@ -68,8 +68,8 @@ export default function SubjectsPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Subjects</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Subjects</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             School-wide subject master. Each subject can be assigned to multiple
             classes from the <strong>Classes</strong> page.
           </p>
@@ -83,26 +83,26 @@ export default function SubjectsPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           {notice}
         </div>
       )}
 
       <Card>
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-4 py-2 font-medium">Code</th>
-              <th className="px-4 py-2 font-medium">Name</th>
-              <th className="px-4 py-2 font-medium">Kind</th>
-              <th className="px-4 py-2 font-medium">Order</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-bold">Code</th>
+              <th className="px-4 py-3 font-bold">Name</th>
+              <th className="px-4 py-3 font-bold">Kind</th>
+              <th className="px-4 py-3 font-bold">Order</th>
+              <th className="px-4 py-3 font-bold">Status</th>
+              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -277,11 +277,11 @@ function SubjectFormModal({
             required
           />
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Kind *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Kind *</span>
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value as SubjectKind)}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="core">Core</option>
               <option value="elective">Elective</option>
@@ -308,7 +308,7 @@ function SubjectFormModal({
           </label>
         )}
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}
@@ -405,7 +405,7 @@ function BulkImportModal({
             Paste CSV (with header)
           </label>
           <textarea
-            className="mt-1 h-48 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            className="mt-1 h-48 w-full rounded-lg border border-slate-300 px-3 py-2 text-[12px] tabular-nums shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
             value={csv}
             onChange={(e) => setCsv(e.target.value)}
           />
@@ -415,7 +415,7 @@ function BulkImportModal({
           </p>
         </div>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}

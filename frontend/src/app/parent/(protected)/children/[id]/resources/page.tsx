@@ -75,7 +75,7 @@ export default function ChildResourcesPage() {
           {shown.map((r) => (
             <Card key={r.id}>
               <CardBody className="space-y-2">
-                <div className="text-xs uppercase text-ink-subtle">
+                <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">
                   {r.subject_name ?? "—"} · {humanize(r.kind)}
                 </div>
                 <h3 className="font-semibold text-ink">{r.title}</h3>

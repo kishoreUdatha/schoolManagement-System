@@ -108,7 +108,7 @@ export default function CataloguePage() {
                 )}
                 {b.waiting_reservations > 0 && <div className="text-xs text-ink-subtle">{b.waiting_reservations} waiting</div>}
               </td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <Link href={`/school/library/catalogue/${b.id}`}>
                   <Button size="sm" variant="secondary">
                     Open

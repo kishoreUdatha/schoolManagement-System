@@ -65,10 +65,10 @@ export default function ParentDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
           Welcome, {user?.full_name?.split(" ")[0]}
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           {children.length === 0
             ? "Your account isn't linked to any students yet — contact the school office."
             : `You are linked to ${children.length} student${
@@ -78,7 +78,7 @@ export default function ParentDashboard() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
 
       {notices.length > 0 && (

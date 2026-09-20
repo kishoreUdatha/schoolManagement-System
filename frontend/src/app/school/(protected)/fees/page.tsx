@@ -134,8 +134,8 @@ export default function FeesPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Fees</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Fees</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Manage fee records, record payments, generate monthly bills. Set up{" "}
             <Link className="text-brand-700 hover:underline" href="/school/fees/heads">
               heads
@@ -150,19 +150,19 @@ export default function FeesPage() {
         <div className="flex gap-2">
           <Link
             href="/school/fees/heads"
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
           >
             Fee heads
           </Link>
           <Link
             href="/school/fees/structures"
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
           >
             Structures
           </Link>
           <Link
             href="/school/fees/reminders"
-            className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
           >
             Reminders
           </Link>
@@ -171,12 +171,12 @@ export default function FeesPage() {
       </div>
 
       <form className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Year</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Year</span>
           <select
             value={yearId ?? ""}
             onChange={(e) => setYearId(Number(e.target.value))}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             {years.map((y) => (
               <option key={y.id} value={y.id}>
@@ -185,15 +185,15 @@ export default function FeesPage() {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Class</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Class</span>
           <select
             value={classId}
             onChange={(e) => {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {classes.map((c) => (
@@ -203,13 +203,13 @@ export default function FeesPage() {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Section</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Section</span>
           <select
             value={sectionId}
             onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
             disabled={!selectedClass}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {selectedClass?.sections.map((s) => (
@@ -226,14 +226,14 @@ export default function FeesPage() {
           onChange={(e) => setPeriod(e.target.value)}
           className="w-32"
         />
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Status</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Status</span>
           <select
             value={statusFilter}
             onChange={(e) =>
               setStatusFilter(e.target.value as typeof statusFilter)
             }
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             <option value="outstanding">Outstanding (pending+overdue)</option>
@@ -246,44 +246,44 @@ export default function FeesPage() {
       </form>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <Card>
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-3 py-2 font-medium">Student</th>
-              <th className="px-3 py-2 font-medium">Head</th>
-              <th className="px-3 py-2 font-medium">Period</th>
-              <th className="px-3 py-2 font-medium">Due / Paid</th>
-              <th className="px-3 py-2 font-medium">Outstanding</th>
-              <th className="px-3 py-2 font-medium">Due date</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-              <th className="px-3 py-2 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-bold">Student</th>
+              <th className="px-4 py-3 font-bold">Head</th>
+              <th className="px-4 py-3 font-bold">Period</th>
+              <th className="px-4 py-3 font-bold">Due / Paid</th>
+              <th className="px-4 py-3 font-bold">Outstanding</th>
+              <th className="px-4 py-3 font-bold">Due date</th>
+              <th className="px-4 py-3 font-bold">Status</th>
+              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {data?.items.map((f) => (
               <tr key={f.id} className="hover:bg-slate-50">
-                <td className="px-3 py-2">
+                <td className="px-4 py-3">
                   <div className="font-medium text-slate-900">{f.student_name}</div>
                   <div className="text-xs text-slate-500">{f.section_label}</div>
                 </td>
-                <td className="px-3 py-2 font-mono text-xs">{f.fee_head_code}</td>
-                <td className="px-3 py-2">{f.period}</td>
-                <td className="px-3 py-2">
+                <td className="px-4 py-3 text-[12px] font-mono">{f.fee_head_code}</td>
+                <td className="px-4 py-3">{f.period}</td>
+                <td className="px-4 py-3">
                   ₹{Number(f.amount_paid).toLocaleString("en-IN")} / ₹
                   {Number(f.amount_due).toLocaleString("en-IN")}
                 </td>
-                <td className="px-3 py-2 font-medium">
+                <td className="px-4 py-3 font-medium">
                   ₹{Number(f.amount_outstanding).toLocaleString("en-IN")}
                 </td>
-                <td className="px-3 py-2 text-slate-600">{f.due_date}</td>
-                <td className="px-3 py-2">
+                <td className="px-4 py-3 text-slate-600">{f.due_date}</td>
+                <td className="px-4 py-3">
                   {f.status === "paid" ? (
                     <Badge tone="emerald">paid</Badge>
                   ) : f.status === "waived" ? (
@@ -294,7 +294,7 @@ export default function FeesPage() {
                     <Badge tone="amber">pending</Badge>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right space-x-1">
+                <td className="px-4 py-3 text-right space-x-1">
                   {f.status === "pending" && (
                     <>
                       <Button size="sm" onClick={() => setPayFee(f)}>
@@ -436,11 +436,11 @@ function RecordPaymentModal({
         />
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Mode</span>
+            <span className="text-[12px] font-bold text-ink-muted">Mode</span>
             <select
               value={mode}
               onChange={(e) => setMode(e.target.value)}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option>Cash</option>
               <option>UPI</option>
@@ -457,7 +457,7 @@ function RecordPaymentModal({
           />
         </div>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -517,11 +517,11 @@ function GenerateModal({
           are skipped.
         </p>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Year *</span>
+          <span className="text-[12px] font-bold text-ink-muted">Year *</span>
           <select
             value={yearId}
             onChange={(e) => setYearId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             <option value="">Select…</option>
@@ -541,7 +541,7 @@ function GenerateModal({
           required
         />
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>

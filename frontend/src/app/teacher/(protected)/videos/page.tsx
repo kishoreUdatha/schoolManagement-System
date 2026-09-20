@@ -117,8 +117,8 @@ export default function TeacherVideosPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Learning videos</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Learning videos</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Share YouTube videos with parents of the classes you teach. Only
             youtube.com / youtu.be links are accepted.
           </p>
@@ -132,11 +132,11 @@ export default function TeacherVideosPage() {
       </div>
 
       <label className="flex flex-col gap-1 text-sm max-w-md">
-        <span className="text-slate-600">Filter by class-subject</span>
+        <span className="text-[12px] font-bold text-ink-muted">Filter by class-subject</span>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value ? Number(e.target.value) : "")}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
         >
           <option value="">All</option>
           {subjects.map((s) => (
@@ -148,12 +148,12 @@ export default function TeacherVideosPage() {
       </label>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           {notice}
         </div>
       )}
@@ -276,7 +276,7 @@ function CompletionsModal({
     <Modal open onClose={onClose} title={`Completions — ${video.title}`} size="lg">
       <div className="space-y-3">
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}
@@ -306,30 +306,30 @@ function CompletionsModal({
                 ))}
               </div>
             </div>
-            <table className="min-w-full divide-y divide-slate-100 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Section</th>
-                  <th className="px-3 py-2 font-medium">Roll</th>
-                  <th className="px-3 py-2 font-medium">Admission #</th>
-                  <th className="px-3 py-2 font-medium">Name</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-4 py-3 font-bold">Section</th>
+                  <th className="px-4 py-3 font-bold">Roll</th>
+                  <th className="px-4 py-3 font-bold">Admission #</th>
+                  <th className="px-4 py-3 font-bold">Name</th>
+                  <th className="px-4 py-3 font-bold">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {rows.map((r) => (
                   <tr key={r.student_id}>
-                    <td className="px-3 py-2 text-slate-600">
+                    <td className="px-4 py-3 text-slate-600">
                       {r.section_label}
                     </td>
-                    <td className="px-3 py-2 text-slate-700">{r.roll_no}</td>
-                    <td className="px-3 py-2 font-mono text-slate-700">
+                    <td className="px-4 py-3 text-slate-700">{r.roll_no}</td>
+                    <td className="px-4 py-3 font-mono text-slate-700">
                       {r.admission_no}
                     </td>
-                    <td className="px-3 py-2 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-medium text-slate-900">
                       {r.full_name}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-3">
                       {r.completed ? (
                         <div className="flex flex-col">
                           <Badge tone="emerald">watched ✓</Badge>
@@ -424,7 +424,7 @@ function VideoFormModal({
       <form onSubmit={submit} className="space-y-4">
         {!existing && (
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">
+            <span className="text-[12px] font-bold text-ink-muted">
               Class-subject *
             </span>
             <select
@@ -432,7 +432,7 @@ function VideoFormModal({
               onChange={(e) =>
                 setForm({ ...form, class_subject_id: Number(e.target.value) })
               }
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               {subjects.map((s) => (
@@ -450,12 +450,12 @@ function VideoFormModal({
           required
         />
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Description</span>
+          <span className="text-[12px] font-bold text-ink-muted">Description</span>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={3}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             placeholder="Optional — what should the student learn from this?"
           />
         </label>
@@ -485,7 +485,7 @@ function VideoFormModal({
           )
         )}
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}

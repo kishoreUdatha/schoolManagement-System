@@ -55,7 +55,7 @@ export default function ParentEventsPage() {
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
       {pending.length > 0 && (
-        <div className="rounded-md bg-amber-500/10 px-3 py-2 text-sm text-amber-600">
+        <div className="rounded-lg bg-[#FFF3D8] px-4 py-3 text-[13px] font-medium text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
           {pending.length} event{pending.length === 1 ? " needs" : "s need"} your consent.
         </div>
       )}
@@ -68,7 +68,7 @@ export default function ParentEventsPage() {
               <Badge tone="brand">{humanize(ev.kind)}</Badge>
               {ev.is_cancelled && <Badge tone="rose">cancelled</Badge>}
             </div>
-            <div className="mt-1 text-sm text-ink-muted">
+            <div className="mt-1.5 text-[13px] text-ink-muted">
               {ev.start_date}
               {ev.end_date !== ev.start_date && ` to ${ev.end_date}`}
               {ev.start_time ? ` · ${hhmm(ev.start_time)}${ev.end_time ? `–${hhmm(ev.end_time)}` : ""}` : " · all day"}

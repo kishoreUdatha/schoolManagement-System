@@ -28,14 +28,14 @@ export default function AccountantFeesPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-ink">Fees</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Fees</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Read-only fee heads. Full collection workflow is on the way.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -57,24 +57,24 @@ export default function AccountantFeesPage() {
             </p>
           )}
           {heads && heads.length > 0 && (
-            <table className="min-w-full divide-y divide-surface-border text-sm">
-              <thead className="text-left text-xs uppercase text-ink-subtle">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Name</th>
-                  <th className="px-3 py-2 font-medium">Code</th>
-                  <th className="px-3 py-2 font-medium">Frequency</th>
-                  <th className="px-3 py-2 font-medium">Category</th>
+                  <th className="px-4 py-3 font-bold">Name</th>
+                  <th className="px-4 py-3 font-bold">Code</th>
+                  <th className="px-4 py-3 font-bold">Frequency</th>
+                  <th className="px-4 py-3 font-bold">Category</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {heads.map((h) => (
                   <tr key={h.id}>
-                    <td className="px-3 py-2 font-medium text-ink">{h.name}</td>
-                    <td className="px-3 py-2 font-mono text-ink-muted">
+                    <td className="px-4 py-3 font-medium text-ink">{h.name}</td>
+                    <td className="px-4 py-3 font-mono text-ink-muted">
                       {h.code || "—"}
                     </td>
-                    <td className="px-3 py-2 text-ink-muted">{h.frequency}</td>
-                    <td className="px-3 py-2 text-ink-muted">
+                    <td className="px-4 py-3 text-ink-muted">{h.frequency}</td>
+                    <td className="px-4 py-3 text-ink-muted">
                       {h.category || "—"}
                     </td>
                   </tr>

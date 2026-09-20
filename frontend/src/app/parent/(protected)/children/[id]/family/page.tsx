@@ -12,7 +12,7 @@ export default function ChildFamilyPage() {
       <Link href={`/parent/children/${id}`} className="text-sm text-brand-700 hover:underline">
         ← Back
       </Link>
-      <h1 className="text-2xl font-bold text-slate-900">Family & pickup</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Family & pickup</h1>
       <p className="text-sm text-slate-500">
         Add grandparents, drivers or others who may collect your child. The gate checks this list for early pickups.
       </p>

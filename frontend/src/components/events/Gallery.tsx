@@ -173,7 +173,7 @@ export function GalleryViewer({ base }: { base: string }) {
           <div>
             <h2 className="text-xl font-semibold text-ink">{open.title}</h2>
             <div className="text-sm text-ink-subtle">{open.album_date}</div>
-            {open.description && <p className="mt-1 text-sm text-ink-muted">{open.description}</p>}
+            {open.description && <p className="mt-1.5 text-[13px] text-ink-muted">{open.description}</p>}
           </div>
           <PhotoGrid photos={open.photos} photoUrl={photoUrl} />
         </div>

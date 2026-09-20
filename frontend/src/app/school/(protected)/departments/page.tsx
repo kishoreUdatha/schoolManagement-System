@@ -43,7 +43,7 @@ export default function DepartmentsPage() {
               <td className={td}>{d.head_name ?? "—"}</td>
               <td className={td}>{d.staff_count}</td>
               <td className={td}>{d.subject_count}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <Button size="sm" variant="secondary" onClick={() => setEditing(d)}>
                   Edit
                 </Button>

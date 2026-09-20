@@ -278,7 +278,7 @@ export function Applications({ canDecide }: { canDecide: boolean }) {
               <td className={td}>
                 <Badge tone={tone[a.status]}>{humanize(a.status)}</Badge>
               </td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <Button size="sm" variant="secondary" onClick={() => open(a)}>
                   Open
                 </Button>

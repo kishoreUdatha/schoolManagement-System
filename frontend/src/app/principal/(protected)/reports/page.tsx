@@ -46,8 +46,8 @@ export default function PrincipalReportsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-ink">Daily absent</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Daily absent</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Students marked absent across all sections.
         </p>
       </div>
@@ -73,7 +73,7 @@ export default function PrincipalReportsPage() {
       </Card>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -89,30 +89,30 @@ export default function PrincipalReportsPage() {
             <p className="text-sm text-ink-muted">No absences on this date.</p>
           )}
           {rows && rows.length > 0 && (
-            <table className="min-w-full divide-y divide-surface-border text-sm">
-              <thead className="text-left text-xs uppercase text-ink-subtle">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Class</th>
-                  <th className="px-3 py-2 font-medium">Sec</th>
-                  <th className="px-3 py-2 font-medium">Roll</th>
-                  <th className="px-3 py-2 font-medium">Adm #</th>
-                  <th className="px-3 py-2 font-medium">Student</th>
-                  <th className="px-3 py-2 font-medium">Remark</th>
+                  <th className="px-4 py-3 font-bold">Class</th>
+                  <th className="px-4 py-3 font-bold">Sec</th>
+                  <th className="px-4 py-3 font-bold">Roll</th>
+                  <th className="px-4 py-3 font-bold">Adm #</th>
+                  <th className="px-4 py-3 font-bold">Student</th>
+                  <th className="px-4 py-3 font-bold">Remark</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {rows.map((r) => (
                   <tr key={r.student_id}>
-                    <td className="px-3 py-2">{r.class_name}</td>
-                    <td className="px-3 py-2">{r.section_name}</td>
-                    <td className="px-3 py-2">{r.roll_no}</td>
-                    <td className="px-3 py-2 font-mono text-ink-muted">
+                    <td className="px-4 py-3">{r.class_name}</td>
+                    <td className="px-4 py-3">{r.section_name}</td>
+                    <td className="px-4 py-3">{r.roll_no}</td>
+                    <td className="px-4 py-3 font-mono text-ink-muted">
                       {r.admission_no}
                     </td>
-                    <td className="px-3 py-2 font-medium text-ink">
+                    <td className="px-4 py-3 font-medium text-ink">
                       {r.full_name}
                     </td>
-                    <td className="px-3 py-2 text-ink-muted">
+                    <td className="px-4 py-3 text-ink-muted">
                       {r.remark || "—"}
                     </td>
                   </tr>

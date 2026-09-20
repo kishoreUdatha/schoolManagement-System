@@ -66,10 +66,10 @@ export default function SchoolVideosModeration() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
           Learning videos — moderation
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Review what teachers have posted. Use <strong>Remove</strong> for any
           link that violates school policy.
         </p>
@@ -86,33 +86,33 @@ export default function SchoolVideosModeration() {
       </label>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           {notice}
         </div>
       )}
 
       <Card className="overflow-hidden p-0">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-4 py-2 font-medium">Thumb</th>
-              <th className="px-4 py-2 font-medium">Title</th>
-              <th className="px-4 py-2 font-medium">Class · subject</th>
-              <th className="px-4 py-2 font-medium">Teacher</th>
-              <th className="px-4 py-2 font-medium">Posted</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 text-right font-medium"></th>
+              <th className="px-4 py-3 font-bold">Thumb</th>
+              <th className="px-4 py-3 font-bold">Title</th>
+              <th className="px-4 py-3 font-bold">Class · subject</th>
+              <th className="px-4 py-3 font-bold">Teacher</th>
+              <th className="px-4 py-3 font-bold">Posted</th>
+              <th className="px-4 py-3 font-bold">Status</th>
+              <th className="px-4 py-3 text-right font-medium"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {items.map((v) => (
               <tr key={v.id}>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3">
                   <a href={v.youtube_url} target="_blank" rel="noreferrer">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -122,7 +122,7 @@ export default function SchoolVideosModeration() {
                     />
                   </a>
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3">
                   <div className="font-medium text-slate-900">{v.title}</div>
                   {v.description && (
                     <div className="text-xs text-slate-500 line-clamp-1">
@@ -130,21 +130,21 @@ export default function SchoolVideosModeration() {
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-2 text-slate-700">
+                <td className="px-4 py-3 text-slate-700">
                   {v.class_name} · {v.subject_name}
                 </td>
-                <td className="px-4 py-2 text-slate-700">{v.teacher_name}</td>
-                <td className="px-4 py-2 text-slate-500">
+                <td className="px-4 py-3 text-slate-700">{v.teacher_name}</td>
+                <td className="px-4 py-3 text-slate-500">
                   {v.created_at.slice(0, 10)}
                 </td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3">
                   {v.is_active ? (
                     <Badge tone="emerald">Live</Badge>
                   ) : (
                     <Badge tone="neutral">Removed</Badge>
                   )}
                 </td>
-                <td className="px-4 py-2 text-right">
+                <td className="px-4 py-3 text-right">
                   {v.is_active && (
                     <Button size="sm" variant="danger" onClick={() => remove(v)}>
                       Remove

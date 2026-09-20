@@ -125,7 +125,7 @@ export default function EnquiryDetailPage() {
           ← Admissions
         </Link>
         {error ? (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         ) : (
           <div className="text-sm text-ink-muted">Loading…</div>
         )}
@@ -143,7 +143,7 @@ export default function EnquiryDetailPage() {
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink">{e.student_name}</h1>
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{e.student_name}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
             <Badge tone={stageTone(e.stage)}>{label(e.stage)}</Badge>
             {e.applying_for_class && <span>for {e.applying_for_class}</span>}
@@ -171,11 +171,11 @@ export default function EnquiryDetailPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
 
       {converted && (
-        <div className="rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           <div className="font-semibold">Enrolled as {converted.admission_no}.</div>
           {converted.parent_temporary_password && (
             <div className="mt-1">
@@ -395,7 +395,7 @@ function LostModal({
           onChange={(ev) => setReason(ev.target.value)}
           required
         />
-        {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+        {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel
@@ -578,7 +578,7 @@ function ConvertModal({
             </label>
           )}
         </div>
-        {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+        {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel

@@ -96,7 +96,7 @@ export function Guardians({ base, mode }: { base: string; mode: "school" | "pare
                 {g.phone ?? "—"}
                 {g.email && <div className="text-xs text-ink-subtle">{g.email}</div>}
               </td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 {mode === "school" ? (
                   <input type="checkbox" checked={g.can_pickup} onChange={(e) => patch(g, { can_pickup: e.target.checked })} aria-label="Can collect" />
                 ) : g.can_pickup ? (
@@ -105,7 +105,7 @@ export function Guardians({ base, mode }: { base: string; mode: "school" | "pare
                   "—"
                 )}
               </td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 {mode === "school" && (
                   <input
                     type="checkbox"
@@ -261,7 +261,7 @@ export function ClassHistory({ studentId }: { studentId: string | number }) {
             <td className={td}>{r.roll_no}</td>
             <td className={td}>{r.start_date}</td>
             <td className={td}>{r.end_date ?? "—"}</td>
-            <td className="px-3 py-2">
+            <td className="px-4 py-3">
               {r.end_date ? (
                 <select
                   className="rounded border border-surface-border bg-surface-subtle px-2 py-1 text-xs text-ink"

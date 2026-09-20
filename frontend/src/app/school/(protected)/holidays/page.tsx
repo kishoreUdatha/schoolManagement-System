@@ -99,8 +99,8 @@ export default function HolidaysPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Holidays</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Holidays</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Holidays are excluded from attendance and visible to parents.
           </p>
         </div>
@@ -143,10 +143,10 @@ export default function HolidaysPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <HolidayCalendar
@@ -162,30 +162,30 @@ export default function HolidaysPage() {
       />
 
       <Card>
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-3 py-2 font-medium">Name</th>
-              <th className="px-3 py-2 font-medium">Type</th>
-              <th className="px-3 py-2 font-medium">Dates</th>
-              <th className="px-3 py-2 font-medium">Days</th>
-              <th className="px-3 py-2 text-right"></th>
+              <th className="px-4 py-3 font-bold">Name</th>
+              <th className="px-4 py-3 font-bold">Type</th>
+              <th className="px-4 py-3 font-bold">Dates</th>
+              <th className="px-4 py-3 font-bold">Days</th>
+              <th className="px-4 py-3 text-right"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {holidays.map((h) => (
               <tr key={h.id} className="hover:bg-slate-50">
-                <td className="px-3 py-2 font-medium text-slate-900">{h.name}</td>
-                <td className="px-3 py-2">
+                <td className="px-4 py-3 font-medium text-slate-900">{h.name}</td>
+                <td className="px-4 py-3">
                   <Badge tone={typeTone[h.type]}>{h.type}</Badge>
                 </td>
-                <td className="px-3 py-2 text-slate-600">
+                <td className="px-4 py-3 text-slate-600">
                   {h.start_date === h.end_date
                     ? h.start_date
                     : `${h.start_date} → ${h.end_date}`}
                 </td>
-                <td className="px-3 py-2 text-slate-500">{h.days}</td>
-                <td className="px-3 py-2 text-right space-x-2">
+                <td className="px-4 py-3 text-slate-500">{h.days}</td>
+                <td className="px-4 py-3 text-right space-x-2">
                   <Button size="sm" variant="secondary" onClick={() => setEditing(h)}>
                     Edit
                   </Button>
@@ -285,13 +285,13 @@ function HolidayFormModal({
         />
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Type *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Type *</span>
             <select
               value={form.type}
               onChange={(e) =>
                 setForm({ ...form, type: e.target.value as HolidayType })
               }
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="national">National</option>
               <option value="school">School</option>
@@ -320,16 +320,16 @@ function HolidayFormModal({
           />
         </div>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Description</span>
+          <span className="text-[12px] font-bold text-ink-muted">Description</span>
           <textarea
             value={form.description ?? ""}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             rows={2}
           />
         </label>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>

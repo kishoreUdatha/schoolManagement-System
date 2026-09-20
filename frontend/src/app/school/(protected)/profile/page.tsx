@@ -157,8 +157,8 @@ export default function SchoolProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">School profile</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">School profile</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Used across reports, fee receipts, and notifications. Code{" "}
           <code>{profile?.code}</code> is assigned by the platform and cannot be
           changed.
@@ -166,12 +166,12 @@ export default function SchoolProfilePage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
       {success && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           {success}
         </div>
       )}
@@ -256,7 +256,7 @@ export default function SchoolProfilePage() {
               hint="Shown in the sidebar header across portals. Defaults to 'SMS'."
             />
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-700">
+              <span className="text-[12px] font-bold text-ink-muted">
                 Brand color
               </span>
               <div className="flex items-center gap-2">

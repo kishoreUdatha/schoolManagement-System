@@ -40,7 +40,7 @@ export default function ChildDetailPage() {
         <Link href="/parent" className="text-sm text-brand-700 hover:underline">
           ← Back
         </Link>
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       </div>
@@ -70,109 +70,109 @@ export default function ChildDetailPage() {
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/parent/children/${params.id}/timetable`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Timetable →
             </Link>
             <Link
               href={`/parent/children/${params.id}/fees`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Fees →
             </Link>
             <Link
               href={`/parent/children/${params.id}/homework`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Homework →
             </Link>
             <Link
               href={`/parent/children/${params.id}/behaviour`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Behaviour →
             </Link>
             <Link
               href={`/parent/children/${params.id}/exams`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Exams →
             </Link>
             <Link
               href={`/parent/children/${params.id}/videos`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Learning videos →
             </Link>
             <Link
               href={`/parent/children/${params.id}/resources`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Study material →
             </Link>
             <Link
               href={`/parent/children/${params.id}/transport`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Transport →
             </Link>
             <Link
               href={`/parent/children/${params.id}/documents`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Documents & certificates →
             </Link>
             <Link
               href={`/parent/children/${params.id}/library`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Library →
             </Link>
             <Link
               href={`/parent/children/${params.id}/health`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Health →
             </Link>
             <Link
               href={`/parent/children/${params.id}/pickup`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Early pickup →
             </Link>
             <Link
               href={`/parent/children/${params.id}/hostel`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Hostel →
             </Link>
             <Link
               href={`/parent/children/${params.id}/family`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Family &amp; pickup →
             </Link>
             <Link
               href={`/parent/children/${params.id}/syllabus`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Syllabus progress →
             </Link>
             <Link
               href={`/parent/children/${params.id}/tests`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Online tests →
             </Link>
             <Link
               href={`/parent/children/${params.id}/leave`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               Apply for leave →
             </Link>
             <Link
               href={`/parent/children/${params.id}/discipline`}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
             >
               School incidents →
             </Link>

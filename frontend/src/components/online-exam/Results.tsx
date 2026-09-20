@@ -203,7 +203,7 @@ export function TestResults({ testId, base }: { testId: string; base: string }) 
               </td>
               <td className={td}>{r.score === null ? "—" : `${Number(r.score)} / ${Number(r.max_score)} (${r.percent}%)`}</td>
               <td className={td}>{r.submitted_at ? fmt(r.submitted_at) : "—"}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 {r.attempt_id && r.status !== "in_progress" && (
                   <Button size="sm" variant="secondary" onClick={() => view(r.attempt_id!)}>
                     {r.pending_grading ? "Mark" : "View"}

@@ -94,7 +94,7 @@ export default function ChildExamDetailPage() {
         >
           ← Back
         </Link>
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       </div>
@@ -112,10 +112,10 @@ export default function ChildExamDetailPage() {
 
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
             {result.exam_name}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             {result.student_name} · {result.class_name} {result.section_name} ·
             Roll {result.student_roll_no}
           </p>
@@ -146,7 +146,7 @@ export default function ChildExamDetailPage() {
               value={`${result.summary.total_obtained} / ${result.summary.total_max}`}
             />
             <div>
-              <div className="text-xs uppercase text-slate-500">Result</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">Result</div>
               <Badge tone={result.summary.is_pass ? "emerald" : "rose"}>
                 {result.summary.is_pass ? "PASS" : "FAIL"}
               </Badge>
@@ -167,16 +167,16 @@ export default function ChildExamDetailPage() {
           <CardTitle>Subject-wise marks</CardTitle>
         </CardHeader>
         <CardBody className="overflow-x-auto p-0">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <table className="min-w-full divide-y divide-surface-border text-[13px]">
+            <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
               <tr>
-                <th className="px-4 py-2 font-medium">Subject</th>
-                <th className="px-4 py-2 font-medium">Exam date</th>
-                <th className="px-4 py-2 text-right font-medium">Max</th>
-                <th className="px-4 py-2 text-right font-medium">Obtained</th>
-                <th className="px-4 py-2 text-center font-medium">Grade</th>
-                <th className="px-4 py-2 text-center font-medium">Pass/Fail</th>
-                <th className="px-4 py-2 font-medium">Remark</th>
+                <th className="px-4 py-3 font-bold">Subject</th>
+                <th className="px-4 py-3 font-bold">Exam date</th>
+                <th className="px-4 py-3 text-right font-medium">Max</th>
+                <th className="px-4 py-3 text-right font-medium">Obtained</th>
+                <th className="px-4 py-3 text-center font-medium">Grade</th>
+                <th className="px-4 py-3 text-center font-medium">Pass/Fail</th>
+                <th className="px-4 py-3 font-bold">Remark</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -187,20 +187,20 @@ export default function ChildExamDetailPage() {
                 else if (s.marks_obtained != null) obtained = String(s.marks_obtained);
                 return (
                   <tr key={s.exam_paper_id}>
-                    <td className="px-4 py-2 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-medium text-slate-900">
                       {s.subject_name}{" "}
                       <span className="text-xs text-slate-500">
                         ({s.subject_code})
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-slate-600">{s.exam_date}</td>
-                    <td className="px-4 py-2 text-right text-slate-600">
+                    <td className="px-4 py-3 text-slate-600">{s.exam_date}</td>
+                    <td className="px-4 py-3 text-right text-slate-600">
                       {s.max_marks}
                     </td>
-                    <td className="px-4 py-2 text-right font-medium">
+                    <td className="px-4 py-3 text-right font-medium">
                       {obtained}
                     </td>
-                    <td className="px-4 py-2 text-center">
+                    <td className="px-4 py-3 text-center">
                       {s.grade ? (
                         <span className="rounded bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">
                           {s.grade}
@@ -209,14 +209,14 @@ export default function ChildExamDetailPage() {
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-center">
+                    <td className="px-4 py-3 text-center">
                       {s.is_pass === true && <Badge tone="emerald">Pass</Badge>}
                       {s.is_pass === false && <Badge tone="rose">Fail</Badge>}
                       {s.is_pass === null && (
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-slate-600">{s.remark || "—"}</td>
+                    <td className="px-4 py-3 text-slate-600">{s.remark || "—"}</td>
                   </tr>
                 );
               })}
@@ -239,7 +239,7 @@ function Stat({
 }) {
   return (
     <div>
-      <div className="text-xs uppercase text-slate-500">{label}</div>
+      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">{label}</div>
       <div
         className={
           big

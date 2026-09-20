@@ -138,7 +138,7 @@ export default function ClassesPage() {
   if (years.length === 0 && !error) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Classes</h1>
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Classes</h1>
         <Card className="p-8 text-center text-slate-500">
           You don&apos;t have any academic years yet.{" "}
           <Link
@@ -156,19 +156,19 @@ export default function ClassesPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Classes & sections</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Classes & sections</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Classes are scoped to an academic year. Drag the order with the
             arrows. Sections live inside a class.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 text-sm">
-            <span className="text-slate-600">Academic year:</span>
+            <span className="text-[12px] font-bold text-ink-muted">Academic year:</span>
             <select
               value={yearId ?? ""}
               onChange={(e) => setYearId(Number(e.target.value))}
-              className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+              className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               {years.map((y) => (
                 <option key={y.id} value={y.id}>
@@ -189,17 +189,17 @@ export default function ClassesPage() {
       </div>
 
       {selectedYear?.is_archived && (
-        <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <div className="rounded-lg bg-[#FFF3D8] px-4 py-3 text-[13px] font-medium text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
           This year is archived — classes are read-only.
         </div>
       )}
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           {notice}
         </div>
       )}
@@ -417,7 +417,7 @@ function CreateClassModal({
           required
         />
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}
@@ -487,7 +487,7 @@ function CreateSectionModal({
           onChange={(e) => setCapacity(Number(e.target.value))}
         />
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}
@@ -541,7 +541,7 @@ function EditClassModal({
           required
         />
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}
@@ -675,12 +675,12 @@ function ManageSubjectsModal({
       size="lg"
     >
       {error && (
-        <div className="mb-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="mb-3 rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
       {allSubjects.length === 0 ? (
-        <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <div className="rounded-lg bg-[#FFF3D8] px-4 py-3 text-[13px] font-medium text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
           No subjects exist yet. Go to <strong>Subjects</strong> and create some first.
         </div>
       ) : (
@@ -818,13 +818,13 @@ function EditSectionModal({
           onChange={(e) => setCapacity(Number(e.target.value))}
         />
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Class teacher</span>
+          <span className="text-[12px] font-bold text-ink-muted">Class teacher</span>
           <select
             value={teacherUserId}
             onChange={(e) =>
               setTeacherUserId(e.target.value ? Number(e.target.value) : "")
             }
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">— Unassigned —</option>
             {teachers.map((t) => (
@@ -840,7 +840,7 @@ function EditSectionModal({
           )}
         </label>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}

@@ -67,9 +67,9 @@ export default function ChildLeavePage() {
       <Link href={`/parent/children/${id}`} className="text-sm text-brand-700 hover:underline">
         ← Back
       </Link>
-      <h1 className="text-2xl font-bold text-slate-900">Leave</h1>
-      {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
-      {notice && <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>}
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Leave</h1>
+      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
+      {notice && <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>}
       <Card>
         <CardHeader>
           <CardTitle>Apply for leave</CardTitle>
@@ -78,7 +78,7 @@ export default function ChildLeavePage() {
           <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3">
             <label className="text-sm text-slate-700">
               Type
-              <select className="mt-1 w-full rounded-md border border-slate-300 px-2 py-2" value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}>
+              <select className="mt-1 w-full min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300" value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}>
                 {KINDS.map(([v, l]) => (
                   <option key={v} value={v}>
                     {l}

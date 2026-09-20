@@ -114,8 +114,8 @@ export default function FeeStructuresPage() {
 
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Fee structures</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Fee structures</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Amounts per fee head × class × year. Editing only affects future
             generation — already-issued bills stay as they were.
           </p>
@@ -126,11 +126,11 @@ export default function FeeStructuresPage() {
       </div>
 
       <label className="flex flex-col gap-1 text-sm max-w-xs">
-        <span className="text-slate-600">Academic year</span>
+        <span className="text-[12px] font-bold text-ink-muted">Academic year</span>
         <select
           value={yearId ?? ""}
           onChange={(e) => setYearId(Number(e.target.value))}
-          className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+          className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
         >
           {years.map((y) => (
             <option key={y.id} value={y.id}>
@@ -141,10 +141,10 @@ export default function FeeStructuresPage() {
       </label>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <div className="space-y-4">
@@ -159,7 +159,7 @@ export default function FeeStructuresPage() {
                 </p>
               ) : (
                 <table className="mt-3 min-w-full text-sm">
-                  <thead className="text-left text-xs uppercase text-slate-500">
+                  <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                     <tr>
                       <th className="py-1 font-medium">Head</th>
                       <th className="py-1 font-medium">Type</th>
@@ -312,11 +312,11 @@ function FormModal({
         {!existing && (
           <>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-700">Class *</span>
+              <span className="text-[12px] font-bold text-ink-muted">Class *</span>
               <select
                 value={classId}
                 onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : "")}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -328,11 +328,11 @@ function FormModal({
               </select>
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-700">Fee head *</span>
+              <span className="text-[12px] font-bold text-ink-muted">Fee head *</span>
               <select
                 value={headId}
                 onChange={(e) => setHeadId(e.target.value ? Number(e.target.value) : "")}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -366,7 +366,7 @@ function FormModal({
           onChange={(e) => setDueDay(Number(e.target.value))}
         />
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>

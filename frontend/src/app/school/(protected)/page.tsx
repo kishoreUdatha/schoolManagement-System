@@ -97,7 +97,7 @@ export default function SchoolAdminDashboard() {
 
   if (error) {
     return (
-      <div className="rounded-md bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+      <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
     );
   }
   if (!data) {
@@ -110,10 +110,10 @@ export default function SchoolAdminDashboard() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
             Good morning, {user?.full_name?.split(" ")[0]}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Academic year:{" "}
             <strong>{data.current_academic_year_name ?? "— set a current year"}</strong>
           </p>
@@ -347,7 +347,7 @@ function QuickAction({ href, label }: { href: string; label: string }) {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between border-b border-slate-100 py-1.5 last:border-0">
-      <span className="text-slate-600">{label}</span>
+      <span className="text-[12px] font-bold text-ink-muted">{label}</span>
       <span className="font-medium text-slate-900">{value}</span>
     </div>
   );

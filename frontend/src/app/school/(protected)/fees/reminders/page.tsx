@@ -94,8 +94,8 @@ export default function FeeRemindersPage() {
             <span className="text-ink-subtle">/</span>
             <span>Reminders</span>
           </div>
-          <h1 className="mt-1 text-2xl font-bold text-ink">Fee reminders</h1>
-          <p className="mt-1 text-sm text-ink-muted">
+          <h1 className="mt-1 text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Fee reminders</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Automatic reminders sent at <strong>7 days</strong> and{" "}
             <strong>1 day</strong> before the due date, and at{" "}
             <strong>1 / 7 / 30 days</strong> after.
@@ -136,7 +136,7 @@ export default function FeeRemindersPage() {
       )}
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -154,37 +154,37 @@ export default function FeeRemindersPage() {
           ) : items.length === 0 ? (
             <p className="text-sm text-ink-muted">No reminders sent yet.</p>
           ) : (
-            <table className="min-w-full divide-y divide-surface-border text-sm">
-              <thead className="text-left text-xs uppercase text-ink-subtle">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Sent at</th>
-                  <th className="px-3 py-2 font-medium">Kind</th>
-                  <th className="px-3 py-2 font-medium">Student</th>
-                  <th className="px-3 py-2 font-medium">Fee ID</th>
-                  <th className="px-3 py-2 font-medium">Notice</th>
+                  <th className="px-4 py-3 font-bold">Sent at</th>
+                  <th className="px-4 py-3 font-bold">Kind</th>
+                  <th className="px-4 py-3 font-bold">Student</th>
+                  <th className="px-4 py-3 font-bold">Fee ID</th>
+                  <th className="px-4 py-3 font-bold">Notice</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {items.map((l) => (
                   <tr key={l.id} className="hover:bg-surface-hover">
-                    <td className="px-3 py-2 text-ink-muted">
+                    <td className="px-4 py-3 text-ink-muted">
                       {new Date(l.sent_at).toLocaleString()}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-3">
                       <Badge tone={kindTone(l.kind)}>{kindLabel[l.kind]}</Badge>
                     </td>
-                    <td className="px-3 py-2 text-ink">
+                    <td className="px-4 py-3 text-ink">
                       <div className="font-medium">{l.student_name ?? "—"}</div>
                       {l.student_admission_no && (
-                        <div className="font-mono text-xs text-ink-subtle">
+                        <div className="text-[12px] tabular-nums text-ink-subtle">
                           {l.student_admission_no}
                         </div>
                       )}
                     </td>
-                    <td className="px-3 py-2 font-mono text-ink-muted">
+                    <td className="px-4 py-3 font-mono text-ink-muted">
                       #{l.student_fee_id}
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs text-ink-subtle">
+                    <td className="px-4 py-3 text-[12px] tabular-nums text-ink-subtle">
                       {l.notice_id ? `#${l.notice_id}` : "—"}
                     </td>
                   </tr>

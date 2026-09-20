@@ -113,8 +113,8 @@ export default function TeacherWeeklyReportsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-ink">Weekly reports</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Weekly reports</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Per-student weekly snapshot of attendance, homework, marks and
           behaviour for sections you class-teach.
         </p>
@@ -126,7 +126,7 @@ export default function TeacherWeeklyReportsPage() {
         </CardHeader>
         <CardBody>
           <form onSubmit={generate} className="grid gap-3 sm:grid-cols-3">
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
               <span className="text-ink-muted">Section *</span>
               <select
                 value={sectionId}
@@ -149,7 +149,7 @@ export default function TeacherWeeklyReportsPage() {
               value={weekStart}
               onChange={(e) => setWeekStart(e.target.value)}
             />
-            <label className="flex flex-col gap-1 text-sm">
+            <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
               <span className="text-ink-muted">Teacher remark</span>
               <input
                 value={remark}
@@ -176,12 +176,12 @@ export default function TeacherWeeklyReportsPage() {
       </Card>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           {notice}
         </div>
       )}
@@ -197,42 +197,42 @@ export default function TeacherWeeklyReportsPage() {
       ) : (
         <Card>
           <CardBody>
-            <table className="min-w-full divide-y divide-surface-border text-sm">
-              <thead className="text-left text-xs uppercase text-ink-subtle">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Student</th>
-                  <th className="px-3 py-2 font-medium">Att %</th>
-                  <th className="px-3 py-2 font-medium">HW</th>
-                  <th className="px-3 py-2 font-medium">Marks</th>
-                  <th className="px-3 py-2 font-medium">Behaviour</th>
-                  <th className="px-3 py-2 font-medium">Shared</th>
+                  <th className="px-4 py-3 font-bold">Student</th>
+                  <th className="px-4 py-3 font-bold">Att %</th>
+                  <th className="px-4 py-3 font-bold">HW</th>
+                  <th className="px-4 py-3 font-bold">Marks</th>
+                  <th className="px-4 py-3 font-bold">Behaviour</th>
+                  <th className="px-4 py-3 font-bold">Shared</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {items.map((r) => (
                   <tr key={r.id}>
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-3">
                       <div className="font-medium text-ink">
                         {r.student_name}
                       </div>
-                      <div className="font-mono text-xs text-ink-subtle">
+                      <div className="text-[12px] tabular-nums text-ink-subtle">
                         {r.student_admission_no}
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-ink">
+                    <td className="px-4 py-3 text-ink">
                       {r.attendance_pct}%
                       <div className="text-xs text-ink-subtle">
                         P{r.attendance_present} A{r.attendance_absent} L
                         {r.attendance_late}
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-ink">
+                    <td className="px-4 py-3 text-ink">
                       {r.homework_submitted}/{r.homework_total}
                       <div className="text-xs text-ink-subtle">
                         {r.homework_submission_pct}%
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-ink">
+                    <td className="px-4 py-3 text-ink">
                       {r.marks_summary ? (
                         <>
                           {r.marks_summary.avg_pct}%
@@ -244,10 +244,10 @@ export default function TeacherWeeklyReportsPage() {
                         <span className="text-ink-subtle">—</span>
                       )}
                     </td>
-                    <td className="px-3 py-2 text-ink">
+                    <td className="px-4 py-3 text-ink">
                       {r.behaviour_avg ?? <span className="text-ink-subtle">—</span>}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-4 py-3">
                       <Button
                         size="sm"
                         variant="secondary"

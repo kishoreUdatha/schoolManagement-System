@@ -51,7 +51,7 @@ export function BorrowedBooks({ endpoint }: { endpoint: string }) {
                 {l.due_on}
                 {l.due_on < today && <div className="text-xs">{l.overdue_days} day(s) late</div>}
               </td>
-              <td className="px-3 py-2 text-right text-xs text-amber-600">
+              <td className="px-4 py-3 text-right text-xs text-amber-600">
                 {Number(l.accruing_fine) > 0 && `Late fine so far ${inr(l.accruing_fine)}`}
               </td>
             </tr>

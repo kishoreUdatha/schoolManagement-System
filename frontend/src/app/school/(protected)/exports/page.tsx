@@ -84,14 +84,14 @@ export default function ExportsPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-ink">Exports</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Exports</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           One-click CSV downloads of the most-used reports. Excel opens these
           natively.
         </p>
       </div>
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}

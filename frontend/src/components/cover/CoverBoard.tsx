@@ -334,7 +334,7 @@ export function CoverBoard() {
                     <td className={td}>{c.teaches_this_class ? "yes" : ""}</td>
                     <td className={td}>{c.covers_this_week}</td>
                     <td className={td}>{c.periods_today}</td>
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-4 py-3 text-right">
                       <Button size="sm" variant={c.status === "free" ? "primary" : "ghost"} disabled={c.status === "on_leave"} onClick={() => assign(c.user_id)}>
                         Assign
                       </Button>

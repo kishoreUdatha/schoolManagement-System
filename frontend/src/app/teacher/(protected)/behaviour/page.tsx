@@ -115,8 +115,8 @@ export default function BehaviourPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Behaviour ratings</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Behaviour ratings</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Rate punctuality, participation, discipline, and respect for students in
           your section. History is per-period — re-rating the same week
           overwrites.
@@ -130,14 +130,14 @@ export default function BehaviourPage() {
       ) : (
         <>
           <div className="flex flex-wrap items-end gap-2">
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-slate-600">Section</span>
+            <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+              <span className="text-[12px] font-bold text-ink-muted">Section</span>
               <select
                 value={sectionId}
                 onChange={(e) =>
                   setSectionId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               >
                 {sections.map((s) => (
                   <option key={s.section_id} value={s.section_id}>
@@ -146,19 +146,19 @@ export default function BehaviourPage() {
                 ))}
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-slate-600">Period</span>
+            <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+              <span className="text-[12px] font-bold text-ink-muted">Period</span>
               <select
                 value={periodKind}
                 onChange={(e) => setPeriodKind(e.target.value as PeriodKind)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               >
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
               </select>
             </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-slate-600">
+            <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+              <span className="text-[12px] font-bold text-ink-muted">
                 {periodKind === "weekly" ? "Week (YYYY-Wnn)" : "Month (YYYY-MM)"}
               </span>
               <input
@@ -174,33 +174,33 @@ export default function BehaviourPage() {
           </div>
 
           {error && (
-            <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+            <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
           )}
           {notice && (
-            <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+            <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
           )}
 
           <Card>
-            <table className="min-w-full divide-y divide-slate-100 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Roll</th>
-                  <th className="px-4 py-2 font-medium">Name</th>
-                  <th className="px-4 py-2 font-medium">Punct.</th>
-                  <th className="px-4 py-2 font-medium">Particip.</th>
-                  <th className="px-4 py-2 font-medium">Discip.</th>
-                  <th className="px-4 py-2 font-medium">Respect</th>
-                  <th className="px-4 py-2 font-medium">Avg</th>
-                  <th className="px-4 py-2 text-right"></th>
+                  <th className="px-4 py-3 font-bold">Roll</th>
+                  <th className="px-4 py-3 font-bold">Name</th>
+                  <th className="px-4 py-3 font-bold">Punct.</th>
+                  <th className="px-4 py-3 font-bold">Particip.</th>
+                  <th className="px-4 py-3 font-bold">Discip.</th>
+                  <th className="px-4 py-3 font-bold">Respect</th>
+                  <th className="px-4 py-3 font-bold">Avg</th>
+                  <th className="px-4 py-3 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {view?.rows.map((row) => (
                   <tr key={row.student_id} className="hover:bg-slate-50">
-                    <td className="px-4 py-2 font-mono text-xs text-slate-500">
+                    <td className="px-4 py-3 text-[12px] tabular-nums text-ink-muted">
                       {row.roll_no}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-3">
                       <div className="font-medium text-slate-900">
                         {row.full_name}
                       </div>
@@ -210,21 +210,21 @@ export default function BehaviourPage() {
                     </td>
                     {row.rating ? (
                       <>
-                        <td className="px-4 py-2"><StarRating value={row.rating.punctuality} size="sm" readOnly /></td>
-                        <td className="px-4 py-2"><StarRating value={row.rating.participation} size="sm" readOnly /></td>
-                        <td className="px-4 py-2"><StarRating value={row.rating.discipline} size="sm" readOnly /></td>
-                        <td className="px-4 py-2"><StarRating value={row.rating.respect} size="sm" readOnly /></td>
-                        <td className="px-4 py-2 font-semibold">{row.rating.average}</td>
+                        <td className="px-4 py-3"><StarRating value={row.rating.punctuality} size="sm" readOnly /></td>
+                        <td className="px-4 py-3"><StarRating value={row.rating.participation} size="sm" readOnly /></td>
+                        <td className="px-4 py-3"><StarRating value={row.rating.discipline} size="sm" readOnly /></td>
+                        <td className="px-4 py-3"><StarRating value={row.rating.respect} size="sm" readOnly /></td>
+                        <td className="px-4 py-3 font-semibold">{row.rating.average}</td>
                       </>
                     ) : (
                       <>
-                        <td className="px-4 py-2" colSpan={4}>
+                        <td className="px-4 py-3" colSpan={4}>
                           <Badge tone="neutral">unrated</Badge>
                         </td>
-                        <td className="px-4 py-2">—</td>
+                        <td className="px-4 py-3">—</td>
                       </>
                     )}
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-3 text-right">
                       <Button size="sm" onClick={() => setEditing(row)}>
                         {row.rating ? "Edit" : "Rate"}
                       </Button>
@@ -336,13 +336,13 @@ function RateModal({
           <RateRow label="Respect" value={r} onChange={setR} />
         </div>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Teacher note</span>
+          <span className="text-[12px] font-bold text-ink-muted">Teacher note</span>
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={4}
             placeholder="A line or two about the student this period…"
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         <div className="flex flex-wrap gap-2">
@@ -359,7 +359,7 @@ function RateModal({
           </div>
         )}
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>
@@ -385,7 +385,7 @@ function RateRow({
 }) {
   return (
     <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
+      <span className="text-[12px] font-bold text-ink-muted">{label}</span>
       <StarRating value={value} onChange={onChange} />
     </div>
   );

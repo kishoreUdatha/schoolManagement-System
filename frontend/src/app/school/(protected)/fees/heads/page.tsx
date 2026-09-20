@@ -63,8 +63,8 @@ export default function FeeHeadsPage() {
 
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Fee heads</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Fee heads</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Categories of fees you charge. Recurring heads auto-generate monthly;
             one-time heads (e.g. Admission Fee) generate when a student is admitted.
           </p>
@@ -73,37 +73,37 @@ export default function FeeHeadsPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <Card>
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-3 py-2 font-medium">Code</th>
-              <th className="px-3 py-2 font-medium">Name</th>
-              <th className="px-3 py-2 font-medium">Recurring</th>
-              <th className="px-3 py-2 font-medium">Late fee</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-              <th className="px-3 py-2 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-bold">Code</th>
+              <th className="px-4 py-3 font-bold">Name</th>
+              <th className="px-4 py-3 font-bold">Recurring</th>
+              <th className="px-4 py-3 font-bold">Late fee</th>
+              <th className="px-4 py-3 font-bold">Status</th>
+              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {items.map((h) => (
               <tr key={h.id} className="hover:bg-slate-50">
-                <td className="px-3 py-2 font-mono text-xs">{h.code}</td>
-                <td className="px-3 py-2 font-medium text-slate-900">{h.name}</td>
-                <td className="px-3 py-2">
+                <td className="px-4 py-3 text-[12px] font-mono">{h.code}</td>
+                <td className="px-4 py-3 font-medium text-slate-900">{h.name}</td>
+                <td className="px-4 py-3">
                   {h.is_recurring ? (
                     <Badge tone="brand">monthly</Badge>
                   ) : (
                     <Badge tone="neutral">one-time</Badge>
                   )}
                 </td>
-                <td className="px-3 py-2 text-slate-600">
+                <td className="px-4 py-3 text-slate-600">
                   {h.late_fee_type === "none" ? (
                     "—"
                   ) : (
@@ -118,14 +118,14 @@ export default function FeeHeadsPage() {
                     </>
                   )}
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-4 py-3">
                   {h.is_active ? (
                     <Badge tone="emerald">active</Badge>
                   ) : (
                     <Badge tone="neutral">inactive</Badge>
                   )}
                 </td>
-                <td className="px-3 py-2 text-right space-x-2">
+                <td className="px-4 py-3 text-right space-x-2">
                   <Button size="sm" variant="secondary" onClick={() => setEditing(h)}>
                     Edit
                   </Button>
@@ -255,13 +255,13 @@ function FormModal({
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Late fee type</span>
+            <span className="text-[12px] font-bold text-ink-muted">Late fee type</span>
             <select
               value={form.late_fee_type}
               onChange={(e) =>
                 setForm({ ...form, late_fee_type: e.target.value as LateFeeType })
               }
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="none">None</option>
               <option value="percent">% of amount</option>
@@ -302,7 +302,7 @@ function FormModal({
           </label>
         )}
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>

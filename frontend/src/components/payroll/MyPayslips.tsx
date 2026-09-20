@@ -37,7 +37,7 @@ export function MyPayslips() {
               <td className={td}>{inr(p.gross)}</td>
               <td className={td}>{inr(p.total_deductions)}</td>
               <td className={tdStrong}>{inr(p.net_pay)}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <Button
                   size="sm"
                   variant="secondary"

@@ -328,7 +328,7 @@ export function Recruitment({ canEdit }: { canEdit: boolean }) {
                 <Badge tone={stageTone[a.stage]}>{humanize(a.stage)}</Badge>
               </td>
               <td className={td}>{a.rating ? `${a.rating}/5` : "—"}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <Button size="sm" variant="secondary" onClick={() => openDetail(a)}>
                   Open
                 </Button>

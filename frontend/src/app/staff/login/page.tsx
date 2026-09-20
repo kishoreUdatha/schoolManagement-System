@@ -56,8 +56,8 @@ function StaffLoginForm() {
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
-          <h1 className="text-2xl font-bold text-brand-700">SMS · Staff portal</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-brand-600">SMS · Staff portal</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Sign in to mark attendance, post homework, and more.
           </p>
         </div>
@@ -83,7 +83,7 @@ function StaffLoginForm() {
                 required
               />
               {error && (
-                <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
                   {error}
                 </div>
               )}

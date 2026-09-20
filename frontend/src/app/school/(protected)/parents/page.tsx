@@ -124,8 +124,8 @@ export default function ParentsPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Parents</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Parents</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Each parent has one login that sees only their linked children.
           </p>
         </div>
@@ -145,12 +145,12 @@ export default function ParentsPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="w-72"
         />
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Status</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Status</span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             <option value="active">Active</option>
@@ -163,10 +163,10 @@ export default function ParentsPage() {
       </form>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <div className="space-y-3">
@@ -352,13 +352,13 @@ function CreateParentModal({
             placeholder="+91…"
           />
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Relation *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Relation *</span>
             <select
               value={form.relation}
               onChange={(e) =>
                 setForm({ ...form, relation: e.target.value as Relation })
               }
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="father">Father</option>
               <option value="mother">Mother</option>
@@ -367,7 +367,7 @@ function CreateParentModal({
             </select>
           </label>
           <label className="flex flex-col gap-1 sm:col-span-2">
-            <span className="text-sm font-medium text-slate-700">Link to student *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Link to student *</span>
             <select
               value={form.student_id}
               onChange={(e) =>
@@ -376,7 +376,7 @@ function CreateParentModal({
                   student_id: e.target.value ? Number(e.target.value) : "",
                 })
               }
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               <option value="">Select student…</option>
@@ -393,7 +393,7 @@ function CreateParentModal({
           </label>
         </div>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -449,11 +449,11 @@ function LinkChildModal({
     <Modal open onClose={onClose} title={`Link another child to ${parent.full_name}`}>
       <form onSubmit={submit} className="space-y-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Student *</span>
+          <span className="text-[12px] font-bold text-ink-muted">Student *</span>
           <select
             value={studentId}
             onChange={(e) => setStudentId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             <option value="">Select…</option>
@@ -470,11 +470,11 @@ function LinkChildModal({
           )}
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Relation *</span>
+          <span className="text-[12px] font-bold text-ink-muted">Relation *</span>
           <select
             value={relation}
             onChange={(e) => setRelation(e.target.value as Relation)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="father">Father</option>
             <option value="mother">Mother</option>
@@ -483,7 +483,7 @@ function LinkChildModal({
           </select>
         </label>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -547,7 +547,7 @@ function EditParentModal({
           Email cannot be changed (it&apos;s the login identifier).
         </p>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -579,7 +579,7 @@ function TempPasswordModal({
             <br />
             (OTP-via-SMS will replace the temp-password flow once the notifications module is wired.)
           </div>
-          <div className="mt-3 rounded bg-white px-3 py-2 font-mono text-xs">
+          <div className="mt-3 rounded bg-white px-3 py-2 text-[12px] tabular-nums">
             <div>Email: {info.email}</div>
             <div>Password: {info.password}</div>
           </div>

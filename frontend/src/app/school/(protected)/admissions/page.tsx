@@ -76,8 +76,8 @@ export default function AdmissionsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink">Admissions</h1>
-          <p className="mt-1 text-sm text-ink-muted">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Admissions</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Track enquiries from first contact to enrolment.
           </p>
         </div>
@@ -182,23 +182,23 @@ export default function AdmissionsPage() {
       </form>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <Card className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-surface-border text-sm">
-          <thead className="text-left text-xs uppercase text-ink-subtle">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-3 py-2 font-medium">Student</th>
-              <th className="px-3 py-2 font-medium">Class</th>
-              <th className="px-3 py-2 font-medium">Parent</th>
-              <th className="px-3 py-2 font-medium">Source</th>
-              <th className="px-3 py-2 font-medium">Stage</th>
-              <th className="px-3 py-2 font-medium">Follow-up</th>
-              <th className="px-3 py-2 font-medium">Received</th>
+              <th className="px-4 py-3 font-bold">Student</th>
+              <th className="px-4 py-3 font-bold">Class</th>
+              <th className="px-4 py-3 font-bold">Parent</th>
+              <th className="px-4 py-3 font-bold">Source</th>
+              <th className="px-4 py-3 font-bold">Stage</th>
+              <th className="px-4 py-3 font-bold">Follow-up</th>
+              <th className="px-4 py-3 font-bold">Received</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-border">
@@ -210,7 +210,7 @@ export default function AdmissionsPage() {
                 e.stage !== "lost";
               return (
                 <tr key={e.id} className="hover:bg-surface-hover">
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3">
                     <Link
                       href={`/school/admissions/${e.id}`}
                       className="font-medium text-ink hover:underline"
@@ -218,24 +218,24 @@ export default function AdmissionsPage() {
                       {e.student_name}
                     </Link>
                   </td>
-                  <td className="px-3 py-2 text-ink-muted">{e.applying_for_class ?? "—"}</td>
-                  <td className="px-3 py-2 text-ink-muted">
+                  <td className="px-4 py-3 text-ink-muted">{e.applying_for_class ?? "—"}</td>
+                  <td className="px-4 py-3 text-ink-muted">
                     <div>{e.parent_name}</div>
                     <div className="text-xs text-ink-subtle">{e.parent_phone}</div>
                   </td>
-                  <td className="px-3 py-2 text-ink-muted">
+                  <td className="px-4 py-3 text-ink-muted">
                     {label(e.source)}
                     {e.campaign_name && (
                       <div className="text-xs text-ink-subtle">{e.campaign_name}</div>
                     )}
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3">
                     <Badge tone={stageTone(e.stage)}>{label(e.stage)}</Badge>
                   </td>
                   <td className={`px-3 py-2 ${overdue ? "font-medium text-amber-500" : "text-ink-muted"}`}>
                     {e.next_follow_up_date ?? "—"}
                   </td>
-                  <td className="px-3 py-2 text-ink-subtle">{e.created_at.slice(0, 10)}</td>
+                  <td className="px-4 py-3 text-ink-subtle">{e.created_at.slice(0, 10)}</td>
                 </tr>
               );
             })}

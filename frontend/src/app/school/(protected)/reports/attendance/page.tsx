@@ -128,8 +128,8 @@ export default function AttendanceReportsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Attendance reports</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Attendance reports</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Daily absentees, class-wise breakdown, and per-student monthly %.
           Export to CSV or use your browser&apos;s print dialog for PDF.
         </p>
@@ -160,7 +160,7 @@ export default function AttendanceReportsPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -222,26 +222,26 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
   return (
     <Card className="p-5">
       <form onSubmit={load} className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Date *</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Date *</span>
           <input
             type="date"
             value={onDate}
             onChange={(e) => setOnDate(e.target.value)}
             max={todayIso()}
             required
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Class</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Class</span>
           <select
             value={classId}
             onChange={(e) => {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {classes.map((c) => (
@@ -251,14 +251,14 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Section</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Section</span>
           <select
             value={sectionId}
             onChange={(e) =>
               setSectionId(e.target.value ? Number(e.target.value) : "")
             }
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             disabled={!selectedClass}
           >
             <option value="">All</option>
@@ -285,7 +285,7 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
       </form>
 
       {error && (
-        <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="mt-3 rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -295,26 +295,26 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
           <div className="mb-2 text-sm text-slate-500">
             <Badge tone="rose">{rows.length} absent</Badge>
           </div>
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <table className="min-w-full divide-y divide-surface-border text-[13px]">
+            <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
               <tr>
-                <th className="px-3 py-2 font-medium">Class</th>
-                <th className="px-3 py-2 font-medium">Sec</th>
-                <th className="px-3 py-2 font-medium">Roll</th>
-                <th className="px-3 py-2 font-medium">Adm #</th>
-                <th className="px-3 py-2 font-medium">Student</th>
-                <th className="px-3 py-2 font-medium">Remark</th>
+                <th className="px-4 py-3 font-bold">Class</th>
+                <th className="px-4 py-3 font-bold">Sec</th>
+                <th className="px-4 py-3 font-bold">Roll</th>
+                <th className="px-4 py-3 font-bold">Adm #</th>
+                <th className="px-4 py-3 font-bold">Student</th>
+                <th className="px-4 py-3 font-bold">Remark</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((r) => (
                 <tr key={r.student_id} className="hover:bg-slate-50">
-                  <td className="px-3 py-2 text-slate-700">{r.class_name}</td>
-                  <td className="px-3 py-2 text-slate-700">{r.section_name}</td>
-                  <td className="px-3 py-2 text-slate-700">{r.roll_no}</td>
-                  <td className="px-3 py-2 font-mono text-slate-700">{r.admission_no}</td>
-                  <td className="px-3 py-2 font-medium text-slate-900">{r.full_name}</td>
-                  <td className="px-3 py-2 text-slate-500">{r.remark || "—"}</td>
+                  <td className="px-4 py-3 text-slate-700">{r.class_name}</td>
+                  <td className="px-4 py-3 text-slate-700">{r.section_name}</td>
+                  <td className="px-4 py-3 text-slate-700">{r.roll_no}</td>
+                  <td className="px-4 py-3 font-mono text-slate-700">{r.admission_no}</td>
+                  <td className="px-4 py-3 font-medium text-slate-900">{r.full_name}</td>
+                  <td className="px-4 py-3 text-slate-500">{r.remark || "—"}</td>
                 </tr>
               ))}
               {rows.length === 0 && (
@@ -379,19 +379,19 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
   return (
     <Card className="p-5">
       <form onSubmit={load} className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">From *</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">From *</span>
           <input
             type="date"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
             max={toDate}
             required
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">To *</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">To *</span>
           <input
             type="date"
             value={toDate}
@@ -399,15 +399,15 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
             min={fromDate}
             max={todayIso()}
             required
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Class</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Class</span>
           <select
             value={classId}
             onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {classes.map((c) => (
@@ -429,43 +429,43 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
       </form>
 
       {error && (
-        <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="mt-3 rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
 
       {rows !== null && (
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <table className="min-w-full divide-y divide-surface-border text-[13px]">
+            <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
               <tr>
-                <th className="px-3 py-2 font-medium">Class</th>
-                <th className="px-3 py-2 font-medium">Sec</th>
-                <th className="px-3 py-2 text-right font-medium">Students</th>
-                <th className="px-3 py-2 text-right font-medium">Days</th>
-                <th className="px-3 py-2 text-right font-medium">Present</th>
-                <th className="px-3 py-2 text-right font-medium">Absent</th>
-                <th className="px-3 py-2 text-right font-medium">Late</th>
-                <th className="px-3 py-2 text-right font-medium">Half</th>
-                <th className="px-3 py-2 text-right font-medium">Att. %</th>
+                <th className="px-4 py-3 font-bold">Class</th>
+                <th className="px-4 py-3 font-bold">Sec</th>
+                <th className="px-4 py-3 text-right font-medium">Students</th>
+                <th className="px-4 py-3 text-right font-medium">Days</th>
+                <th className="px-4 py-3 text-right font-medium">Present</th>
+                <th className="px-4 py-3 text-right font-medium">Absent</th>
+                <th className="px-4 py-3 text-right font-medium">Late</th>
+                <th className="px-4 py-3 text-right font-medium">Half</th>
+                <th className="px-4 py-3 text-right font-medium">Att. %</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((r) => (
                 <tr key={r.section_id} className="hover:bg-slate-50">
-                  <td className="px-3 py-2 text-slate-700">{r.class_name}</td>
-                  <td className="px-3 py-2 text-slate-700">{r.section_name}</td>
-                  <td className="px-3 py-2 text-right text-slate-700">
+                  <td className="px-4 py-3 text-slate-700">{r.class_name}</td>
+                  <td className="px-4 py-3 text-slate-700">{r.section_name}</td>
+                  <td className="px-4 py-3 text-right text-slate-700">
                     {r.distinct_students}
                   </td>
-                  <td className="px-3 py-2 text-right text-slate-700">
+                  <td className="px-4 py-3 text-right text-slate-700">
                     {r.distinct_days}
                   </td>
-                  <td className="px-3 py-2 text-right text-emerald-700">{r.present}</td>
-                  <td className="px-3 py-2 text-right text-rose-700">{r.absent}</td>
-                  <td className="px-3 py-2 text-right text-amber-700">{r.late}</td>
-                  <td className="px-3 py-2 text-right text-slate-700">{r.half_day}</td>
-                  <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                  <td className="px-4 py-3 text-right text-emerald-700">{r.present}</td>
+                  <td className="px-4 py-3 text-right text-rose-700">{r.absent}</td>
+                  <td className="px-4 py-3 text-right text-amber-700">{r.late}</td>
+                  <td className="px-4 py-3 text-right text-slate-700">{r.half_day}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-slate-900">
                     {r.attendance_pct}%
                   </td>
                 </tr>
@@ -550,15 +550,15 @@ function StudentMonthlyTab({
   return (
     <Card className="p-5">
       <form onSubmit={load} className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Class *</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Class *</span>
           <select
             value={classId}
             onChange={(e) => {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             <option value="">Select…</option>
@@ -569,14 +569,14 @@ function StudentMonthlyTab({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Section *</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Section *</span>
           <select
             value={sectionId}
             onChange={(e) =>
               setSectionId(e.target.value ? Number(e.target.value) : "")
             }
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             disabled={!selectedClass}
             required
           >
@@ -588,8 +588,8 @@ function StudentMonthlyTab({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Year *</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Year *</span>
           <input
             type="number"
             min={2020}
@@ -600,12 +600,12 @@ function StudentMonthlyTab({
             required
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Month *</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Month *</span>
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -634,7 +634,7 @@ function StudentMonthlyTab({
       </form>
 
       {error && (
-        <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="mt-3 rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -653,42 +653,42 @@ function StudentMonthlyTab({
             </span>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-100 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Roll</th>
-                  <th className="px-3 py-2 font-medium">Adm #</th>
-                  <th className="px-3 py-2 font-medium">Student</th>
-                  <th className="px-3 py-2 text-right font-medium">Present</th>
-                  <th className="px-3 py-2 text-right font-medium">Absent</th>
-                  <th className="px-3 py-2 text-right font-medium">Late</th>
-                  <th className="px-3 py-2 text-right font-medium">Half</th>
-                  <th className="px-3 py-2 text-right font-medium">Days</th>
-                  <th className="px-3 py-2 text-right font-medium">Att. %</th>
+                  <th className="px-4 py-3 font-bold">Roll</th>
+                  <th className="px-4 py-3 font-bold">Adm #</th>
+                  <th className="px-4 py-3 font-bold">Student</th>
+                  <th className="px-4 py-3 text-right font-medium">Present</th>
+                  <th className="px-4 py-3 text-right font-medium">Absent</th>
+                  <th className="px-4 py-3 text-right font-medium">Late</th>
+                  <th className="px-4 py-3 text-right font-medium">Half</th>
+                  <th className="px-4 py-3 text-right font-medium">Days</th>
+                  <th className="px-4 py-3 text-right font-medium">Att. %</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {report.rows.map((r) => (
                   <tr key={r.student_id} className="hover:bg-slate-50">
-                    <td className="px-3 py-2 text-slate-700">{r.roll_no}</td>
-                    <td className="px-3 py-2 font-mono text-slate-700">
+                    <td className="px-4 py-3 text-slate-700">{r.roll_no}</td>
+                    <td className="px-4 py-3 font-mono text-slate-700">
                       {r.admission_no}
                     </td>
-                    <td className="px-3 py-2 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-medium text-slate-900">
                       {r.full_name}
                     </td>
-                    <td className="px-3 py-2 text-right text-emerald-700">
+                    <td className="px-4 py-3 text-right text-emerald-700">
                       {r.present}
                     </td>
-                    <td className="px-3 py-2 text-right text-rose-700">{r.absent}</td>
-                    <td className="px-3 py-2 text-right text-amber-700">{r.late}</td>
-                    <td className="px-3 py-2 text-right text-slate-700">
+                    <td className="px-4 py-3 text-right text-rose-700">{r.absent}</td>
+                    <td className="px-4 py-3 text-right text-amber-700">{r.late}</td>
+                    <td className="px-4 py-3 text-right text-slate-700">
                       {r.half_day}
                     </td>
-                    <td className="px-3 py-2 text-right text-slate-700">
+                    <td className="px-4 py-3 text-right text-slate-700">
                       {r.marked_days}
                     </td>
-                    <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                    <td className="px-4 py-3 text-right font-semibold text-slate-900">
                       {r.attendance_pct}%
                     </td>
                   </tr>

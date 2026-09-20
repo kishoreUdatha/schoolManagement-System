@@ -135,7 +135,7 @@ export function PayrollHome({ basePath }: { basePath: string }) {
               {runs.map((r) => (
                 <tr key={r.id} className="hover:bg-surface-hover">
                   <td className={tdStrong}>{r.period}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3">
                     <Badge tone={runTone[r.status]}>{r.status}</Badge>
                     {r.paid_on && <div className="text-xs text-ink-subtle">on {r.paid_on}</div>}
                   </td>
@@ -144,7 +144,7 @@ export function PayrollHome({ basePath }: { basePath: string }) {
                   <td className={td}>{inr(r.total_deductions)}</td>
                   <td className={tdStrong}>{inr(r.total_net)}</td>
                   <td className={td}>{inr(r.total_employer_cost)}</td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-4 py-3 text-right">
                     <Link href={`${basePath}/runs/${r.id}`}>
                       <Button size="sm" variant="secondary">
                         Open
@@ -174,7 +174,7 @@ export function PayrollHome({ basePath }: { basePath: string }) {
                 </td>
                 <td className={td}>{s.salary?.bank_account_no ? `${s.salary.bank_ifsc} ••${s.salary.bank_account_no.slice(-4)}` : "—"}</td>
                 <td className={td}>{s.salary?.effective_from ?? "—"}</td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-4 py-3 text-right">
                   <Button size="sm" variant="secondary" onClick={() => setEditing(s)}>
                     {s.salary ? "Revise" : "Set salary"}
                   </Button>

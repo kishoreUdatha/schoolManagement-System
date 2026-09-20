@@ -99,12 +99,12 @@ export function StudentProfileView({
         )}
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">
+            <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
               {profile.full_name}
             </h1>
             {!profile.is_active && <Badge tone="neutral">Inactive</Badge>}
           </div>
-          <div className="mt-1 text-sm text-slate-500">
+          <div className="mt-1.5 text-[13px] text-ink-muted">
             {profile.admission_no} · {profile.class_name} {profile.section_name} ·
             Roll {profile.roll_no} · AY {profile.academic_year_name}
           </div>
@@ -189,31 +189,31 @@ export function StudentProfileView({
                 No published exams yet.
               </div>
             ) : (
-              <table className="min-w-full divide-y divide-slate-100 text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <table className="min-w-full divide-y divide-surface-border text-[13px]">
+                <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                   <tr>
-                    <th className="px-4 py-2 font-medium">Exam</th>
-                    <th className="px-4 py-2 text-right font-medium">%</th>
-                    <th className="px-4 py-2 text-center font-medium">Grade</th>
-                    <th className="px-4 py-2 text-center font-medium">Result</th>
+                    <th className="px-4 py-3 font-bold">Exam</th>
+                    <th className="px-4 py-3 text-right font-medium">%</th>
+                    <th className="px-4 py-3 text-center font-medium">Grade</th>
+                    <th className="px-4 py-3 text-center font-medium">Result</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {profile.exams.map((e) => (
                     <tr key={e.exam_id}>
-                      <td className="px-4 py-2">
+                      <td className="px-4 py-3">
                         <div className="font-medium">{e.exam_name}</div>
                         <div className="text-xs text-slate-500">
                           {e.exam_kind.replace(/_/g, " ")}
                         </div>
                       </td>
-                      <td className="px-4 py-2 text-right">{e.percentage}%</td>
-                      <td className="px-4 py-2 text-center">
+                      <td className="px-4 py-3 text-right">{e.percentage}%</td>
+                      <td className="px-4 py-3 text-center">
                         <span className="rounded bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">
                           {e.overall_grade}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-center">
+                      <td className="px-4 py-3 text-center">
                         <Badge tone={e.is_pass ? "emerald" : "rose"}>
                           {e.is_pass ? "Pass" : "Fail"}
                         </Badge>
@@ -253,7 +253,7 @@ export function StudentProfileView({
                       {b.discipline} · Resp {b.respect}
                     </div>
                     {b.teacher_note && (
-                      <p className="mt-1 text-sm text-slate-700">
+                      <p className="mt-1.5 text-[13px] text-ink-muted">
                         {b.teacher_note}
                       </p>
                     )}
@@ -313,24 +313,24 @@ export function StudentProfileView({
                 No parent linked.
               </div>
             ) : (
-              <table className="min-w-full divide-y divide-slate-100 text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+              <table className="min-w-full divide-y divide-surface-border text-[13px]">
+                <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                   <tr>
-                    <th className="px-4 py-2 font-medium">Name</th>
-                    <th className="px-4 py-2 font-medium">Relation</th>
-                    <th className="px-4 py-2 font-medium">Email</th>
-                    <th className="px-4 py-2 font-medium">Phone</th>
+                    <th className="px-4 py-3 font-bold">Name</th>
+                    <th className="px-4 py-3 font-bold">Relation</th>
+                    <th className="px-4 py-3 font-bold">Email</th>
+                    <th className="px-4 py-3 font-bold">Phone</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {profile.parents.map((p) => (
                     <tr key={p.user_id}>
-                      <td className="px-4 py-2 font-medium">{p.full_name}</td>
-                      <td className="px-4 py-2 text-slate-600">{p.relation}</td>
-                      <td className="px-4 py-2 text-slate-600">
+                      <td className="px-4 py-3 font-medium">{p.full_name}</td>
+                      <td className="px-4 py-3 text-slate-600">{p.relation}</td>
+                      <td className="px-4 py-3 text-slate-600">
                         {p.email ?? "—"}
                       </td>
-                      <td className="px-4 py-2 text-slate-600">
+                      <td className="px-4 py-3 text-slate-600">
                         {p.phone ?? "—"}
                       </td>
                     </tr>
@@ -378,7 +378,7 @@ function Stat({
   return (
     <Card>
       <CardBody>
-        <div className="text-xs uppercase text-slate-500">{title}</div>
+        <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">{title}</div>
         <div className={`text-2xl font-bold ${valueClass}`}>{value}</div>
         {sub && <div className="mt-1 text-xs text-slate-500">{sub}</div>}
       </CardBody>

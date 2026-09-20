@@ -82,7 +82,7 @@ export default function MyClassesPage() {
 
   if (error)
     return (
-      <div className="rounded-md bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+      <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
     );
   if (!data) return <div className="text-sm text-slate-500">Loading…</div>;
 
@@ -92,8 +92,8 @@ export default function MyClassesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">My classes</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">My classes</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Every section and subject you&apos;re assigned to. Use the cards to
           jump into rosters, attendance, homework, and marks.
         </p>
@@ -144,13 +144,13 @@ export default function MyClassesPage() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Link
                     href={`/teacher/sections/${c.section_id}/roster`}
-                    className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    className="inline-flex min-h-[32px] items-center justify-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-3 py-1.5 text-[11px] font-extrabold text-ink transition-colors hover:bg-surface-hover"
                   >
                     Roster
                   </Link>
                   <Link
                     href={`/teacher/attendance?section_id=${c.section_id}`}
-                    className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    className="inline-flex min-h-[32px] items-center justify-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-3 py-1.5 text-[11px] font-extrabold text-ink transition-colors hover:bg-surface-hover"
                   >
                     Attendance
                   </Link>

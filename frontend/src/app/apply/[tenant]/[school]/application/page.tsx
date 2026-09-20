@@ -79,20 +79,20 @@ export default function PublicApplicationPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-ink">{info?.school_name ?? "Admission application"}</h1>
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{info?.school_name ?? "Admission application"}</h1>
         <p className="text-sm text-ink-muted">Admission application</p>
         {info?.phone && <p className="text-xs text-ink-subtle">{info.phone}</p>}
       </div>
-      {error && <div className="rounded-md bg-rose-500/10 px-3 py-2 text-sm text-rose-400">{error}</div>}
+      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
       <Card>
         <CardBody>
           <form onSubmit={submit} className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <Input label="Student's name *" value={f.student_name} onChange={set("student_name")} required minLength={2} />
               <Input label="Date of birth" type="date" max={new Date().toISOString().slice(0, 10)} value={f.dob} onChange={set("dob")} />
-              <label className="flex flex-col gap-1 text-sm text-ink-muted">
+              <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
                 Gender
-                <select value={f.gender} onChange={set("gender")} className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink">
+                <select value={f.gender} onChange={set("gender")} className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300">
                   <option value="">—</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>

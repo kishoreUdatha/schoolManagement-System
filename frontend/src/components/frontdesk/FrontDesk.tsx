@@ -211,7 +211,7 @@ function Visitors({ onChange, onError }: Handlers) {
               <td className={td}>
                 {v.status === "checked_in" ? <Badge tone="brand">inside · {v.minutes_inside}m</Badge> : v.status === "checked_out" ? time(v.check_out_at) : <Badge>{v.status}</Badge>}
               </td>
-              <td className="px-3 py-2 font-mono text-xs text-ink">{v.pass_no ?? "—"}</td>
+              <td className="px-4 py-3 text-[12px] font-mono text-ink">{v.pass_no ?? "—"}</td>
               <td className="space-x-1 whitespace-nowrap px-3 py-2 text-right">
                 {v.status === "expected" && (
                   <>
@@ -509,12 +509,12 @@ function Passes({ office, onChange, onError }: Handlers & { office: boolean }) {
               <td className={td}>{g.leave_time ?? "—"}</td>
               <td className={td}>{g.pickup_name}</td>
               <td className={td}>{g.reason}</td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 <Badge tone={g.status === "departed" ? "emerald" : g.status === "approved" ? "brand" : g.status === "requested" ? "amber" : "neutral"}>
                   {g.status === "departed" ? `left ${time(g.departed_at)}` : g.status}
                 </Badge>
               </td>
-              <td className="px-3 py-2 font-mono text-xs text-ink">{g.code ?? ""}</td>
+              <td className="px-4 py-3 text-[12px] font-mono text-ink">{g.code ?? ""}</td>
             </tr>
           ))}
         </Table>
@@ -675,11 +675,11 @@ function Incidents({ office, onChange, onError }: Handlers & { office: boolean }
                 {i.action_taken && <div className="text-xs font-normal text-emerald-500">Action: {i.action_taken}</div>}
               </td>
               <td className={td}>{i.location ?? "—"}</td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 <Badge tone={sevTone[i.severity]}>{i.severity}</Badge>
               </td>
               <td className={td}>{i.reported_by_name ?? "—"}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 {i.is_closed ? <Badge tone="emerald">closed</Badge> : office && (
                   <Button size="sm" variant="secondary" onClick={() => close(i)}>
                     Close

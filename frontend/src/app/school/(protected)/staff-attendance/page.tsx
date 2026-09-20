@@ -91,8 +91,8 @@ export default function StaffAttendancePage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Staff attendance</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Staff attendance</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             See check-ins and override status (on leave, sick, etc.).
           </p>
         </div>
@@ -106,12 +106,12 @@ export default function StaffAttendancePage() {
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Staff member</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Staff member</span>
           <select
             value={userId}
             onChange={(e) => setUserId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {staff.map((s) => (
@@ -133,42 +133,42 @@ export default function StaffAttendancePage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <Card>
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-4 py-2 font-medium">Date</th>
-              <th className="px-4 py-2 font-medium">Staff</th>
-              <th className="px-4 py-2 font-medium">Role</th>
-              <th className="px-4 py-2 font-medium">Check-in</th>
-              <th className="px-4 py-2 font-medium">Check-out</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium">Notes</th>
+              <th className="px-4 py-3 font-bold">Date</th>
+              <th className="px-4 py-3 font-bold">Staff</th>
+              <th className="px-4 py-3 font-bold">Role</th>
+              <th className="px-4 py-3 font-bold">Check-in</th>
+              <th className="px-4 py-3 font-bold">Check-out</th>
+              <th className="px-4 py-3 font-bold">Status</th>
+              <th className="px-4 py-3 font-bold">Notes</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {records.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2 font-mono text-xs">{r.date}</td>
-                <td className="px-4 py-2 font-medium text-slate-900">
+                <td className="px-4 py-3 text-[12px] tabular-nums">{r.date}</td>
+                <td className="px-4 py-3 font-medium text-slate-900">
                   {r.user_full_name}
                 </td>
-                <td className="px-4 py-2 text-slate-600">{r.user_role}</td>
-                <td className="px-4 py-2">{fmtTime(r.check_in_at)}</td>
-                <td className="px-4 py-2">{fmtTime(r.check_out_at)}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3 text-slate-600">{r.user_role}</td>
+                <td className="px-4 py-3">{fmtTime(r.check_in_at)}</td>
+                <td className="px-4 py-3">{fmtTime(r.check_out_at)}</td>
+                <td className="px-4 py-3">
                   <Badge tone={statusTone[r.status]}>{r.status}</Badge>
                   {r.manually_overridden && (
                     <span className="ml-2 text-xs text-slate-500">override</span>
                   )}
                 </td>
-                <td className="px-4 py-2 text-xs text-slate-600">
+                <td className="px-4 py-3 text-xs text-slate-600">
                   {r.override_remark || ""}
                 </td>
               </tr>
@@ -245,11 +245,11 @@ function OverrideModal({
     <Modal open onClose={onClose} title="Override status">
       <form onSubmit={submit} className="space-y-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Staff *</span>
+          <span className="text-[12px] font-bold text-ink-muted">Staff *</span>
           <select
             value={userId}
             onChange={(e) => setUserId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             <option value="">Select…</option>
@@ -268,11 +268,11 @@ function OverrideModal({
           required
         />
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Status *</span>
+          <span className="text-[12px] font-bold text-ink-muted">Status *</span>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as Status)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="on_leave">On leave</option>
             <option value="sick">Sick</option>
@@ -288,7 +288,7 @@ function OverrideModal({
           placeholder="Reason, leave application ref, …"
         />
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>

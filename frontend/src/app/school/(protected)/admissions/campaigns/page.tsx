@@ -65,8 +65,8 @@ export default function CampaignsPage() {
       </Link>
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-ink">Campaigns</h1>
-          <p className="mt-1 text-sm text-ink-muted">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Campaigns</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Attribute enquiries to ads, open days and social pushes to see what works.
           </p>
         </div>
@@ -81,7 +81,7 @@ export default function CampaignsPage() {
             here with source “Website”.
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <code className="rounded bg-surface-subtle px-2 py-1 font-mono text-xs text-ink">
+            <code className="rounded bg-surface-subtle px-2 py-1 text-[12px] font-mono text-ink">
               {formLink}
             </code>
             <Button size="sm" variant="secondary" onClick={() => navigator.clipboard?.writeText(formLink)}>
@@ -91,20 +91,20 @@ export default function CampaignsPage() {
         </Card>
       )}
 
-      {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
 
       <Card className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-surface-border text-sm">
-          <thead className="text-left text-xs uppercase text-ink-subtle">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-3 py-2 font-medium">Name</th>
-              <th className="px-3 py-2 font-medium">Channel</th>
-              <th className="px-3 py-2 font-medium">Dates</th>
-              <th className="px-3 py-2 font-medium">Budget</th>
-              <th className="px-3 py-2 font-medium">Enquiries</th>
-              <th className="px-3 py-2 font-medium">Enrolled</th>
-              <th className="px-3 py-2 font-medium">Cost / enrolment</th>
-              <th className="px-3 py-2" />
+              <th className="px-4 py-3 font-bold">Name</th>
+              <th className="px-4 py-3 font-bold">Channel</th>
+              <th className="px-4 py-3 font-bold">Dates</th>
+              <th className="px-4 py-3 font-bold">Budget</th>
+              <th className="px-4 py-3 font-bold">Enquiries</th>
+              <th className="px-4 py-3 font-bold">Enrolled</th>
+              <th className="px-4 py-3 font-bold">Cost / enrolment</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-surface-border">
@@ -112,19 +112,19 @@ export default function CampaignsPage() {
               const budget = c.budget ? Number(c.budget) : null;
               return (
                 <tr key={c.id} className="hover:bg-surface-hover">
-                  <td className="px-3 py-2 font-medium text-ink">
+                  <td className="px-4 py-3 font-medium text-ink">
                     {c.name} {!c.is_active && <Badge>inactive</Badge>}
                   </td>
-                  <td className="px-3 py-2 text-ink-muted">{label(c.channel)}</td>
-                  <td className="px-3 py-2 text-ink-muted">
+                  <td className="px-4 py-3 text-ink-muted">{label(c.channel)}</td>
+                  <td className="px-4 py-3 text-ink-muted">
                     {c.start_date ?? "—"} → {c.end_date ?? "—"}
                   </td>
-                  <td className="px-3 py-2 text-ink-muted">
+                  <td className="px-4 py-3 text-ink-muted">
                     {budget != null ? `₹${budget.toLocaleString("en-IN")}` : "—"}
                   </td>
-                  <td className="px-3 py-2 text-ink">{c.enquiry_count}</td>
-                  <td className="px-3 py-2 text-ink">{c.enrolled_count}</td>
-                  <td className="px-3 py-2 text-ink-muted">
+                  <td className="px-4 py-3 text-ink">{c.enquiry_count}</td>
+                  <td className="px-4 py-3 text-ink">{c.enrolled_count}</td>
+                  <td className="px-4 py-3 text-ink-muted">
                     {budget != null && c.enrolled_count
                       ? `₹${Math.round(budget / c.enrolled_count).toLocaleString("en-IN")}`
                       : "—"}
@@ -272,7 +272,7 @@ function CampaignModal({
             className={selectClass}
           />
         </label>
-        {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+        {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel

@@ -59,8 +59,8 @@ export default function BookDetailPage() {
       </Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink">{book.title}</h1>
-          <div className="mt-1 text-sm text-ink-muted">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{book.title}</h1>
+          <div className="mt-1.5 text-[13px] text-ink-muted">
             {[book.authors, book.publisher, book.edition, book.publish_year].filter(Boolean).join(" · ")}
           </div>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -106,8 +106,8 @@ export default function BookDetailPage() {
         <Table head={["Accession no.", "Status", "With", "Price", "Acquired", "Note", ""]} empty={book.copies.length === 0 && "No physical copies."}>
           {book.copies.map((c) => (
             <tr key={c.id}>
-              <td className="px-3 py-2 font-mono text-xs text-ink">{c.accession_no}</td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3 text-[12px] font-mono text-ink">{c.accession_no}</td>
+              <td className="px-4 py-3">
                 <Badge tone={copyTone[c.status]}>{humanize(c.status)}</Badge>
               </td>
               <td className={td}>

@@ -65,8 +65,8 @@ export default function TenantsPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Tenants</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Tenants</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             One tenant = one school account.
           </p>
         </div>
@@ -93,19 +93,19 @@ export default function TenantsPage() {
       </form>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
 
       <Card>
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-4 py-2 font-medium">Name</th>
-              <th className="px-4 py-2 font-medium">Code</th>
-              <th className="px-4 py-2 font-medium">Contact</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium">Created</th>
-              <th className="px-4 py-2"></th>
+              <th className="px-4 py-3 font-bold">Name</th>
+              <th className="px-4 py-3 font-bold">Code</th>
+              <th className="px-4 py-3 font-bold">Contact</th>
+              <th className="px-4 py-3 font-bold">Status</th>
+              <th className="px-4 py-3 font-bold">Created</th>
+              <th className="px-4 py-3"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -236,7 +236,7 @@ function CreateTenantModal({
               Share these credentials with the school admin <strong>once</strong> — the
               password is not stored in plain text and cannot be retrieved later.
             </div>
-            <div className="mt-3 rounded bg-white px-3 py-2 font-mono text-xs">
+            <div className="mt-3 rounded bg-white px-3 py-2 text-[12px] tabular-nums">
               <div>Email: {form.school_admin_email}</div>
               <div>Temporary password: {tempPwd}</div>
             </div>
@@ -311,7 +311,7 @@ function CreateTenantModal({
           </div>
 
           {error && (
-            <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
               {error}
             </div>
           )}

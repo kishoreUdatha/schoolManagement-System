@@ -139,8 +139,8 @@ function Book({ onError }: { onError: (m: string) => void }) {
                 {Object.entries(b.by_mode).map(([m, v]) => (
                   <tr key={m}>
                     <td className={td}>{humanize(m)}</td>
-                    <td className="px-3 py-2 text-emerald-500">{inr(v.in)}</td>
-                    <td className="px-3 py-2 text-rose-400">{inr(v.out)}</td>
+                    <td className="px-4 py-3 text-emerald-500">{inr(v.in)}</td>
+                    <td className="px-4 py-3 text-rose-400">{inr(v.out)}</td>
                   </tr>
                 ))}
               </Table>
@@ -154,8 +154,8 @@ function Book({ onError }: { onError: (m: string) => void }) {
               {b.daily.map((d) => (
                 <tr key={d.date}>
                   <td className={td}>{d.date}</td>
-                  <td className="px-3 py-2 text-emerald-500">{inr(d.in)}</td>
-                  <td className="px-3 py-2 text-rose-400">{inr(d.out)}</td>
+                  <td className="px-4 py-3 text-emerald-500">{inr(d.in)}</td>
+                  <td className="px-4 py-3 text-rose-400">{inr(d.out)}</td>
                   <td className={tdStrong}>{inr(Number(d.in) - Number(d.out))}</td>
                 </tr>
               ))}
@@ -202,7 +202,7 @@ function Collections({ onError }: { onError: (m: string) => void }) {
         <Table head={["Receipt", "Date", "Student", "Fee", "Mode", "Amount", "By"]} empty={rows.length === 0 && "No fee receipts in this range."}>
           {rows.map((r) => (
             <tr key={r.id}>
-              <td className="px-3 py-2 font-mono text-xs text-ink">{r.receipt_no}</td>
+              <td className="px-4 py-3 text-[12px] font-mono text-ink">{r.receipt_no}</td>
               <td className={td}>{r.collected_on}</td>
               <td className={tdStrong}>
                 {r.student_name}
@@ -352,7 +352,7 @@ function Expenses({ onChange, onError }: Handlers) {
               </td>
               <td className={td}>{humanize(x.mode)}</td>
               <td className={tdStrong}>{inr(x.amount)}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 {!x.is_void && (
                   <Button size="sm" variant="ghost" onClick={() => voidRow(x)}>
                     Void
@@ -433,13 +433,13 @@ function OtherIncome({ onChange, onError }: Handlers) {
         <Table head={["Receipt", "Date", "Source", "From", "Mode", "Amount", ""]} empty={rows.length === 0 && "Nothing in this range."}>
           {rows.map((r) => (
             <tr key={r.id} className={r.is_void ? "opacity-50" : ""}>
-              <td className="px-3 py-2 font-mono text-xs text-ink">{r.receipt_no}</td>
+              <td className="px-4 py-3 text-[12px] font-mono text-ink">{r.receipt_no}</td>
               <td className={td}>{r.received_on}</td>
               <td className={td}>{humanize(r.source)}</td>
               <td className={td}>{r.payer}</td>
               <td className={td}>{humanize(r.mode)}</td>
               <td className={tdStrong}>{inr(r.amount)}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 {r.is_void ? (
                   <Badge tone="rose">void</Badge>
                 ) : (
@@ -522,7 +522,7 @@ function Cheques({ onChange, onError }: Handlers) {
                 {c.cheque_date}
                 {c.due_for_deposit && <div className="text-xs">ready to deposit</div>}
               </td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 <Badge tone={tone[c.status as keyof typeof tone]}>{c.status}</Badge>
                 {c.bounce_reason && <div className="text-xs text-rose-400">{c.bounce_reason}</div>}
               </td>
@@ -815,7 +815,7 @@ function Concessions({ onChange, onError }: Handlers) {
                 {c.valid_from} → {c.valid_to ?? "open"}
               </td>
               <td className={td}>{c.approved_by_name ?? "—"}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <Button
                   size="sm"
                   variant="ghost"

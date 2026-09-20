@@ -88,9 +88,9 @@ export default function EarlyPickupPage() {
       <Link href={`/parent/children/${id}`} className="text-sm text-brand-700 hover:underline">
         ← Back
       </Link>
-      <h1 className="text-2xl font-bold text-slate-900">Early pickup</h1>
-      {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
-      {notice && <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>}
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Early pickup</h1>
+      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
+      {notice && <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>}
 
       {items
         .filter((p) => p.status === "approved")

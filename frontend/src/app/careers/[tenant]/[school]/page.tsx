@@ -83,13 +83,13 @@ export default function CareersPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-ink">{info?.school_name ?? "Careers"}</h1>
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{info?.school_name ?? "Careers"}</h1>
         <p className="text-sm text-ink-muted">Work with us</p>
         {info?.address && <p className="text-xs text-ink-subtle">{info.address}</p>}
       </div>
 
-      {done && <div className="rounded-md bg-emerald-500/10 px-3 py-2 text-sm text-emerald-500">{done}</div>}
-      {error && <div className="rounded-md bg-rose-500/10 px-3 py-2 text-sm text-rose-400">{error}</div>}
+      {done && <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{done}</div>}
+      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
 
       {openings.length === 0 && <p className="text-center text-sm text-ink-subtle">No openings at the moment. Please check back later.</p>}
 

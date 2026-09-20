@@ -79,8 +79,8 @@ export default function MyAttendancePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">My attendance</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">My attendance</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Daily check-ins for this month. Late detection compares your check-in
           time to the school&apos;s start time + 15 min grace.
         </p>
@@ -99,7 +99,7 @@ export default function MyAttendancePage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
 
       {history && (
@@ -114,29 +114,29 @@ export default function MyAttendancePage() {
           </div>
 
           <Card>
-            <table className="min-w-full divide-y divide-slate-100 text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <th className="px-4 py-2 font-medium">Date</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
-                  <th className="px-4 py-2 font-medium">Check-in</th>
-                  <th className="px-4 py-2 font-medium">Check-out</th>
-                  <th className="px-4 py-2 font-medium">Notes</th>
+                  <th className="px-4 py-3 font-bold">Date</th>
+                  <th className="px-4 py-3 font-bold">Status</th>
+                  <th className="px-4 py-3 font-bold">Check-in</th>
+                  <th className="px-4 py-3 font-bold">Check-out</th>
+                  <th className="px-4 py-3 font-bold">Notes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {history.records.map((r) => (
                   <tr key={r.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-2 font-mono text-xs">{r.date}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-3 text-[12px] tabular-nums">{r.date}</td>
+                    <td className="px-4 py-3">
                       <Badge tone={statusTone[r.status]}>{r.status}</Badge>
                       {r.manually_overridden && (
                         <span className="ml-2 text-xs text-slate-500">(overridden)</span>
                       )}
                     </td>
-                    <td className="px-4 py-2">{fmtTime(r.check_in_at)}</td>
-                    <td className="px-4 py-2">{fmtTime(r.check_out_at)}</td>
-                    <td className="px-4 py-2 text-xs text-slate-600">
+                    <td className="px-4 py-3">{fmtTime(r.check_in_at)}</td>
+                    <td className="px-4 py-3">{fmtTime(r.check_out_at)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-600">
                       {r.override_remark || ""}
                     </td>
                   </tr>

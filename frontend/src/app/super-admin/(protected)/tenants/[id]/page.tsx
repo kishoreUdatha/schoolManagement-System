@@ -116,7 +116,7 @@ export default function TenantDetailPage() {
   }
 
   if (error) {
-    return <div className="rounded-md bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>;
+    return <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>;
   }
   if (!tenant) {
     return <div className="text-sm text-slate-500">Loading…</div>;
@@ -127,10 +127,10 @@ export default function TenantDetailPage() {
       <header className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900">{tenant.name}</h1>
+            <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{tenant.name}</h1>
             <Badge tone={statusTone[tenant.status]}>{tenant.status}</Badge>
           </div>
-          <div className="mt-1 text-sm text-slate-500">
+          <div className="mt-1.5 text-[13px] text-ink-muted">
             Code: <code>{tenant.code}</code> · {tenant.contact_email} · {tenant.contact_mobile}
           </div>
         </div>
@@ -221,32 +221,32 @@ export default function TenantDetailPage() {
             Record payment
           </Button>
         </CardHeader>
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-4 py-2 font-medium">Date</th>
-              <th className="px-4 py-2 font-medium">Amount</th>
-              <th className="px-4 py-2 font-medium">Mode</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium">Reference</th>
+              <th className="px-4 py-3 font-bold">Date</th>
+              <th className="px-4 py-3 font-bold">Amount</th>
+              <th className="px-4 py-3 font-bold">Mode</th>
+              <th className="px-4 py-3 font-bold">Status</th>
+              <th className="px-4 py-3 font-bold">Reference</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {payments.map((p) => (
               <tr key={p.id}>
-                <td className="px-4 py-2 text-slate-500">
+                <td className="px-4 py-3 text-slate-500">
                   {p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "—"}
                 </td>
-                <td className="px-4 py-2 font-medium">
+                <td className="px-4 py-3 font-medium">
                   {p.currency} {Number(p.amount).toLocaleString("en-IN")}
                 </td>
-                <td className="px-4 py-2 text-slate-600">{p.mode}</td>
-                <td className="px-4 py-2">
+                <td className="px-4 py-3 text-slate-600">{p.mode}</td>
+                <td className="px-4 py-3">
                   <Badge tone={p.status === "success" ? "emerald" : "amber"}>
                     {p.status}
                   </Badge>
                 </td>
-                <td className="px-4 py-2 text-slate-600">{p.reference ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600">{p.reference ?? "—"}</td>
               </tr>
             ))}
             {payments.length === 0 && (
@@ -286,7 +286,7 @@ export default function TenantDetailPage() {
 function KV({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col">
-      <span className="text-xs uppercase tracking-wide text-slate-500">{label}</span>
+      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">{label}</span>
       <span className="mt-1 text-sm font-medium text-slate-900">{value}</span>
     </div>
   );
@@ -299,7 +299,7 @@ function QuotaBar({ label, q }: { label: string; q: Quota }) {
   return (
     <div>
       <div className="flex items-baseline justify-between text-sm">
-        <span className="text-slate-600">{label}</span>
+        <span className="text-[12px] font-bold text-ink-muted">{label}</span>
         <span className="text-xs text-slate-500">
           {q.used.toLocaleString()} / {q.limit.toLocaleString() || "∞"}
         </span>
@@ -351,11 +351,11 @@ function AssignPlanModal({
     <Modal open={open} onClose={onClose} title="Assign plan">
       <form onSubmit={submit} className="space-y-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Plan</span>
+          <span className="text-[12px] font-bold text-ink-muted">Plan</span>
           <select
             value={planId}
             onChange={(e) => setPlanId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             <option value="">Select a plan…</option>
@@ -367,18 +367,18 @@ function AssignPlanModal({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Billing cycle</span>
+          <span className="text-[12px] font-bold text-ink-muted">Billing cycle</span>
           <select
             value={cycle}
             onChange={(e) => setCycle(e.target.value as BillingCycle)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
           </select>
         </label>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -443,11 +443,11 @@ function RecordPaymentModal({
           required
         />
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Mode</span>
+          <span className="text-[12px] font-bold text-ink-muted">Mode</span>
           <select
             value={mode}
             onChange={(e) => setMode(e.target.value as PaymentMode)}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="manual">Manual (offline)</option>
             <option value="razorpay">Razorpay</option>
@@ -460,7 +460,7 @@ function RecordPaymentModal({
           onChange={(e) => setReference(e.target.value)}
         />
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>

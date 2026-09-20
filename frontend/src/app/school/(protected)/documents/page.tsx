@@ -176,7 +176,7 @@ export default function DocumentsPage() {
                   {d.uploaded_by_parent && " (parent)"}
                 </div>
               </td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 <Badge tone={vTone[d.verification_status]}>{d.verification_status}</Badge>
                 {d.remarks && <div className="text-xs text-ink-subtle">{d.remarks}</div>}
               </td>

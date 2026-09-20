@@ -103,7 +103,7 @@ export function CheckInCard() {
       </CardHeader>
       <CardBody className="space-y-3">
         {today.is_holiday && (
-          <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <div className="rounded-lg bg-[#FFF3D8] px-4 py-3 text-[13px] font-medium text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
             Today is a holiday ({today.holiday_name}). No check-in needed.
           </div>
         )}
@@ -154,10 +154,10 @@ export function CheckInCard() {
         )}
 
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         {notice && (
-          <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+          <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
         )}
       </CardBody>
     </Card>
@@ -167,7 +167,7 @@ export function CheckInCard() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between border-b border-slate-100 py-1.5 last:border-0">
-      <span className="text-slate-600">{label}</span>
+      <span className="text-[12px] font-bold text-ink-muted">{label}</span>
       <span className="font-medium text-slate-900">{value}</span>
     </div>
   );

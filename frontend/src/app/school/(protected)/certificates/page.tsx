@@ -142,7 +142,7 @@ export default function CertificatesPage() {
         <Table head={["Serial", "Certificate", "Student", "Purpose", "Issued", "Status", ""]} empty={items.length === 0 && "Nothing in the register yet."}>
           {items.map((c) => (
             <tr key={c.id} className="hover:bg-surface-hover">
-              <td className="px-3 py-2 font-mono text-xs text-ink">{c.serial_no ?? "—"}</td>
+              <td className="px-4 py-3 text-[12px] font-mono text-ink">{c.serial_no ?? "—"}</td>
               <td className={tdStrong}>{c.template_name ?? humanize(c.kind)}</td>
               <td className={td}>
                 {c.student_name}
@@ -155,7 +155,7 @@ export default function CertificatesPage() {
                 {c.issued_on ?? "—"}
                 {c.issued_by_name && <div className="text-xs text-ink-subtle">{c.issued_by_name}</div>}
               </td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 <Badge tone={tone[c.status]}>{c.status}</Badge>
                 {c.remarks && <div className="max-w-xs text-xs text-ink-subtle">{c.remarks}</div>}
               </td>

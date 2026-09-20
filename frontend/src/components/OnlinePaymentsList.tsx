@@ -62,7 +62,7 @@ export function OnlinePaymentsList() {
       </div>
       <ErrorBox>{error}</ErrorBox>
       {refunds.length > 0 && (
-        <div className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <div className="rounded-lg bg-[#FFF3D8] px-4 py-3 text-[13px] font-medium text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
           {refunds.length} payment(s) include money received for dues that were already paid (
           {inr(refunds.reduce((s, o) => s + Number(o.excess_amount), 0))}). Refund these from the
           Razorpay dashboard.
@@ -85,14 +85,14 @@ export function OnlinePaymentsList() {
                   <div className="text-xs text-amber-500">refund {inr(o.excess_amount)}</div>
                 )}
               </td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 <Badge tone={tone[o.status]}>{o.status}</Badge>
                 {o.failure_reason && <div className="text-xs text-ink-subtle">{o.failure_reason}</div>}
               </td>
-              <td className="px-3 py-2 font-mono text-xs text-ink-subtle">
+              <td className="px-4 py-3 text-[12px] tabular-nums text-ink-subtle">
                 {o.provider === "mock" ? "test mode" : o.provider_payment_id ?? "—"}
               </td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 {o.status === "paid" && (
                   <Button
                     size="sm"

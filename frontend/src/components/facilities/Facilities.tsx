@@ -284,7 +284,7 @@ export function Facilities({ canManage }: { canManage: boolean }) {
               <td className={tdStrong}>{b.lab_name}</td>
               <td className={td}>{b.section_label ?? "—"}</td>
               <td className={td}>{b.purpose ?? "—"}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <Button
                   size="sm"
                   variant="ghost"

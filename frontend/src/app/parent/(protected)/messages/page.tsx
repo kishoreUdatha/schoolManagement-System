@@ -103,11 +103,11 @@ export default function ParentMessagesPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between">
-        <h1 className="text-2xl font-bold text-ink">Messages</h1>
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Messages</h1>
         <Button onClick={() => setShowCompose(true)}>New conversation</Button>
       </div>
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -287,7 +287,7 @@ function ComposeNew({
       <div className="w-full max-w-lg rounded-xl border border-surface-border bg-surface-raised p-4">
         <h3 className="text-base font-semibold text-ink">New conversation</h3>
         <form onSubmit={submit} className="mt-4 space-y-3">
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
             <span className="text-ink-muted">Child</span>
             <select
               value={childId}
@@ -304,7 +304,7 @@ function ComposeNew({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
             <span className="text-ink-muted">Teacher</span>
             <select
               value={teacherId}
@@ -321,7 +321,7 @@ function ComposeNew({
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
             <span className="text-ink-muted">Message</span>
             <textarea
               value={body}
@@ -332,7 +332,7 @@ function ComposeNew({
             />
           </label>
           {error && (
-            <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
               {error}
             </div>
           )}

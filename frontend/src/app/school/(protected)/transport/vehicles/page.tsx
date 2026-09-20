@@ -112,7 +112,7 @@ export default function VehiclesPage() {
                 {v.driver_name ?? "—"}
                 {v.driver_phone && <div className="text-xs text-ink-subtle">{v.driver_phone}</div>}
               </td>
-              <td className="px-3 py-2 text-xs">
+              <td className="px-4 py-3 text-xs">
                 {v.expiring_documents.length ? (
                   v.expiring_documents.map((d) => (
                     <div key={d} className={d.includes("expired") ? "text-rose-400" : "text-amber-400"}>
@@ -406,7 +406,7 @@ function LogsModal({ vehicle, onClose }: { vehicle: Vehicle; onClose: () => void
             <td className={td}>{inr(l.amount)}</td>
             <td className={td}>{l.litres ?? "—"}</td>
             <td className={td}>{[l.vendor, l.notes].filter(Boolean).join(" · ") || "—"}</td>
-            <td className="px-3 py-2 text-right">
+            <td className="px-4 py-3 text-right">
               <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
                 ✕
               </Button>

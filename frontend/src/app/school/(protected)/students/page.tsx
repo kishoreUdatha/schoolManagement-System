@@ -147,7 +147,7 @@ export default function StudentsPage() {
   if (years.length === 0 && !error) {
     return (
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Students</h1>
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Students</h1>
         <Card className="p-8 text-center text-slate-500">
           You need an academic year first.{" "}
           <Link href="/school/academic-years" className="font-medium text-brand-700 hover:underline">
@@ -162,8 +162,8 @@ export default function StudentsPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Students</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Students</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Admit students individually or import a class roster via CSV.
           </p>
         </div>
@@ -186,12 +186,12 @@ export default function StudentsPage() {
         }}
         className="flex flex-wrap items-end gap-2"
       >
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Year</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Year</span>
           <select
             value={yearId ?? ""}
             onChange={(e) => setYearId(Number(e.target.value))}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             {years.map((y) => (
               <option key={y.id} value={y.id}>
@@ -201,15 +201,15 @@ export default function StudentsPage() {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Class</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Class</span>
           <select
             value={classId}
             onChange={(e) => {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {classes.map((c) => (
@@ -219,12 +219,12 @@ export default function StudentsPage() {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Section</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Section</span>
           <select
             value={sectionId}
             onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             disabled={!selectedClass}
           >
             <option value="">All</option>
@@ -235,12 +235,12 @@ export default function StudentsPage() {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Status</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Status</span>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
+            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             <option value="active">Active</option>
@@ -259,23 +259,23 @@ export default function StudentsPage() {
       </form>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <Card>
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-4 py-2 font-medium">Adm #</th>
-              <th className="px-4 py-2 font-medium">Roll</th>
-              <th className="px-4 py-2 font-medium">Name</th>
-              <th className="px-4 py-2 font-medium">Section</th>
-              <th className="px-4 py-2 font-medium">Gender / DOB</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 text-right font-medium">Actions</th>
+              <th className="px-4 py-3 font-bold">Adm #</th>
+              <th className="px-4 py-3 font-bold">Roll</th>
+              <th className="px-4 py-3 font-bold">Name</th>
+              <th className="px-4 py-3 font-bold">Section</th>
+              <th className="px-4 py-3 font-bold">Gender / DOB</th>
+              <th className="px-4 py-3 font-bold">Status</th>
+              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -492,11 +492,11 @@ function CreateStudentModal({
       <form onSubmit={submit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Year *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Year *</span>
             <select
               value={yearId}
               onChange={(e) => setYearId(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               <option value="">Select…</option>
@@ -508,14 +508,14 @@ function CreateStudentModal({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Class *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Class *</span>
             <select
               value={classId}
               onChange={(e) => {
                 setClassId(e.target.value ? Number(e.target.value) : "");
                 setSectionId("");
               }}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               <option value="">Select…</option>
@@ -527,11 +527,11 @@ function CreateStudentModal({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Section *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Section *</span>
             <select
               value={sectionId}
               onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               disabled={!selectedClass}
               required
             >
@@ -571,11 +571,11 @@ function CreateStudentModal({
             onChange={(e) => setForm({ ...form, dob: e.target.value })}
           />
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Gender</span>
+            <span className="text-[12px] font-bold text-ink-muted">Gender</span>
             <select
               value={form.gender}
               onChange={(e) => setForm({ ...form, gender: e.target.value as Gender | "" })}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="">—</option>
               <option value="male">Male</option>
@@ -601,7 +601,7 @@ function CreateStudentModal({
           onChange={(e) => setForm({ ...form, address: e.target.value })}
         />
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -688,11 +688,11 @@ function EditStudentModal({
             required
           />
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Class *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Class *</span>
             <select
               value={classId}
               onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -702,13 +702,13 @@ function EditStudentModal({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Section *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Section *</span>
             <select
               value={form.section_id}
               onChange={(e) =>
                 setForm({ ...form, section_id: Number(e.target.value) })
               }
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               {selectedClass?.sections.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -731,11 +731,11 @@ function EditStudentModal({
             onChange={(e) => setForm({ ...form, dob: e.target.value })}
           />
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Gender</span>
+            <span className="text-[12px] font-bold text-ink-muted">Gender</span>
             <select
               value={form.gender}
               onChange={(e) => setForm({ ...form, gender: e.target.value as Gender | "" })}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="">—</option>
               <option value="male">Male</option>
@@ -760,7 +760,7 @@ function EditStudentModal({
           onChange={(e) => setForm({ ...form, address: e.target.value })}
         />
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -797,7 +797,7 @@ function ViewStudentModal({
   return (
     <Modal open onClose={onClose} title={student.full_name} size="lg">
       {error && (
-        <div className="mb-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="mb-3 rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {detail && (
         <div className="space-y-4 text-sm">
@@ -811,7 +811,7 @@ function ViewStudentModal({
           </div>
           {detail.address && (
             <div>
-              <div className="text-xs uppercase text-slate-500">Address</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">Address</div>
               <div className="mt-1 text-slate-900">{detail.address}</div>
             </div>
           )}
@@ -853,7 +853,7 @@ function ViewStudentModal({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col">
-      <span className="text-xs uppercase text-slate-500">{label}</span>
+      <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">{label}</span>
       <span className="font-medium text-slate-900">{value}</span>
     </div>
   );
@@ -987,11 +987,11 @@ function BulkImportModal({
       <form onSubmit={submit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-3">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Year *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Year *</span>
             <select
               value={yearId}
               onChange={(e) => setYearId(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="">Select…</option>
               {years.map((y) => (
@@ -1002,14 +1002,14 @@ function BulkImportModal({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Class *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Class *</span>
             <select
               value={classId}
               onChange={(e) => {
                 setClassId(e.target.value ? Number(e.target.value) : "");
                 setSectionId("");
               }}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="">Select…</option>
               {classes.map((c) => (
@@ -1020,11 +1020,11 @@ function BulkImportModal({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Section *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Section *</span>
             <select
               value={sectionId}
               onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               disabled={!selectedClass}
             >
               <option value="">Select…</option>
@@ -1064,23 +1064,23 @@ function BulkImportModal({
         <div>
           <label className="text-sm font-medium text-slate-700">CSV content</label>
           <textarea
-            className="mt-1 h-44 w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            className="mt-1 h-44 w-full rounded-lg border border-slate-300 px-3 py-2 text-[12px] tabular-nums shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
             value={csv}
             onChange={(e) => setCsv(e.target.value)}
           />
         </div>
 
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         {result && (
           <div className="space-y-2">
-            <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+            <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
               Imported {result.created} student(s)
               {result.errors.length ? `, skipped ${result.errors.length}.` : "."}
             </div>
             {result.errors.length > 0 && (
-              <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800">
+              <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[12px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
                 <div className="font-semibold">Skipped rows:</div>
                 <ul className="mt-1 space-y-0.5">
                   {result.errors.map((er, i) => (
@@ -1257,13 +1257,13 @@ function PromoteStudentsModal({
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-700">Year *</span>
+              <span className="text-[12px] font-bold text-ink-muted">Year *</span>
               <select
                 value={srcYearId}
                 onChange={(e) =>
                   setSrcYearId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -1275,14 +1275,14 @@ function PromoteStudentsModal({
               </select>
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-700">Class *</span>
+              <span className="text-[12px] font-bold text-ink-muted">Class *</span>
               <select
                 value={srcClassId}
                 onChange={(e) => {
                   setSrcClassId(e.target.value ? Number(e.target.value) : "");
                   setSrcSectionId("");
                 }}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -1294,13 +1294,13 @@ function PromoteStudentsModal({
               </select>
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-700">Section *</span>
+              <span className="text-[12px] font-bold text-ink-muted">Section *</span>
               <select
                 value={srcSectionId}
                 onChange={(e) =>
                   setSrcSectionId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 disabled={!srcSelectedClass}
                 required
               >
@@ -1322,13 +1322,13 @@ function PromoteStudentsModal({
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-700">Year *</span>
+              <span className="text-[12px] font-bold text-ink-muted">Year *</span>
               <select
                 value={tgtYearId}
                 onChange={(e) =>
                   setTgtYearId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -1342,14 +1342,14 @@ function PromoteStudentsModal({
               </select>
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-700">Class *</span>
+              <span className="text-[12px] font-bold text-ink-muted">Class *</span>
               <select
                 value={tgtClassId}
                 onChange={(e) => {
                   setTgtClassId(e.target.value ? Number(e.target.value) : "");
                   setTgtSectionId("");
                 }}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -1361,13 +1361,13 @@ function PromoteStudentsModal({
               </select>
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-700">Section *</span>
+              <span className="text-[12px] font-bold text-ink-muted">Section *</span>
               <select
                 value={tgtSectionId}
                 onChange={(e) =>
                   setTgtSectionId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 disabled={!tgtSelectedClass}
                 required
               >
@@ -1407,13 +1407,13 @@ function PromoteStudentsModal({
             </div>
             {!promoteAll && (
               <div className="max-h-56 overflow-y-auto rounded-md border border-slate-200">
-                <table className="min-w-full text-sm">
+                <table className="min-w-full text-[13px]">
                   <thead className="sticky top-0 bg-slate-50 text-left text-xs uppercase text-slate-500">
                     <tr>
-                      <th className="px-3 py-2 w-8" />
-                      <th className="px-3 py-2 font-medium">Roll</th>
-                      <th className="px-3 py-2 font-medium">Admission #</th>
-                      <th className="px-3 py-2 font-medium">Name</th>
+                      <th className="px-4 py-3 w-8" />
+                      <th className="px-4 py-3 font-bold">Roll</th>
+                      <th className="px-4 py-3 font-bold">Admission #</th>
+                      <th className="px-4 py-3 font-bold">Name</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1423,7 +1423,7 @@ function PromoteStudentsModal({
                         className="hover:bg-slate-50 cursor-pointer"
                         onClick={() => toggleStudent(s.id)}
                       >
-                        <td className="px-3 py-2">
+                        <td className="px-4 py-3">
                           <input
                             type="checkbox"
                             checked={selected.has(s.id)}
@@ -1432,11 +1432,11 @@ function PromoteStudentsModal({
                             className="rounded border-slate-300"
                           />
                         </td>
-                        <td className="px-3 py-2 text-slate-700">{s.roll_no}</td>
-                        <td className="px-3 py-2 font-mono text-slate-700">
+                        <td className="px-4 py-3 text-slate-700">{s.roll_no}</td>
+                        <td className="px-4 py-3 font-mono text-slate-700">
                           {s.admission_no}
                         </td>
-                        <td className="px-3 py-2 font-medium text-slate-900">
+                        <td className="px-4 py-3 font-medium text-slate-900">
                           {s.full_name}
                         </td>
                       </tr>
@@ -1454,7 +1454,7 @@ function PromoteStudentsModal({
         )}
 
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}

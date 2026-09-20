@@ -116,13 +116,13 @@ export default function ChildFeesPage() {
         ← Back to child profile
       </Link>
 
-      <h1 className="text-2xl font-bold text-slate-900">Fees</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Fees</h1>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-4">
@@ -171,23 +171,23 @@ export default function ChildFeesPage() {
       )}
 
       <Card>
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
               <th className="w-8 px-3 py-2" />
-              <th className="px-3 py-2 font-medium">Head</th>
-              <th className="px-3 py-2 font-medium">Period</th>
-              <th className="px-3 py-2 font-medium">Due</th>
-              <th className="px-3 py-2 font-medium">Paid</th>
-              <th className="px-3 py-2 font-medium">Outstanding</th>
-              <th className="px-3 py-2 font-medium">Due date</th>
-              <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-4 py-3 font-bold">Head</th>
+              <th className="px-4 py-3 font-bold">Period</th>
+              <th className="px-4 py-3 font-bold">Due</th>
+              <th className="px-4 py-3 font-bold">Paid</th>
+              <th className="px-4 py-3 font-bold">Outstanding</th>
+              <th className="px-4 py-3 font-bold">Due date</th>
+              <th className="px-4 py-3 font-bold">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {fees.map((f) => (
               <tr key={f.id}>
-                <td className="px-3 py-2">
+                <td className="px-4 py-3">
                   {f.status === "pending" && Number(f.amount_outstanding) > 0 && (
                     <input
                       type="checkbox"
@@ -197,15 +197,15 @@ export default function ChildFeesPage() {
                     />
                   )}
                 </td>
-                <td className="px-3 py-2 font-medium text-slate-900">{f.fee_head_name}</td>
-                <td className="px-3 py-2">{f.period}</td>
-                <td className="px-3 py-2">₹{Number(f.amount_due).toLocaleString("en-IN")}</td>
-                <td className="px-3 py-2">₹{Number(f.amount_paid).toLocaleString("en-IN")}</td>
-                <td className="px-3 py-2 font-medium">
+                <td className="px-4 py-3 font-medium text-slate-900">{f.fee_head_name}</td>
+                <td className="px-4 py-3">{f.period}</td>
+                <td className="px-4 py-3">₹{Number(f.amount_due).toLocaleString("en-IN")}</td>
+                <td className="px-4 py-3">₹{Number(f.amount_paid).toLocaleString("en-IN")}</td>
+                <td className="px-4 py-3 font-medium">
                   ₹{Number(f.amount_outstanding).toLocaleString("en-IN")}
                 </td>
-                <td className="px-3 py-2 text-slate-600">{f.due_date}</td>
-                <td className="px-3 py-2">
+                <td className="px-4 py-3 text-slate-600">{f.due_date}</td>
+                <td className="px-4 py-3">
                   {f.status === "paid" ? (
                     <Badge tone="emerald">paid</Badge>
                   ) : f.status === "waived" ? (
@@ -284,7 +284,7 @@ function SummaryCard({
       : "text-rose-700";
   return (
     <Card className="p-4">
-      <div className="text-xs uppercase text-slate-500">{label}</div>
+      <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">{label}</div>
       <div className={`mt-1 text-2xl font-bold ${tone}`}>{value}</div>
     </Card>
   );

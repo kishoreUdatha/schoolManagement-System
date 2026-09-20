@@ -126,7 +126,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
         <Link href={`/parent/children/${result.student_id}/tests`} className="text-sm text-brand-700 hover:underline">
           ← Back to tests
         </Link>
-        <h1 className="text-2xl font-bold text-slate-900">{result.title}</h1>
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{result.title}</h1>
         <Card>
           <CardBody className="text-center">
             <div className="text-sm text-slate-500">
@@ -150,7 +150,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
       </div>
     );
   }
-  if (!paper) return error ? <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div> : null;
+  if (!paper) return error ? <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div> : null;
 
   const q = paper.questions[current];
   const r = answers[q.question_id] ?? {};
@@ -172,7 +172,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
         <div className={cn("rounded-md px-3 py-1 font-mono text-lg font-bold", left < 60 ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-900")}>{mmss(left)}</div>
         <Button onClick={() => submit(false)}>Submit</Button>
       </div>
-      {error && <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
       {paper.instructions && current === 0 && <p className="whitespace-pre-line text-sm text-slate-600">{paper.instructions}</p>}
 
       <Card>
@@ -220,7 +220,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
           {q.kind === "short" && (
             <textarea
               rows={5}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-slate-900"
+              className="w-full min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               value={r.text ?? ""}
               onChange={(e) => setAnswer(q.question_id, { text: e.target.value })}
             />

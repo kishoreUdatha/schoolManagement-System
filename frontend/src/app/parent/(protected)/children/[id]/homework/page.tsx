@@ -61,10 +61,10 @@ export default function ChildHomeworkPage() {
         ← Back to child profile
       </Link>
 
-      <h1 className="text-2xl font-bold text-slate-900">Homework</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Homework</h1>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -305,12 +305,12 @@ function SubmissionModal({
           placeholder="https://drive.google.com/…"
         />
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Comment</span>
+          <span className="text-[12px] font-bold text-ink-muted">Comment</span>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={5}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             placeholder="Optional note for the teacher"
           />
         </label>
@@ -321,7 +321,7 @@ function SubmissionModal({
           </p>
         )}
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}

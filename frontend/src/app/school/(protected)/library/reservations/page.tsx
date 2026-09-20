@@ -58,7 +58,7 @@ export default function ReservationsPage() {
             <tr key={r.id}>
               <td className={tdStrong}>{r.title}</td>
               <td className={td}>{r.borrower_name}</td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 {r.status === "ready" ? (
                   <>
                     <Badge tone="amber">ready</Badge>
@@ -74,7 +74,7 @@ export default function ReservationsPage() {
                 )}
               </td>
               <td className={td}>{r.created_at.slice(0, 10)}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <Button size="sm" variant="ghost" onClick={() => cancel(r)}>
                   Cancel
                 </Button>

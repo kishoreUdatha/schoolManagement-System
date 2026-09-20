@@ -5,7 +5,7 @@ export default function LandingPage() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-16">
       <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-brand-700">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-brand-600">
           School Management System
         </h1>
         <HealthBadge />
@@ -29,25 +29,25 @@ export default function LandingPage() {
           </Link>
           <Link
             href="/school/login"
-            className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
           >
             School admin
           </Link>
           <Link
             href="/teacher/login"
-            className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
           >
             Teacher
           </Link>
           <Link
             href="/staff/login"
-            className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
           >
             Staff
           </Link>
           <Link
             href="/parent/login"
-            className="rounded-lg border border-slate-300 bg-white px-5 py-3 font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
           >
             Parent
           </Link>
@@ -66,10 +66,10 @@ export default function LandingPage() {
         {features.map((f) => (
           <div
             key={f.title}
-            className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-[14px] border border-surface-border bg-surface-raised p-5"
           >
             <h3 className="font-semibold">{f.title}</h3>
-            <p className="mt-1 text-sm text-slate-600">{f.desc}</p>
+            <p className="mt-1.5 text-[13px] text-ink-muted">{f.desc}</p>
           </div>
         ))}
       </section>

@@ -74,7 +74,7 @@ export default function ChildVideosPage() {
         >
           ← Back
         </Link>
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function ChildVideosPage() {
       </Link>
 
       <header>
-        <h1 className="text-2xl font-bold text-slate-900">Learning videos</h1>
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Learning videos</h1>
         <p className="text-sm text-slate-500">
           Videos shared by your child&apos;s teachers. Tap any thumbnail to watch
           inline.
@@ -204,7 +204,7 @@ export default function ChildVideosPage() {
           onClick={() => setActive(null)}
         >
           <div
-            className="w-full max-w-3xl rounded-lg bg-white p-3 shadow-xl"
+            className="w-full max-w-3xl rounded-[14px] bg-surface-raised p-3 shadow-[0_24px_60px_-20px_rgba(23,37,84,0.35)]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-2">

@@ -28,7 +28,7 @@ export default function TeacherStudentProfilePage() {
         <Link href="/teacher" className="text-sm text-brand-700 hover:underline">
           ← Back
         </Link>
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       </div>

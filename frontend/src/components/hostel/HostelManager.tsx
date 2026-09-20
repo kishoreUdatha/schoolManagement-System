@@ -445,7 +445,7 @@ function Outings({ hostel, onChange, onError }: Handlers & { hostel: Hostel }) {
                 {o.reason}
                 {o.escort_name && <div className="text-xs text-ink-subtle">with {o.escort_name}</div>}
               </td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 <Badge tone={o.status === "out" ? "amber" : o.status === "requested" ? "brand" : o.status === "returned" ? "emerald" : "neutral"}>{o.status}</Badge>
               </td>
               <td className="space-x-1 whitespace-nowrap px-3 py-2 text-right">
@@ -583,10 +583,10 @@ function Menu({ hostel, onChange, onError }: Handlers & { hostel: Hostel }) {
   return (
     <Card>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead className="text-left text-xs uppercase text-ink-subtle">
+        <table className="min-w-full text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-3 py-2" />
+              <th className="px-4 py-3" />
               {MEALS.map((m) => (
                 <th key={m} className="px-3 py-2 font-medium">
                   {humanize(m)}
@@ -692,7 +692,7 @@ function Complaints({ hostel, onChange, onError }: Handlers & { hostel: Hostel }
                 {c.description}
                 {c.student_name && <div className="text-xs text-ink-subtle">{c.student_name}</div>}
               </td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 <Badge tone={c.status === "resolved" ? "emerald" : c.status === "in_progress" ? "brand" : "amber"}>{humanize(c.status)}</Badge>
               </td>
               <td className="space-x-1 whitespace-nowrap px-3 py-2 text-right">

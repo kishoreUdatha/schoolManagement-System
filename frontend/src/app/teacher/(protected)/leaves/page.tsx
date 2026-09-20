@@ -74,8 +74,8 @@ export default function TeacherLeavesPage() {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink">My leaves</h1>
-          <p className="mt-1 text-sm text-ink-muted">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">My leaves</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Apply for leave; the school admin or principal will review.
           </p>
         </div>
@@ -85,12 +85,12 @@ export default function TeacherLeavesPage() {
       <MyLeaveBalances />
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           {notice}
         </div>
       )}
@@ -244,7 +244,7 @@ function ApplyModal({
       <form onSubmit={submit} className="space-y-4">
         {types.length > 0 && (
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-ink-muted">Leave type</span>
+            <span className="text-[12px] font-bold text-ink-muted">Leave type</span>
             <select
               value={typeId}
               onChange={(e) => {
@@ -252,7 +252,7 @@ function ApplyModal({
                 const t = types.find((x) => String(x.id) === e.target.value);
                 if (t) setKind(t.kind);
               }}
-              className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               {types.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -263,11 +263,11 @@ function ApplyModal({
           </label>
         )}
         <label className={types.length > 0 ? "hidden" : "flex flex-col gap-1"}>
-          <span className="text-sm font-medium text-ink-muted">Kind</span>
+          <span className="text-[12px] font-bold text-ink-muted">Kind</span>
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as LeaveKind)}
-            className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="casual">Casual</option>
             <option value="sick">Sick</option>
@@ -294,17 +294,17 @@ function ApplyModal({
           />
         </div>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-ink-muted">Reason</span>
+          <span className="text-[12px] font-bold text-ink-muted">Reason</span>
           <textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             rows={3}
             placeholder="Brief reason for the request"
-            className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}

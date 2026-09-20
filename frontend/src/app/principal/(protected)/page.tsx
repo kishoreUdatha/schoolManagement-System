@@ -106,7 +106,7 @@ export default function PrincipalDashboard() {
 
   if (error) {
     return (
-      <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+      <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
         {error}
       </div>
     );
@@ -119,12 +119,12 @@ export default function PrincipalDashboard() {
     <div className="space-y-6">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-ink">School overview</h1>
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">School overview</h1>
           {data.current_academic_year_name && (
             <Badge tone="brand">{data.current_academic_year_name}</Badge>
           )}
         </div>
-        <p className="mt-1 text-sm text-ink-muted">
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Daily snapshot of attendance, fees, exams, and notifications.
         </p>
       </div>

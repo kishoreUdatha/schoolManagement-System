@@ -53,17 +53,17 @@ export default function TeacherDashboard() {
 
   if (error)
     return (
-      <div className="rounded-md bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+      <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
     );
   if (!data) return <div className="text-sm text-slate-500">Loading dashboard…</div>;
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
           Hello {user?.full_name?.split(" ").slice(-1)[0]}
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           {DAYS[data.today_day_of_week]} · {new Date(data.today_iso_date).toLocaleDateString()}
         </p>
       </div>
@@ -99,8 +99,8 @@ export default function TeacherDashboard() {
                 school timetable isn&apos;t set up yet for {DAYS[data.today_day_of_week]}.
               </p>
             ) : (
-              <table className="min-w-full divide-y divide-slate-100 text-sm">
-                <thead className="text-left text-xs uppercase text-slate-500">
+              <table className="min-w-full divide-y divide-surface-border text-[13px]">
+                <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                   <tr>
                     <th className="py-2 font-medium">Slot</th>
                     <th className="py-2 font-medium">Time</th>
@@ -111,7 +111,7 @@ export default function TeacherDashboard() {
                 <tbody className="divide-y divide-slate-100">
                   {data.todays_classes.map((c) => (
                     <tr key={c.period_id} className="hover:bg-slate-50">
-                      <td className="py-2 font-mono text-xs text-slate-500">
+                      <td className="py-2 text-[12px] tabular-nums text-ink-muted">
                         P{c.period_number}
                       </td>
                       <td className="py-2">
@@ -199,7 +199,7 @@ function PlaceholderCard({ title, note }: { title: string; note: string }) {
     <Card className="border-dashed">
       <CardBody>
         <div className="text-sm font-medium text-slate-500">{title}</div>
-        <div className="mt-2 text-2xl font-bold text-slate-300">—</div>
+        <div className="mt-2 text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink-subtle">—</div>
         <div className="mt-1 text-xs text-slate-400">{note}</div>
       </CardBody>
     </Card>

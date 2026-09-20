@@ -84,7 +84,7 @@ function Overview({ onError }: { onError: (m: string) => void }) {
           {d.low_stock.map((i) => (
             <tr key={i.id}>
               <td className={tdStrong}>{i.name}</td>
-              <td className="px-3 py-2 text-rose-400">
+              <td className="px-4 py-3 text-rose-400">
                 {q(i.on_hand)} {i.unit}
               </td>
               <td className={td}>{q(i.reorder_level)}</td>
@@ -416,13 +416,13 @@ function Assets({ onChange, onError }: Handlers) {
         <Table head={["Tag", "Asset", "Where / who", "Status", "Cost", "Warranty"]} empty={assets.length === 0 && "No assets."}>
           {assets.map((a) => (
             <tr key={a.id} className="cursor-pointer hover:bg-surface-hover" onClick={() => setOpen(a)}>
-              <td className="px-3 py-2 font-mono text-xs text-ink">{a.asset_tag}</td>
+              <td className="px-4 py-3 text-[12px] tabular-nums text-ink">{a.asset_tag}</td>
               <td className={tdStrong}>
                 {a.name}
                 <div className="text-xs font-normal text-ink-subtle">{[a.category, a.serial_no].filter(Boolean).join(" · ")}</div>
               </td>
               <td className={td}>{[a.location, a.assigned_to_name].filter(Boolean).join(" · ") || "—"}</td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 <Badge tone={tone[a.status as keyof typeof tone]}>{humanize(a.status)}</Badge>
               </td>
               <td className={td}>
@@ -753,12 +753,12 @@ function Store({ onChange, onError }: Handlers) {
         <Table head={["Bill", "Buyer", "Items", "Total", "Payment", ""]} empty={sales.length === 0 && "No sales today."}>
           {sales.map((s) => (
             <tr key={s.id} className={s.is_void ? "opacity-50" : ""}>
-              <td className="px-3 py-2 font-mono text-xs text-ink">{s.bill_no}</td>
+              <td className="px-4 py-3 text-[12px] tabular-nums text-ink">{s.bill_no}</td>
               <td className={td}>{s.student_name ?? s.buyer_name}</td>
               <td className={td}>{s.lines.map((l) => `${l.item_name} × ${q(l.qty)}`).join(", ")}</td>
               <td className={tdStrong}>{inr(s.total)}</td>
               <td className={td}>{s.is_void ? <Badge tone="rose">void</Badge> : humanize(s.payment)}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 {!s.is_void && (
                   <Button size="sm" variant="ghost" onClick={() => voidSale(s)}>
                     Void
@@ -799,7 +799,7 @@ function Suppliers({ onChange, onError }: Handlers) {
               </td>
               <td className={td}>{[s.contact_person, s.phone, s.email].filter(Boolean).join(" · ") || "—"}</td>
               <td className={td}>{s.gstin ?? "—"}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <Button size="sm" variant="secondary" onClick={() => setEditing(s)}>
                   Edit
                 </Button>

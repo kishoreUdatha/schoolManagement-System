@@ -228,7 +228,7 @@ export default function MarksEntryPage() {
       {view && (
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">
+            <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
               {view.exam_name} — {view.subject_name}
             </h1>
             {view.is_published ? (
@@ -237,7 +237,7 @@ export default function MarksEntryPage() {
               <Badge tone="amber">draft</Badge>
             )}
           </div>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             {view.class_name} · {view.exam_date} · max {view.max_marks} · pass{" "}
             {view.pass_marks}
           </p>
@@ -249,14 +249,14 @@ export default function MarksEntryPage() {
       ) : (
         <>
           <div className="flex flex-wrap items-end gap-2">
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="text-slate-600">Section</span>
+            <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+              <span className="text-[12px] font-bold text-ink-muted">Section</span>
               <select
                 value={sectionId}
                 onChange={(e) =>
                   setSectionId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               >
                 {sections.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -285,10 +285,10 @@ export default function MarksEntryPage() {
           )}
 
           {error && (
-            <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+            <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
           )}
           {notice && (
-            <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+            <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
           )}
 
           {view && (
@@ -303,16 +303,16 @@ export default function MarksEntryPage() {
               </div>
 
               <Card>
-                <table className="min-w-full divide-y divide-slate-100 text-sm">
-                  <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+                <table className="min-w-full divide-y divide-surface-border text-[13px]">
+                  <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                     <tr>
-                      <th className="px-3 py-2 font-medium">Roll</th>
-                      <th className="px-3 py-2 font-medium">Name</th>
-                      <th className="px-3 py-2 font-medium">Status</th>
-                      <th className="px-3 py-2 font-medium">Marks</th>
-                      <th className="px-3 py-2 font-medium">Grade</th>
-                      <th className="px-3 py-2 font-medium">Pass</th>
-                      <th className="px-3 py-2 font-medium">Remark</th>
+                      <th className="px-4 py-3 font-bold">Roll</th>
+                      <th className="px-4 py-3 font-bold">Name</th>
+                      <th className="px-4 py-3 font-bold">Status</th>
+                      <th className="px-4 py-3 font-bold">Marks</th>
+                      <th className="px-4 py-3 font-bold">Grade</th>
+                      <th className="px-4 py-3 font-bold">Pass</th>
+                      <th className="px-4 py-3 font-bold">Remark</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -324,12 +324,12 @@ export default function MarksEntryPage() {
                           : r.is_pass;
                       return (
                         <tr key={r.student_id} className="hover:bg-slate-50">
-                          <td className="px-3 py-2 font-mono text-xs text-slate-500">{r.roll_no}</td>
-                          <td className="px-3 py-2">
+                          <td className="px-4 py-3 text-[12px] tabular-nums text-ink-muted">{r.roll_no}</td>
+                          <td className="px-4 py-3">
                             <div className="font-medium text-slate-900">{r.full_name}</div>
                             <div className="text-xs text-slate-500">{r.admission_no}</div>
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-4 py-3">
                             <div className="flex gap-1">
                               {STATUSES.map((s) => {
                                 const active = r.status === s.value;
@@ -359,7 +359,7 @@ export default function MarksEntryPage() {
                               )}
                             </div>
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-4 py-3">
                             {r.status === "scored" ? (
                               <input
                                 type="number"
@@ -379,7 +379,7 @@ export default function MarksEntryPage() {
                               <span className="text-xs text-slate-400">—</span>
                             )}
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-4 py-3">
                             <Badge
                               tone={
                                 liveGrade === "—"
@@ -394,7 +394,7 @@ export default function MarksEntryPage() {
                               {liveGrade}
                             </Badge>
                           </td>
-                          <td className="px-3 py-2 text-xs">
+                          <td className="px-4 py-3 text-xs">
                             {livePass == null ? (
                               "—"
                             ) : livePass ? (
@@ -403,7 +403,7 @@ export default function MarksEntryPage() {
                               <span className="text-rose-700 font-medium">Fail</span>
                             )}
                           </td>
-                          <td className="px-3 py-2">
+                          <td className="px-4 py-3">
                             <input
                               type="text"
                               value={r.remark ?? ""}

@@ -40,15 +40,15 @@ export default function MyMarksPapersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Marks entry</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Marks entry</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Every exam paper you&apos;re responsible for. Click a paper to enter
           marks. Once the school admin publishes the exam, marks lock.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
 
       {papers.length === 0 && !error && (

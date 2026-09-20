@@ -146,7 +146,7 @@ export default function HealthPage() {
               <Input label="Complaint *" placeholder="Headache, fever, injury…" value={form.complaint} onChange={set("complaint")} required />
             </div>
             {studentAllergy && (
-              <div className="rounded-md bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">Allergies: {studentAllergy}</div>
+              <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">Allergies: {studentAllergy}</div>
             )}
             <div className="grid gap-3 sm:grid-cols-4">
               <Input label="Temperature °C" type="number" step="0.1" min="30" max="45" value={form.temperature_c} onChange={set("temperature_c")} />
@@ -207,11 +207,11 @@ export default function HealthPage() {
                     {v.temperature_c && <span className="text-ink-subtle"> · {v.temperature_c}°C</span>}
                   </td>
                   <td className={td}>{v.medicine_given ?? "—"}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-3">
                     <Badge tone={outcomeTone(v.outcome)}>{humanize(v.outcome)}</Badge>
                     {v.parent_notified && <div className="text-xs text-ink-subtle">parents notified</div>}
                   </td>
-                  <td className="px-3 py-2 text-xs text-ink-subtle">{v.recorded_by_name}</td>
+                  <td className="px-4 py-3 text-xs text-ink-subtle">{v.recorded_by_name}</td>
                 </tr>
               ))}
             </Table>
@@ -231,7 +231,7 @@ export default function HealthPage() {
                   <div className="text-xs font-normal text-ink-subtle">{a.section_label}</div>
                 </td>
                 <td className={td}>{a.blood_group ?? "—"}</td>
-                <td className="px-3 py-2 text-rose-400">{a.allergies ?? "—"}</td>
+                <td className="px-4 py-3 text-rose-400">{a.allergies ?? "—"}</td>
                 <td className={td}>{a.chronic_conditions ?? "—"}</td>
                 <td className={td}>{a.current_medications ?? "—"}</td>
                 <td className={td}>{a.emergency_contact_phone ?? "—"}</td>

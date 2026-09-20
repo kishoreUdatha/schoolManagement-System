@@ -80,8 +80,8 @@ export default function PeriodsPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Periods</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Periods</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             School-wide weekly period schedule. Used by every section&apos;s
             timetable.
           </p>
@@ -90,10 +90,10 @@ export default function PeriodsPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -113,7 +113,7 @@ export default function PeriodsPage() {
                   className="flex items-center justify-between py-2"
                 >
                   <div>
-                    <span className="font-mono text-xs text-slate-500">
+                    <span className="text-[12px] tabular-nums text-ink-muted">
                       P{p.period_number}
                     </span>{" "}
                     <span className="font-medium">
@@ -196,13 +196,13 @@ function CreatePeriodModal({
       <form onSubmit={submit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Day *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Day *</span>
             <select
               value={form.day_of_week}
               onChange={(e) =>
                 setForm({ ...form, day_of_week: Number(e.target.value) })
               }
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               {DAYS.slice(1).map((d, i) => (
                 <option key={i + 1} value={i + 1}>
@@ -253,7 +253,7 @@ function CreatePeriodModal({
           </label>
         </div>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>

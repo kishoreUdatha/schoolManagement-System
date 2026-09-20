@@ -98,7 +98,7 @@ export default function SuperAdminDashboard() {
 
   if (error) {
     return (
-      <div className="rounded-md bg-rose-50 px-4 py-3 text-sm text-rose-700">
+      <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
         {error}
       </div>
     );
@@ -111,8 +111,8 @@ export default function SuperAdminDashboard() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Platform overview</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Platform overview</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Live counters across all tenants. Last 30 days for usage and revenue.
           </p>
         </div>
@@ -131,12 +131,12 @@ export default function SuperAdminDashboard() {
       </div>
 
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           {notice}
         </div>
       )}
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -204,26 +204,26 @@ export default function SuperAdminDashboard() {
           <CardHeader>
             <CardTitle>Renewals due (next 30 days)</CardTitle>
           </CardHeader>
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+          <table className="min-w-full divide-y divide-surface-border text-[13px]">
+            <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
               <tr>
-                <th className="px-3 py-2 font-medium">Tenant</th>
-                <th className="px-3 py-2 font-medium">Code</th>
-                <th className="px-3 py-2 font-medium">Days left</th>
-                <th className="px-3 py-2 font-medium">Expires</th>
-                <th className="px-3 py-2 font-medium">Contact</th>
+                <th className="px-4 py-3 font-bold">Tenant</th>
+                <th className="px-4 py-3 font-bold">Code</th>
+                <th className="px-4 py-3 font-bold">Days left</th>
+                <th className="px-4 py-3 font-bold">Expires</th>
+                <th className="px-4 py-3 font-bold">Contact</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {renewals.map((r) => (
                 <tr key={r.tenant_id}>
-                  <td className="px-3 py-2 font-medium text-slate-900">{r.tenant_name}</td>
-                  <td className="px-3 py-2 font-mono text-xs">{r.tenant_code}</td>
-                  <td className="px-3 py-2 text-slate-600">{r.days_remaining ?? "—"}</td>
-                  <td className="px-3 py-2 text-slate-600">
+                  <td className="px-4 py-3 font-medium text-slate-900">{r.tenant_name}</td>
+                  <td className="px-4 py-3 text-[12px] font-mono">{r.tenant_code}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.days_remaining ?? "—"}</td>
+                  <td className="px-4 py-3 text-slate-600">
                     {r.expires_at ? new Date(r.expires_at).toLocaleDateString() : "—"}
                   </td>
-                  <td className="px-3 py-2 text-slate-600">{r.contact_email}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.contact_email}</td>
                 </tr>
               ))}
             </tbody>
@@ -237,7 +237,7 @@ export default function SuperAdminDashboard() {
 function Row({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="flex items-center justify-between border-b border-slate-100 py-1.5 last:border-0">
-      <span className="text-slate-600">{label}</span>
+      <span className="text-[12px] font-bold text-ink-muted">{label}</span>
       <span className="font-medium text-slate-900">{value}</span>
     </div>
   );

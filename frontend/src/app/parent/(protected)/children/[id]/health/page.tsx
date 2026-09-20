@@ -12,7 +12,7 @@ export default function ChildHealthPage() {
       <Link href={`/parent/children/${id}`} className="text-sm text-brand-700 hover:underline">
         ← Back
       </Link>
-      <h1 className="text-2xl font-bold text-slate-900">Health</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Health</h1>
       <p className="text-sm text-slate-500">Keep allergies, medication and emergency contacts up to date so the school nurse has them.</p>
       <HealthRecordView
         mode="parent"

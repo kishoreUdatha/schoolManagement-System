@@ -260,7 +260,7 @@ export function RolesAndBranches() {
                 <td className={td}>{a.role_name}</td>
                 <td className={td}>{a.branch_name ?? "Whole school"}</td>
                 <td className={td}>{new Date(a.assigned_at).toLocaleDateString()}</td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-4 py-3 text-right">
                   <Button size="sm" variant="ghost" onClick={() => run(() => api.delete(`${base}/role-assignments/${a.id}`), "Role taken away.")}>
                     Take away
                   </Button>

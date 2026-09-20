@@ -142,8 +142,8 @@ export default function HomeworkPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Homework</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Homework</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Post homework to a class-subject. Visible to parents of every section
             in that class.
           </p>
@@ -154,14 +154,14 @@ export default function HomeworkPage() {
       </div>
 
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Class-subject</span>
+        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
+          <span className="text-[12px] font-bold text-ink-muted">Class-subject</span>
           <select
             value={classSubjectFilter}
             onChange={(e) =>
               setClassSubjectFilter(e.target.value ? Number(e.target.value) : "")
             }
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {subjects.map((s) => (
@@ -183,10 +183,10 @@ export default function HomeworkPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <div className="space-y-3">
@@ -354,13 +354,13 @@ function HomeworkFormModal({
       <form onSubmit={submit} className="space-y-4">
         {!existing && (
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Class-subject *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Class-subject *</span>
             <select
               value={form.class_subject_id}
               onChange={(e) =>
                 setForm({ ...form, class_subject_id: Number(e.target.value) })
               }
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               {subjects.map((s) => (
@@ -378,13 +378,13 @@ function HomeworkFormModal({
           required
         />
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Description *</span>
+          <span className="text-[12px] font-bold text-ink-muted">Description *</span>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={5}
             required
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -404,11 +404,11 @@ function HomeworkFormModal({
           />
         </div>
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Mark against a rubric</span>
+          <span className="text-[12px] font-bold text-ink-muted">Mark against a rubric</span>
           <select
             value={form.rubric_id}
             onChange={(e) => setForm({ ...form, rubric_id: e.target.value })}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">No rubric — approve or reject only</option>
             {rubrics.map((r) => (
@@ -432,7 +432,7 @@ function HomeworkFormModal({
           </label>
         )}
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -532,7 +532,7 @@ function SubmissionsModal({
         </div>
 
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}
@@ -557,7 +557,7 @@ function SubmissionsModal({
                       <span className="font-medium text-slate-900">
                         {s.student_name}
                       </span>
-                      <span className="font-mono text-xs text-slate-500">
+                      <span className="text-[12px] tabular-nums text-ink-muted">
                         {s.student_admission_no}
                       </span>
                       <Badge tone={statusTone(s.status)}>{s.status}</Badge>

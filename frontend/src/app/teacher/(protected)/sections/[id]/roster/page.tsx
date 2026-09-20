@@ -47,10 +47,10 @@ export default function SectionRosterPage() {
         ← Back to My classes
       </Link>
 
-      <h1 className="text-2xl font-bold text-slate-900">Roster</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Roster</h1>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
 
       <div className="flex items-center justify-between gap-2">
@@ -66,28 +66,28 @@ export default function SectionRosterPage() {
       </div>
 
       <Card>
-        <table className="min-w-full divide-y divide-slate-100 text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
-              <th className="px-4 py-2 font-medium">Roll</th>
-              <th className="px-4 py-2 font-medium">Admission #</th>
-              <th className="px-4 py-2 font-medium">Name</th>
-              <th className="px-4 py-2 font-medium">Gender</th>
-              <th className="px-4 py-2 font-medium">DOB</th>
+              <th className="px-4 py-3 font-bold">Roll</th>
+              <th className="px-4 py-3 font-bold">Admission #</th>
+              <th className="px-4 py-3 font-bold">Name</th>
+              <th className="px-4 py-3 font-bold">Gender</th>
+              <th className="px-4 py-3 font-bold">DOB</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {filtered.map((s) => (
               <tr key={s.id} className="hover:bg-slate-50">
-                <td className="px-4 py-2 font-mono text-xs text-slate-500">
+                <td className="px-4 py-3 text-[12px] tabular-nums text-ink-muted">
                   {s.roll_no}
                 </td>
-                <td className="px-4 py-2 font-mono text-xs">{s.admission_no}</td>
-                <td className="px-4 py-2 font-medium text-slate-900">
+                <td className="px-4 py-3 text-[12px] font-mono">{s.admission_no}</td>
+                <td className="px-4 py-3 font-medium text-slate-900">
                   {s.full_name}
                 </td>
-                <td className="px-4 py-2 text-slate-600">{s.gender ?? "—"}</td>
-                <td className="px-4 py-2 text-slate-600">{s.dob ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600">{s.gender ?? "—"}</td>
+                <td className="px-4 py-3 text-slate-600">{s.dob ?? "—"}</td>
               </tr>
             ))}
             {filtered.length === 0 && (

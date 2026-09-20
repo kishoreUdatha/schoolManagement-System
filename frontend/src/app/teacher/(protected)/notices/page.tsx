@@ -138,20 +138,20 @@ export default function TeacherNoticesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Notices</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Notices</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Send in-app notices to parents of the classes, sections, or students
           you teach. They land in the parent inbox immediately.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           {notice}
         </div>
       )}
@@ -280,13 +280,13 @@ function Composer({
         <form onSubmit={submit} className="mt-4 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-700">
+              <span className="text-[12px] font-bold text-ink-muted">
                 Audience *
               </span>
               <select
                 value={audience}
                 onChange={(e) => setAudience(e.target.value as Audience)}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               >
                 <option value="class_parents">All parents in a class</option>
                 <option value="section_parents">
@@ -298,13 +298,13 @@ function Composer({
 
             {audience === "class_parents" && (
               <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-[12px] font-bold text-ink-muted">
                   Class *
                 </span>
                 <select
                   value={classId}
                   onChange={(e) => setClassId(Number(e.target.value))}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+                  className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                   required
                 >
                   {classes.map((c) => (
@@ -318,13 +318,13 @@ function Composer({
 
             {audience === "section_parents" && (
               <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-slate-700">
+                <span className="text-[12px] font-bold text-ink-muted">
                   Section *
                 </span>
                 <select
                   value={sectionId}
                   onChange={(e) => setSectionId(Number(e.target.value))}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+                  className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                   required
                 >
                   {sections.map((s) => (
@@ -339,13 +339,13 @@ function Composer({
             {audience === "single_parent" && (
               <>
                 <label className="flex flex-col gap-1">
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-[12px] font-bold text-ink-muted">
                     Section *
                   </span>
                   <select
                     value={sectionId}
                     onChange={(e) => setSectionId(Number(e.target.value))}
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+                    className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                     required
                   >
                     {sections.map((s) => (
@@ -356,13 +356,13 @@ function Composer({
                   </select>
                 </label>
                 <label className="flex flex-col gap-1 sm:col-span-2">
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-[12px] font-bold text-ink-muted">
                     Student *
                   </span>
                   <select
                     value={studentId}
                     onChange={(e) => setStudentId(Number(e.target.value))}
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+                    className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                     required
                     disabled={rosterLoading || roster.length === 0}
                   >
@@ -390,13 +390,13 @@ function Composer({
           />
 
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Body *</span>
+            <span className="text-[12px] font-bold text-ink-muted">Body *</span>
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={5}
               required
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             />
           </label>
 

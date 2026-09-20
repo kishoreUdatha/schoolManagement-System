@@ -12,7 +12,7 @@ export default function ChildLibraryPage() {
       <Link href={`/parent/children/${id}`} className="text-sm text-brand-700 hover:underline">
         ← Back
       </Link>
-      <h1 className="text-2xl font-bold text-slate-900">Library</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Library</h1>
       <BorrowedBooks endpoint={`/api/v1/parent/me/children/${id}/library`} />
     </div>
   );

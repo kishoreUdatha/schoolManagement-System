@@ -64,9 +64,9 @@ export default function ChildProjectsPage() {
       >
         ← Back to child profile
       </Link>
-      <h1 className="text-2xl font-bold text-ink">Projects</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Projects</h1>
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -236,11 +236,11 @@ function ProgressModal({
     <Modal open onClose={onClose} title="Update project progress">
       <form onSubmit={submit} className="space-y-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-ink-muted">Status</span>
+          <span className="text-[12px] font-bold text-ink-muted">Status</span>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as ProgressStatus)}
-            className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="in_progress">In progress</option>
             <option value="submitted">Submitted</option>
@@ -253,13 +253,13 @@ function ProgressModal({
           placeholder="https://drive.google.com/…"
         />
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-ink-muted">Comment</span>
+          <span className="text-[12px] font-bold text-ink-muted">Comment</span>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={5}
             placeholder="Notes for the teacher"
-            className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         {existing && existing.teacher_remark && (
@@ -268,7 +268,7 @@ function ProgressModal({
           </p>
         )}
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}

@@ -42,10 +42,10 @@ export default function ChildBehaviourPage() {
       >
         ← Back to child profile
       </Link>
-      <h1 className="text-2xl font-bold text-slate-900">Behaviour ratings</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Behaviour ratings</h1>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
 
       {items.length === 0 && !error && (

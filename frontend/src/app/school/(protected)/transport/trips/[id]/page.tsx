@@ -85,10 +85,10 @@ export default function TripSheetPage() {
       </Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
             {trip.route_name} · {humanize(trip.direction)}
           </h1>
-          <div className="mt-1 text-sm text-ink-muted">
+          <div className="mt-1.5 text-[13px] text-ink-muted">
             {trip.trip_date} · {trip.vehicle_label ?? "no vehicle"} · {trip.driver_name ?? "no driver"} ·{" "}
             <Badge>{humanize(trip.status)}</Badge>
           </div>
@@ -130,7 +130,7 @@ export default function TripSheetPage() {
               </td>
               <td className={tdStrong}>{s.student_name}</td>
               <td className={td}>{s.section_label ?? "—"}</td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 {s.status ? (
                   <Badge tone={s.status === "absent" ? "rose" : "emerald"}>{s.status}</Badge>
                 ) : (

@@ -65,8 +65,8 @@ export default function PlansPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Plans</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Plans</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Subscription tiers — define quotas and which modules each plan unlocks.
           </p>
         </div>
@@ -74,7 +74,7 @@ export default function PlansPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -87,7 +87,7 @@ export default function PlansPage() {
                   <Badge tone={tierTone[p.tier]}>{p.tier}</Badge>
                 </div>
                 {p.description && (
-                  <p className="mt-1 text-sm text-slate-500">{p.description}</p>
+                  <p className="mt-1.5 text-[13px] text-ink-muted">{p.description}</p>
                 )}
               </div>
               <div className="text-right">
@@ -194,11 +194,11 @@ function CreatePlanModal({
             required
           />
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Tier</span>
+            <span className="text-[12px] font-bold text-ink-muted">Tier</span>
             <select
               value={form.tier}
               onChange={(e) => setForm({ ...form, tier: e.target.value as typeof form.tier })}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="basic">Basic</option>
               <option value="standard">Standard</option>
@@ -289,7 +289,7 @@ function CreatePlanModal({
         </div>
 
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>

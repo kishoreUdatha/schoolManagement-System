@@ -12,7 +12,7 @@ export default function StudentHealthPage() {
       <Link href="/school/health" className="text-sm text-ink-muted hover:underline">
         ← Health
       </Link>
-      <h1 className="text-2xl font-bold text-ink">Health record</h1>
+      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Health record</h1>
       <HealthRecordView
         mode="school"
         recordUrl={`/api/v1/school/health/students/${id}`}

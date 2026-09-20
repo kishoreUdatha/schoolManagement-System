@@ -106,8 +106,8 @@ export default function TeacherProjectsPage() {
     <div className="space-y-5">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink">Projects</h1>
-          <p className="mt-1 text-sm text-ink-muted">
+          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Projects</h1>
+          <p className="mt-1.5 text-[13px] text-ink-muted">
             Assign hands-on projects to your classes and review student
             submissions.
           </p>
@@ -118,12 +118,12 @@ export default function TeacherProjectsPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
       {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
           {notice}
         </div>
       )}
@@ -266,11 +266,11 @@ function ProjectCreateModal({
     <Modal open onClose={onClose} title="New project" size="lg">
       <form onSubmit={submit} className="space-y-4">
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-ink-muted">Class-subject *</span>
+          <span className="text-[12px] font-bold text-ink-muted">Class-subject *</span>
           <select
             value={csId}
             onChange={(e) => setCsId(Number(e.target.value))}
-            className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             {subjects.map((s) => (
@@ -287,13 +287,13 @@ function ProjectCreateModal({
           required
         />
         <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-ink-muted">Description *</span>
+          <span className="text-[12px] font-bold text-ink-muted">Description *</span>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
             required
-            className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink"
+            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -306,11 +306,11 @@ function ProjectCreateModal({
             required
           />
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-ink-muted">Kind</span>
+            <span className="text-[12px] font-bold text-ink-muted">Kind</span>
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value as ProjectKind)}
-              className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink"
+              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="individual">Individual</option>
               <option value="group">Group</option>
@@ -333,7 +333,7 @@ function ProjectCreateModal({
           Notify parents of this class
         </label>
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}
@@ -407,7 +407,7 @@ function ProgressRosterModal({
     <Modal open onClose={onClose} title={`Progress — ${project.title}`} size="lg">
       <div className="space-y-3">
         {error && (
-          <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}
@@ -429,7 +429,7 @@ function ProgressRosterModal({
                       <div>
                         <div className="text-sm font-medium text-ink">
                           {r.student_name}{" "}
-                          <span className="font-mono text-xs text-ink-subtle">
+                          <span className="text-[12px] tabular-nums text-ink-subtle">
                             {r.student_admission_no}
                           </span>
                         </div>

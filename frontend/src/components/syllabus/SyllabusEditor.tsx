@@ -181,7 +181,7 @@ export function SyllabusEditor({ csId, backHref }: { csId: string; backHref: str
                     {ch.planned_periods ? ` · ${ch.planned_periods} periods` : ""}
                     {overdue && <span className="text-amber-500"> · should be finished</span>}
                   </div>
-                  {ch.description && <p className="mt-1 text-sm text-ink-muted">{ch.description}</p>}
+                  {ch.description && <p className="mt-1.5 text-[13px] text-ink-muted">{ch.description}</p>}
                 </div>
                 {edit && (
                   <div className="flex gap-1">

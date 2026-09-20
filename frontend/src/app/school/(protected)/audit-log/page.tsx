@@ -104,8 +104,8 @@ export default function AuditLogPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-ink">Audit log</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Audit log</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Who changed what, when. Tracks create / update / delete on critical
           entities.
         </p>
@@ -176,7 +176,7 @@ export default function AuditLogPage() {
       </Card>
 
       {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
+        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
@@ -194,38 +194,38 @@ export default function AuditLogPage() {
       ) : (
         <Card>
           <CardBody>
-            <table className="min-w-full divide-y divide-surface-border text-sm">
-              <thead className="text-left text-xs uppercase text-ink-subtle">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <th className="px-3 py-2 font-medium">When</th>
-                  <th className="px-3 py-2 font-medium">Action</th>
-                  <th className="px-3 py-2 font-medium">Entity</th>
-                  <th className="px-3 py-2 font-medium">By</th>
-                  <th className="px-3 py-2 font-medium">Path</th>
-                  <th className="px-3 py-2 font-medium">Changes</th>
+                  <th className="px-4 py-3 font-bold">When</th>
+                  <th className="px-4 py-3 font-bold">Action</th>
+                  <th className="px-4 py-3 font-bold">Entity</th>
+                  <th className="px-4 py-3 font-bold">By</th>
+                  <th className="px-4 py-3 font-bold">Path</th>
+                  <th className="px-4 py-3 font-bold">Changes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {items.map((e) => (
                   <Fragment key={e.id}>
                     <tr className="align-top hover:bg-surface-hover">
-                      <td className="px-3 py-2 text-ink-muted">
+                      <td className="px-4 py-3 text-ink-muted">
                         {new Date(e.created_at).toLocaleString()}
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-4 py-3">
                         <Badge tone={actionTone(e.action)}>{e.action}</Badge>
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-4 py-3">
                         <span className="font-medium text-ink">
                           {e.entity_type}
                         </span>
                         {e.entity_id != null && (
-                          <span className="ml-1 font-mono text-xs text-ink-subtle">
+                          <span className="ml-1 text-[12px] tabular-nums text-ink-subtle">
                             #{e.entity_id}
                           </span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-ink-muted">
+                      <td className="px-4 py-3 text-ink-muted">
                         <div>{e.user_name ?? "—"}</div>
                         {e.user_role && (
                           <div className="text-[11px] text-ink-subtle">
@@ -233,10 +233,10 @@ export default function AuditLogPage() {
                           </div>
                         )}
                       </td>
-                      <td className="px-3 py-2 font-mono text-[11px] text-ink-subtle">
+                      <td className="px-4 py-3 font-mono text-[11px] text-ink-subtle">
                         {e.request_path ?? "—"}
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-4 py-3">
                         <button
                           type="button"
                           onClick={() =>

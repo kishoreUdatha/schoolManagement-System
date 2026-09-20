@@ -151,14 +151,14 @@ export default function TransportOverviewPage() {
               <td className={td}>{humanize(t.direction)}</td>
               <td className={td}>{t.vehicle_label ?? "—"}</td>
               <td className={td}>{t.driver_name ?? "—"}</td>
-              <td className="px-3 py-2">
+              <td className="px-4 py-3">
                 <Badge tone={statusTone[t.status]}>{humanize(t.status)}</Badge>
               </td>
               <td className={td}>
                 {t.boarded}/{t.expected}
               </td>
               <td className={td}>{t.absent || "—"}</td>
-              <td className="px-3 py-2 text-right">
+              <td className="px-4 py-3 text-right">
                 <Link href={`/school/transport/trips/${t.id}`}>
                   <Button size="sm" variant="secondary">
                     Open

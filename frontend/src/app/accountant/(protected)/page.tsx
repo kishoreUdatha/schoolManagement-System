@@ -8,8 +8,8 @@ export default function AccountantDashboard() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-ink">Accountant dashboard</h1>
-        <p className="mt-1 text-sm text-ink-muted">
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Accountant dashboard</h1>
+        <p className="mt-1.5 text-[13px] text-ink-muted">
           Fee structures, payments, and collection.
         </p>
       </div>
