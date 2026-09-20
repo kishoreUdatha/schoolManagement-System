@@ -641,7 +641,7 @@ def pdf(db: Session, c: CertificateIssue, *, count_print: bool = True) -> tuple[
                 [
                     ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
                     ("FONTSIZE", (0, 0), (-1, -1), 10),
-                    ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F6F8FC")),
+                    ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#F9FAFB")),
                     ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ]
             )

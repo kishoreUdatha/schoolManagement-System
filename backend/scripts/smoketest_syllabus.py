@@ -174,7 +174,10 @@ def main():
         mine = next(r for r in rows if r["class_subject_id"] == cs)
         sp = next(s for s in mine["sections"] if s["section_id"] == sec)
         assert mine["topics"] == 4 and sp["covered"] == 1 and sp["percent"] == 25 and sp["behind"] == 1, sp
-        code, rows = request("GET", "/school/syllabus", token=ttok)
+        # Name the year, as the admin call above already does. Without it the
+        # endpoint falls back to whichever year is current, and another suite
+        # in this run moves that — so this passed or failed on test order.
+        code, rows = request("GET", f"/school/syllabus?academic_year_id={ctx['year']}", token=ttok)
         assert any(r["class_subject_id"] == cs and r["can_edit"] for r in rows), rows
         code, err = request("DELETE", f"/school/syllabus/topics/{t1}", token=ttok)
         assert code == 400, err

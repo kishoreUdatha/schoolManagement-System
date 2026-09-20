@@ -262,7 +262,7 @@ export default function SchoolProfilePage() {
               <div className="flex items-center gap-2">
                 <input
                   type="color"
-                  value={form.brand_color || "#2454ff"}
+                  value={form.brand_color || "#2563eb"}
                   onChange={(e) =>
                     setForm({ ...form, brand_color: e.target.value })
                   }
@@ -273,7 +273,7 @@ export default function SchoolProfilePage() {
                   onChange={(e) =>
                     setForm({ ...form, brand_color: e.target.value })
                   }
-                  placeholder="#2454ff"
+                  placeholder="#2563eb"
                   className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
                 />
                 {form.brand_color && (

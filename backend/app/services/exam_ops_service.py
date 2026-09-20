@@ -731,7 +731,7 @@ def admit_card_pdf(db: Session, school_id: int, exam_id: int, student_id: int) -
         ("FONTNAME", (2, 0), (2, -1), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, -1), 9),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#DCE4EF")),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#E5E7EB")),
     ]))
     story += [t, Spacer(1, 0.5 * cm)]
 
@@ -745,10 +745,10 @@ def admit_card_pdf(db: Session, school_id: int, exam_id: int, student_id: int) -
     ] for s in card["sittings"]]
     papers = Table([head] + body, colWidths=[2.8 * cm, 3.4 * cm, 6 * cm, 2 * cm, 2.8 * cm])
     papers.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F6F8FC")),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F9FAFB")),
         ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
         ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#DCE4EF")),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#E5E7EB")),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
     ]))
     story += [papers, Spacer(1, 0.8 * cm)]

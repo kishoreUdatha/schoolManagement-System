@@ -505,11 +505,11 @@ def receipt_pdf(db: Session, o: FeePaymentOrder) -> tuple[bytes, str]:
         TableStyle(
             [
                 ("FONTSIZE", (0, 0), (-1, -1), 9),
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F6F8FC")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F9FAFB")),
                 ("ALIGN", (2, 0), (2, -1), "RIGHT"),
                 ("LINEABOVE", (0, -1), (-1, -1), 0.8, colors.black),
                 ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
-                ("GRID", (0, 0), (-1, -2), 0.25, colors.HexColor("#DCE4EF")),
+                ("GRID", (0, 0), (-1, -2), 0.25, colors.HexColor("#E5E7EB")),
             ]
         )
     )

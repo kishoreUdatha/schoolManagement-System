@@ -7,114 +7,104 @@
   :root {
     color-scheme: light;
 
-    /* Brand ramp around #2454FF. BrandingProvider may override these per
+    /* Brand ramp around #2563EB. BrandingProvider may override these per
        tenant, so every consumer reads the variable rather than the hex. */
-    --brand-50: 238 243 255;           /* #EEF3FF */
-    --brand-100: 220 230 255;
-    --brand-200: 186 204 255;
-    --brand-300: 143 170 255;          /* focus ring */
-    --brand-400: 91 128 255;
-    --brand-500: 58 102 255;
-    --brand-600: 36 84 255;            /* #2454FF primary action */
-    --brand-700: 29 67 204;            /* #1D43CC hover */
-    --brand-800: 22 52 156;
-    --brand-900: 18 35 63;             /* #12233F, the same as ink */
+    --brand-50: 239 246 255;           /* #EFF6FF */
+    --brand-100: 219 234 254;
+    --brand-200: 191 219 254;
+    --brand-300: 147 197 253;          /* focus ring */
+    --brand-400: 96 165 250;
+    --brand-500: 59 130 246;
+    --brand-600: 37 99 235;            /* #2563EB buttons and active links */
+    --brand-700: 29 78 216;            /* #1D4ED8 hover */
+    --brand-800: 30 64 175;
+    --brand-900: 30 58 138;
 
-    /* Surfaces. The workspace is white now, so a card no longer floats on a
-       tint — the border carries the separation instead, which is why
-       --surface-border matters more here than it did. */
+    /* Pure white throughout; the border and a hairline shadow do the
+       separating that a background tint used to. */
     --surface: 255 255 255;            /* #FFFFFF page */
     --surface-raised: 255 255 255;     /* #FFFFFF cards, inputs */
-    --surface-subtle: 246 248 252;     /* #F6F8FC table heads and wells */
-    --surface-border: 220 228 239;     /* #DCE4EF */
-    --surface-hover: 238 243 255;      /* #EEF3FF */
+    --surface-subtle: 249 250 251;     /* #F9FAFB table heads and wells */
+    --surface-border: 229 231 235;     /* #E5E7EB */
+    --surface-hover: 243 244 246;      /* #F3F4F6 */
 
-    --ink: 18 35 63;                   /* #12233F headings and body */
-    --ink-muted: 92 107 130;           /* #5C6B82 secondary */
-    --ink-subtle: 105 118 138;         /* #69768A — 4.5:1 on white, so
-                                          hints and placeholders are legible */
+    /* Charcoal, not navy — a blue-tinted grey beside #111827 reads as a
+       mistake rather than a second tone. */
+    --ink: 17 24 39;                   /* #111827 headings and menus */
+    --ink-muted: 75 85 99;             /* #4B5563 secondary, 7.6:1 */
+    --ink-subtle: 107 114 128;         /* #6B7280 hints, 4.8:1 */
 
-    /* The sidebar is white like the page, so the border and the selected
-       pill do the separating. Menu text and icons sit at full opacity —
-       nothing in here is dimmed to imply it is secondary. */
+    /* The sidebar is white like the page. Its text is the same charcoal as
+       a heading, and the accent marks where you are. */
     --sidebar: 255 255 255;            /* #FFFFFF */
-    --sidebar-ink: 23 52 92;           /* #17345C menu text */
-    --sidebar-icon: 35 76 124;         /* #234C7C icons */
-    --sidebar-ink-muted: 23 52 92;     /* the same: 100% opacity throughout */
-    --sidebar-active: 43 93 170;       /* #2B5DAA selected */
-    --sidebar-hover: 237 242 250;      /* #EDF2FA */
-    /* Two different jobs. The rules inside the panel separate a heading
-       from a list and should stay quiet. The outer edge is the only thing
-       dividing a white sidebar from a white page, so it carries 3.3:1 —
-       at #DCE4EF it was 1.28:1 and effectively invisible. */
-    --sidebar-border: 220 228 239;     /* #DCE4EF internal rules */
-    --sidebar-edge: 118 144 178;       /* #7690B2 panel against page */
+    --sidebar-ink: 17 24 39;           /* #111827 menu text */
+    --sidebar-icon: 107 114 128;       /* #6B7280 icons */
+    --sidebar-ink-muted: 17 24 39;     /* the same: 100% opacity throughout */
+    --sidebar-active: 37 99 235;       /* #2563EB selected */
+    --sidebar-hover: 243 244 246;      /* #F3F4F6 */
+    --sidebar-border: 229 231 235;     /* #E5E7EB internal rules, quiet */
+    --sidebar-edge: 139 147 161;       /* #8B93A1 panel against page, 3.1:1 */
 
-    /* Status. These were written out as raw hex in 350-odd places; naming
-       them means a school can be told what red means once. */
-    --success: 7 121 85;               /* #077955 — 4.9:1 on its own chip */
-    --success-bg: 233 247 240;
+    /* Status, named once so a colour means the same thing everywhere. */
+    --success: 7 121 85;
+    --success-bg: 236 253 245;
     --warning: 142 92 5;
-    --warning-bg: 255 243 216;
+    --warning-bg: 255 251 235;
     --danger: 184 46 69;
-    --danger-bg: 255 235 238;
-    --info: 36 84 255;
-    --info-bg: 238 243 255;
+    --danger-bg: 254 242 242;
+    --info: 37 99 235;
+    --info-bg: 239 246 255;
 
-    --scrollbar-thumb: 205 215 230;
-    --scrollbar-thumb-hover: 168 183 205;
+    --scrollbar-thumb: 209 213 219;
+    --scrollbar-thumb-hover: 156 163 175;
 
-    /* A white page needs no glow behind it. */
     --body-glow: transparent;
   }
 
   .dark {
     color-scheme: dark;
 
-    /* The same blue family after dark, so a school working late is not
-       looking at a different product. */
-    --brand-50: 26 44 96;
-    --brand-100: 22 52 156;
-    --brand-200: 29 67 204;
-    --brand-300: 143 170 255;
-    --brand-400: 91 128 255;
-    --brand-500: 58 102 255;
-    --brand-600: 36 84 255;
-    --brand-700: 29 67 204;
-    --brand-800: 22 52 156;
-    --brand-900: 26 44 96;
+    --brand-50: 23 37 84;
+    --brand-100: 30 58 138;
+    --brand-200: 30 64 175;
+    --brand-300: 147 197 253;
+    --brand-400: 96 165 250;
+    --brand-500: 59 130 246;
+    --brand-600: 37 99 235;
+    --brand-700: 29 78 216;
+    --brand-800: 30 64 175;
+    --brand-900: 23 37 84;
 
-    --surface: 9 16 30;
-    --surface-raised: 16 27 47;
-    --surface-subtle: 22 35 58;
-    --surface-border: 32 48 76;
-    --surface-hover: 28 44 74;
+    --surface: 9 11 17;
+    --surface-raised: 17 21 30;
+    --surface-subtle: 24 29 41;
+    --surface-border: 39 45 58;
+    --surface-hover: 33 39 52;
 
-    --ink: 233 239 249;
-    --ink-muted: 156 172 201;
-    --ink-subtle: 116 134 166;
+    --ink: 243 244 246;
+    --ink-muted: 156 163 175;
+    --ink-subtle: 122 130 145;
 
-    /* Already dark; it sits a shade off the page so the edge still reads. */
-    --sidebar: 14 26 45;
-    --sidebar-ink: 231 238 248;
-    --sidebar-icon: 168 191 224;
-    --sidebar-ink-muted: 231 238 248;
-    --sidebar-active: 43 93 170;
-    --sidebar-hover: 26 44 72;
-    --sidebar-border: 30 50 80;
-    --sidebar-edge: 30 50 80;
+    --sidebar: 15 18 26;
+    --sidebar-ink: 243 244 246;
+    --sidebar-icon: 156 163 175;
+    --sidebar-ink-muted: 243 244 246;
+    --sidebar-active: 37 99 235;
+    --sidebar-hover: 31 37 49;
+    --sidebar-border: 39 45 58;
+    --sidebar-edge: 39 45 58;
 
     --success: 52 199 148;
-    --success-bg: 10 58 44;
+    --success-bg: 8 47 36;
     --warning: 240 189 92;
-    --warning-bg: 63 47 10;
+    --warning-bg: 58 43 9;
     --danger: 255 138 155;
-    --danger-bg: 66 21 30;
-    --info: 143 170 255;
-    --info-bg: 21 38 82;
+    --danger-bg: 62 20 28;
+    --info: 147 197 253;
+    --info-bg: 23 37 84;
 
-    --scrollbar-thumb: 38 54 86;
-    --scrollbar-thumb-hover: 54 74 114;
+    --scrollbar-thumb: 45 52 66;
+    --scrollbar-thumb-hover: 64 73 90;
 
     --body-glow: transparent;
   }

@@ -71,7 +71,7 @@ const config: Config = {
         "glow-sm":
           "0 0 0 1px rgb(var(--brand-600) / 0.2), 0 2px 8px -2px rgb(var(--brand-600) / 0.28)",
         // A white card on a white page needs an edge, not a shadow.
-        card: "0 1px 2px 0 rgb(18 35 63 / 0.04)",
+        card: "0 1px 2px 0 rgb(17 24 39 / 0.05)",
       },
     },
   },
