@@ -34,14 +34,16 @@
     --ink-subtle: 105 118 138;         /* #69768A — 4.5:1 on white, so
                                           hints and placeholders are legible */
 
-    /* The sidebar is the one dark surface in a white app, so it needs its
-       own scale — reusing --surface would make every nested component
-       inside it unreadable. */
-    --sidebar: 23 45 77;               /* #172D4D */
-    --sidebar-ink: 231 238 248;        /* #E7EEF8 */
-    --sidebar-ink-muted: 154 173 199;  /* #9AADC7 inactive items */
-    --sidebar-hover: 31 58 96;         /* #1F3A60 */
-    --sidebar-border: 30 56 92;
+    /* The sidebar is white like the page, so the border and the selected
+       pill do the separating. Menu text and icons sit at full opacity —
+       nothing in here is dimmed to imply it is secondary. */
+    --sidebar: 255 255 255;            /* #FFFFFF */
+    --sidebar-ink: 23 52 92;           /* #17345C menu text */
+    --sidebar-icon: 35 76 124;         /* #234C7C icons */
+    --sidebar-ink-muted: 23 52 92;     /* the same: 100% opacity throughout */
+    --sidebar-active: 43 93 170;       /* #2B5DAA selected */
+    --sidebar-hover: 237 242 250;      /* #EDF2FA */
+    --sidebar-border: 220 228 239;     /* #DCE4EF, as the page */
 
     /* Status. These were written out as raw hex in 350-odd places; naming
        them means a school can be told what red means once. */
@@ -90,7 +92,9 @@
     /* Already dark; it sits a shade off the page so the edge still reads. */
     --sidebar: 14 26 45;
     --sidebar-ink: 231 238 248;
-    --sidebar-ink-muted: 148 166 193;
+    --sidebar-icon: 168 191 224;
+    --sidebar-ink-muted: 231 238 248;
+    --sidebar-active: 43 93 170;
     --sidebar-hover: 26 44 72;
     --sidebar-border: 30 50 80;
 

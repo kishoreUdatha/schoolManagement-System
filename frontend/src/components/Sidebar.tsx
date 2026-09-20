@@ -110,22 +110,17 @@ export function Sidebar({
         href={item.href}
         onClick={() => setMobileOpen(false)}
         className={cn(
-          "group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-tight transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
+          "group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[15px] font-semibold leading-tight transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
           active
-            ? "bg-brand-600 font-extrabold text-white"
-            : "font-semibold text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-ink"
+            ? "bg-sidebar-active text-white"
+            : "text-sidebar-ink hover:bg-sidebar-hover"
         )}
       >
-        {active && (
-          <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-white/70" />
-        )}
         {Icon && (
           <Icon
             className={cn(
               "h-3.5 w-3.5 shrink-0",
-              active
-                ? "text-white"
-                : "text-sidebar-muted group-hover:text-sidebar-ink"
+              active ? "text-white" : "text-sidebar-icon"
             )}
             strokeWidth={1.75}
           />
@@ -185,14 +180,14 @@ export function Sidebar({
                 type="button"
                 onClick={() => toggle(section.heading!)}
                 className={cn(
-                  "group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
-                  "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-ink"
+                  "group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
+                  "text-sidebar-ink hover:bg-sidebar-hover"
                 )}
                 aria-expanded={open}
               >
                 {SectionIcon && (
                   <SectionIcon
-                    className="h-3.5 w-3.5 shrink-0 text-sidebar-muted group-hover:text-sidebar-ink"
+                    className="h-3.5 w-3.5 shrink-0 text-sidebar-icon"
                     strokeWidth={1.75}
                   />
                 )}
@@ -226,7 +221,7 @@ export function Sidebar({
       <div className="border-t border-sidebar-border px-3 py-3">
         {user && (
           <div className="mb-1.5 flex items-center gap-2 text-xs">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-hover text-[11px] font-extrabold uppercase text-sidebar-ink">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-hover text-[11px] font-extrabold uppercase text-sidebar-icon">
               {initials(user.full_name)}
             </div>
             <div className="min-w-0">
@@ -242,7 +237,7 @@ export function Sidebar({
         <div className="flex items-center gap-2">
           <button
             onClick={logout}
-            className="flex-1 rounded-lg border border-sidebar-border bg-transparent px-3 py-2 text-[12px] font-bold text-sidebar-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-ink"
+            className="flex-1 rounded-lg border border-sidebar-border bg-transparent px-3 py-2 text-[12px] font-bold text-sidebar-ink transition-colors hover:bg-sidebar-hover"
           >
             Sign out
           </button>
@@ -304,7 +299,7 @@ export function Sidebar({
             <button
               aria-label="Close menu"
               onClick={() => setMobileOpen(false)}
-              className="absolute right-2 top-2 z-10 rounded-md p-1 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-ink"
+              className="absolute right-2 top-2 z-10 rounded-md p-1 text-sidebar-icon hover:bg-sidebar-hover"
             >
               <X className="h-4 w-4" />
             </button>

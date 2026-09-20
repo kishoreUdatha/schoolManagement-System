@@ -35,12 +35,15 @@ const config: Config = {
           muted: "rgb(var(--ink-muted) / <alpha-value>)",
           subtle: "rgb(var(--ink-subtle) / <alpha-value>)",
         },
-        // The sidebar is the one dark surface in a white app and needs its
-        // own scale; nested components there cannot read --surface.
+        // The sidebar keeps its own scale even though it is white now: its
+        // text, icons and selected state are a different blue from the page,
+        // and one role could be themed without touching the other.
         sidebar: {
           DEFAULT: "rgb(var(--sidebar) / <alpha-value>)",
           ink: "rgb(var(--sidebar-ink) / <alpha-value>)",
           muted: "rgb(var(--sidebar-ink-muted) / <alpha-value>)",
+          icon: "rgb(var(--sidebar-icon) / <alpha-value>)",
+          active: "rgb(var(--sidebar-active) / <alpha-value>)",
           hover: "rgb(var(--sidebar-hover) / <alpha-value>)",
           border: "rgb(var(--sidebar-border) / <alpha-value>)",
         },
