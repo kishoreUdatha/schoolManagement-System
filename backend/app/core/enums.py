@@ -578,6 +578,63 @@ class ConsentResponse(str, enum.Enum):
     no = "no"
 
 
+class EmploymentType(str, enum.Enum):
+    full_time = "full_time"
+    part_time = "part_time"
+    contract = "contract"
+    temporary = "temporary"
+
+
+class OpeningStatus(str, enum.Enum):
+    draft = "draft"
+    open = "open"
+    on_hold = "on_hold"
+    closed = "closed"
+    filled = "filled"
+
+
+class CandidateSource(str, enum.Enum):
+    website = "website"
+    referral = "referral"
+    agency = "agency"
+    walk_in = "walk_in"
+    job_portal = "job_portal"
+    other = "other"
+
+
+class ApplicationStage(str, enum.Enum):
+    applied = "applied"
+    screening = "screening"
+    shortlisted = "shortlisted"
+    interview = "interview"
+    offered = "offered"
+    hired = "hired"
+    rejected = "rejected"
+    withdrawn = "withdrawn"
+
+
+class InterviewMode(str, enum.Enum):
+    in_person = "in_person"
+    phone = "phone"
+    video = "video"
+
+
+class InterviewStatus(str, enum.Enum):
+    scheduled = "scheduled"
+    done = "done"
+    cancelled = "cancelled"
+    no_show = "no_show"
+
+
+class OfferStatus(str, enum.Enum):
+    draft = "draft"
+    sent = "sent"
+    accepted = "accepted"
+    declined = "declined"
+    withdrawn = "withdrawn"
+    expired = "expired"
+
+
 class DisciplineCategory(str, enum.Enum):
     bullying = "bullying"
     fighting = "fighting"

@@ -8,6 +8,8 @@ from app.core.enums import StaffLeaveKind, StaffLeaveStatus
 
 class StaffLeaveCreate(BaseModel):
     kind: StaffLeaveKind = StaffLeaveKind.casual
+    # a configured leave type; its entitlement is then checked and used up
+    leave_type_id: Optional[int] = None
     from_date: date
     to_date: date
     reason: Optional[str] = Field(None, max_length=2000)
@@ -32,6 +34,7 @@ class StaffLeaveRead(BaseModel):
     applicant_name: Optional[str] = None
     applicant_role: Optional[str] = None
     kind: StaffLeaveKind
+    leave_type_id: Optional[int] = None
     from_date: date
     to_date: date
     days: int

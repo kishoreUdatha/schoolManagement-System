@@ -13,6 +13,7 @@ from app.api.v1.super_admin import (
     usage as super_admin_usage,
 )
 from app.api.v1.public import admissions as public_admissions
+from app.api.v1.public import careers as public_careers
 from app.api.v1.public import payments as public_payments
 from app.api.v1.public import transport as public_transport
 from app.api.v1.school import (
@@ -42,6 +43,7 @@ from app.api.v1.school import (
     health as school_health,
     holidays as school_holidays,
     hostel as school_hostel,
+    hr as school_hr,
     inventory as school_inventory,
     library as school_library,
     notices as school_notices,
@@ -771,6 +773,18 @@ app.include_router(
     parent_discipline.router,
     prefix="/api/v1/parent/me/children",
     tags=["parent / discipline"],
+)
+
+app.include_router(
+    school_hr.router,
+    prefix="/api/v1/school/hr",
+    tags=["school / recruitment, leave entitlement"],
+)
+
+app.include_router(
+    public_careers.router,
+    prefix="/api/v1/public/careers",
+    tags=["public / careers"],
 )
 
 

@@ -25,6 +25,7 @@ from app.models.staff_attendance import StaffAttendance
 from app.models.staff_leave import StaffLeave
 from app.models.user import User
 from app.schemas.staff_leave import StaffLeaveCreate, StaffLeaveDecide
+from app.services import hr_service
 
 
 def to_read_dict(db: Session, l: StaffLeave) -> dict:
@@ -36,6 +37,7 @@ def to_read_dict(db: Session, l: StaffLeave) -> dict:
         "applicant_name": applicant.full_name if applicant else None,
         "applicant_role": applicant.role.value if applicant else None,
         "kind": l.kind,
+        "leave_type_id": l.leave_type_id,
         "from_date": l.from_date,
         "to_date": l.to_date,
         "days": (l.to_date - l.from_date).days + 1,
@@ -98,11 +100,20 @@ def apply_leave(
         school_id=school_id,
         applicant_user_id=applicant_user_id,
         kind=data.kind,
+        leave_type_id=data.leave_type_id,
         from_date=data.from_date,
         to_date=data.to_date,
         reason=(data.reason or "").strip() or None,
         status=StaffLeaveStatus.pending,
     )
+    if data.leave_type_id:
+        from app.models.hr import LeaveType
+
+        t = db.get(LeaveType, data.leave_type_id)
+        if not t or t.school_id != school_id or not t.is_active:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown leave type")
+        l.kind = t.kind
+        hr_service.check_balance(db, l)
     db.add(l)
     db.commit()
     db.refresh(l)
@@ -163,8 +174,11 @@ def cancel_own(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot cancel a {l.status.value} leave",
         )
+    was_approved = l.status == StaffLeaveStatus.approved
     l.status = StaffLeaveStatus.cancelled
     l.decided_at = datetime.now(timezone.utc)
+    if was_approved:
+        hr_service.consume(db, l, -1)  # give the days back
     db.commit()
     db.refresh(l)
     return l
@@ -197,6 +211,8 @@ def decide(
     db.refresh(l)
 
     if data.status == StaffLeaveStatus.approved:
+        hr_service.consume(db, l, 1)
+        db.commit()
         _materialize_attendance(db, l)
 
     _notify_applicant(db, l)

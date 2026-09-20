@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { MyLeaveBalances } from "@/components/hr/MyLeaveBalances";
 import { api, apiError } from "@/lib/api";
 
 type LeaveKind = "casual" | "sick" | "earned" | "unpaid" | "other";
@@ -79,6 +80,8 @@ export default function TeacherLeavesPage() {
         </div>
         <Button onClick={() => setOpenApply(true)}>Apply for leave</Button>
       </div>
+
+      <MyLeaveBalances />
 
       {error && (
         <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">
@@ -169,6 +172,8 @@ function ApplyModal({
   onDone: () => void;
 }) {
   const [kind, setKind] = useState<LeaveKind>("casual");
+  const [types, setTypes] = useState<{ id: number; name: string; kind: LeaveKind }[]>([]);
+  const [typeId, setTypeId] = useState("");
   const [fromDate, setFromDate] = useState(todayIso());
   const [toDate, setToDate] = useState(todayIso());
   const [reason, setReason] = useState("");
@@ -182,6 +187,7 @@ function ApplyModal({
     try {
       await api.post("/api/v1/staff/leaves", {
         kind,
+        leave_type_id: typeId ? Number(typeId) : null,
         from_date: fromDate,
         to_date: toDate,
         reason: reason.trim() || null,
@@ -194,10 +200,43 @@ function ApplyModal({
     }
   }
 
+  useEffect(() => {
+    api
+      .get<{ id: number; name: string; kind: LeaveKind }[]>("/api/v1/staff/leaves/types")
+      .then((r) => {
+        setTypes(r.data);
+        if (r.data[0]) {
+          setTypeId(String(r.data[0].id));
+          setKind(r.data[0].kind);
+        }
+      })
+      .catch(() => setTypes([]));
+  }, []);
+
   return (
     <Modal open onClose={onClose} title="Apply for leave">
       <form onSubmit={submit} className="space-y-4">
-        <label className="flex flex-col gap-1">
+        {types.length > 0 && (
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-ink-muted">Leave type</span>
+            <select
+              value={typeId}
+              onChange={(e) => {
+                setTypeId(e.target.value);
+                const t = types.find((x) => String(x.id) === e.target.value);
+                if (t) setKind(t.kind);
+              }}
+              className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink"
+            >
+              {types.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label className={types.length > 0 ? "hidden" : "flex flex-col gap-1"}>
           <span className="text-sm font-medium text-ink-muted">Kind</span>
           <select
             value={kind}

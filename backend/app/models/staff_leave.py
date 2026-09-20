@@ -44,6 +44,9 @@ class StaffLeave(Base, PrimaryKeyMixin, TimestampMixin):
     kind: Mapped[StaffLeaveKind] = mapped_column(
         SAEnum(StaffLeaveKind, name="staff_leave_kind"), nullable=False
     )
+    leave_type_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("leave_types.id", ondelete="SET NULL")
+    )
     from_date: Mapped[date] = mapped_column(Date, nullable=False)
     to_date: Mapped[date] = mapped_column(Date, nullable=False)
     reason: Mapped[Optional[str]] = mapped_column(Text)

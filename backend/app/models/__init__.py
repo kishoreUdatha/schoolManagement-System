@@ -61,6 +61,15 @@ from app.models.hostel import (
     HostelRoom,
     MessMenu,
 )
+from app.models.hr import (
+    Candidate,
+    CandidateApplication,
+    InterviewSchedule,
+    JobOpening,
+    LeaveBalance,
+    LeaveType,
+    Offer,
+)
 from app.models.homework import Homework, HomeworkSubmission
 from app.models.inventory import (
     Asset,
@@ -234,6 +243,13 @@ __all__ = [
     "User",
     "UserOtp",
     "Visit",
+    "Candidate",
+    "CandidateApplication",
+    "InterviewSchedule",
+    "JobOpening",
+    "LeaveBalance",
+    "LeaveType",
+    "Offer",
     "CounsellingCase",
     "CounsellingSession",
     "DisciplineAction",

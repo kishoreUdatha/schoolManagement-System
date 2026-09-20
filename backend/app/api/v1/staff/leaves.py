@@ -1,13 +1,15 @@
 """Story 8.2 — Employee-side leave application + my-leaves list."""
-from typing import Annotated
+from datetime import date
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import CurrentUser
 from app.database import get_db
+from app.schemas.hr import BalanceRead, LeaveTypeRead
 from app.schemas.staff_leave import StaffLeaveCreate, StaffLeaveRead
-from app.services import staff_leave_service
+from app.services import hr_service, staff_leave_service
 
 
 router = APIRouter()
@@ -75,3 +77,30 @@ def cancel(
         db, leave_id, current_user.id, current_user.school_id
     )
     return StaffLeaveRead.model_validate(staff_leave_service.to_read_dict(db, l))
+
+
+@router.get(
+    "/balances",
+    response_model=list[BalanceRead],
+    summary="My leave entitlement for a year",
+)
+def my_balances(
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    year: Optional[int] = None,
+):
+    if not staff_leave_service.can_apply(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only school employees have leave balances",
+        )
+    return hr_service.balances(db, current_user.school_id, year or date.today().year, current_user.id)
+
+
+@router.get(
+    "/types",
+    response_model=list[LeaveTypeRead],
+    summary="Leave types I can apply under",
+)
+def types(current_user: CurrentUser, db: Annotated[Session, Depends(get_db)]):
+    return [t for t in hr_service.list_leave_types(db, current_user.school_id) if t.is_active]
