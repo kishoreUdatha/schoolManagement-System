@@ -7,6 +7,7 @@ from app.api.v1 import branding, health
 from app.api.v1.super_admin import (
     auth as super_admin_auth,
     payments as super_admin_payments,
+    platform as super_admin_platform,
     plans as super_admin_plans,
     subscriptions as super_admin_subscriptions,
     tenants as super_admin_tenants,
@@ -70,6 +71,7 @@ from app.api.v1.school import (
     report_cards as school_report_cards,
     sections as school_sections,
     staff as school_staff,
+    staff_ops as school_staff_ops,
     staff_attendance as school_staff_attendance,
     staff_leaves as school_staff_leaves,
     student_detail as school_student_detail,
@@ -80,6 +82,7 @@ from app.api.v1.school import (
     timetable as school_timetable,
     transport as school_transport,
     videos as school_videos,
+    wellbeing as school_wellbeing,
 )
 from app.api.v1.accountant import dashboard as accountant_dashboard
 from app.api.v1.staff import (
@@ -252,6 +255,11 @@ app.include_router(
     tags=["super-admin / usage"],
 )
 app.include_router(
+    super_admin_platform.router,
+    prefix="/api/v1/super-admin",
+    tags=["super-admin / platform"],
+)
+app.include_router(
     school_auth.router,
     prefix="/api/v1/school/auth",
     tags=["school / auth"],
@@ -290,6 +298,11 @@ app.include_router(
     school_class_subjects.class_subjects_router,
     prefix="/api/v1/school/class-subjects",
     tags=["school / class-subjects"],
+)
+app.include_router(
+    school_staff_ops.router,
+    prefix="/api/v1/school/staff-ops",
+    tags=["school / staff operations"],
 )
 app.include_router(
     school_staff.router,
@@ -845,6 +858,11 @@ app.include_router(
     school_pastoral.router,
     prefix="/api/v1/school/discipline",
     tags=["school / discipline, counselling"],
+)
+app.include_router(
+    school_wellbeing.router,
+    prefix="/api/v1/school/wellbeing",
+    tags=["school / wellbeing"],
 )
 
 app.include_router(

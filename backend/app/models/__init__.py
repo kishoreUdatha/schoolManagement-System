@@ -125,12 +125,24 @@ from app.models.pastoral import (
 from app.models.datadesk import ExportJob, ImportJob, ReportDefinition
 from app.models.curriculum import LearningOutcome, OutcomeTopic, TeachingResource
 from app.models.payroll import PayrollRun, PayrollSettings, Payslip, StaffSalary
+from app.models.platform import (
+    GlobalAnnouncement,
+    PlatformSetting,
+    SupportTicket,
+    TicketReply,
+)
 from app.models.plan import Plan, PlanModule
 from app.models.project import Project, ProjectProgress
 from app.models.rbac import Branch, Permission, Role, RolePermission, UserRoleAssignment
 from app.models.result_override import ExamResultOverride
 from app.models.rubric import Rubric, RubricCriterion, RubricScore
 from app.models.register import AttendanceSession, Visitor
+from app.models.staff_ops import (
+    ClassroomObservation,
+    ExitClearance,
+    ExitClearanceItem,
+    StaffQualification,
+)
 from app.models.staff import Staff
 from app.models.staff_attendance import StaffAttendance
 from app.models.staff_leave import StaffLeave
@@ -158,6 +170,12 @@ from app.models.transport import (
     VehicleLog,
 )
 from app.models.usage import TenantUsage
+from app.models.wellbeing import (
+    CounsellingAppointment,
+    EmergencyEscalation,
+    FirstAidLog,
+    MedicationAdministration,
+)
 from app.models.visitor import GatePass, SecurityIncident, Visit
 from app.models.user import User, UserOtp
 from app.models.weekly_report import WeeklyReport

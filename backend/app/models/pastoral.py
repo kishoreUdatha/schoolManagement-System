@@ -105,6 +105,12 @@ class DisciplineAction(Base, PrimaryKeyMixin, TimestampMixin, _School):
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
     completed_on: Mapped[Optional[date]] = mapped_column(Date)
+    # completed_on existed but nothing ever set it, so an outstanding detention
+    # and a served one looked the same. Naming who signed it off is what makes
+    # "served" a fact rather than an assertion.
+    completed_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
     counselling_case_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("counselling_cases.id", ondelete="SET NULL")
     )

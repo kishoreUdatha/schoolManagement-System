@@ -14,13 +14,13 @@ SCR-010	Done	Done	/super-admin/tenants	Paginated table with search and status
 SCR-011	Done	Done	/super-admin/tenants	Creates tenant, school and admin
 SCR-012	Done	Done	/super-admin/tenants/[id]	Subscription, schools, usage, payments, suspend
 SCR-013	Done	Done	/super-admin/plans	List plus create and edit
-SCR-014	Partial	Partial	/super-admin/tenants/[id]	Per-tenant cards, no billing screen
-SCR-015	Partial	Done	/super-admin/tenants/[id]	Usage versus quota card only
-SCR-016	Missing	Missing	-	No platform user management
-SCR-017	Missing	Missing	-	No ticketing anywhere
-SCR-018	Partial	Partial	/	Online pill only, two health endpoints
-SCR-019	Missing	Missing	-	No global announcements
-SCR-020	Missing	Missing	-	No platform settings screen
+SCR-014	Done	Partial	/super-admin/billing	Subscription, plan and payments; invoicing is not modelled
+SCR-015	Done	Done	/super-admin/usage	Usage against quota, per tenant
+SCR-016	Done	Done	/super-admin/users	Operator accounts; the last active one cannot be switched off
+SCR-017	Done	Done	/super-admin/tickets	Internal notes kept out of a non-internal read, in the service
+SCR-018	Done	Done	/super-admin/health	Two things probed; the rest labelled not monitored
+SCR-019	Done	Done	/super-admin/announcements	Live only inside its window
+SCR-020	Done	Done	/super-admin/settings	Known knobs listed before anybody sets them
 SCR-021	Done	Done	/super-admin/schools	Organisation editable via the tenant patch
 SCR-022	Done	Done	/super-admin/schools	Searchable list with status and contact
 SCR-023	Partial	Partial	/super-admin/tenants	School only creatable with a new tenant
@@ -82,16 +82,16 @@ SCR-078	Done	Done	/school/parents/[id]/payments	Across all their children, not o
 SCR-079	Done	Done	/school/parents/[id]/activity	Audit by actor and by subject, sign-ins stated as unrecorded
 SCR-080	Done	Done	/school/staff	Role and status filters with search
 SCR-081	Done	Done	/school/staff	Creates staff and login with temp password
-SCR-082	Partial	Done	/school/staff	No staff profile page, only a row and modal
+SCR-082	Done	Done	/school/staff/[id]	Profile, documents, qualifications and leave in one place
 SCR-083	Done	Done	/school/staff	Name, phone, number, designation, department
 SCR-084	Done	Done	/school/classes	Class teacher plus subject teacher per class
 SCR-085	Done	Done	/school/classes	Assign subjects and teacher per class-subject
-SCR-086	Missing	Partial	-	No workload view anywhere
-SCR-087	Partial	Done	/school/documents	No qualification fields on the staff record
-SCR-088	Partial	Done	/school/staff-attendance	Single day only; no monthly summary
+SCR-086	Done	Done	/school/staff/workload	Computed from the timetable; nobody is flagged overloaded
+SCR-087	Done	Done	/school/staff/[id]/qualifications	Qualifications with the certificate already on file
+SCR-088	Done	Done	/school/staff/attendance-summary	A month per person, using the existing analytics
 SCR-089	Done	Done	/school/staff-leaves	Decisions plus per-employee balances
-SCR-090	Missing	Missing	-	No observation or appraisal anywhere
-SCR-091	Partial	Partial	/school/staff	Deactivate only; no clearance or exit flow
+SCR-090	Done	Done	/school/staff/observations	What was seen and what to try next; no score field exists
+SCR-091	Done	Done	/school/staff/[id]/exit	Seven areas, none assumed cleared; cannot complete with one open
 SCR-092	Done	Done	/school/academic-years	Full CRUD, archive, set-current
 SCR-093	Done	Done	/school/terms	Terms per year with overlap guard
 SCR-094	Done	Done	/school/classes	Create, rename, reorder, delete classes
@@ -176,7 +176,7 @@ SCR-172	Missing	Missing	-	No requisition or approval to hire
 SCR-173	Done	Done	/school/recruitment	Create, publish, close, careers flag
 SCR-174	Done	Done	/school/recruitment	Opening and stage filters with moves
 SCR-175	Done	Done	/school/recruitment	Candidate detail in a modal only (in a tab, complete)
-SCR-176	Partial	Done	/school/recruitment	Per application; no interview calendar
+SCR-176	Done	Partial	/school/recruitment/interviews	Week view with clashes; wants a list-interviews endpoint
 SCR-177	Done	Done	/school/recruitment	Draft, send, respond, hire creates staff
 SCR-178	Missing	Missing	-	No onboarding checklist anywhere
 SCR-179	Done	Done	/school/staff-attendance	Check in and out with override
@@ -219,13 +219,13 @@ SCR-215	Done	Done	/school/hostel	Complaints triage plus monthly hostel fees
 SCR-216	Done	Done	/school/health	Five KPI cards with visits and alerts tabs
 SCR-217	Done	Done	/school/health/students/[id]	Profile, checkups, immunisations, visits
 SCR-218	Done	Done	/school/health	Complaint, temperature, outcome, parent notice
-SCR-219	Partial	Partial	/school/health	One medicine field; no register or stock
-SCR-220	Partial	Done	/school/health	Split across tabs; no drive or bulk entry
-SCR-221	Partial	Partial	/school/counselling	Next-session date only; no booking diary
+SCR-219	Done	Done	/school/health/medication	Append-only; a correction supersedes rather than edits
+SCR-220	Done	Done	/school/health/immunisation	Bulk entry for a drive, capped per section
+SCR-221	Done	Done	/school/counselling/diary	Private notes never selected, not filtered later
 SCR-222	Done	Done	/school/counselling	Session notes with privacy and closure
 SCR-223	Done	Done	/school/discipline	Report incident with category and severity
-SCR-224	Partial	Done	/school/discipline	No way to mark an action served
-SCR-225	Partial	Partial	/school/health	Contacts shown; no escalation chain
+SCR-224	Done	Done	/school/discipline/actions	A sanction can be marked served, and outstanding ones show
+SCR-225	Done	Done	/school/health/emergency	Ordered chain that renumbers when one is removed
 SCR-226	Done	Done	/school/front-desk	Six stat cards including inside now
 SCR-227	Done	Done	/school/front-desk	Walk-in check-in with ID and host
 SCR-228	Done	Done	/school/front-desk	Host confirms or declines an expected visitor
@@ -283,11 +283,11 @@ SCR-279	Done	Done	/school/reports/transport	Riders against seats, over-capacity 
 SCR-280	Done	Done	/school/reports/library	Issues and returns by month, and top titles
 SCR-281	Done	Done	/school/reports/inventory	Stock and asset value by category, and low stock
 SCR-282	Done	Done	/school/reports/notifications	By audience, month and channel, skipped kept apart from failed
-SCR-283	Partial	Done	/school/data-desk	Sources, columns, run and export; no filter UI
+SCR-283	Done	Done	/school/data-desk/reports/[id]	Filter keys the source actually accepts, no invented operators
 SCR-284	Done	Done	/school/staff	Create login, activate, reset password
 SCR-285	Done	Done	/school/roles	Role CRUD with built-in and custom
 SCR-286	Done	Done	/school/roles	Permission catalogue only inside the role modal (in a tab, complete)
-SCR-287	Partial	Done	/school/roles	Per-role grid, no cross-role matrix
+SCR-287	Done	Done	/school/roles/matrix	Cross-role grid, editable, with a differences-only view
 SCR-288	Done	Done	/school/roles	Assign person, role and branch
 SCR-289	Done	Done	/school/settings	Settings index with set-up state
 SCR-290	Done	Done	/school/grading	Grade scales and report-card settings

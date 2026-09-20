@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { FormEvent, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -411,7 +413,14 @@ function Reports({ onChange, onError }: Handlers) {
             {items.map((r) => (
               <tr key={r.id}>
                 <td className={tdStrong}>
-                  {r.name}
+                  {/* The name is the way into the report's filters; without a
+                      link the page existed but nobody could find it. */}
+                  <Link
+                    href={`/school/data-desk/reports/${r.id}`}
+                    className="hover:text-brand-600 hover:underline"
+                  >
+                    {r.name}
+                  </Link>
                   <span className="block text-xs text-ink-subtle">
                     {r.code}
                     {r.description ? ` · ${r.description}` : ""}

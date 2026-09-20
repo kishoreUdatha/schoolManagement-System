@@ -892,3 +892,59 @@ class ContactMethod(str, enum.Enum):
     email = "email"
     meeting = "meeting"
     home_visit = "home_visit"
+
+
+class TicketStatus(str, enum.Enum):
+    open = "open"
+    waiting = "waiting"      # with the school, not with us
+    resolved = "resolved"
+    closed = "closed"
+
+
+class TicketPriority(str, enum.Enum):
+    low = "low"
+    normal = "normal"
+    high = "high"
+    urgent = "urgent"
+
+
+class AnnouncementAudience(str, enum.Enum):
+    all = "all"
+    school_admins = "school_admins"
+    principals = "principals"
+    teachers = "teachers"
+
+
+class ExitClearanceStatus(str, enum.Enum):
+    in_progress = "in_progress"
+    complete = "complete"
+    cancelled = "cancelled"
+
+
+class ClearanceArea(str, enum.Enum):
+    """Who has to say they have nothing outstanding before somebody leaves."""
+
+    library = "library"
+    store = "store"
+    it = "it"
+    finance = "finance"
+    hostel = "hostel"
+    transport = "transport"
+    hr = "hr"
+
+
+class AppointmentStatus(str, enum.Enum):
+    """A counselling booking. Missed is kept apart from cancelled: a run of
+    missed appointments is a signal, a cancelled one usually is not."""
+
+    booked = "booked"
+    attended = "attended"
+    missed = "missed"
+    cancelled = "cancelled"
+
+
+class FirstAidOutcome(str, enum.Enum):
+    returned_to_class = "returned_to_class"
+    rested_in_clinic = "rested_in_clinic"
+    sent_home = "sent_home"
+    referred_out = "referred_out"

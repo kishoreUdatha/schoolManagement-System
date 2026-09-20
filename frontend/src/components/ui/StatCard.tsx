@@ -7,13 +7,14 @@ interface StatCardProps {
   label: string;
   value: ReactNode;
   hint?: string;
-  accent?: "brand" | "emerald" | "amber" | "rose";
+  accent?: "neutral" | "brand" | "emerald" | "amber" | "rose";
   icon?: LucideIcon;
 }
 
 // The number carries the meaning, so it stays ink; the accent tints the chip
 // beside it. A wall of coloured numbers is harder to read, not easier.
 const dots = {
+  neutral: "bg-ink-subtle",
   brand: "bg-brand-600",
   emerald: "bg-[#07845E]",
   amber: "bg-[#8E5C05]",
@@ -21,6 +22,7 @@ const dots = {
 };
 
 const accents = {
+  neutral: "bg-surface-subtle text-ink-muted",
   brand: "bg-brand-50 text-brand-600",
   emerald: "bg-[#E9F7F0] text-[#07845E]",
   amber: "bg-[#FFF3D8] text-[#8E5C05]",
