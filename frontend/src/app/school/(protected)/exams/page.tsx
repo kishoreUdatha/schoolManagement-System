@@ -23,6 +23,9 @@ type Paper = {
   exam_date: string;
   duration_minutes: number | null;
   marks_entered_count: number;
+  marks_verified_at: string | null;
+  marks_verified_by_name: string | null;
+  marks_verified_count: number | null;
 };
 
 type Exam = {
@@ -123,6 +126,24 @@ export default function ExamsPage() {
     }
   }
 
+  // The backend refuses a sign-off by whoever entered the marks, which is the
+  // point of the check; surface that refusal rather than swallowing it.
+  async function verify(p: Paper, verified: boolean) {
+    try {
+      await api.post(`/api/v1/school/exams/papers/${p.id}/verify`, { verified });
+      setNotice(
+        verified
+          ? `${p.subject_name} marks signed off.`
+          : `Sign-off removed from ${p.subject_name}.`
+      );
+      setError(null);
+      load();
+    } catch (e) {
+      setNotice(null);
+      setError(apiError(e));
+    }
+  }
+
   async function removePaper(p: Paper) {
     if (
       !window.confirm(`Remove ${p.subject_name} paper from this exam?`)
@@ -204,7 +225,7 @@ export default function ExamsPage() {
                         <th className="py-1 font-medium">Class</th>
                         <th className="py-1 font-medium">Date</th>
                         <th className="py-1 font-medium">Max / Pass</th>
-                        <th className="py-1 font-medium">Duration</th>
+                        <th className="py-1 font-medium">Marks</th>
                         <th className="py-1 text-right"></th>
                       </tr>
                     </thead>
@@ -222,12 +243,35 @@ export default function ExamsPage() {
                           <td className="py-2">
                             {p.max_marks}/{p.pass_marks}
                           </td>
-                          <td className="py-2 text-slate-600">
-                            {p.duration_minutes ? `${p.duration_minutes} min` : "—"}
+                          <td className="py-2">
+                            {p.marks_entered_count} entered
+                            {p.marks_verified_at ? (
+                              <Badge tone="emerald" className="ml-2">
+                                Signed off
+                              </Badge>
+                            ) : p.marks_entered_count > 0 ? (
+                              <Badge tone="amber" className="ml-2">
+                                Unchecked
+                              </Badge>
+                            ) : null}
+                            {p.marks_verified_by_name && (
+                              <span className="block text-[11px] text-ink-subtle">
+                                by {p.marks_verified_by_name}
+                              </span>
+                            )}
                           </td>
                           <td className="py-2 text-right">
-                            {!e.is_published &&
-                              p.marks_entered_count === 0 && (
+                            <div className="flex justify-end gap-2">
+                              {p.marks_entered_count > 0 && !e.is_published && (
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => verify(p, !p.marks_verified_at)}
+                                >
+                                  {p.marks_verified_at ? "Undo sign-off" : "Sign off marks"}
+                                </Button>
+                              )}
+                              {!e.is_published && p.marks_entered_count === 0 && (
                                 <Button
                                   size="sm"
                                   variant="danger"
@@ -236,6 +280,7 @@ export default function ExamsPage() {
                                   Remove
                                 </Button>
                               )}
+                            </div>
                           </td>
                         </tr>
                       ))}

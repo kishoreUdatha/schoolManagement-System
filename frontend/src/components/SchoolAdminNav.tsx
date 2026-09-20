@@ -150,6 +150,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/school/transport", label: "Transport", icon: Bus },
       { href: "/school/library", label: "Library", icon: Library },
+      { href: "/school/library/members", label: "Library members", icon: Users },
       { href: "/school/hostel", label: "Hostel", icon: BedDouble },
       { href: "/school/health", label: "Health", icon: HeartPulse },
       { href: "/school/discipline", label: "Discipline", icon: Gavel },
@@ -176,6 +177,7 @@ const sections: NavSection[] = [
     icon: Shield,
     items: [
       { href: "/school/roles", label: "Roles & branches", icon: KeyRound },
+      { href: "/school/settings", label: "Settings", icon: Settings },
       { href: "/school/audit-log", label: "Audit log", icon: ScrollText },
       { href: "/school/exports", label: "Exports", icon: Download },
       { href: "/school/data-desk", label: "Data desk", icon: DatabaseZap },

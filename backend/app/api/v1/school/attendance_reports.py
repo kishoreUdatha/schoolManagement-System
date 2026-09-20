@@ -20,6 +20,7 @@ from app.database import get_db
 from app.schemas.attendance_report import (
     ClassSummaryRow,
     DailyAbsentRow,
+    StudentHistory,
     StudentMonthlyReport,
 )
 from app.services import attendance_report_service
@@ -168,6 +169,23 @@ def class_summary_csv(
 
 
 # --- 3. Student monthly ---
+
+@router.get(
+    "/students/{student_id}",
+    response_model=StudentHistory,
+    summary="One child's attendance history, day by day and month by month",
+)
+def student_history(
+    student_id: int,
+    current_user: SchoolAdminOrPrincipal,
+    db: Annotated[Session, Depends(get_db)],
+    frm: Optional[date] = Query(None, alias="from"),
+    to: Optional[date] = Query(None),
+):
+    return attendance_report_service.student_history(
+        db, current_user.school_id, student_id, frm=frm, to=to
+    )
+
 
 @router.get(
     "/student-monthly",

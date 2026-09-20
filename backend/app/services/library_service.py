@@ -839,6 +839,65 @@ def my_loans(db: Session, user_id: int) -> list[Loan]:
     return list(db.execute(select(Loan).where(Loan.user_id == user_id).order_by(Loan.issued_on.desc()).limit(100)).scalars())
 
 
+# --- Members: who holds what ---
+
+
+def members(db: Session, school_id: int, *, q: Optional[str] = None,
+            with_books_only: bool = False, limit: int = 300) -> list[dict]:
+    """Everyone who can borrow, and what they are holding right now.
+
+    The desk asks this at the counter — "can this child take another book?" —
+    so the answer carries their limit, what is out, what is overdue and what
+    they owe, rather than making the librarian read it off three screens.
+    """
+    cfg = db.execute(
+        select(LibrarySettings).where(LibrarySettings.school_id == school_id)
+    ).scalar_one_or_none()
+    student_limit = cfg.max_books_student if cfg else 2
+    staff_limit = cfg.max_books_staff if cfg else 5
+
+    loans = list(db.execute(select(Loan).where(Loan.school_id == school_id)).scalars())
+    today = date.today()
+    holders: dict[tuple, dict] = {}
+    for l in loans:
+        key = ("student", l.student_id) if l.borrower_type == BorrowerType.student else ("staff", l.user_id)
+        if key[1] is None:
+            continue
+        row = holders.setdefault(key, {
+            "borrower_type": l.borrower_type, "student_id": l.student_id, "user_id": l.user_id,
+            "name": "", "detail": None, "out": 0, "overdue": 0, "fine_due": ZERO,
+            "borrowed_ever": 0, "last_issued_on": None,
+        })
+        row["borrowed_ever"] += 1
+        if row["last_issued_on"] is None or l.issued_on > row["last_issued_on"]:
+            row["last_issued_on"] = l.issued_on
+        if l.returned_on is None and l.lost_on is None:
+            row["out"] += 1
+            if l.due_on < today:
+                row["overdue"] += 1
+        if l.fine_status == FineStatus.pending:
+            row["fine_due"] += l.fine_amount
+
+    out = []
+    for (kind, ident), row in holders.items():
+        sample = next(
+            l for l in loans
+            if (l.student_id == ident if kind == "student" else l.user_id == ident)
+        )
+        row["name"], row["detail"] = _borrower_name(db, sample)
+        row["limit"] = student_limit if kind == "student" else staff_limit
+        row["can_borrow"] = row["out"] < row["limit"] and row["fine_due"] == ZERO
+        out.append(row)
+
+    if q:
+        needle = q.strip().lower()
+        out = [r for r in out if needle in r["name"].lower() or needle in (r["detail"] or "").lower()]
+    if with_books_only:
+        out = [r for r in out if r["out"] > 0]
+    out.sort(key=lambda r: (-r["out"], r["name"]))
+    return out[:limit]
+
+
 # --- Fines as a register of their own ---
 
 

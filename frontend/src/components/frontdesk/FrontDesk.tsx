@@ -26,6 +26,8 @@ type Visit = {
   vehicle_no: string | null;
   status: "expected" | "checked_in" | "checked_out" | "denied" | "cancelled";
   expected_at: string | null;
+  host_approved_at: string | null;
+  host_declined_reason: string | null;
   check_in_at: string | null;
   check_out_at: string | null;
   pass_no: string | null;
@@ -156,6 +158,21 @@ function Visitors({ onChange, onError }: Handlers) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [day]);
 
+  // The desk can always let someone in — a parent at the gate shouldn't wait
+  // on a teacher mid-lesson — but it should be able to see whether the host
+  // has actually agreed, which is what this records.
+  async function hostDecision(v: Visit, approved: boolean) {
+    const reason = approved ? null : window.prompt(`Why can ${v.host_name ?? "the host"} not see ${v.visitor_name}?`);
+    if (!approved && !reason) return;
+    try {
+      await api.post(`${base}/visits/${v.id}/host-decision`, { approved, reason });
+      onChange(approved ? `${v.host_name ?? "Host"} is expecting ${v.visitor_name}.` : `${v.visitor_name} turned away.`);
+      load();
+    } catch (e) {
+      onError(apiError(e));
+    }
+  }
+
   async function act(v: Visit, path: string, msg: string) {
     try {
       await api.post(`${base}/visits/${v.id}/${path}`, path === "deny" || path === "cancel" ? {} : undefined);
@@ -206,7 +223,13 @@ function Visitors({ onChange, onError }: Handlers) {
                 {humanize(v.purpose)}
                 {v.purpose_detail && <div className="text-xs text-ink-subtle">{v.purpose_detail}</div>}
               </td>
-              <td className={td}>{v.host_name ?? v.student_name ?? "—"}</td>
+              <td className={td}>
+                {v.host_name ?? v.student_name ?? "—"}
+                {v.host_approved_at && <Badge tone="emerald">Host expecting</Badge>}
+                {v.host_declined_reason && (
+                  <span className="block text-[11px] text-ink-subtle">Declined: {v.host_declined_reason}</span>
+                )}
+              </td>
               <td className={td}>{v.status === "expected" ? <Badge tone="amber">expected {time(v.expected_at)}</Badge> : time(v.check_in_at)}</td>
               <td className={td}>
                 {v.status === "checked_in" ? <Badge tone="brand">inside · {v.minutes_inside}m</Badge> : v.status === "checked_out" ? time(v.check_out_at) : <Badge>{v.status}</Badge>}
@@ -215,6 +238,16 @@ function Visitors({ onChange, onError }: Handlers) {
               <td className="space-x-1 whitespace-nowrap px-3 py-2 text-right">
                 {v.status === "expected" && (
                   <>
+                    {!v.host_approved_at && v.host_name && (
+                      <Button size="sm" variant="secondary" onClick={() => hostDecision(v, true)}>
+                        Host confirms
+                      </Button>
+                    )}
+                    {v.host_name && (
+                      <Button size="sm" variant="ghost" onClick={() => hostDecision(v, false)}>
+                        Host declines
+                      </Button>
+                    )}
                     <Button size="sm" onClick={() => act(v, "check-in", `${v.visitor_name} checked in.`)}>
                       Check in
                     </Button>

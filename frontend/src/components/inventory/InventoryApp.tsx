@@ -26,7 +26,7 @@ const q = (n: string | number) => Number(n).toLocaleString("en-IN", { maximumFra
 type Handlers = { onChange: (m: string) => void; onError: (m: string) => void };
 
 export function InventoryApp() {
-  const [tab, setTab] = useState<"overview" | "stock" | "assets" | "store" | "suppliers">("overview");
+  const [tab, setTab] = useState<"overview" | "stock" | "assets" | "assignments" | "store" | "suppliers">("overview");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const flash = (m: string) => {
@@ -37,13 +37,13 @@ export function InventoryApp() {
     <div className="space-y-6">
       <PageHeader title="Inventory & store" subtitle="Stock, fixed assets, the school store counter and suppliers." />
       <nav className="flex flex-wrap gap-1 border-b border-surface-border">
-        {(["overview", "stock", "assets", "store", "suppliers"] as const).map((t) => (
+        {(["overview", "stock", "assets", "assignments", "store", "suppliers"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${tab === t ? "border-brand-500 text-ink" : "border-transparent text-ink-muted hover:text-ink"}`}
           >
-            {{ overview: "Overview", stock: "Items & stock", assets: "Assets", store: "Store counter", suppliers: "Suppliers" }[t]}
+            {{ overview: "Overview", stock: "Items & stock", assets: "Assets", assignments: "Assignments", store: "Store counter", suppliers: "Suppliers" }[t]}
           </button>
         ))}
       </nav>
@@ -52,6 +52,7 @@ export function InventoryApp() {
       {tab === "overview" && <Overview onError={setError} />}
       {tab === "stock" && <Stock onChange={flash} onError={setError} />}
       {tab === "assets" && <Assets onChange={flash} onError={setError} />}
+      {tab === "assignments" && <Assignments onError={setError} />}
       {tab === "store" && <Store onChange={flash} onError={setError} />}
       {tab === "suppliers" && <Suppliers onChange={flash} onError={setError} />}
     </div>
@@ -874,5 +875,72 @@ function SupplierModal({ existing, onClose, onSaved }: { existing: Supplier | nu
         </div>
       </form>
     </Modal>
+  );
+}
+
+
+type Assignment = {
+  asset_id: number;
+  asset_tag: string;
+  asset_name: string;
+  event_id: number;
+  user_id: number | null;
+  user_name: string | null;
+  assigned_on: string;
+  returned_on: string | null;
+  ended_by: string | null;
+  location: string | null;
+  notes: string | null;
+};
+
+/** Who has what, across every asset. The per-asset history answers "where has
+ *  this laptop been"; this answers "what is out, and with whom" — which is the
+ *  question asked when someone leaves. */
+function Assignments({ onError }: { onError: (m: string) => void }) {
+  const [rows, setRows] = useState<Assignment[]>([]);
+  const [openOnly, setOpenOnly] = useState(true);
+
+  useEffect(() => {
+    api
+      .get<Assignment[]>("/api/v1/school/inventory/assignments", { params: { open_only: openOnly } })
+      .then((r) => setRows(r.data))
+      .catch((e) => onError(apiError(e)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openOnly]);
+
+  return (
+    <div className="space-y-4">
+      <label className="flex items-center gap-2 text-[13px] text-ink-muted">
+        <input type="checkbox" checked={openOnly} onChange={(e) => setOpenOnly(e.target.checked)} />
+        Only what is still out
+      </label>
+      <Card>
+        <CardHeader>
+          <CardTitle>Assignments</CardTitle>
+        </CardHeader>
+        <CardBody className="p-0">
+          <Table
+            head={["Asset", "Held by", "From", "Until", "Ended by", "Where"]}
+            empty={rows.length === 0 && (openOnly ? "Nothing is out at the moment." : "Nothing has been assigned yet.")}
+          >
+            {rows.map((r) => (
+              <tr key={r.event_id}>
+                <td className={tdStrong}>
+                  {r.asset_name}
+                  <span className="block text-[11px] font-mono text-ink-subtle">{r.asset_tag}</span>
+                </td>
+                <td className={td}>{r.user_name ?? "—"}</td>
+                <td className={td}>{r.assigned_on}</td>
+                <td className={td}>
+                  {r.returned_on ?? <Badge tone="amber">Still out</Badge>}
+                </td>
+                <td className={td}>{r.ended_by ? humanize(r.ended_by) : "—"}</td>
+                <td className={td}>{r.location ?? "—"}</td>
+              </tr>
+            ))}
+          </Table>
+        </CardBody>
+      </Card>
+    </div>
   );
 }

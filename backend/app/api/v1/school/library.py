@@ -20,6 +20,7 @@ from app.schemas.library import (
     HoldUpdate,
     FineRead,
     FineSummary,
+    MemberRead,
     IssueRequest,
     LibraryDashboard,
     LibrarySettingsRead,
@@ -169,6 +170,17 @@ def lost(loan_id: int, payload: LostRequest, current_user: SchoolAdminUser, db: 
     return LoanRead.model_validate(
         svc.loan_to_read(db, svc.mark_lost(db, loan_id, current_user.school_id, current_user.id, payload))
     )
+
+
+@router.get("/members", response_model=list[MemberRead],
+            summary="Who can borrow, and what they are holding")
+def members(
+    current_user: SchoolAdminUser,
+    db: Db,
+    q: Optional[str] = Query(None, description="Name, admission number or section"),
+    with_books_only: bool = False,
+):
+    return svc.members(db, current_user.school_id, q=q, with_books_only=with_books_only)
 
 
 @router.get("/fines", response_model=FineSummary, summary="Every fine raised, and what is still owed")

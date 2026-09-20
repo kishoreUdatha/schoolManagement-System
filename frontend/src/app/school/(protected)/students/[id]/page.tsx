@@ -9,6 +9,7 @@ import {
   StudentProfileView,
 } from "@/components/StudentProfileView";
 import { ClassHistory, Guardians } from "@/components/foundation/Guardians";
+import { StudentTabs } from "@/components/students/StudentTabs";
 import { api, apiError } from "@/lib/api";
 
 export default function SchoolStudentProfilePage() {
@@ -48,6 +49,7 @@ export default function SchoolStudentProfilePage() {
         ← Back to students
       </Link>
       <StudentProfileView profile={profile} showParentContacts={true} />
+      <StudentTabs studentId={params.id} />
       <Guardians mode="school" base={`/api/v1/school/students/${params.id}/guardians`} />
       <ClassHistory studentId={params.id} />
     </div>

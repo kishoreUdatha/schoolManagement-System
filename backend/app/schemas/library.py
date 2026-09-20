@@ -237,3 +237,20 @@ class HoldUpdate(BaseModel):
     """Hold a reserved book a little longer."""
 
     hold_until: date
+
+
+class MemberRead(BaseModel):
+    """A borrower at the counter: what they hold, and whether they may take more."""
+
+    borrower_type: BorrowerType
+    student_id: Optional[int] = None
+    user_id: Optional[int] = None
+    name: str
+    detail: Optional[str] = None
+    out: int
+    overdue: int
+    fine_due: Decimal
+    limit: int
+    can_borrow: bool
+    borrowed_ever: int
+    last_issued_on: Optional[date] = None

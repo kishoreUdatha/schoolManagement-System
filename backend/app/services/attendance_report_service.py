@@ -4,6 +4,7 @@ Three views the principal/admin needs:
   1. daily_absent   — who was absent on date X (with section + class + remark)
   2. class_summary  — per class/section attendance breakdown over a date range
   3. student_monthly — per student counts + attendance % for a month in one section
+  4. student_history — one child's own attendance, day by day and month by month
 
 All are read-only and scoped to the caller's school_id.
 """
@@ -271,4 +272,66 @@ def student_monthly(
         "rows": rows,
         "totals": totals,
         "overall_pct": overall_pct,
+    }
+
+
+# --- 4. One child's history ---
+
+
+def student_history(
+    db: Session,
+    school_id: int,
+    student_id: int,
+    *,
+    frm: Optional[date] = None,
+    to: Optional[date] = None,
+) -> dict:
+    """Everything the office needs when a parent asks "how often is my child in?"
+
+    The monthly report answers it for a section; this answers it for the child,
+    which is the question actually asked at a counter. Absences come back with
+    their remark, because "why" matters more than "how many".
+    """
+    student = db.get(Student, student_id)
+    if not student or student.school_id != school_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+
+    stmt = select(StudentAttendance).where(StudentAttendance.student_id == student_id)
+    if frm:
+        stmt = stmt.where(StudentAttendance.date >= frm)
+    if to:
+        stmt = stmt.where(StudentAttendance.date <= to)
+    rows = list(db.execute(stmt.order_by(StudentAttendance.date.desc())).scalars())
+
+    counts = {s.value: 0 for s in AttendanceStatus}
+    months: dict[str, dict] = {}
+    for r in rows:
+        counts[r.status.value] += 1
+        key = f"{r.date:%Y-%m}"
+        m = months.setdefault(key, {"month": key, "present": 0, "absent": 0, "late": 0, "half_day": 0})
+        m[r.status.value] += 1
+
+    for m in months.values():
+        m["percent"] = _attendance_pct(m["present"], m["late"], m["half_day"], m["absent"])
+
+    sec = db.get(Section, student.section_id) if student.section_id else None
+    cls = db.get(SchoolClass, sec.class_id) if sec else None
+    return {
+        "student_id": student.id,
+        "student_name": student.full_name,
+        "admission_no": student.admission_no,
+        "section_label": f"{cls.name} {sec.name}" if cls and sec else None,
+        "from_date": frm,
+        "to_date": to,
+        "marked_days": len(rows),
+        "present": counts["present"],
+        "absent": counts["absent"],
+        "late": counts["late"],
+        "half_day": counts["half_day"],
+        "percent": _attendance_pct(counts["present"], counts["late"], counts["half_day"], counts["absent"]),
+        "months": sorted(months.values(), key=lambda m: m["month"], reverse=True),
+        "days": [
+            {"date": r.date, "status": r.status, "remark": r.remark}
+            for r in rows[:400]
+        ],
     }
