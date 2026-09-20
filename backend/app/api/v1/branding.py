@@ -24,6 +24,11 @@ class BrandingRead(BaseModel):
     logo_url: Optional[str] = None
     brand_color: Optional[str] = None
     app_name: Optional[str] = None
+    # The campus line under the school name in every sidebar. Not sensitive
+    # to somebody who works in the building, and this is the one endpoint
+    # every role can already read.
+    address: Optional[str] = None
+    code: Optional[str] = None
 
 
 @router.get(
@@ -51,4 +56,6 @@ def my_branding(
         logo_url=school.logo_url,
         brand_color=school.brand_color,
         app_name=school.app_name,
+        address=school.address,
+        code=school.code,
     )

@@ -29,6 +29,7 @@ const sections: NavSection[] = [
 export function AccountantNav() {
   return (
     <Sidebar
+      showSchool
       brandTitle="SMS · Accountant"
       portalLabel="Accountant"
       brandHref="/accountant"

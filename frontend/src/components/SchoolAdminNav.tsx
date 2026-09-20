@@ -281,6 +281,7 @@ const sections: NavSection[] = [
 export function SchoolAdminNav() {
   return (
     <Sidebar
+      showSchool
       brandTitle="SMS · School"
       portalLabel="School"
       brandHref="/school"

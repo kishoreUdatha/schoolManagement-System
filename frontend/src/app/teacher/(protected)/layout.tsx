@@ -1,23 +1,22 @@
 import { ReactNode } from "react";
 
 import { BrandingProvider } from "@/components/BrandingProvider";
+import { PortalShell } from "@/components/PortalShell";
 import { TeacherGuard } from "@/components/TeacherGuard";
 import { TeacherNav } from "@/components/TeacherNav";
 
-export default function TeacherProtectedLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function TeacherProtectedLayout({ children }: { children: ReactNode }) {
   return (
     <TeacherGuard>
       <BrandingProvider>
-        <div className="flex min-h-screen flex-col md:flex-row">
-          <TeacherNav />
-          <main className="flex-1 overflow-x-auto">
-            <div className="mx-auto max-w-6xl px-6 py-5">{children}</div>
-          </main>
-        </div>
+        <PortalShell
+          noticesHref="/teacher/notices"
+          messagesHref="/teacher/messages"
+          nav={<TeacherNav />}
+          width="max-w-6xl"
+        >
+          {children}
+        </PortalShell>
       </BrandingProvider>
     </TeacherGuard>
   );

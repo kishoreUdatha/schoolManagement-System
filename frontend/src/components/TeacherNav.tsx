@@ -96,6 +96,7 @@ const sections: NavSection[] = [
 export function TeacherNav() {
   return (
     <Sidebar
+      showSchool
       brandTitle="SMS · Teacher"
       portalLabel="Teacher"
       brandHref="/teacher"

@@ -1,23 +1,21 @@
 import { ReactNode } from "react";
 
 import { BrandingProvider } from "@/components/BrandingProvider";
+import { PortalShell } from "@/components/PortalShell";
 import { StaffGuard } from "@/components/StaffGuard";
 import { StaffNav } from "@/components/StaffNav";
 
-export default function StaffProtectedLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function StaffProtectedLayout({ children }: { children: ReactNode }) {
   return (
     <StaffGuard>
       <BrandingProvider>
-        <div className="flex min-h-screen flex-col md:flex-row">
-          <StaffNav />
-          <main className="flex-1 overflow-x-auto">
-            <div className="mx-auto max-w-6xl px-6 py-5">{children}</div>
-          </main>
-        </div>
+        <PortalShell
+          noticesHref="/staff/inbox"
+          nav={<StaffNav />}
+          width="max-w-5xl"
+        >
+          {children}
+        </PortalShell>
       </BrandingProvider>
     </StaffGuard>
   );

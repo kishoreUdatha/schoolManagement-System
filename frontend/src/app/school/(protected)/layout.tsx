@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 
 import { BrandingProvider } from "@/components/BrandingProvider";
+import { PortalShell } from "@/components/PortalShell";
 import { SchoolAdminGuard } from "@/components/SchoolAdminGuard";
 import { SchoolAdminNav } from "@/components/SchoolAdminNav";
 
@@ -8,12 +9,15 @@ export default function SchoolProtectedLayout({ children }: { children: ReactNod
   return (
     <SchoolAdminGuard>
       <BrandingProvider>
-        <div className="flex min-h-screen flex-col md:flex-row">
-          <SchoolAdminNav />
-          <main className="flex-1 overflow-x-auto">
-            <div className="mx-auto max-w-7xl px-6 py-5">{children}</div>
-          </main>
-        </div>
+        <PortalShell
+          showYear
+          noticesHref="/school/notices"
+          messagesHref="/school/messages"
+          nav={<SchoolAdminNav />}
+          width="max-w-7xl"
+        >
+          {children}
+        </PortalShell>
       </BrandingProvider>
     </SchoolAdminGuard>
   );

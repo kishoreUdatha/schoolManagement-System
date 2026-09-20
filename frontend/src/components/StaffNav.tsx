@@ -33,5 +33,6 @@ const sections: NavSection[] = [
 ];
 
 export function StaffNav() {
-  return <Sidebar brandTitle="SMS · Staff" portalLabel="Staff" brandHref="/staff" sections={sections} loginPath="/staff/login" />;
+  return <Sidebar
+      showSchool brandTitle="SMS · Staff" portalLabel="Staff" brandHref="/staff" sections={sections} loginPath="/staff/login" />;
 }

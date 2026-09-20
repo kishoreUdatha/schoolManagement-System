@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
 
 import { useBranding } from "@/components/BrandingProvider";
+import { useNavShell, type SearchablePage } from "@/components/NavShellContext";
+import { SchoolSwitcher } from "@/components/SchoolSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { auth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -33,6 +35,9 @@ export interface SidebarProps {
   loginPath: string;
   /** Story 21.1 — short label after the brand name (e.g. "School", "Teacher"). */
   portalLabel?: string;
+  /** Name the school under the brand. Off for the platform portal, which
+   *  sits above any one school. */
+  showSchool?: boolean;
 }
 
 function itemMatches(pathname: string | null, item: NavItem): boolean {
@@ -46,12 +51,37 @@ export function Sidebar({
   sections,
   loginPath,
   portalLabel,
+  showSchool = false,
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const user = auth.getUser();
   const branding = useBranding();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  // The shell owns this when there is a topbar, since its menu button and
+  // this drawer are the same control. Falls back to local state so the
+  // sidebar still works on its own.
+  const shell = useNavShell();
+  const [ownOpen, setOwnOpen] = useState(false);
+  const mobileOpen = shell ? shell.open : ownOpen;
+  const setMobileOpen = shell ? shell.setOpen : setOwnOpen;
+
+  // Hand the topbar's search the pages this nav renders. Keyed on the labels
+  // and hrefs rather than the array itself, because a nav that builds its
+  // sections inline (the parent one does, around the selected child) hands us
+  // a new array every render and would otherwise loop.
+  const publishPages = shell?.publishPages;
+  const pagesKey = JSON.stringify(
+    sections.map((s) => [s.heading, s.items.map((i) => [i.label, i.href])])
+  );
+  useEffect(() => {
+    if (!publishPages) return;
+    const flat: SearchablePage[] = (
+      JSON.parse(pagesKey) as [string | null, [string, string][]][]
+    ).flatMap(([heading, items]) =>
+      items.map(([label, href]) => ({ label, href, section: heading }))
+    );
+    publishPages(flat);
+  }, [pagesKey, publishPages]);
 
   // Compose the displayed title from branding + portal label, falling back
   // to whatever the wrapper passed in.
@@ -157,6 +187,8 @@ export function Sidebar({
       </div>
 
       {/* Sections */}
+      {showSchool && <SchoolSwitcher />}
+
       <div className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {sections.map((section, i) => {
           if (!section.heading) {
@@ -249,7 +281,8 @@ export function Sidebar({
 
   return (
     <>
-      {/* Mobile top bar */}
+      {/* Mobile top bar — only when no topbar is carrying the menu button */}
+      {!shell && (
       <div className="flex items-center justify-between border-b border-surface-border bg-surface-raised px-4 py-3 md:hidden">
         <Link
           href={brandHref}
@@ -276,7 +309,7 @@ export function Sidebar({
         >
           <Menu className="h-4 w-4" />
         </button>
-      </div>
+      </div>)}
 
       {/* Desktop sidebar — pinned to viewport height so the footer
           (user info, sign out, theme toggle) is always visible even on

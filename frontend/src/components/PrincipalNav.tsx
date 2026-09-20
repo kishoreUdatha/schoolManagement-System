@@ -36,6 +36,7 @@ const sections: NavSection[] = [
 export function PrincipalNav() {
   return (
     <Sidebar
+      showSchool
       brandTitle="SMS · Principal"
       portalLabel="Principal"
       brandHref="/principal"
