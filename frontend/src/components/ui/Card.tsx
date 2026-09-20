@@ -6,7 +6,7 @@ export function Card({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-surface-border bg-surface-raised/60 shadow-sm backdrop-blur-sm",
+        "rounded-[14px] border border-surface-border bg-surface-raised",
         className
       )}
       {...rest}
@@ -18,7 +18,7 @@ export function CardHeader({ className, ...rest }: HTMLAttributes<HTMLDivElement
   return (
     <div
       className={cn(
-        "flex items-center justify-between border-b border-surface-border px-5 py-4",
+        "flex flex-wrap items-center justify-between gap-3 border-b border-surface-border px-5 py-4",
         className
       )}
       {...rest}
@@ -30,7 +30,7 @@ export function CardTitle({ className, ...rest }: HTMLAttributes<HTMLHeadingElem
   return (
     <h3
       className={cn(
-        "text-base font-semibold tracking-tight text-ink",
+        "text-[19px] font-extrabold leading-tight tracking-[-0.45px] text-ink",
         className
       )}
       {...rest}

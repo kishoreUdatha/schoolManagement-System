@@ -20,7 +20,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {label && (
         <label
           htmlFor={inputId}
-          className="text-xs font-medium text-ink-muted"
+          className="text-[12px] font-bold text-ink-muted"
         >
           {label}
         </label>
@@ -29,8 +29,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         id={inputId}
         ref={ref}
         className={cn(
-          "rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink shadow-sm",
-          "placeholder:text-ink-subtle focus:border-brand-500/60 focus:outline-none focus:ring-2 focus:ring-brand-500/30",
+          "min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink",
+          "placeholder:text-ink-subtle focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300",
           error &&
             "border-rose-500/50 focus:border-rose-500 focus:ring-rose-500/30",
           className

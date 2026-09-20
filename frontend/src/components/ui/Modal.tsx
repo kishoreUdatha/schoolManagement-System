@@ -26,15 +26,15 @@ export function Modal({ open, onClose, title, children, size = "md" }: ModalProp
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#172554]/40 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className={`relative w-full ${maxWidth} rounded-xl border border-surface-border bg-surface-raised shadow-2xl`}
+        className={`relative w-full ${maxWidth} rounded-[14px] border border-surface-border bg-surface-raised shadow-[0_24px_60px_-20px_rgba(23,37,84,0.35)]`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-surface-border px-5 py-4">
-          <h3 className="text-base font-semibold tracking-tight text-ink">
+          <h3 className="text-[19px] font-extrabold leading-tight tracking-[-0.45px] text-ink">
             {title}
           </h3>
           <button

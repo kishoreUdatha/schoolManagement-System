@@ -7,54 +7,67 @@
   :root {
     color-scheme: light;
 
-    /* Story 21.1 — brand palette via CSS vars (BrandingProvider overrides). */
-    --brand-50: 238 246 255;
-    --brand-100: 217 234 255;
-    --brand-200: 188 217 255;
-    --brand-300: 142 191 255;
-    --brand-400: 91 155 255;
+    /* Brand ramp around BrightCampus blue #2563EB (BrandingProvider may
+       override these per tenant). */
+    --brand-50: 234 242 255;           /* #EAF2FF — soft blue surfaces */
+    --brand-100: 219 233 255;
+    --brand-200: 191 214 254;
+    --brand-300: 147 197 253;          /* focus ring */
+    --brand-400: 96 165 250;
+    --brand-500: 59 130 246;           /* #3B82F6 secondary blue */
+    --brand-600: 37 99 235;            /* #2563EB primary action */
+    --brand-700: 29 78 216;            /* hover on primary */
+    --brand-800: 30 64 175;
+    --brand-900: 23 37 84;             /* #172554 — same family as ink */
+
+    /* Surfaces: a tinted workspace with white panels on top of it. */
+    --surface: 241 246 255;            /* #F1F6FF workspace background */
+    --surface-raised: 255 255 255;     /* panels, sidebar, header */
+    --surface-subtle: 246 250 255;     /* pale fill: table heads, wells */
+    --surface-border: 227 234 245;     /* #E3EAF5 */
+    --surface-hover: 234 242 255;      /* #EAF2FF */
+
+    --ink: 23 37 84;                   /* #172554 */
+    --ink-muted: 98 113 139;           /* #62718B */
+    --ink-subtle: 143 157 181;
+
+    --scrollbar-thumb: 203 216 238;
+    --scrollbar-thumb-hover: 163 184 219;
+
+    /* The workspace tint does the work; no glow needed in light mode. */
+    --body-glow: transparent;
+  }
+
+  .dark {
+    color-scheme: dark;
+
+    /* Night shift for the same blue family, so a school that works late
+       isn't looking at a different product. */
+    --brand-50: 30 58 138;
+    --brand-100: 30 64 175;
+    --brand-200: 29 78 216;
+    --brand-300: 147 197 253;
+    --brand-400: 96 165 250;
     --brand-500: 59 130 246;
     --brand-600: 37 99 235;
     --brand-700: 29 78 216;
     --brand-800: 30 64 175;
     --brand-900: 30 58 138;
 
-    /* Light theme surface + ink (pure white admin look) */
-    --surface: 255 255 255;
-    --surface-raised: 255 255 255;
-    --surface-subtle: 248 250 252;     /* slate-50 */
-    --surface-border: 226 232 240;     /* slate-200 */
-    --surface-hover: 241 245 249;      /* slate-100 */
+    --surface: 9 14 30;
+    --surface-raised: 15 23 45;
+    --surface-subtle: 21 31 58;
+    --surface-border: 30 42 73;
+    --surface-hover: 27 39 70;
 
-    --ink: 15 23 42;                   /* slate-900 */
-    --ink-muted: 71 85 105;            /* slate-600 */
-    --ink-subtle: 148 163 184;         /* slate-400 */
+    --ink: 236 242 255;
+    --ink-muted: 156 172 201;
+    --ink-subtle: 116 134 166;
 
-    /* Scrollbar (light) */
-    --scrollbar-thumb: 203 213 225;    /* slate-300 */
-    --scrollbar-thumb-hover: 148 163 184;  /* slate-400 */
+    --scrollbar-thumb: 36 50 84;
+    --scrollbar-thumb-hover: 52 70 112;
 
-    /* Body radial accent (subtle in light) */
-    --body-glow: rgba(59, 130, 246, 0.06);
-  }
-
-  .dark {
-    color-scheme: dark;
-
-    --surface: 10 10 11;
-    --surface-raised: 17 17 20;
-    --surface-subtle: 22 22 26;
-    --surface-border: 31 31 36;
-    --surface-hover: 28 28 33;
-
-    --ink: 250 250 250;
-    --ink-muted: 161 161 170;
-    --ink-subtle: 113 113 122;
-
-    --scrollbar-thumb: 42 42 48;
-    --scrollbar-thumb-hover: 58 58 69;
-
-    --body-glow: rgba(59, 130, 246, 0.08);
+    --body-glow: rgba(37, 99, 235, 0.12);
   }
 
   ::selection {
@@ -86,62 +99,76 @@
   }
 
   body {
+    background-color: rgb(var(--surface));
     background-image:
       radial-gradient(ellipse 80% 50% at 50% -20%, var(--body-glow), transparent);
     background-attachment: fixed;
+    font-weight: 500;          /* Manrope reads thin at 400 on a light ground */
+    letter-spacing: -0.006em;
+  }
+
+  /* BrightCampus type scale: tight, heavy headings over calm body text. */
+  h1 {
+    letter-spacing: -0.035em;
+  }
+  h2,
+  h3 {
+    letter-spacing: -0.02em;
+  }
+
+  /* Numbers in tables and totals should line up column to column. */
+  table {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 @layer components {
-  /* Dark-only remaps for pages that still use raw Tailwind utilities
-     (legacy bg-white / text-slate-X) so they keep their dark look. */
-  .dark .bg-white {
-    background-color: #111114;
+  /* Most pages were written against raw slate utilities before the palette
+     existed. Rather than touch two hundred files, point those utilities at
+     the BrightCampus tokens so every page moves together. */
+  .text-slate-900,
+  .text-slate-800 {
+    color: rgb(var(--ink));
   }
-  .dark .text-slate-900 {
-    color: #fafafa;
+  .text-slate-700,
+  .text-slate-600 {
+    color: rgb(var(--ink-muted));
   }
-  .dark .text-slate-800 {
-    color: #e4e4e7;
+  .text-slate-500,
+  .text-slate-400 {
+    color: rgb(var(--ink-subtle));
   }
-  .dark .text-slate-700 {
-    color: #d4d4d8;
+  .border-slate-100,
+  .border-slate-200,
+  .border-slate-300 {
+    border-color: rgb(var(--surface-border));
   }
-  .dark .text-slate-600 {
-    color: #a1a1aa;
+  .divide-slate-100 > * + *,
+  .divide-slate-200 > * + * {
+    border-color: rgb(var(--surface-border));
   }
-  .dark .text-slate-500 {
-    color: #8a8a93;
+  .bg-slate-50,
+  .bg-slate-100 {
+    background-color: rgb(var(--surface-subtle));
   }
-  .dark .text-slate-400 {
-    color: #71717a;
+  .hover\:bg-slate-50:hover,
+  .hover\:bg-slate-100:hover {
+    background-color: rgb(var(--surface-hover));
   }
-  .dark .border-slate-100 {
-    border-color: #1c1c21;
+  .bg-white {
+    background-color: rgb(var(--surface-raised));
   }
-  .dark .border-slate-200 {
-    border-color: #1f1f24;
-  }
-  .dark .border-slate-300 {
-    border-color: #2a2a30;
-  }
-  .dark .bg-slate-50 {
-    background-color: #16161a;
-  }
+
+  /* The same legacy utilities at night. They point at the tokens too, so
+     dark mode follows the palette instead of a second hard-coded theme. */
+  .dark .bg-white,
+  .dark .bg-slate-50,
   .dark .bg-slate-100 {
-    background-color: #1c1c21;
+    background-color: rgb(var(--surface-raised));
   }
-  .dark .hover\:bg-slate-50:hover {
-    background-color: #1c1c21;
-  }
+  .dark .hover\:bg-slate-50:hover,
   .dark .hover\:bg-slate-100:hover {
-    background-color: #1f1f24;
-  }
-  .dark .divide-slate-100 > * + * {
-    border-color: #1c1c21;
-  }
-  .dark .divide-slate-200 > * + * {
-    border-color: #1f1f24;
+    background-color: rgb(var(--surface-hover));
   }
 
   .dark .bg-brand-50 {

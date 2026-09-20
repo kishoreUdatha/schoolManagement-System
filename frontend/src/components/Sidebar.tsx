@@ -110,14 +110,14 @@ export function Sidebar({
         href={item.href}
         onClick={() => setMobileOpen(false)}
         className={cn(
-          "group relative flex items-center gap-1.5 rounded-md px-2 py-1 text-[12px] leading-tight transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
+          "group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-tight transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
           active
-            ? "bg-surface-hover font-medium text-ink"
-            : "text-ink-muted hover:bg-surface-hover hover:text-ink"
+            ? "bg-brand-50 font-extrabold text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"
+            : "font-semibold text-ink-muted hover:bg-surface-hover hover:text-ink"
         )}
       >
         {active && (
-          <span className="absolute inset-y-0.5 left-0 w-[2px] rounded-r-full bg-brand-500 shadow-glow-sm" />
+          <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-brand-600" />
         )}
         {Icon && (
           <Icon
@@ -137,24 +137,24 @@ export function Sidebar({
   }
 
   const navContent = (
-    <nav className="flex h-full flex-col bg-surface-raised/95 backdrop-blur-sm">
+    <nav className="flex h-full flex-col bg-surface-raised">
       {/* Brand header */}
-      <div className="flex items-center gap-2 border-b border-surface-border px-2.5 py-2.5">
+      <div className="flex items-center gap-2.5 border-b border-surface-border px-4 py-4">
         {branding?.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={branding.logo_url}
             alt={branding.name}
-            className="h-6 w-6 shrink-0 rounded-md object-cover"
+            className="h-9 w-9 shrink-0 rounded-[10px] object-cover"
           />
         ) : (
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-brand-500 to-brand-700 text-[11px] font-bold text-white shadow-glow-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-brand-600 text-[13px] font-extrabold text-white">
             {initial}
           </div>
         )}
         <Link
           href={brandHref}
-          className="truncate text-[12px] font-semibold tracking-tight text-ink"
+          className="truncate text-[14px] font-extrabold tracking-[-0.3px] text-ink"
           onClick={() => setMobileOpen(false)}
         >
           {displayTitle}
@@ -162,7 +162,7 @@ export function Sidebar({
       </div>
 
       {/* Sections */}
-      <div className="flex-1 space-y-0.5 overflow-y-auto px-2 py-2">
+      <div className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {sections.map((section, i) => {
           if (!section.heading) {
             // Flat top section — items always visible, no collapse control.
@@ -185,7 +185,7 @@ export function Sidebar({
                 type="button"
                 onClick={() => toggle(section.heading!)}
                 className={cn(
-                  "group flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
+                  "group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
                   "text-ink-muted hover:bg-surface-hover hover:text-ink"
                 )}
                 aria-expanded={open}
@@ -212,7 +212,7 @@ export function Sidebar({
                 )}
               >
                 <div className="overflow-hidden">
-                  <div className="space-y-0.5 pb-1 pl-3">
+                  <div className="space-y-0.5 pb-1 pl-2">
                     {section.items.map(renderItem)}
                   </div>
                 </div>
@@ -223,14 +223,14 @@ export function Sidebar({
       </div>
 
       {/* User footer */}
-      <div className="border-t border-surface-border px-3 py-2.5">
+      <div className="border-t border-surface-border px-3 py-3">
         {user && (
           <div className="mb-1.5 flex items-center gap-2 text-xs">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500/30 to-brand-700/30 text-[9px] font-semibold uppercase text-ink ring-1 ring-surface-border">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-[11px] font-extrabold uppercase text-brand-600">
               {initials(user.full_name)}
             </div>
             <div className="min-w-0">
-              <div className="truncate text-[11px] font-medium text-ink">
+              <div className="truncate text-[12px] font-bold text-ink">
                 {user.full_name}
               </div>
               <div className="truncate text-[10px] text-ink-subtle">
@@ -242,7 +242,7 @@ export function Sidebar({
         <div className="flex items-center gap-2">
           <button
             onClick={logout}
-            className="flex-1 rounded-md border border-surface-border bg-surface-subtle px-2.5 py-1 text-[11px] font-medium text-ink-muted transition-colors hover:border-surface-hover hover:bg-surface-hover hover:text-ink"
+            className="flex-1 rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[12px] font-bold text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
           >
             Sign out
           </button>
@@ -255,7 +255,7 @@ export function Sidebar({
   return (
     <>
       {/* Mobile top bar */}
-      <div className="flex items-center justify-between border-b border-surface-border bg-surface-raised/95 px-4 py-2 backdrop-blur-sm md:hidden">
+      <div className="flex items-center justify-between border-b border-surface-border bg-surface-raised px-4 py-3 md:hidden">
         <Link
           href={brandHref}
           className="flex items-center gap-2 text-sm font-semibold text-ink"
@@ -286,7 +286,7 @@ export function Sidebar({
       {/* Desktop sidebar — pinned to viewport height so the footer
           (user info, sign out, theme toggle) is always visible even on
           tall main content pages. */}
-      <aside className="sticky top-0 hidden h-screen w-44 shrink-0 border-r border-surface-border md:flex md:flex-col">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-surface-border bg-surface-raised md:flex md:flex-col">
         {navContent}
       </aside>
 
@@ -333,10 +333,10 @@ export function NavBadge({
   tone?: "rose" | "brand" | "amber" | "emerald";
 }) {
   const tones: Record<string, string> = {
-    rose: "bg-rose-500/20 text-rose-300 ring-1 ring-rose-500/30",
-    brand: "bg-brand-500/20 text-brand-300 ring-1 ring-brand-500/30",
-    amber: "bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/30",
-    emerald: "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/30",
+    rose: "bg-[#FFEBEE] text-[#B82E45]",
+    brand: "bg-brand-50 text-brand-600",
+    amber: "bg-[#FFF3D8] text-[#8E5C05]",
+    emerald: "bg-[#E9F7F0] text-[#07845E]",
   };
   return (
     <span

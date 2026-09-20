@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 import { THEME_BOOT_SCRIPT, ThemeProvider } from "@/components/ThemeProvider";
 
-const inter = Inter({
-  subsets: ["latin"],
+// Manrope, served from our own build — no request leaves the school's network.
+// The variable file carries 200–800, which is the whole range the UI uses.
+const manrope = localFont({
+  src: "./fonts/Manrope.ttf",
+  weight: "200 800",
   variable: "--font-sans",
   display: "swap",
 });
@@ -21,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={manrope.variable} suppressHydrationWarning>
       <head>
         {/* Apply saved theme BEFORE first paint to avoid a flash of the wrong color */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />

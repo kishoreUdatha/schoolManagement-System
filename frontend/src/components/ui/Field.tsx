@@ -5,7 +5,7 @@ import { ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 export const fieldClass =
-  "rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink shadow-sm focus:border-brand-500/60 focus:outline-none focus:ring-2 focus:ring-brand-500/30";
+  "min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300";
 
 export function Select({
   label,
@@ -15,7 +15,7 @@ export function Select({
 }: SelectHTMLAttributes<HTMLSelectElement> & { label?: string }) {
   return (
     <label className="flex flex-col gap-1">
-      {label && <span className="text-xs font-medium text-ink-muted">{label}</span>}
+      {label && <span className="text-[12px] font-bold text-ink-muted">{label}</span>}
       <select className={cn(fieldClass, className)} {...rest}>
         {children}
       </select>
@@ -30,7 +30,7 @@ export function Textarea({
 }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string }) {
   return (
     <label className="flex flex-col gap-1">
-      {label && <span className="text-xs font-medium text-ink-muted">{label}</span>}
+      {label && <span className="text-[12px] font-bold text-ink-muted">{label}</span>}
       <textarea rows={2} className={cn(fieldClass, className)} {...rest} />
     </label>
   );
@@ -38,13 +38,19 @@ export function Textarea({
 
 export function ErrorBox({ children }: { children: ReactNode }) {
   if (!children) return null;
-  return <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{children}</div>;
+  return (
+    <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
+      {children}
+    </div>
+  );
 }
 
 export function NoticeBox({ children }: { children: ReactNode }) {
   if (!children) return null;
   return (
-    <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{children}</div>
+    <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
+      {children}
+    </div>
   );
 }
 
@@ -60,8 +66,8 @@ export function PageHeader({
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-bold text-ink">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-ink-muted">{subtitle}</p>}
+        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{title}</h1>
+        {subtitle && <p className="mt-1.5 text-[13px] text-ink-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>
@@ -82,11 +88,11 @@ export function Table({
 }) {
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-surface-border text-sm">
-        <thead className="text-left text-xs uppercase text-ink-subtle">
+      <table className="min-w-full divide-y divide-surface-border text-[13px]">
+        <thead className="text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
           <tr>
             {head.map((h, i) => (
-              <th key={i} className="px-3 py-2 font-medium">
+              <th key={i} className="px-4 py-3 font-bold">
                 {h}
               </th>
             ))}
@@ -96,7 +102,7 @@ export function Table({
           {children}
           {empty && (
             <tr>
-              <td colSpan={colSpan ?? head.length} className="px-3 py-8 text-center text-ink-muted">
+              <td colSpan={colSpan ?? head.length} className="px-4 py-10 text-center text-ink-muted">
                 {empty}
               </td>
             </tr>
@@ -107,8 +113,8 @@ export function Table({
   );
 }
 
-export const td = "px-3 py-2 text-ink-muted";
-export const tdStrong = "px-3 py-2 font-medium text-ink";
+export const td = "px-4 py-3 text-ink-muted";
+export const tdStrong = "px-4 py-3 font-bold text-ink";
 
 export function humanize(v: string | null | undefined): string {
   if (!v) return "—";
