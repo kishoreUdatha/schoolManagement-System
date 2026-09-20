@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Send } from "lucide-react";
 
 import { BreakdownChart, ChartCard } from "@/components/charts/Charts";
-import { VERDICT } from "@/components/charts/theme";
+import { SERIES, VERDICT } from "@/components/charts/theme";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -50,10 +50,10 @@ type ReminderLog = {
 };
 
 const BUCKET_TONE: Record<string, string> = {
-  "Not yet due": "#4B5563",
+  "Not yet due": SERIES[7],
   "1-30 days": VERDICT.good,
   "31-60 days": VERDICT.fair,
-  "61-90 days": "#C2410C",
+  "61-90 days": SERIES[6],
   "Over 90 days": VERDICT.poor,
 };
 

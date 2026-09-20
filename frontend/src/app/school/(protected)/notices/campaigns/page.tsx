@@ -146,7 +146,7 @@ export default function CampaignsPage() {
                     <>
                       {dateTime(r.scheduled_at)}
                       {r.overdue && (
-                        <span className="block text-[11px] font-bold text-[#8E5C05]">
+                        <span className="block text-[11px] font-bold text-warning">
                           time has passed
                         </span>
                       )}

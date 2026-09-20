@@ -95,7 +95,7 @@ export function HealthRecordView({ recordUrl, profileUrl, mode }: { recordUrl: s
     <div className="space-y-4">
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
-      {p.allergies && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">Allergies: {p.allergies}</div>}
+      {p.allergies && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">Allergies: {p.allergies}</div>}
 
       <Card>
         <CardHeader>

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 
 import { BreakdownChart, ChartCard } from "@/components/charts/Charts";
-import { VERDICT } from "@/components/charts/theme";
+import { SERIES, VERDICT } from "@/components/charts/theme";
 import { CsvButton, ReportShell } from "@/components/reports/ReportShell";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -35,10 +35,10 @@ type Dues = {
  *  the amount — a large bill raised last week is not the problem that a small
  *  one ignored since June is. */
 const BUCKET_TONE: Record<string, string> = {
-  "Not yet due": "#4B5563",
+  "Not yet due": SERIES[7],
   "1-30 days": VERDICT.good,
   "31-60 days": VERDICT.fair,
-  "61-90 days": "#C2410C",
+  "61-90 days": SERIES[6],
   "Over 90 days": VERDICT.poor,
 };
 

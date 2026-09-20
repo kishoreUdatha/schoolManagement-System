@@ -88,7 +88,7 @@ function ExamCard({ exam }: { exam: ExamRow }) {
             </p>
 
             {held && exam.parent_note && (
-              <p className="mt-2 text-[13px] font-medium text-[#8E5C05]">
+              <p className="mt-2 text-[13px] font-medium text-warning">
                 {exam.parent_note}
               </p>
             )}

@@ -336,7 +336,7 @@ function TimetableSetup() {
                               className={
                                 "block w-full rounded-lg border px-3 py-2 text-left text-[12px] transition-colors " +
                                 (period.is_break
-                                  ? "cursor-default border-transparent bg-[#FFF3D8] text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200"
+                                  ? "cursor-default border-transparent bg-warning-bg text-warning dark:bg-amber-500/15 dark:text-amber-200"
                                   : entry
                                   ? "border-transparent bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-200"
                                   : "border-dashed border-surface-border bg-surface-raised text-ink-subtle hover:bg-surface-hover hover:text-ink-muted")
@@ -363,7 +363,7 @@ function TimetableSetup() {
                             {entry && !period.is_break && (
                               <button
                                 onClick={() => clearCell(period.id)}
-                                className="mt-1 text-[10px] font-bold text-[#B82E45] hover:underline"
+                                className="mt-1 text-[10px] font-bold text-danger hover:underline"
                               >
                                 clear
                               </button>

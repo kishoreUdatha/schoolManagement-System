@@ -112,20 +112,20 @@ export function Sidebar({
         className={cn(
           "group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] leading-tight transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
           active
-            ? "bg-brand-50 font-extrabold text-brand-600 dark:bg-brand-500/15 dark:text-brand-300"
-            : "font-semibold text-ink-muted hover:bg-surface-hover hover:text-ink"
+            ? "bg-brand-600 font-extrabold text-white"
+            : "font-semibold text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-ink"
         )}
       >
         {active && (
-          <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-brand-600" />
+          <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-white/70" />
         )}
         {Icon && (
           <Icon
             className={cn(
               "h-3.5 w-3.5 shrink-0",
               active
-                ? "text-brand-400"
-                : "text-ink-subtle group-hover:text-ink-muted"
+                ? "text-white"
+                : "text-sidebar-muted group-hover:text-sidebar-ink"
             )}
             strokeWidth={1.75}
           />
@@ -137,9 +137,9 @@ export function Sidebar({
   }
 
   const navContent = (
-    <nav className="flex h-full flex-col bg-surface-raised">
+    <nav className="flex h-full flex-col bg-sidebar">
       {/* Brand header */}
-      <div className="flex items-center gap-2.5 border-b border-surface-border px-4 py-4">
+      <div className="flex items-center gap-2.5 border-b border-sidebar-border px-4 py-4">
         {branding?.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -154,7 +154,7 @@ export function Sidebar({
         )}
         <Link
           href={brandHref}
-          className="truncate text-[14px] font-extrabold tracking-[-0.3px] text-ink"
+          className="truncate text-[14px] font-extrabold tracking-[-0.3px] text-sidebar-ink"
           onClick={() => setMobileOpen(false)}
         >
           {displayTitle}
@@ -186,13 +186,13 @@ export function Sidebar({
                 onClick={() => toggle(section.heading!)}
                 className={cn(
                   "group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
-                  "text-ink-muted hover:bg-surface-hover hover:text-ink"
+                  "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-ink"
                 )}
                 aria-expanded={open}
               >
                 {SectionIcon && (
                   <SectionIcon
-                    className="h-3.5 w-3.5 shrink-0 text-ink-muted group-hover:text-ink"
+                    className="h-3.5 w-3.5 shrink-0 text-sidebar-muted group-hover:text-sidebar-ink"
                     strokeWidth={1.75}
                   />
                 )}
@@ -223,17 +223,17 @@ export function Sidebar({
       </div>
 
       {/* User footer */}
-      <div className="border-t border-surface-border px-3 py-3">
+      <div className="border-t border-sidebar-border px-3 py-3">
         {user && (
           <div className="mb-1.5 flex items-center gap-2 text-xs">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-[11px] font-extrabold uppercase text-brand-600">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-hover text-[11px] font-extrabold uppercase text-sidebar-ink">
               {initials(user.full_name)}
             </div>
             <div className="min-w-0">
-              <div className="truncate text-[12px] font-bold text-ink">
+              <div className="truncate text-[12px] font-bold text-sidebar-ink">
                 {user.full_name}
               </div>
-              <div className="truncate text-[10px] text-ink-subtle">
+              <div className="truncate text-[10px] text-sidebar-muted">
                 {user.email}
               </div>
             </div>
@@ -242,7 +242,7 @@ export function Sidebar({
         <div className="flex items-center gap-2">
           <button
             onClick={logout}
-            className="flex-1 rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[12px] font-bold text-ink-muted transition-colors hover:bg-surface-hover hover:text-ink"
+            className="flex-1 rounded-lg border border-sidebar-border bg-transparent px-3 py-2 text-[12px] font-bold text-sidebar-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-ink"
           >
             Sign out
           </button>
@@ -286,7 +286,7 @@ export function Sidebar({
       {/* Desktop sidebar — pinned to viewport height so the footer
           (user info, sign out, theme toggle) is always visible even on
           tall main content pages. */}
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-surface-border bg-surface-raised md:flex md:flex-col">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-sidebar-border bg-sidebar md:flex md:flex-col">
         {navContent}
       </aside>
 
@@ -298,13 +298,13 @@ export function Sidebar({
         >
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <aside
-            className="absolute left-0 top-0 flex h-full w-64 flex-col border-r border-surface-border shadow-2xl"
+            className="absolute left-0 top-0 flex h-full w-64 flex-col border-r border-sidebar-border shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               aria-label="Close menu"
               onClick={() => setMobileOpen(false)}
-              className="absolute right-2 top-2 z-10 rounded-md p-1 text-ink-muted hover:bg-surface-hover hover:text-ink"
+              className="absolute right-2 top-2 z-10 rounded-md p-1 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-ink"
             >
               <X className="h-4 w-4" />
             </button>
@@ -333,10 +333,10 @@ export function NavBadge({
   tone?: "rose" | "brand" | "amber" | "emerald";
 }) {
   const tones: Record<string, string> = {
-    rose: "bg-[#FFEBEE] text-[#B82E45]",
+    rose: "bg-danger-bg text-danger",
     brand: "bg-brand-50 text-brand-600",
-    amber: "bg-[#FFF3D8] text-[#8E5C05]",
-    emerald: "bg-[#E9F7F0] text-[#07845E]",
+    amber: "bg-warning-bg text-warning",
+    emerald: "bg-success-bg text-success",
   };
   return (
     <span

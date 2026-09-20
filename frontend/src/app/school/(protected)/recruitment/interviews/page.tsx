@@ -260,7 +260,7 @@ export default function InterviewCalendarPage() {
                     key={s.id}
                     className={
                       clashing.has(s.id)
-                        ? "rounded-[10px] border border-[#B82E45] bg-[#FFEBEE] p-3 dark:bg-rose-500/10"
+                        ? "rounded-[10px] border border-danger bg-danger-bg p-3 dark:bg-rose-500/10"
                         : "rounded-[10px] border border-surface-border p-3"
                     }
                   >
@@ -290,7 +290,7 @@ export default function InterviewCalendarPage() {
                         : "No panel recorded"}
                     </p>
                     {clashing.has(s.id) && (
-                      <p className="mt-1 text-[11px] font-bold text-[#B82E45]">
+                      <p className="mt-1 text-[11px] font-bold text-danger">
                         A panel member is double-booked at this hour.
                       </p>
                     )}

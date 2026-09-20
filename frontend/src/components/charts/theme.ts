@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
  *  colour blindness; blue leads because it is the product's own colour.
  */
 export const SERIES = [
-  "#2563EB", // brand blue
+  "#2454FF", // brand blue
   "#07845E", // green, the same one the Done badge uses
   "#8E5C05", // amber
   "#B82E45", // rose
@@ -33,18 +33,18 @@ export interface ChartTheme {
 }
 
 const LIGHT: ChartTheme = {
-  axis: "#62718B",
-  grid: "#E3EAF5",
+  axis: "#5C6B82",
+  grid: "#DCE4EF",
   tooltipBg: "#FFFFFF",
-  tooltipBorder: "#E3EAF5",
-  tooltipInk: "#172554",
+  tooltipBorder: "#DCE4EF",
+  tooltipInk: "#12233F",
 };
 const DARK: ChartTheme = {
-  axis: "#8F9DB5",
-  grid: "#1E2A49",
-  tooltipBg: "#0F172D",
-  tooltipBorder: "#1E2A49",
-  tooltipInk: "#E6EDF9",
+  axis: "#8A96A8",
+  grid: "#20304C",
+  tooltipBg: "#101B2F",
+  tooltipBorder: "#20304C",
+  tooltipInk: "#E9EFF9",
 };
 
 /** Axis and grid colours that follow the theme toggle.

@@ -141,7 +141,7 @@ export default function ChildTimetablePage() {
                           {trim(period.start_time)} – {trim(period.end_time)}
                         </div>
                         {period.is_break ? (
-                          <div className="mt-1 inline-block rounded-md bg-[#FFF3D8] px-2 py-0.5 text-[12px] font-extrabold text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
+                          <div className="mt-1 inline-block rounded-md bg-warning-bg px-2 py-0.5 text-[12px] font-extrabold text-warning dark:bg-amber-500/15 dark:text-amber-200">
                             {period.label ?? "Break"}
                           </div>
                         ) : entry ? (

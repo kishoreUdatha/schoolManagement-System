@@ -239,7 +239,7 @@ export default function PermissionMatrixPage() {
                                 aria-label={`${granted ? "Take away" : "Grant"} ${p.name} for ${r.name}`}
                                 className={
                                   granted
-                                    ? "inline-flex h-7 w-7 items-center justify-center rounded-[8px] bg-[#E9F7F0] text-[#07845E] hover:opacity-80 disabled:opacity-40"
+                                    ? "inline-flex h-7 w-7 items-center justify-center rounded-[8px] bg-success-bg text-success hover:opacity-80 disabled:opacity-40"
                                     : "inline-flex h-7 w-7 items-center justify-center rounded-[8px] bg-surface-subtle text-ink-subtle hover:bg-surface-hover disabled:opacity-40"
                                 }
                               >

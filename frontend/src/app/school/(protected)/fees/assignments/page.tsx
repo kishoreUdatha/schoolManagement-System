@@ -234,8 +234,8 @@ export default function FeeAssignmentsPage() {
                     <span
                       className={
                         Number(a.difference) < 0
-                          ? "block text-[11px] font-normal text-[#07845E]"
-                          : "block text-[11px] font-normal text-[#B82E45]"
+                          ? "block text-[11px] font-normal text-success"
+                          : "block text-[11px] font-normal text-danger"
                       }
                     >
                       {Number(a.difference) < 0 ? "−" : "+"}

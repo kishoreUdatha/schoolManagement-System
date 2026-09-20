@@ -150,7 +150,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
       </div>
     );
   }
-  if (!paper) return error ? <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div> : null;
+  if (!paper) return error ? <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div> : null;
 
   const q = paper.questions[current];
   const r = answers[q.question_id] ?? {};
@@ -172,7 +172,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
         <div className={cn("rounded-md px-3 py-1 font-mono text-lg font-bold", left < 60 ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-900")}>{mmss(left)}</div>
         <Button onClick={() => submit(false)}>Submit</Button>
       </div>
-      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
+      {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
       {paper.instructions && current === 0 && <p className="whitespace-pre-line text-sm text-slate-600">{paper.instructions}</p>}
 
       <Card>

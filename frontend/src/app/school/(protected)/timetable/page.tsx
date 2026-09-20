@@ -143,7 +143,7 @@ export default function TimetableDashboardPage() {
                         className={
                           "block h-full rounded-full " +
                           (r.percent >= 100
-                            ? "bg-[#07845E]"
+                            ? "bg-success"
                             : r.percent > 0
                             ? "bg-brand-600"
                             : "bg-transparent")

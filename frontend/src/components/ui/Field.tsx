@@ -5,7 +5,7 @@ import { ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 export const fieldClass =
-  "min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300";
+  "min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink placeholder:text-ink-subtle transition-colors hover:border-brand-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-ink-subtle";
 
 export function Select({
   label,
@@ -42,11 +42,11 @@ export function Textarea({
       {label && <span className="text-[12px] font-bold text-ink-muted">{label}</span>}
       <textarea
         rows={2}
-        className={cn(fieldClass, error && "border-[#B82E45]", className)}
+        className={cn(fieldClass, error && "border-danger/60 focus:border-danger focus:ring-danger/25", className)}
         {...rest}
       />
       {error ? (
-        <span className="text-[11px] font-medium text-[#B82E45]">{error}</span>
+        <span className="text-[11px] font-medium text-danger">{error}</span>
       ) : hint ? (
         <span className="text-[11px] text-ink-subtle">{hint}</span>
       ) : null}
@@ -57,7 +57,7 @@ export function Textarea({
 export function ErrorBox({ children }: { children: ReactNode }) {
   if (!children) return null;
   return (
-    <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
+    <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger">
       {children}
     </div>
   );
@@ -66,7 +66,7 @@ export function ErrorBox({ children }: { children: ReactNode }) {
 export function NoticeBox({ children }: { children: ReactNode }) {
   if (!children) return null;
   return (
-    <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
+    <div className="rounded-lg bg-success-bg px-4 py-3 text-[13px] font-medium text-success">
       {children}
     </div>
   );
@@ -79,7 +79,7 @@ export function NoticeBox({ children }: { children: ReactNode }) {
 export function WarnBox({ children }: { children: ReactNode }) {
   if (!children) return null;
   return (
-    <div className="rounded-lg bg-[#FFF3D8] px-4 py-3 text-[13px] font-medium text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
+    <div className="rounded-lg bg-warning-bg px-4 py-3 text-[13px] font-medium text-warning">
       {children}
     </div>
   );

@@ -35,11 +35,39 @@ const config: Config = {
           muted: "rgb(var(--ink-muted) / <alpha-value>)",
           subtle: "rgb(var(--ink-subtle) / <alpha-value>)",
         },
+        // The sidebar is the one dark surface in a white app and needs its
+        // own scale; nested components there cannot read --surface.
+        sidebar: {
+          DEFAULT: "rgb(var(--sidebar) / <alpha-value>)",
+          ink: "rgb(var(--sidebar-ink) / <alpha-value>)",
+          muted: "rgb(var(--sidebar-ink-muted) / <alpha-value>)",
+          hover: "rgb(var(--sidebar-hover) / <alpha-value>)",
+          border: "rgb(var(--sidebar-border) / <alpha-value>)",
+        },
+        // Status, named once so a colour means the same thing everywhere.
+        success: {
+          DEFAULT: "rgb(var(--success) / <alpha-value>)",
+          bg: "rgb(var(--success-bg) / <alpha-value>)",
+        },
+        warning: {
+          DEFAULT: "rgb(var(--warning) / <alpha-value>)",
+          bg: "rgb(var(--warning-bg) / <alpha-value>)",
+        },
+        danger: {
+          DEFAULT: "rgb(var(--danger) / <alpha-value>)",
+          bg: "rgb(var(--danger-bg) / <alpha-value>)",
+        },
+        info: {
+          DEFAULT: "rgb(var(--info) / <alpha-value>)",
+          bg: "rgb(var(--info-bg) / <alpha-value>)",
+        },
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(59, 130, 246, 0.15), 0 8px 24px -8px rgba(59, 130, 246, 0.25)",
+        glow: "0 0 0 1px rgb(var(--brand-600) / 0.15), 0 8px 24px -8px rgb(var(--brand-600) / 0.22)",
         "glow-sm":
-          "0 0 0 1px rgba(59, 130, 246, 0.2), 0 2px 8px -2px rgba(59, 130, 246, 0.3)",
+          "0 0 0 1px rgb(var(--brand-600) / 0.2), 0 2px 8px -2px rgb(var(--brand-600) / 0.28)",
+        // A white card on a white page needs an edge, not a shadow.
+        card: "0 1px 2px 0 rgb(18 35 63 / 0.04)",
       },
     },
   },

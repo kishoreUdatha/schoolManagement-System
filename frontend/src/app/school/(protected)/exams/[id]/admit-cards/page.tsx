@@ -208,7 +208,7 @@ export default function AdmitCardsPage() {
                               )}
                             </>
                           ) : (
-                            <span className="text-[#8E5C05] dark:text-amber-300">
+                            <span className="text-warning dark:text-amber-300">
                               To be announced
                             </span>
                           )}

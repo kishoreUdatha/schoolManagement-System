@@ -510,8 +510,8 @@ def payslip_pdf(db: Session, slip: Payslip, run: PayrollRun) -> tuple[bytes, str
     table = Table(rows, colWidths=[5 * cm, 3.4 * cm, 5 * cm, 3.4 * cm])
     table.setStyle(
         TableStyle([
-            ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#cbd5e1")),
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eef2f7")),
+            ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#DCE4EF")),
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F6F8FC")),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
             ("ALIGN", (1, 0), (1, -1), "RIGHT"),

@@ -56,7 +56,7 @@ export default function ChildTransportPage() {
         ← Back
       </Link>
       <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">School transport</h1>
-      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
+      {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
       {data === null && (
         <Card className="p-6 text-sm text-slate-500">Your child isn’t using school transport.</Card>
       )}

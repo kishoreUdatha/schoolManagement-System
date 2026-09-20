@@ -16,17 +16,17 @@ interface StatCardProps {
 const dots = {
   neutral: "bg-ink-subtle",
   brand: "bg-brand-600",
-  emerald: "bg-[#07845E]",
-  amber: "bg-[#8E5C05]",
-  rose: "bg-[#B82E45]",
+  emerald: "bg-success",
+  amber: "bg-warning",
+  rose: "bg-danger",
 };
 
 const accents = {
   neutral: "bg-surface-subtle text-ink-muted",
-  brand: "bg-brand-50 text-brand-600",
-  emerald: "bg-[#E9F7F0] text-[#07845E]",
-  amber: "bg-[#FFF3D8] text-[#8E5C05]",
-  rose: "bg-[#FFEBEE] text-[#B82E45]",
+  brand: "bg-info-bg text-info",
+  emerald: "bg-success-bg text-success",
+  amber: "bg-warning-bg text-warning",
+  rose: "bg-danger-bg text-danger",
 };
 
 export function StatCard({ label, value, hint, accent = "brand", icon: Icon }: StatCardProps) {

@@ -196,7 +196,7 @@ export default function EventRegisterPage() {
               return (
                 <tr
                   key={r.student_id}
-                  className={r.consented_absent ? "bg-[#FFEBEE]/40" : undefined}
+                  className={r.consented_absent ? "bg-danger-bg/40" : undefined}
                 >
                   <td className={td}>{r.admission_no}</td>
                   <td className={tdStrong}>{r.student_name}</td>
@@ -223,7 +223,7 @@ export default function EventRegisterPage() {
                       ) : r.attended ? (
                         "here"
                       ) : (
-                        <span className="font-bold text-[#B82E45]">not here</span>
+                        <span className="font-bold text-danger">not here</span>
                       )}
                     </label>
                   </td>

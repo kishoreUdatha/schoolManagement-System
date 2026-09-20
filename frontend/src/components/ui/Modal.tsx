@@ -26,11 +26,11 @@ export function Modal({ open, onClose, title, children, size = "md" }: ModalProp
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#172554]/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className={`relative w-full ${maxWidth} rounded-[14px] border border-surface-border bg-surface-raised shadow-[0_24px_60px_-20px_rgba(23,37,84,0.35)]`}
+        className={`relative w-full ${maxWidth} rounded-[14px] border border-surface-border bg-surface-raised shadow-[0_24px_60px_-20px_rgb(18_35_63_/_0.28)]`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-surface-border px-5 py-4">

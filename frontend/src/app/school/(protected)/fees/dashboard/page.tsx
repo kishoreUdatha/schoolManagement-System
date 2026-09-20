@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { BreakdownChart, ChartCard, TrendChart } from "@/components/charts/Charts";
-import { VERDICT } from "@/components/charts/theme";
+import { SERIES, VERDICT } from "@/components/charts/theme";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, PageHeader, Table, inr, td, tdStrong } from "@/components/ui/Field";
@@ -36,10 +36,10 @@ type Dashboard = {
 /** Older money is harder money, so the bucket picks the colour rather than
  *  the size of it. */
 const BUCKET_TONE: Record<string, string> = {
-  "Not yet due": "#4B5563",
+  "Not yet due": SERIES[7],
   "1-30 days": VERDICT.good,
   "31-60 days": VERDICT.fair,
-  "61-90 days": "#C2410C",
+  "61-90 days": SERIES[6],
   "Over 90 days": VERDICT.poor,
 };
 

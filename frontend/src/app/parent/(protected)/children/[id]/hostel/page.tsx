@@ -88,8 +88,8 @@ export default function ChildHostelPage() {
         ← Back
       </Link>
       <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Hostel</h1>
-      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
-      {notice && <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>}
+      {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
+      {notice && <div className="rounded-lg bg-success-bg px-4 py-3 text-[13px] font-medium text-success dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>}
       {data === null && <Card className="p-6 text-sm text-slate-500">Your child isn&apos;t staying in the school hostel.</Card>}
       {data && (
         <>

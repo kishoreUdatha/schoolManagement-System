@@ -146,7 +146,7 @@ export default function HealthPage() {
               <Input label="Complaint *" placeholder="Headache, fever, injury…" value={form.complaint} onChange={set("complaint")} required />
             </div>
             {studentAllergy && (
-              <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">Allergies: {studentAllergy}</div>
+              <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">Allergies: {studentAllergy}</div>
             )}
             <div className="grid gap-3 sm:grid-cols-4">
               <Input label="Temperature °C" type="number" step="0.1" min="30" max="45" value={form.temperature_c} onChange={set("temperature_c")} />

@@ -48,7 +48,7 @@ export default function MyMarksPapersPage() {
       </div>
 
       {error && (
-        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
+        <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
 
       {papers.length === 0 && !error && (

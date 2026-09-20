@@ -283,7 +283,7 @@ export default function TicketsPage() {
                   key={r.id}
                   className={
                     r.is_internal
-                      ? "rounded-lg border border-[#FFF3D8] bg-[#FFF3D8] p-3 dark:border-amber-500/20 dark:bg-amber-500/10"
+                      ? "rounded-lg border border-warning/25 bg-warning-bg p-3"
                       : "rounded-lg border border-surface-border p-3"
                   }
                 >

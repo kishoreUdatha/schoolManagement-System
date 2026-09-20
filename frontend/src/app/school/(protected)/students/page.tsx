@@ -259,10 +259,10 @@ export default function StudentsPage() {
       </form>
 
       {error && (
-        <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
+        <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {notice && (
-        <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
+        <div className="rounded-lg bg-success-bg px-4 py-3 text-[13px] font-medium text-success dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
       <Card>
@@ -601,7 +601,7 @@ function CreateStudentModal({
           onChange={(e) => setForm({ ...form, address: e.target.value })}
         />
         {error && (
-          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
+          <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -760,7 +760,7 @@ function EditStudentModal({
           onChange={(e) => setForm({ ...form, address: e.target.value })}
         />
         {error && (
-          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
+          <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onClose}>
@@ -797,7 +797,7 @@ function ViewStudentModal({
   return (
     <Modal open onClose={onClose} title={student.full_name} size="lg">
       {error && (
-        <div className="mb-3 rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
+        <div className="mb-3 rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
       )}
       {detail && (
         <div className="space-y-4 text-sm">
@@ -1071,16 +1071,16 @@ function BulkImportModal({
         </div>
 
         {error && (
-          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
+          <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
         {result && (
           <div className="space-y-2">
-            <div className="rounded-lg bg-[#E9F7F0] px-4 py-3 text-[13px] font-medium text-[#07845E] dark:bg-emerald-500/15 dark:text-emerald-200">
+            <div className="rounded-lg bg-success-bg px-4 py-3 text-[13px] font-medium text-success dark:bg-emerald-500/15 dark:text-emerald-200">
               Imported {result.created} student(s)
               {result.errors.length ? `, skipped ${result.errors.length}.` : "."}
             </div>
             {result.errors.length > 0 && (
-              <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[12px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
+              <div className="rounded-lg bg-danger-bg px-4 py-3 text-[12px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
                 <div className="font-semibold">Skipped rows:</div>
                 <ul className="mt-1 space-y-0.5">
                   {result.errors.map((er, i) => (
@@ -1454,7 +1454,7 @@ function PromoteStudentsModal({
         )}
 
         {error && (
-          <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">
+          <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
             {error}
           </div>
         )}

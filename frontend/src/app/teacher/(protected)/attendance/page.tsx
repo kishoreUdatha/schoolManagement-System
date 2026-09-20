@@ -61,9 +61,9 @@ const STATUSES: { value: Status; label: string; tone: "emerald" | "rose" | "ambe
 // The status buttons are the one place colour carries meaning rather than
 // decoration, so they use the palette's status colours at full strength.
 const ACTIVE: Record<string, string> = {
-  emerald: "border-[#07845E] bg-[#07845E] text-white",
-  rose: "border-[#B82E45] bg-[#B82E45] text-white",
-  amber: "border-[#8E5C05] bg-[#8E5C05] text-white",
+  emerald: "border-success bg-success text-white",
+  rose: "border-danger bg-danger text-white",
+  amber: "border-warning bg-warning text-white",
   brand: "border-brand-600 bg-brand-600 text-white",
 };
 
@@ -220,7 +220,7 @@ export default function AttendancePage() {
       ) : (
         <>
           {view?.is_holiday && (
-            <div className="rounded-lg bg-[#FFF3D8] px-4 py-3 text-[13px] font-medium text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
+            <div className="rounded-lg bg-warning-bg px-4 py-3 text-[13px] font-medium text-warning dark:bg-amber-500/15 dark:text-amber-200">
               {date} is a holiday ({view.holiday_name}). No attendance expected.
             </div>
           )}

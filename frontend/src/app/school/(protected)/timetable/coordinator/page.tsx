@@ -167,7 +167,7 @@ export default function CoordinatorViewPage() {
                           return (
                             <td
                               key={p.period_number}
-                              className="border-b border-surface-border bg-[#FFF3D8] px-3 py-2 text-center text-[11px] font-bold text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200"
+                              className="border-b border-surface-border bg-warning-bg px-3 py-2 text-center text-[11px] font-bold text-warning dark:bg-amber-500/15 dark:text-amber-200"
                             >
                               {p.label ?? "Break"}
                             </td>

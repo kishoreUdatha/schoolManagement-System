@@ -55,7 +55,7 @@ export default function ParentEventsPage() {
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
       {pending.length > 0 && (
-        <div className="rounded-lg bg-[#FFF3D8] px-4 py-3 text-[13px] font-medium text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
+        <div className="rounded-lg bg-warning-bg px-4 py-3 text-[13px] font-medium text-warning dark:bg-amber-500/15 dark:text-amber-200">
           {pending.length} event{pending.length === 1 ? " needs" : "s need"} your consent.
         </div>
       )}

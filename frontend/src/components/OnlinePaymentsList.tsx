@@ -62,7 +62,7 @@ export function OnlinePaymentsList() {
       </div>
       <ErrorBox>{error}</ErrorBox>
       {refunds.length > 0 && (
-        <div className="rounded-lg bg-[#FFF3D8] px-4 py-3 text-[13px] font-medium text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
+        <div className="rounded-lg bg-warning-bg px-4 py-3 text-[13px] font-medium text-warning dark:bg-amber-500/15 dark:text-amber-200">
           {refunds.length} payment(s) include money received for dues that were already paid (
           {inr(refunds.reduce((s, o) => s + Number(o.excess_amount), 0))}). Refund these from the
           Razorpay dashboard.

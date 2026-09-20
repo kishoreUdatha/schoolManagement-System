@@ -83,7 +83,7 @@ export default function PublicApplicationPage() {
         <p className="text-sm text-ink-muted">Admission application</p>
         {info?.phone && <p className="text-xs text-ink-subtle">{info.phone}</p>}
       </div>
-      {error && <div className="rounded-lg bg-[#FFEBEE] px-4 py-3 text-[13px] font-medium text-[#B82E45] dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
+      {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
       <Card>
         <CardBody>
           <form onSubmit={submit} className="space-y-3">

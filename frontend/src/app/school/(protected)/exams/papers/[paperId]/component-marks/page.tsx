@@ -195,7 +195,7 @@ export default function ComponentMarksPage() {
                           type="number"
                           min={0}
                           max={h.max_marks}
-                          className={bad ? "border-[#B82E45]" : undefined}
+                          className={bad ? "border-danger" : undefined}
                           disabled={r.status !== "scored"}
                           value={v ?? ""}
                           onChange={(e) => setValue(r.student_id, h.id, e.target.value)}

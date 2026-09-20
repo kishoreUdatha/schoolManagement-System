@@ -7,71 +7,110 @@
   :root {
     color-scheme: light;
 
-    /* Brand ramp around BrightCampus blue #2563EB (BrandingProvider may
-       override these per tenant). */
-    --brand-50: 234 242 255;           /* #EAF2FF — soft blue surfaces */
-    --brand-100: 219 233 255;
-    --brand-200: 191 214 254;
-    --brand-300: 147 197 253;          /* focus ring */
-    --brand-400: 96 165 250;
-    --brand-500: 59 130 246;           /* #3B82F6 secondary blue */
-    --brand-600: 37 99 235;            /* #2563EB primary action */
-    --brand-700: 29 78 216;            /* hover on primary */
-    --brand-800: 30 64 175;
-    --brand-900: 23 37 84;             /* #172554 — same family as ink */
+    /* Brand ramp around #2454FF. BrandingProvider may override these per
+       tenant, so every consumer reads the variable rather than the hex. */
+    --brand-50: 238 243 255;           /* #EEF3FF */
+    --brand-100: 220 230 255;
+    --brand-200: 186 204 255;
+    --brand-300: 143 170 255;          /* focus ring */
+    --brand-400: 91 128 255;
+    --brand-500: 58 102 255;
+    --brand-600: 36 84 255;            /* #2454FF primary action */
+    --brand-700: 29 67 204;            /* #1D43CC hover */
+    --brand-800: 22 52 156;
+    --brand-900: 18 35 63;             /* #12233F, the same as ink */
 
-    /* Surfaces: a tinted workspace with white panels on top of it. */
-    --surface: 241 246 255;            /* #F1F6FF workspace background */
-    --surface-raised: 255 255 255;     /* panels, sidebar, header */
-    --surface-subtle: 246 250 255;     /* pale fill: table heads, wells */
-    --surface-border: 227 234 245;     /* #E3EAF5 */
-    --surface-hover: 234 242 255;      /* #EAF2FF */
+    /* Surfaces. The workspace is white now, so a card no longer floats on a
+       tint — the border carries the separation instead, which is why
+       --surface-border matters more here than it did. */
+    --surface: 255 255 255;            /* #FFFFFF page */
+    --surface-raised: 255 255 255;     /* #FFFFFF cards, inputs */
+    --surface-subtle: 246 248 252;     /* #F6F8FC table heads and wells */
+    --surface-border: 220 228 239;     /* #DCE4EF */
+    --surface-hover: 238 243 255;      /* #EEF3FF */
 
-    --ink: 23 37 84;                   /* #172554 */
-    --ink-muted: 98 113 139;           /* #62718B */
-    --ink-subtle: 143 157 181;
+    --ink: 18 35 63;                   /* #12233F headings and body */
+    --ink-muted: 92 107 130;           /* #5C6B82 secondary */
+    --ink-subtle: 105 118 138;         /* #69768A — 4.5:1 on white, so
+                                          hints and placeholders are legible */
 
-    --scrollbar-thumb: 203 216 238;
-    --scrollbar-thumb-hover: 163 184 219;
+    /* The sidebar is the one dark surface in a white app, so it needs its
+       own scale — reusing --surface would make every nested component
+       inside it unreadable. */
+    --sidebar: 23 45 77;               /* #172D4D */
+    --sidebar-ink: 231 238 248;        /* #E7EEF8 */
+    --sidebar-ink-muted: 154 173 199;  /* #9AADC7 inactive items */
+    --sidebar-hover: 31 58 96;         /* #1F3A60 */
+    --sidebar-border: 30 56 92;
 
-    /* The workspace tint does the work; no glow needed in light mode. */
+    /* Status. These were written out as raw hex in 350-odd places; naming
+       them means a school can be told what red means once. */
+    --success: 7 121 85;               /* #077955 — 4.9:1 on its own chip */
+    --success-bg: 233 247 240;
+    --warning: 142 92 5;
+    --warning-bg: 255 243 216;
+    --danger: 184 46 69;
+    --danger-bg: 255 235 238;
+    --info: 36 84 255;
+    --info-bg: 238 243 255;
+
+    --scrollbar-thumb: 205 215 230;
+    --scrollbar-thumb-hover: 168 183 205;
+
+    /* A white page needs no glow behind it. */
     --body-glow: transparent;
   }
 
   .dark {
     color-scheme: dark;
 
-    /* Night shift for the same blue family, so a school that works late
-       isn't looking at a different product. */
-    --brand-50: 30 58 138;
-    --brand-100: 30 64 175;
-    --brand-200: 29 78 216;
-    --brand-300: 147 197 253;
-    --brand-400: 96 165 250;
-    --brand-500: 59 130 246;
-    --brand-600: 37 99 235;
-    --brand-700: 29 78 216;
-    --brand-800: 30 64 175;
-    --brand-900: 30 58 138;
+    /* The same blue family after dark, so a school working late is not
+       looking at a different product. */
+    --brand-50: 26 44 96;
+    --brand-100: 22 52 156;
+    --brand-200: 29 67 204;
+    --brand-300: 143 170 255;
+    --brand-400: 91 128 255;
+    --brand-500: 58 102 255;
+    --brand-600: 36 84 255;
+    --brand-700: 29 67 204;
+    --brand-800: 22 52 156;
+    --brand-900: 26 44 96;
 
-    --surface: 9 14 30;
-    --surface-raised: 15 23 45;
-    --surface-subtle: 21 31 58;
-    --surface-border: 30 42 73;
-    --surface-hover: 27 39 70;
+    --surface: 9 16 30;
+    --surface-raised: 16 27 47;
+    --surface-subtle: 22 35 58;
+    --surface-border: 32 48 76;
+    --surface-hover: 28 44 74;
 
-    --ink: 236 242 255;
+    --ink: 233 239 249;
     --ink-muted: 156 172 201;
     --ink-subtle: 116 134 166;
 
-    --scrollbar-thumb: 36 50 84;
-    --scrollbar-thumb-hover: 52 70 112;
+    /* Already dark; it sits a shade off the page so the edge still reads. */
+    --sidebar: 14 26 45;
+    --sidebar-ink: 231 238 248;
+    --sidebar-ink-muted: 148 166 193;
+    --sidebar-hover: 26 44 72;
+    --sidebar-border: 30 50 80;
 
-    --body-glow: rgba(37, 99, 235, 0.12);
+    --success: 52 199 148;
+    --success-bg: 10 58 44;
+    --warning: 240 189 92;
+    --warning-bg: 63 47 10;
+    --danger: 255 138 155;
+    --danger-bg: 66 21 30;
+    --info: 143 170 255;
+    --info-bg: 21 38 82;
+
+    --scrollbar-thumb: 38 54 86;
+    --scrollbar-thumb-hover: 54 74 114;
+
+    --body-glow: transparent;
   }
 
   ::selection {
-    background-color: rgba(59, 130, 246, 0.3);
+    background-color: rgb(var(--brand-600) / 0.28);
     color: #fff;
   }
 
@@ -100,9 +139,7 @@
 
   body {
     background-color: rgb(var(--surface));
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, var(--body-glow), transparent);
-    background-attachment: fixed;
+    color: rgb(var(--ink));
     font-weight: 500;          /* Manrope reads thin at 400 on a light ground */
     letter-spacing: -0.006em;
   }
@@ -171,41 +208,42 @@
     background-color: rgb(var(--surface-hover));
   }
 
-  .dark .bg-brand-50 {
-    background-color: rgba(59, 130, 246, 0.12);
+  /* The legacy status utilities, pointed at the semantic tokens so dark
+     mode follows the palette rather than a second hard-coded theme. */
+  .bg-emerald-50,
+  .bg-emerald-100 {
+    background-color: rgb(var(--success-bg));
   }
-  .dark .text-brand-700 {
-    color: #93b9ff;
+  .text-emerald-600,
+  .text-emerald-700,
+  .text-emerald-800 {
+    color: rgb(var(--success));
   }
-
-  .dark .bg-emerald-50 {
-    background-color: rgba(16, 185, 129, 0.12);
+  .bg-rose-50,
+  .bg-rose-100 {
+    background-color: rgb(var(--danger-bg));
   }
-  .dark .text-emerald-700 {
-    color: #6ee7b7;
+  .text-rose-500,
+  .text-rose-600,
+  .text-rose-700 {
+    color: rgb(var(--danger));
   }
-  .dark .bg-rose-50 {
-    background-color: rgba(244, 63, 94, 0.12);
+  .bg-amber-50,
+  .bg-amber-100 {
+    background-color: rgb(var(--warning-bg));
   }
-  .dark .text-rose-700 {
-    color: #fda4af;
+  .text-amber-600,
+  .text-amber-700,
+  .text-amber-800 {
+    color: rgb(var(--warning));
   }
-  .dark .bg-amber-50 {
-    background-color: rgba(245, 158, 11, 0.12);
+  .border-rose-200 {
+    border-color: rgb(var(--danger) / 0.3);
   }
-  .dark .text-amber-700 {
-    color: #fcd34d;
+  .border-emerald-200 {
+    border-color: rgb(var(--success) / 0.3);
   }
-  .dark .bg-emerald-100 {
-    background-color: rgba(16, 185, 129, 0.15);
-  }
-  .dark .bg-rose-100 {
-    background-color: rgba(244, 63, 94, 0.15);
-  }
-  .dark .bg-amber-100 {
-    background-color: rgba(245, 158, 11, 0.15);
-  }
-  .dark .bg-brand-100 {
-    background-color: rgba(59, 130, 246, 0.18);
+  .border-amber-200 {
+    border-color: rgb(var(--warning) / 0.3);
   }
 }

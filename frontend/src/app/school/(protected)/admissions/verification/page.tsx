@@ -205,7 +205,7 @@ export default function DocumentVerificationPage() {
                     </td>
                     <td className={td}>
                       {item.doc.remark ? (
-                        <span className="text-[#B82E45]">{item.doc.remark}</span>
+                        <span className="text-danger">{item.doc.remark}</span>
                       ) : (
                         "—"
                       )}
