@@ -70,6 +70,7 @@ from app.api.v1.school import (
     staff as school_staff,
     staff_attendance as school_staff_attendance,
     staff_leaves as school_staff_leaves,
+    student_logins as school_student_logins,
     students as school_students,
     subjects as school_subjects,
     syllabus as school_syllabus,
@@ -113,6 +114,10 @@ from app.api.v1.parent import (
     transport as parent_transport,
     videos as parent_videos,
     weekly_reports as parent_weekly_reports,
+)
+from app.api.v1.student import (
+    auth as student_auth,
+    portal as student_portal,
 )
 from app.api.v1.teacher import (
     attendance as teacher_attendance,
@@ -475,6 +480,21 @@ app.include_router(
     school_exam_ops.router,
     prefix="/api/v1/school/exam-ops",
     tags=["school / exam operations"],
+)
+app.include_router(
+    school_student_logins.router,
+    prefix="/api/v1/school/student-logins",
+    tags=["school / student logins"],
+)
+app.include_router(
+    student_auth.router,
+    prefix="/api/v1/student/auth",
+    tags=["student / auth"],
+)
+app.include_router(
+    student_portal.router,
+    prefix="/api/v1/student",
+    tags=["student / portal"],
 )
 app.include_router(
     school_analytics.router,

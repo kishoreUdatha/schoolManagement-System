@@ -104,6 +104,21 @@ def require_parent(current_user: CurrentUser) -> User:
 ParentUser = Annotated[User, Depends(require_parent)]
 
 
+def require_student(current_user: CurrentUser) -> User:
+    if current_user.role != UserRole.student:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Student access required"
+        )
+    if current_user.tenant_id is None or current_user.school_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Student must be linked to a tenant and school",
+        )
+    return current_user
+
+
+StudentUser = Annotated[User, Depends(require_student)]
+
 def require_teacher(current_user: CurrentUser) -> User:
     if current_user.role != UserRole.teacher:
         raise HTTPException(

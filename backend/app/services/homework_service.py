@@ -298,7 +298,16 @@ def list_for_child(
     student = db.get(Student, student_id)
     if not student:
         return []
+    return list_for_student(db, student)
 
+
+def list_for_student(db: Session, student: Student) -> list[Homework]:
+    """Every piece of homework set for this child's class.
+
+    Homework belongs to a class subject, so the child's section decides what
+    they see. Shared by the parent portal and the child's own, because what
+    was set is the same fact either way.
+    """
     # Find the student's section -> class, then all class_subjects in that class.
     section = db.get(Section, student.section_id)
     if not section:
@@ -392,6 +401,25 @@ def parent_submit(
     data: SubmissionCreate,
 ) -> HomeworkSubmission:
     student = _verify_parent_owns_child(db, parent_user_id, student_id)
+    return submit_for_student(db, student, homework_id, data, by_user_id=parent_user_id)
+
+
+def submit_for_student(
+    db: Session,
+    student: Student,
+    homework_id: int,
+    data: SubmissionCreate,
+    *,
+    by_user_id: int,
+) -> HomeworkSubmission:
+    """Record a submission against a child.
+
+    Who is allowed to do it is settled before this is called — a parent with
+    the child on their account, or the child themselves. The work itself is
+    the same either way, and `submitted_by_user_id` records which of them it
+    actually was, so a teacher can tell.
+    """
+    student_id = student.id
     hw = db.get(Homework, homework_id)
     if not hw:
         raise HTTPException(
@@ -423,7 +451,7 @@ def parent_submit(
         existing.teacher_remark = None
         existing.reviewed_by_user_id = None
         existing.reviewed_at = None
-        existing.submitted_by_user_id = parent_user_id
+        existing.submitted_by_user_id = by_user_id
         db.commit()
         db.refresh(existing)
         return existing
@@ -433,7 +461,7 @@ def parent_submit(
         school_id=hw.school_id,
         homework_id=homework_id,
         student_id=student_id,
-        submitted_by_user_id=parent_user_id,
+        submitted_by_user_id=by_user_id,
         attachment_url=data.attachment_url,
         comment=data.comment,
         submitted_at=now,
@@ -454,6 +482,22 @@ def parent_edit_submission(
 ) -> HomeworkSubmission:
     """Parents can edit only their own child's submission, which resets review."""
     _verify_parent_owns_child(db, parent_user_id, student_id)
+    return edit_submission_for_student(
+        db, student_id, homework_id, data, by_user_id=parent_user_id
+    )
+
+
+def edit_submission_for_student(
+    db: Session,
+    student_id: int,
+    homework_id: int,
+    data: SubmissionUpdate,
+    *,
+    by_user_id: int,
+) -> HomeworkSubmission:
+    """Change a submission that has already been made. Editing it puts it back
+    in front of the teacher, because a reviewed remark about work that has
+    since changed is worse than no remark."""
     sub = db.execute(
         select(HomeworkSubmission).where(
             HomeworkSubmission.homework_id == homework_id,
@@ -478,7 +522,7 @@ def parent_edit_submission(
     sub.teacher_remark = None
     sub.reviewed_by_user_id = None
     sub.reviewed_at = None
-    sub.submitted_by_user_id = parent_user_id
+    sub.submitted_by_user_id = by_user_id
     db.commit()
     db.refresh(sub)
     return sub
@@ -488,6 +532,12 @@ def parent_get_submission(
     db: Session, parent_user_id: int, student_id: int, homework_id: int
 ) -> Optional[HomeworkSubmission]:
     _verify_parent_owns_child(db, parent_user_id, student_id)
+    return get_submission_for_student(db, student_id, homework_id)
+
+
+def get_submission_for_student(
+    db: Session, student_id: int, homework_id: int
+) -> Optional[HomeworkSubmission]:
     return db.execute(
         select(HomeworkSubmission).where(
             HomeworkSubmission.homework_id == homework_id,

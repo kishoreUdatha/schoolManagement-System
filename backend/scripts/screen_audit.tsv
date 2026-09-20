@@ -36,7 +36,7 @@ SCR-032	Done	Done	/school/profile	App name, logo, brand colour
 SCR-033	Done	Done	/school	Dashboard stat cards and panels
 SCR-034	Done	Done	/principal	Principal overview dashboard
 SCR-035	Done	Done	/teacher	Today classes and stat cards
-SCR-036	Missing	Missing	-	Deliberate: no student login; parent portal stands in
+SCR-036	Done	Done	/student	Homework due, today's lessons, attendance, notices
 SCR-037	Done	Done	/parent	Children cards, notices, holidays
 SCR-038	Partial	Missing	/accountant	Forty-line stub with one link
 SCR-039	Missing	Partial	-	No HR portal; pipeline endpoint unused
@@ -131,12 +131,12 @@ SCR-127	Done	Done	/school/cover	Uncovered slots, candidates, assign, auto-assign
 SCR-128	Done	Done	/teacher/homework	List with due dates, counts, close and reopen
 SCR-129	Done	Done	/teacher/homework	Create modal with rubric and attachment
 SCR-130	Done	Done	/teacher/homework	Submissions in a modal, no detail page (in a tab, complete)
-SCR-131	Done	Done	/parent/children/[id]/homework	Parent acts; no student login exists
-SCR-132	Done	Done	/parent/children/[id]/homework	Submit or edit with comment and file
+SCR-131	Done	Done	/student/homework	The child sees their own homework, not via a parent
+SCR-132	Done	Done	/student/homework	The child hands work in themselves; the record says who did
 SCR-133	Done	Done	/teacher/homework	Approve, reject and rubric marks in a modal (in a tab, complete)
 SCR-134	Done	Done	/teacher/projects	Project list with progress counts
 SCR-135	Done	Done	/teacher/projects	Create modal with dates and attachment
-SCR-136	Done	Done	/parent/children/[id]/projects	Progress with status, file and note
+SCR-136	Done	Done	/student/homework	Submission with teacher remark and review state
 SCR-137	Done	Done	/teacher/projects	Per-student remark and rating in a modal (in a tab, complete)
 SCR-138	Done	Done	/school/exams/[id]	Readiness checklist per paper, with what blocks publication
 SCR-139	Done	Done	/school/grading	Exam types are one card among three (in a tab, complete)
@@ -151,8 +151,8 @@ SCR-147	Done	Done	/teacher/marks/papers/[id]/import	Teacher uploads for their ow
 SCR-148	Done	Done	/school/exams	Sign off a paper; refuses whoever entered the marks
 SCR-149	Done	Done	/school/grading	Scale CRUD, bands, seed, default
 SCR-150	Done	Done	/principal/exams	Principal publishes, told what is outstanding first
-SCR-151	Partial	Done	/parent/children/[id]/exams/[examId]	Full result, but parent login only
-SCR-152	Partial	Done	/school/report-cards	Report card PDF; no student login
+SCR-151	Done	Done	/student/exams/[examId]	Published only, withheld stays withheld
+SCR-152	Done	Done	/student/exams/[examId]	Same renderer as the school and the parents
 SCR-153	Done	Done	/school/exams/[id]/promotion	Result-driven suggestion, review kept apart from fail
 SCR-154	Partial	Done	/accountant	Accountant dashboard is a placeholder
 SCR-155	Done	Done	/school/fees/structures	Per class, head and year

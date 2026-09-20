@@ -189,6 +189,7 @@ const sections: NavSection[] = [
     heading: "Security",
     icon: Shield,
     items: [
+      { href: "/school/student-logins", label: "Student logins", icon: KeyRound },
       { href: "/school/roles", label: "Roles & branches", icon: KeyRound },
       { href: "/school/settings", label: "Settings", icon: Settings },
       { href: "/school/audit-log", label: "Audit log", icon: ScrollText },

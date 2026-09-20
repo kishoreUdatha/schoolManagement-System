@@ -236,6 +236,16 @@ def list_exams_for_child(
     db: Session, parent_user_id: int, student_id: int
 ) -> list[dict]:
     student = _verify_parent_link(db, parent_user_id, student_id)
+    return list_published_for_student(db, student)
+
+
+def list_published_for_student(db: Session, student: Student) -> list[dict]:
+    """Published results for one child, with the school's decision applied.
+
+    Shared by the parent portal and the child's own. Whoever is asking, a
+    withheld result has to stay withheld — a family that cannot see a mark at
+    home should not be able to see it by borrowing the child's login.
+    """
     section = db.get(Section, student.section_id)
     if not section:
         return []
@@ -263,6 +273,11 @@ def get_child_exam_result(
     db: Session, parent_user_id: int, student_id: int, exam_id: int
 ) -> dict:
     student = _verify_parent_link(db, parent_user_id, student_id)
+    return get_published_result_for_student(db, student, exam_id)
+
+
+def get_published_result_for_student(db: Session, student: Student, exam_id: int) -> dict:
+    """One published result for one child, as the family sees it."""
     exam = db.get(Exam, exam_id)
     if not exam or exam.school_id != student.school_id or not exam.is_published:
         raise HTTPException(

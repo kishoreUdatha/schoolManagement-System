@@ -39,3 +39,14 @@ export function readableDate(iso: string): string {
 
 /** "09:00" from "09:00:00". The API sends seconds; nobody reads them. */
 export const hhmm = (t: string): string => t.slice(0, 5);
+
+/** The day part of a full timestamp, rendered readably.
+ *
+ *  The API sends dates as "YYYY-MM-DD" but timestamps as ISO with a time on
+ *  the end. Handing one of those to the helpers above yields Invalid Date,
+ *  quietly, in the middle of a page — so timestamps come through here rather
+ *  than every caller remembering to trim the string first.
+ */
+export function dateTime(iso: string): string {
+  return readableDate(iso.slice(0, 10));
+}
