@@ -29,6 +29,7 @@ import {
   FileText,
   Award,
   Library,
+  KeyRound,
   FileSignature,
   BriefcaseBusiness,
   CalendarClock,
@@ -166,6 +167,7 @@ const sections: NavSection[] = [
     heading: "Security",
     icon: Shield,
     items: [
+      { href: "/school/roles", label: "Roles & branches", icon: KeyRound },
       { href: "/school/audit-log", label: "Audit log", icon: ScrollText },
       { href: "/school/exports", label: "Exports", icon: Download },
     ],

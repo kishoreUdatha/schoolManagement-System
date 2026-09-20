@@ -55,6 +55,7 @@ from app.api.v1.school import (
     payroll as school_payroll,
     periods as school_periods,
     profile as school_profile,
+    rbac as school_rbac,
     report_cards as school_report_cards,
     sections as school_sections,
     staff as school_staff,
@@ -792,6 +793,12 @@ app.include_router(
     school_applications.router,
     prefix="/api/v1/school/admissions/applications",
     tags=["school / admission applications"],
+)
+
+app.include_router(
+    school_rbac.router,
+    prefix="/api/v1/school",
+    tags=["school / roles, permissions, branches"],
 )
 
 

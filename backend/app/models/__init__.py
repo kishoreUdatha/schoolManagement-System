@@ -113,6 +113,7 @@ from app.models.pastoral import (
 from app.models.payroll import PayrollRun, PayrollSettings, Payslip, StaffSalary
 from app.models.plan import Plan, PlanModule
 from app.models.project import Project, ProjectProgress
+from app.models.rbac import Branch, Permission, Role, RolePermission, UserRoleAssignment
 from app.models.staff import Staff
 from app.models.staff_attendance import StaffAttendance
 from app.models.staff_leave import StaffLeave
@@ -249,6 +250,11 @@ __all__ = [
     "User",
     "UserOtp",
     "Visit",
+    "Branch",
+    "Permission",
+    "Role",
+    "RolePermission",
+    "UserRoleAssignment",
     "AdmissionApplication",
     "AdmissionAssessment",
     "ApplicationDocument",

@@ -371,11 +371,16 @@ def approved_leave_students(db: Session, student_ids, d: date) -> set[int]:
 
 
 def _can_decide(db: Session, user: User, lv: StudentLeave) -> bool:
+    from app.services import rbac_service
+
+    if lv.school_id != user.school_id:
+        return False
     if user.role == UserRole.school_admin:
-        return lv.school_id == user.school_id
-    if user.role == UserRole.teacher:
-        return db.get(Section, lv.section_id).class_teacher_user_id == user.id
-    return False
+        return True
+    if user.role == UserRole.teacher and db.get(Section, lv.section_id).class_teacher_user_id == user.id:
+        return True
+    # a school can delegate leave decisions to anyone
+    return rbac_service.has_permission(db, user, "studentleave.decide")
 
 
 def leaves_to_read(db: Session, user: Optional[User], leaves: list[StudentLeave]) -> list[dict]:

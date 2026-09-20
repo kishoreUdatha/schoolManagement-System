@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import CurrentUser, SchoolAdminOrAccountant
+from app.core.deps import CurrentUser, SchoolAdminOrAccountant, allow
 from app.core.enums import RefundStatus, UserRole
 from app.database import get_db
 from app.models.user import User
@@ -33,6 +33,10 @@ def _finance_staff(current_user: CurrentUser) -> User:
 router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
 Finance = Annotated[User, Depends(_finance_staff)]
+# approving a refund can be delegated with the fees.refund.approve permission
+RefundApprover = Annotated[
+    User, Depends(allow(UserRole.school_admin, UserRole.principal, UserRole.accountant, permission="fees.refund.approve"))
+]
 
 
 # ---------- late fee rules ----------
@@ -91,7 +95,7 @@ def request_refund(payload: RefundIn, current_user: SchoolAdminOrAccountant, db:
 
 
 @router.post("/refunds/{refund_id}/decide", response_model=RefundRead, summary="Approve or reject (admin/principal)")
-def decide(refund_id: int, payload: RefundDecideIn, current_user: Finance, db: Db):
+def decide(refund_id: int, payload: RefundDecideIn, current_user: RefundApprover, db: Db):
     return svc.refunds_to_read(db, [svc.decide_refund(db, current_user, refund_id, payload)])[0]
 
 

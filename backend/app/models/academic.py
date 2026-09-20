@@ -103,6 +103,9 @@ class Section(Base, PrimaryKeyMixin, TimestampMixin):
 
     name: Mapped[str] = mapped_column(String(20), nullable=False)
     capacity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    branch_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("branches.id", ondelete="SET NULL")
+    )
     # Set later in Story 2.5 once teacher accounts exist
     class_teacher_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")

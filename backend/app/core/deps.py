@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
@@ -232,3 +232,28 @@ def require_front_desk(current_user: CurrentUser) -> User:
 
 
 FrontDeskUser = Annotated[User, Depends(require_front_desk)]
+
+
+def allow(*roles: UserRole, permission: Optional[str] = None):
+    """Dependency for 'one of these roles, or anyone granted this permission'.
+
+    Permissions are additive, so existing role checks keep working and a school
+    can delegate a job by giving someone a custom role.
+    """
+
+    def _check(
+        current_user: CurrentUser,
+        db: Annotated[Session, Depends(get_db)],
+    ) -> User:
+        if current_user.school_id is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="School access required")
+        if current_user.role in roles:
+            return current_user
+        if permission:
+            from app.services import rbac_service
+
+            if rbac_service.has_permission(db, current_user, permission):
+                return current_user
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have access to this")
+
+    return _check

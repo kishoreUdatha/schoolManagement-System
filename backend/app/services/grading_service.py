@@ -307,7 +307,9 @@ def save_remark(db: Session, user: User, exam: Exam, student: Student, data: Rem
 
 
 def approve_results(db: Session, user: User, exam: Exam, approve: bool) -> Exam:
-    if user.role not in (UserRole.school_admin, UserRole.principal):
+    from app.services import rbac_service
+
+    if user.role not in (UserRole.school_admin, UserRole.principal) and not rbac_service.has_permission(db, user, "exams.approve_results"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the principal or school admin can approve results")
     if approve:
         exam.results_approved_by_user_id, exam.results_approved_at = user.id, datetime.now(timezone.utc)

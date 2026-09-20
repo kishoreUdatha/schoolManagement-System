@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.core.deps import CurrentUser, SchoolAdminOrPrincipal
+from app.core.deps import CurrentUser, SchoolAdminOrPrincipal, allow
 from app.core.enums import StudentLeaveStatus, UserRole
 from app.database import get_db
 from app.models.user import User
@@ -33,6 +33,10 @@ def _academic_staff(current_user: CurrentUser) -> User:
 router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
 Academic = Annotated[User, Depends(_academic_staff)]
+# deciding student leave can be delegated with the studentleave.decide permission
+LeaveDecider = Annotated[
+    User, Depends(allow(UserRole.school_admin, UserRole.principal, UserRole.teacher, permission="studentleave.decide"))
+]
 
 
 def _ids(raw: Optional[str]) -> list[int]:
@@ -122,5 +126,5 @@ def student_leaves(current_user: Academic, db: Db, status_: Optional[StudentLeav
 
 
 @router.post("/student-leaves/{leave_id}/decide", response_model=StudentLeaveRead)
-def decide(leave_id: int, payload: DecideIn, current_user: Academic, db: Db):
+def decide(leave_id: int, payload: DecideIn, current_user: LeaveDecider, db: Db):
     return svc.leaves_to_read(db, current_user, [svc.decide(db, current_user, leave_id, payload)])[0]

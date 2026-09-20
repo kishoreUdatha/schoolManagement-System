@@ -251,8 +251,11 @@ def request_refund(db: Session, user: User, data: RefundIn) -> Refund:
 
 def decide_refund(db: Session, user: User, refund_id: int, data: RefundDecideIn) -> Refund:
     r = _get(db, refund_id, user.school_id)
-    if user.role not in (UserRole.school_admin, UserRole.principal):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the school admin or principal can approve refunds")
+    from app.services import rbac_service
+
+    if user.role not in (UserRole.school_admin, UserRole.principal) and not rbac_service.has_permission(db, user, "fees.refund.approve"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Only the school admin, principal or someone with the refund permission can approve refunds")
     if r.status != RefundStatus.requested:
         raise _400("This refund has already been decided")
     if not data.approve and not (data.note or "").strip():

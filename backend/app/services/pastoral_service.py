@@ -38,6 +38,15 @@ from app.schemas.pastoral import (
 OFFICE = (UserRole.school_admin, UserRole.principal)
 
 
+def is_office(db: Session, user: User, permission: str = "discipline.manage") -> bool:
+    """Office roles, or someone a school has given the permission to."""
+    if user.role in OFFICE:
+        return True
+    from app.services import rbac_service
+
+    return rbac_service.has_permission(db, user, permission)
+
+
 def _404(what: str) -> HTTPException:
     return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{what} not found")
 
@@ -83,7 +92,7 @@ def get_incident(db: Session, user: User, incident_id: int) -> DisciplineInciden
 
 
 def can_see_incident(db: Session, user: User, i: DisciplineIncident) -> bool:
-    if user.role in OFFICE:
+    if is_office(db, user):
         return True
     return i.reported_by_user_id == user.id or i.section_id in _my_sections(db, user)
 
@@ -146,7 +155,7 @@ def delete_incident(db: Session, user: User, incident_id: int) -> None:
 
 def share_with_parents(db: Session, user: User, incident_id: int, note: Optional[str]) -> DisciplineIncident:
     i = get_incident(db, user, incident_id)
-    if user.role not in OFFICE:
+    if not is_office(db, user, "discipline.share"):
         raise _403("Only the office can share an incident with parents")
     st = db.get(Student, i.student_id)
     i.shared_with_parents = True
@@ -162,7 +171,7 @@ def share_with_parents(db: Session, user: User, incident_id: int, note: Optional
 
 def add_action(db: Session, user: User, incident_id: int, data: ActionIn) -> DisciplineAction:
     i = get_incident(db, user, incident_id)
-    if user.role not in OFFICE:
+    if not is_office(db, user):
         raise _403("Only the office can record an action")
     if data.end_date and data.start_date and data.end_date < data.start_date:
         raise _400("The action ends before it starts")
@@ -305,15 +314,21 @@ def discipline_summary(db: Session, user: User, frm: date, to: date) -> dict:
 
 
 def can_see_case(db: Session, user: User, c: CounsellingCase) -> bool:
-    if user.role in OFFICE:
+    if user.role in OFFICE or _may_counsel(db, user):
         return True
     if c.counsellor_user_id == user.id:
         return True
     return c.referred_by_user_id == user.id and not c.is_sensitive
 
 
-def can_write_case(user: User, c: CounsellingCase) -> bool:
-    return user.role in OFFICE or c.counsellor_user_id == user.id
+def _may_counsel(db: Session, user: User) -> bool:
+    from app.services import rbac_service
+
+    return rbac_service.has_permission(db, user, "counselling.access")
+
+
+def can_write_case(db: Session, user: User, c: CounsellingCase) -> bool:
+    return user.role in OFFICE or c.counsellor_user_id == user.id or _may_counsel(db, user)
 
 
 def get_case(db: Session, user: User, case_id: int) -> CounsellingCase:
@@ -352,7 +367,7 @@ def _check_counsellor(db: Session, school_id: int, user_id: int) -> None:
 
 def update_case(db: Session, user: User, case_id: int, data: CaseUpdate) -> CounsellingCase:
     c = get_case(db, user, case_id)
-    if not can_write_case(user, c):
+    if not can_write_case(db, user, c):
         raise _403("Only the assigned counsellor or the office can change this case")
     updates = data.model_dump(exclude_unset=True)
     if updates.get("counsellor_user_id"):
@@ -372,7 +387,7 @@ def update_case(db: Session, user: User, case_id: int, data: CaseUpdate) -> Coun
 
 def add_session(db: Session, user: User, case_id: int, data: SessionIn) -> CounsellingSession:
     c = get_case(db, user, case_id)
-    if not can_write_case(user, c):
+    if not can_write_case(db, user, c):
         raise _403("Only the assigned counsellor or the office can add notes")
     if c.status == CaseStatus.closed:
         raise _400("This case is closed; reopen it to add notes")
@@ -437,7 +452,7 @@ def cases_to_read(db: Session, user: User, items: list[CounsellingCase], with_se
             opened_on=c.opened_on, referred_by_name=users.get(c.referred_by_user_id),
             counsellor_user_id=c.counsellor_user_id, counsellor_name=users.get(c.counsellor_user_id),
             parent_informed=c.parent_informed, referred_to=c.referred_to, outcome=c.outcome, closed_on=c.closed_on,
-            session_count=counts.get(c.id, 0), can_write=can_write_case(user, c),
+            session_count=counts.get(c.id, 0), can_write=can_write_case(db, user, c),
             sessions=sessions.get(c.id, []),
         ))
     return out
@@ -451,7 +466,7 @@ def case_detail(db: Session, user: User, case_id: int) -> dict:
 def inform_parents(db: Session, user: User, case_id: int, message: str) -> CounsellingCase:
     """Tell the parents the school would like to meet — never the case notes."""
     c = get_case(db, user, case_id)
-    if not can_write_case(user, c):
+    if not can_write_case(db, user, c):
         raise _403("Only the assigned counsellor or the office can contact parents")
     st = db.get(Student, c.student_id)
     notify.student_parents(db, st, f"From the school counsellor: {st.full_name}", message)

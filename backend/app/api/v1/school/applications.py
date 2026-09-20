@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Respon
 from sqlalchemy.orm import Session
 
 from app.core import storage
-from app.core.deps import CurrentUser, SchoolAdminUser
+from app.core.deps import CurrentUser, SchoolAdminUser, allow
 from app.core.enums import ApplicationStatus, DocumentCategory, UserRole
 from app.database import get_db
 from app.models.user import User
@@ -36,6 +36,8 @@ def _admissions_staff(current_user: CurrentUser) -> User:
 router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
 Admissions = Annotated[User, Depends(_admissions_staff)]
+# deciding and admitting can be delegated with the admissions.decide permission
+Decider = Annotated[User, Depends(allow(UserRole.school_admin, permission="admissions.decide"))]
 
 
 @router.get("", response_model=list[ApplicationRead])
@@ -89,7 +91,7 @@ def set_status(application_id: int, payload: StatusIn, current_user: Admissions,
 
 
 @router.post("/{application_id}/decide", response_model=ApplicationRead, summary="Approve or reject")
-def decide(application_id: int, payload: DecideIn, current_user: SchoolAdminUser, db: Db):
+def decide(application_id: int, payload: DecideIn, current_user: Decider, db: Db):
     svc.decide(db, current_user, application_id, payload)
     return svc.detail(db, current_user.school_id, application_id)
 
@@ -101,7 +103,7 @@ def fee(application_id: int, payload: FeeIn, current_user: Admissions, db: Db):
 
 
 @router.post("/{application_id}/admit", response_model=AdmitResult, summary="Create the student record")
-def admit(application_id: int, payload: AdmitIn, current_user: SchoolAdminUser, db: Db):
+def admit(application_id: int, payload: AdmitIn, current_user: Decider, db: Db):
     return svc.admit(db, current_user, application_id, payload)
 
 
