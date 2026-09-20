@@ -1,0 +1,299 @@
+# Screen coverage audit: does a usable screen exist for each of the 296 mock screens.
+# Partial ('In progress') = a real shortfall. A complete feature in a tab or modal counts as Done.
+# id	frontend	api	where	note
+SCR-001	Done	Not required	/	Hero, feature cards, portal links, health badge
+SCR-002	Partial	Not required	/	Role buttons on landing, no workspace chooser
+SCR-003	Done	Done	/school/login and six other portals	Seven sign-in pages, each posts auth/login
+SCR-004	Missing	Missing	-	No forgot-password UI or endpoint anywhere
+SCR-005	Missing	Partial	-	Only an admin-issued temporary password
+SCR-006	Missing	Missing	-	Parent login says OTP coming soon
+SCR-007	Partial	Partial	/teacher/change-password	Missing for admin, principal, accountant, parent
+SCR-008	Missing	Not required	-	Guards redirect on 401; no screen
+SCR-009	Done	Done	/super-admin	Usage counters, renewals, CSV export
+SCR-010	Done	Done	/super-admin/tenants	Paginated table with search and status
+SCR-011	Done	Done	/super-admin/tenants	Creates tenant, school and admin
+SCR-012	Done	Done	/super-admin/tenants/[id]	Subscription, schools, usage, payments, suspend
+SCR-013	Done	Done	/super-admin/plans	List plus create and edit
+SCR-014	Partial	Partial	/super-admin/tenants/[id]	Per-tenant cards, no billing screen
+SCR-015	Partial	Done	/super-admin/tenants/[id]	Usage versus quota card only
+SCR-016	Missing	Missing	-	No platform user management
+SCR-017	Missing	Missing	-	No ticketing anywhere
+SCR-018	Partial	Partial	/	Online pill only, two health endpoints
+SCR-019	Missing	Missing	-	No global announcements
+SCR-020	Missing	Missing	-	No platform settings screen
+SCR-021	Partial	Done	/super-admin/tenants/[id]	Read-only header; patch endpoint unused
+SCR-022	Partial	Partial	/super-admin/tenants/[id]	Name and code list only
+SCR-023	Partial	Partial	/super-admin/tenants	School only creatable with a new tenant
+SCR-024	Done	Done	/school/profile	Identity, contacts, address, timezone, currency
+SCR-025	Done	Done	/school/roles	Branches table with head and counts
+SCR-026	Done	Done	/school/roles	Inline branch form with head and main flag
+SCR-027	Partial	Done	/school/roles	Edit form, no branch detail page
+SCR-028	Done	Done	/school/academic-years	Create, set current, archive, terms
+SCR-029	Done	Done	/school/classes	Create, rename, delete, reorder
+SCR-030	Done	Done	/school/classes	Sections plus subject and teacher assignment
+SCR-031	Done	Done	/school/departments	Create and update with head
+SCR-032	Done	Done	/school/profile	App name, logo, brand colour
+SCR-033	Done	Done	/school	Dashboard stat cards and panels
+SCR-034	Done	Done	/principal	Principal overview dashboard
+SCR-035	Done	Done	/teacher	Today classes and stat cards
+SCR-036	Missing	Missing	-	Deliberate: no student login; parent portal stands in
+SCR-037	Done	Done	/parent	Children cards, notices, holidays
+SCR-038	Partial	Missing	/accountant	Forty-line stub with one link
+SCR-039	Missing	Partial	-	No HR portal; pipeline endpoint unused
+SCR-040	Partial	Done	/school/admissions	Pipeline exists, no officer portal
+SCR-041	Partial	Done	/school/transport	Real dashboard, school-admin only
+SCR-042	Partial	Done	/school/library	Library dashboard is school-admin only
+SCR-043	Partial	Done	/school/admissions	Stat cards atop the list; no dashboard page
+SCR-044	Done	Done	/school/admissions	Stage, source and follow-up filters with paging
+SCR-045	Done	Done	/school/admissions	New enquiry modal, full field set
+SCR-046	Done	Done	/school/admissions/[id]	Stage moves, timeline, convert, lost
+SCR-047	Partial	Partial	/school/admissions	Follow-ups-due checkbox; no calendar
+SCR-048	Done	Done	/school/admissions/applications	Status filter, search, list
+SCR-049	Done	Done	/apply/[tenant]/[school]/application	Staff modal and public form both exist
+SCR-050	Done	Done	/school/admissions/applications	Profile, docs, assessments, fee, history
+SCR-051	Partial	Done	/school/admissions/applications	Verify inside modal; no verification queue
+SCR-052	Partial	Done	/school/admissions/applications	Scheduling fine; results captured by prompt
+SCR-053	Partial	Done	/school/admissions/applications	Approve and reject are prompt dialogs
+SCR-054	Done	Done	/school/admissions/applications	Creates student and parent login with password
+SCR-055	Done	Done	/school/students	Year, class, section, status filters and search
+SCR-056	Done	Done	/school/students	Admit modal plus bulk CSV import
+SCR-057	Done	Done	/school/students/[id]	Stats, attendance, exams, behaviour, homework
+SCR-058	Done	Done	/school/students	Edit name, section, roll, DOB, blood, address
+SCR-059	Partial	Done	/school/students/[id]	Year-by-year enrolment; no subject detail
+SCR-060	Partial	Done	/school/students/[id]	Aggregate counts only; no per-child history
+SCR-061	Partial	Done	/school/students/[id]	Summary rows; per-paper detail is section-scoped
+SCR-062	Partial	Done	/school/fees	Cannot scope the fee list to one child
+SCR-063	Partial	Done	/school/documents	No per-student document view
+SCR-064	Partial	Done	/school/discipline	Discipline list filters status, not student
+SCR-065	Done	Done	/school/health/students/[id]	Full per-student health record
+SCR-066	Done	Done	/school/transport/students	Search by student, assign, move, end
+SCR-067	Partial	Done	/school/library	Circulation desk, not a per-student view
+SCR-068	Partial	Done	/school/students/[id]	Guardians managed; siblings not shown
+SCR-069	Done	Done	/school/students	Bulk promote plus section change
+SCR-070	Partial	Done	/school/certificates	TC and deactivate; no alumni record
+SCR-071	Done	Done	/school/parents	Search, status filter, linked children
+SCR-072	Done	Done	/school/parents	Creates login, links a child, temp password
+SCR-073	Partial	Done	/school/parents	No parent profile page; name and phone only
+SCR-074	Done	Done	/school/parents	Link and unlink children with relation
+SCR-075	Missing	Missing	-	No notification preference UI or model
+SCR-076	Done	Done	/school/parents	Activate, deactivate, reset password
+SCR-077	Partial	Partial	/school/ptm	Meetings and slots; messages are teacher-only
+SCR-078	Partial	Done	/school/fees/online	Paid and failed list, not per parent
+SCR-079	Missing	Partial	-	Only last login; audit log has no parent filter
+SCR-080	Done	Done	/school/staff	Role and status filters with search
+SCR-081	Done	Done	/school/staff	Creates staff and login with temp password
+SCR-082	Partial	Done	/school/staff	No staff profile page, only a row and modal
+SCR-083	Done	Done	/school/staff	Name, phone, number, designation, department
+SCR-084	Done	Done	/school/classes	Class teacher plus subject teacher per class
+SCR-085	Done	Done	/school/classes	Assign subjects and teacher per class-subject
+SCR-086	Missing	Partial	-	No workload view anywhere
+SCR-087	Partial	Done	/school/documents	No qualification fields on the staff record
+SCR-088	Partial	Done	/school/staff-attendance	Single day only; no monthly summary
+SCR-089	Done	Done	/school/staff-leaves	Decisions plus per-employee balances
+SCR-090	Missing	Missing	-	No observation or appraisal anywhere
+SCR-091	Partial	Partial	/school/staff	Deactivate only; no clearance or exit flow
+SCR-092	Done	Done	/school/academic-years	Full CRUD, archive, set-current
+SCR-093	Done	Done	/school/terms	Terms per year with overlap guard
+SCR-094	Done	Done	/school/classes	Create, rename, reorder, delete classes
+SCR-095	Done	Done	/school/classes	Sections are a nested list inside Classes (in a tab, complete)
+SCR-096	Done	Done	/school/subjects	CRUD, code, kind, department, bulk paste
+SCR-097	Missing	Missing	-	No subject-group entity anywhere
+SCR-098	Partial	Partial	/school/syllabus	No curriculum entity with board and status
+SCR-099	Done	Done	/school/syllabus/[id]	Chapters, topics, progress, copy
+SCR-100	Done	Done	/school/syllabus/[id]	Chapter and topic tree, reorder, periods
+SCR-101	Done	Done	/school/syllabus/[id]/curriculum	Outcomes tab with coverage (in a tab, complete)
+SCR-102	Done	Done	/teacher/lesson-plans	List with status filter
+SCR-103	Done	Done	/teacher/lesson-plans	Create and edit plan modal
+SCR-104	Done	Done	/principal/lesson-plans	Reviewer mode, approve or return
+SCR-105	Done	Done	/school/syllabus	Per-section progress and behind-plan count
+SCR-106	Done	Done	/school/syllabus/[id]/curriculum	Resources tab, file or link (in a tab, complete)
+SCR-107	Done	Done	/school/facilities	Rooms with building, floor, kind, capacity
+SCR-108	Done	Done	/school/calendar	Events, holidays, exams and PTM in one feed
+SCR-109	Missing	Missing	-	No activity or club register
+SCR-110	Done	Done	/teacher/attendance	Roster, statuses, bulk set, edit window
+SCR-111	Missing	Missing	-	Attendance keyed by section and date only
+SCR-112	Partial	Done	/school/reports/attendance	Matrix is an admin tab; teachers have none
+SCR-113	Partial	Partial	/school/attendance-registers	Reopen only; no per-student correction request
+SCR-114	Done	Done	/parent/children/[id]/leave	Apply and history, parent-initiated
+SCR-115	Done	Done	/school/student-leaves	Approve or reject with note
+SCR-116	Partial	Partial	/school/front-desk	Gate passes cover exit, not late entry
+SCR-117	Partial	Done	/school/reports/attendance	One tab of three, with CSV
+SCR-118	Missing	Missing	-	No threshold, at-risk list or contact log
+SCR-119	Done	Done	/school/reports/attendance	Daily, class and student views with CSV
+SCR-120	Partial	Partial	/school/timetable	Only a clashes panel, no dashboard stats
+SCR-121	Partial	Partial	/school/timetable	Grid assigns subject; entries carry no room
+SCR-122	Done	Done	/school/periods	Per-day periods with times
+SCR-123	Partial	Partial	/school/cover	Date-range blocks, not a weekly grid
+SCR-124	Missing	Missing	-	No generator; manual entry and copy only
+SCR-125	Done	Done	/school/timetable	Section grid with publish; parent read-only
+SCR-126	Partial	Partial	/teacher/timetable	Own week only; no coordinator view
+SCR-127	Done	Done	/school/cover	Uncovered slots, candidates, assign, auto-assign
+SCR-128	Done	Done	/teacher/homework	List with due dates, counts, close and reopen
+SCR-129	Done	Done	/teacher/homework	Create modal with rubric and attachment
+SCR-130	Done	Done	/teacher/homework	Submissions in a modal, no detail page (in a tab, complete)
+SCR-131	Done	Done	/parent/children/[id]/homework	Parent acts; no student login exists
+SCR-132	Done	Done	/parent/children/[id]/homework	Submit or edit with comment and file
+SCR-133	Done	Done	/teacher/homework	Approve, reject and rubric marks in a modal (in a tab, complete)
+SCR-134	Done	Done	/teacher/projects	Project list with progress counts
+SCR-135	Done	Done	/teacher/projects	Create modal with dates and attachment
+SCR-136	Done	Done	/parent/children/[id]/projects	Progress with status, file and note
+SCR-137	Done	Done	/teacher/projects	Per-student remark and rating in a modal (in a tab, complete)
+SCR-138	Partial	Partial	/school/exams	Paper counts only; no exam dashboard
+SCR-139	Done	Done	/school/grading	Exam types are one card among three (in a tab, complete)
+SCR-140	Done	Done	/school/exams	Create exam and add papers with marks
+SCR-141	Partial	Partial	/school/exams	Per-paper date only; no datesheet screen
+SCR-142	Missing	Missing	-	No exam hall or seat allocation anywhere
+SCR-143	Missing	Missing	-	No invigilation assignment anywhere
+SCR-144	Missing	Missing	-	No admit card UI or endpoint
+SCR-145	Done	Done	/teacher/marks/papers/[id]	Roster, status, marks, live grade, save
+SCR-146	Missing	Missing	-	One max mark per paper; no internal split
+SCR-147	Partial	Done	/school/data-desk	Marks import exists but admin-only
+SCR-148	Missing	Done	-	Verify endpoint has no caller in the frontend
+SCR-149	Done	Done	/school/grading	Scale CRUD, bands, seed, default
+SCR-150	Partial	Done	/school/exams	Publish is admin-only; principal approves
+SCR-151	Partial	Done	/parent/children/[id]/exams/[examId]	Full result, but parent login only
+SCR-152	Partial	Done	/school/report-cards	Report card PDF; no student login
+SCR-153	Partial	Partial	/school/students	Section move, not a result-driven decision
+SCR-154	Partial	Done	/accountant	Accountant dashboard is a placeholder
+SCR-155	Done	Done	/school/fees/structures	Per class, head and year
+SCR-156	Done	Done	/school/fees/structures	Amount, due day, recurring flag
+SCR-157	Missing	Missing	-	No per-student fee plan; class structures only
+SCR-158	Done	Done	/school/fees	Record payment with mode and reference
+SCR-159	Done	Done	/parent/children/[id]/fees	Razorpay checkout, verify, failures
+SCR-160	Done	Done	/parent/children/[id]/fees	Per-order receipt PDF
+SCR-161	Partial	Partial	/parent/children/[id]/fees	No staff-side per-student ledger
+SCR-162	Partial	Partial	/school/fees	A filter, not a dues or ageing report
+SCR-163	Done	Done	/school/accounts	Concessions: add, amend, end
+SCR-164	Done	Done	/school/fees/late-refunds	Rule CRUD with preview and charge
+SCR-165	Done	Done	/school/fees/late-refunds	Request, decide, pay out with reference
+SCR-166	Done	Done	/school/accounts	Other income with source, mode, void
+SCR-167	Done	Done	/school/accounts	Expenses with void and reason
+SCR-168	Partial	Done	/school/inventory	Supplier master; no ledger or payables
+SCR-169	Partial	Partial	/school/inventory	No purchase order, bill or payment tracking
+SCR-170	Done	Done	/school/accounts	Cash book by mode across a date range
+SCR-171	Partial	Partial	/school/exports	CSV and builder; no finance report pack
+SCR-172	Missing	Missing	-	No requisition or approval to hire
+SCR-173	Done	Done	/school/recruitment	Create, publish, close, careers flag
+SCR-174	Done	Done	/school/recruitment	Opening and stage filters with moves
+SCR-175	Done	Done	/school/recruitment	Candidate detail in a modal only (in a tab, complete)
+SCR-176	Partial	Done	/school/recruitment	Per application; no interview calendar
+SCR-177	Done	Done	/school/recruitment	Draft, send, respond, hire creates staff
+SCR-178	Missing	Missing	-	No onboarding checklist anywhere
+SCR-179	Done	Done	/school/staff-attendance	Check in and out with override
+SCR-180	Done	Done	/school/leave-entitlement	Days, carry forward, paid, proof
+SCR-181	Done	Done	/school/staff-leaves	Pending and history across staff
+SCR-182	Done	Done	/school/staff-leaves	Decide on the list; no approver queue (in a tab, complete)
+SCR-183	Done	Done	/school/payroll	Salary structure plus statutory rates
+SCR-184	Done	Done	/school/payroll/runs/[id]	Recalculate, finalise, adjust, bank file
+SCR-185	Done	Done	/school/payroll	Payslip PDF and month history
+SCR-186	Done	Done	/school/transport/vehicles	Fleet table with document expiry and CRUD
+SCR-187	Done	Done	/school/transport/vehicles	Create and edit with four document expiries
+SCR-188	Partial	Done	/school/transport/vehicles	No vehicle detail page; endpoint unused
+SCR-189	Done	Done	/school/transport/routes	Route cards with stop table
+SCR-190	Done	Done	/school/transport/routes	Route editor with reorderable stops
+SCR-191	Partial	Partial	/school/transport/routes	Stops only inside the route modal
+SCR-192	Done	Done	/school/transport/crew	Drivers and conductors with licence expiry
+SCR-193	Done	Done	/school/transport/students	Assign, move, end with route and stop
+SCR-194	Done	Done	/school/transport/trips/[id]	Generate sheets, start, complete, odometer
+SCR-195	Partial	Done	/school/transport/vehicles	Last-seen link only; no live map
+SCR-196	Done	Done	/school/transport/trips/[id]	Per-student boarded, dropped, absent
+SCR-197	Partial	Done	/school/transport/vehicles	Fuel and service log in a modal
+SCR-198	Done	Done	/school/library/catalogue	Search with category and shelf filters
+SCR-199	Done	Done	/school/library/catalogue	Book form with initial copies and price
+SCR-200	Done	Done	/school/library/catalogue/[id]	Copies table, statuses, add copies
+SCR-201	Missing	Partial	-	No members screen; borrowers only a picker
+SCR-202	Done	Done	/school/library	Borrower and accession scan with due date
+SCR-203	Done	Done	/school/library	Return with damage flag and fine
+SCR-204	Done	Done	/school/library/reservations	Renew, reserve, queue and holds
+SCR-205	Done	Done	/school/library	Collect, waive, bill; lost and damaged
+SCR-206	Partial	Partial	/school/library/catalogue	A URL field only; no reader or entitlements
+SCR-207	Partial	Partial	/school/library	Stat tiles only; no date range or export
+SCR-208	Done	Done	/school/hostel	Hostel cards with kind, warden, fee, curfew
+SCR-209	Done	Done	/school/hostel	Rooms with bed count and occupancy grid
+SCR-210	Partial	Done	/school/hostel	Bed by bed only; no allocation register
+SCR-211	Partial	Partial	/school/hostel	Single warden field, no duty roster
+SCR-212	Done	Done	/school/hostel	Morning and night roll call
+SCR-213	Done	Done	/school/hostel	Request, approve, signed out, returned
+SCR-214	Done	Done	/school/hostel	Seven-day, four-meal editable grid
+SCR-215	Done	Done	/school/hostel	Complaints triage plus monthly hostel fees
+SCR-216	Done	Done	/school/health	Five KPI cards with visits and alerts tabs
+SCR-217	Done	Done	/school/health/students/[id]	Profile, checkups, immunisations, visits
+SCR-218	Done	Done	/school/health	Complaint, temperature, outcome, parent notice
+SCR-219	Partial	Partial	/school/health	One medicine field; no register or stock
+SCR-220	Partial	Done	/school/health	Split across tabs; no drive or bulk entry
+SCR-221	Partial	Partial	/school/counselling	Next-session date only; no booking diary
+SCR-222	Done	Done	/school/counselling	Session notes with privacy and closure
+SCR-223	Done	Done	/school/discipline	Report incident with category and severity
+SCR-224	Partial	Done	/school/discipline	No way to mark an action served
+SCR-225	Partial	Partial	/school/health	Contacts shown; no escalation chain
+SCR-226	Done	Done	/school/front-desk	Six stat cards including inside now
+SCR-227	Done	Done	/school/front-desk	Walk-in check-in with ID and host
+SCR-228	Partial	Done	/school/front-desk	Host-decision endpoint has no screen
+SCR-229	Partial	Partial	/school/front-desk	Pass number shown, nothing printable
+SCR-230	Done	Done	/school/front-desk	Check out with minutes inside
+SCR-231	Done	Done	/school/front-desk	Issue, approve, verify code, release
+SCR-232	Partial	Partial	/school/front-desk	Vehicle captured; no staff gate log
+SCR-233	Done	Done	/school/front-desk	Log with time, place, severity, closure
+SCR-234	Done	Done	/school/inventory	Dashboard tiles, low stock, warranty list
+SCR-235	Done	Done	/school/inventory	Item list, search, SKU, reorder level
+SCR-236	Partial	Partial	/school/inventory	One item at a time; no multi-line receipt
+SCR-237	Partial	Done	/school/inventory	Free-text issued-to; no requisition register
+SCR-238	Done	Done	/school/inventory	Supplier CRUD with contact and GSTIN
+SCR-239	Done	Done	/school/inventory	Tag, serial, status, cost, warranty, history
+SCR-240	Partial	Done	/school/inventory	Per asset only; assignments register unused
+SCR-241	Partial	Partial	/school/inventory	Logs repairs; no schedule or AMC tracking
+SCR-242	Done	Done	/school/facilities	Lab CRUD with room, subject, in-charge
+SCR-243	Partial	Missing	/school/facilities	Equipment is free text; no items or stock
+SCR-244	Done	Done	/school/facilities	Period grid, book, cancel, my bookings
+SCR-245	Partial	Partial	/school/inventory	Tiles and ledger; no date-range report
+SCR-246	Done	Done	/school/calendar	Month grid and agenda across sources
+SCR-247	Done	Done	/school/events	Kind, dates, venue, audience, consent
+SCR-248	Partial	Partial	/school/events	Consent roster only; no attendance
+SCR-249	Done	Done	/parent/events	Deadline and per-child consent with report
+SCR-250	Partial	Partial	/school/ptm	Admin-only setup; teachers cannot create
+SCR-251	Done	Done	/parent/meetings	Slot grid, book, cancel, mark done
+SCR-252	Done	Done	/school/notices	Title, body, audience, attachment, send
+SCR-253	Partial	Partial	/teacher/messages	Teacher and parent only; admin has no inbox
+SCR-254	Partial	Partial	/school/notices	SMS and email skipped; schedule not wired
+SCR-255	Partial	Partial	/school/notices	Per-notice delivery only, no history log
+SCR-256	Done	Done	/school/documents	Owner, category, verification and expiry
+SCR-257	Partial	Done	/school/documents	A filter, not a student documents view
+SCR-258	Partial	Done	/school/documents	Same repository filtered for staff
+SCR-259	Done	Done	/school/documents	Upload, verify, reject with reason
+SCR-260	Done	Done	/school/certificates/templates	Six kinds with placeholders and serials
+SCR-261	Done	Done	/school/certificates	Template and student with live preview
+SCR-262	Done	Done	/school/certificates	Leaving date, conduct, dues check
+SCR-263	Done	Done	/school/certificates	Serial, status, reprints, cancel
+SCR-264	Partial	Partial	/school	Counts only; no trends or charts
+SCR-265	Partial	Done	/school/admissions	Stage counts inline; funnel endpoint unused
+SCR-266	Partial	Partial	/school/students	No class strength or year-on-year table
+SCR-267	Missing	Missing	-	No demographic breakdown anywhere
+SCR-268	Done	Done	/school/reports/attendance	Class and per-student percentages with CSV
+SCR-269	Partial	Partial	/school/reports/attendance	One section at a time; no threshold list
+SCR-270	Partial	Partial	/school/report-cards	Per-section results; no cohort analysis
+SCR-271	Missing	Missing	-	No subject performance screen or endpoint
+SCR-272	Partial	Partial	/school/report-cards	No pass rate or grade distribution
+SCR-273	Partial	Done	/school/accounts	Receipts list; no head-wise rollup
+SCR-274	Partial	Done	/school/fees	Filtered rows; no ageing or defaulters
+SCR-275	Done	Done	/school/accounts	Cash book tab; no profit and loss view (in a tab, complete)
+SCR-276	Partial	Partial	/school/staff-attendance	Single day; no monthly totals
+SCR-277	Done	Done	/school/payroll	Per-run totals and bank file (in a tab, complete)
+SCR-278	Missing	Missing	-	No teacher performance screen or endpoint
+SCR-279	Partial	Partial	/school/transport	Tiles only; no utilisation report
+SCR-280	Partial	Partial	/school/library	Counts only; no period usage report
+SCR-281	Partial	Partial	/school/inventory	Tiles only; no valuation report
+SCR-282	Partial	Partial	/school/notices	Per-notice counts; no aggregate report
+SCR-283	Partial	Done	/school/data-desk	Sources, columns, run and export; no filter UI
+SCR-284	Done	Done	/school/staff	Create login, activate, reset password
+SCR-285	Done	Done	/school/roles	Role CRUD with built-in and custom
+SCR-286	Done	Done	/school/roles	Permission catalogue only inside the role modal (in a tab, complete)
+SCR-287	Partial	Done	/school/roles	Per-role grid, no cross-role matrix
+SCR-288	Done	Done	/school/roles	Assign person, role and branch
+SCR-289	Done	Partial	/school/profile	Settings hub endpoint unused
+SCR-290	Done	Done	/school/grading	Grade scales and report-card settings
+SCR-291	Missing	Missing	-	No notification channel or template settings
+SCR-292	Partial	Partial	/school/fees/online	Razorpay keys only; integrations endpoint unused
+SCR-293	Missing	Missing	-	No password policy anywhere
+SCR-294	Done	Done	/school/audit-log	Filtered list with CSV export
+SCR-295	Done	Partial	/school/data-desk	Import and export done; no backup or restore
+SCR-296	Partial	Partial	/parent/notices	Parents only; staff have no inbox page
