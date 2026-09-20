@@ -264,25 +264,25 @@ SCR-260	Done	Done	/school/certificates/templates	Six kinds with placeholders and
 SCR-261	Done	Done	/school/certificates	Template and student with live preview
 SCR-262	Done	Done	/school/certificates	Leaving date, conduct, dues check
 SCR-263	Done	Done	/school/certificates	Serial, status, reprints, cancel
-SCR-264	Partial	Partial	/school	Counts only; no trends or charts
-SCR-265	Partial	Done	/school/admissions	Stage counts inline; funnel endpoint unused
-SCR-266	Partial	Partial	/school/students	No class strength or year-on-year table
-SCR-267	Missing	Missing	-	No demographic breakdown anywhere
+SCR-264	Done	Done	/school/reports	Headline tiles plus attendance and money trends, and the index of every report
+SCR-265	Done	Done	/school/reports/admissions	Funnel by stage with conversion rate
+SCR-266	Done	Done	/school/reports/strength	Class, section and capacity, with year on year
+SCR-267	Done	Done	/school/reports/demographics	Gender, age and blood group, with how much is on file
 SCR-268	Done	Done	/school/reports/attendance	Class and per-student percentages with CSV
-SCR-269	Partial	Partial	/school/reports/attendance	One section at a time; no threshold list
-SCR-270	Partial	Partial	/school/report-cards	Per-section results; no cohort analysis
-SCR-271	Missing	Missing	-	No subject performance screen or endpoint
-SCR-272	Partial	Partial	/school/report-cards	No pass rate or grade distribution
-SCR-273	Partial	Done	/school/accounts	Receipts list; no head-wise rollup
-SCR-274	Partial	Done	/school/fees	Filtered rows; no ageing or defaulters
+SCR-269	Done	Done	/school/reports/chronic-absence	School-wide, with an adjustable threshold and CSV
+SCR-270	Done	Done	/school/reports/exams	Whole-cohort analysis per exam
+SCR-271	Done	Done	/school/reports/exams	Pass rate and average per subject, weakest first (in a tab, complete)
+SCR-272	Done	Done	/school/reports/exams	Pass rate tile and grade ring (in a tab, complete)
+SCR-273	Done	Done	/school/reports/fee-collection	By head, class, mode and month, with CSV
+SCR-274	Done	Done	/school/reports/dues	Five ageing buckets and the defaulter list, with CSV
 SCR-275	Done	Done	/school/accounts	Cash book tab; no profit and loss view (in a tab, complete)
-SCR-276	Partial	Partial	/school/staff-attendance	Single day; no monthly totals
+SCR-276	Done	Done	/school/reports/staff-attendance	A month per person, holidays excluded
 SCR-277	Done	Done	/school/payroll	Per-run totals and bank file (in a tab, complete)
-SCR-278	Missing	Missing	-	No teacher performance screen or endpoint
-SCR-279	Partial	Partial	/school/transport	Tiles only; no utilisation report
-SCR-280	Partial	Partial	/school/library	Counts only; no period usage report
-SCR-281	Partial	Partial	/school/inventory	Tiles only; no valuation report
-SCR-282	Partial	Partial	/school/notices	Per-notice counts; no aggregate report
+SCR-278	Done	Done	/school/reports/teachers	Counts of work done, stated as not a ranking
+SCR-279	Done	Done	/school/reports/transport	Riders against seats, over-capacity routes flagged
+SCR-280	Done	Done	/school/reports/library	Issues and returns by month, and top titles
+SCR-281	Done	Done	/school/reports/inventory	Stock and asset value by category, and low stock
+SCR-282	Done	Done	/school/reports/notifications	By audience, month and channel, skipped kept apart from failed
 SCR-283	Partial	Done	/school/data-desk	Sources, columns, run and export; no filter UI
 SCR-284	Done	Done	/school/staff	Create login, activate, reset password
 SCR-285	Done	Done	/school/roles	Role CRUD with built-in and custom

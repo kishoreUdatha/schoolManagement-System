@@ -54,6 +54,19 @@ export function NoticeBox({ children }: { children: ReactNode }) {
   );
 }
 
+/** For something that wants attention but is not an error: a bus over its
+ *  seats, stock about to run out, money that has been owed too long. Amber
+ *  rather than NoticeBox's green, because a warning in the colour of good
+ *  news is read as good news. */
+export function WarnBox({ children }: { children: ReactNode }) {
+  if (!children) return null;
+  return (
+    <div className="rounded-lg bg-[#FFF3D8] px-4 py-3 text-[13px] font-medium text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
+      {children}
+    </div>
+  );
+}
+
 export function PageHeader({
   title,
   subtitle,

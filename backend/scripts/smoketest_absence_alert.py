@@ -107,7 +107,10 @@ def login(email, pw, role):
 
 
 def count_absence_notices(token):
-    code, inbox = request("GET", "/parent/me/notices", token=token)
+    # The whole inbox, not the default first page. Each run of this suite adds
+    # notices, so a page-sized window eventually fills with older ones and the
+    # count stops moving even though the alert fired.
+    code, inbox = request("GET", "/parent/me/notices?limit=200", token=token)
     assert code == 200, inbox
     return sum(1 for n in inbox if n["title"].startswith("Absence notice:"))
 

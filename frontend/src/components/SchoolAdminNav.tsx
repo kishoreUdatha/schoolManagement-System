@@ -131,7 +131,7 @@ const sections: NavSection[] = [
       { href: "/school/staff-leaves", label: "Staff leaves", icon: ClipboardCheck },
       { href: "/school/leave-entitlement", label: "Leave entitlement", icon: CalendarClock },
       { href: "/school/recruitment", label: "Recruitment", icon: BriefcaseBusiness },
-      { href: "/school/reports/attendance", label: "Reports", icon: BarChart3 },
+      { href: "/school/reports/attendance", label: "Attendance reports", icon: BarChart3 },
     ],
   },
   {
@@ -170,6 +170,19 @@ const sections: NavSection[] = [
       { href: "/school/accounts", label: "Accounts", icon: Calculator },
       { href: "/school/payroll", label: "Payroll", icon: Banknote },
       { href: "/school/inventory", label: "Inventory & store", icon: Package },
+    ],
+  },
+  {
+    heading: "Reports",
+    icon: BarChart3,
+    items: [
+      { href: "/school/reports", label: "All reports", icon: BarChart3 },
+      { href: "/school/reports/strength", label: "Student strength", icon: Users },
+      { href: "/school/reports/chronic-absence", label: "Chronic absence", icon: CheckSquare },
+      { href: "/school/reports/exams", label: "Exam analysis", icon: GraduationCap },
+      { href: "/school/reports/fee-collection", label: "Fee collection", icon: IndianRupee },
+      { href: "/school/reports/dues", label: "Dues & ageing", icon: Wallet },
+      { href: "/school/reports/teachers", label: "Teacher activity", icon: Sparkles },
     ],
   },
   {
