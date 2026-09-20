@@ -116,6 +116,7 @@ from app.models.payroll import PayrollRun, PayrollSettings, Payslip, StaffSalary
 from app.models.plan import Plan, PlanModule
 from app.models.project import Project, ProjectProgress
 from app.models.rbac import Branch, Permission, Role, RolePermission, UserRoleAssignment
+from app.models.rubric import Rubric, RubricCriterion, RubricScore
 from app.models.register import AttendanceSession, Visitor
 from app.models.staff import Staff
 from app.models.staff_attendance import StaffAttendance
@@ -254,6 +255,9 @@ __all__ = [
     "UserOtp",
     "Visit",
     "AttendanceSession",
+    "Rubric",
+    "RubricCriterion",
+    "RubricScore",
     "LearningOutcome",
     "OutcomeTopic",
     "TeachingResource",

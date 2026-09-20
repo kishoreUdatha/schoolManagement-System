@@ -171,7 +171,7 @@ MAP = {
     "learning_tasks": {
         **crud("GET /teacher/homework", "POST /teacher/homework", "GET /teacher/homework/{id}", "PATCH /teacher/homework/{id}"),
         "publish": (D, "POST /teacher/homework", "Published on create"),
-        "close": (N, "", ""),
+        "close": (D, "POST /teacher/homework/{id}/close", "closed = false reopens it"),
     },
     "task_submissions": {
         **crud("GET /teacher/homework/{id}/submissions", "POST /parent/me/children/{id}/homework/{hw}/submission",
@@ -179,7 +179,7 @@ MAP = {
         "evaluate": (D, "PATCH /teacher/homework/submissions/{id}/review", ""),
         "return": (D, "PATCH /teacher/homework/submissions/{id}/review", "status = rejected"),
     },
-    "rubrics": none(),
+    "rubrics": crud("GET /school/rubrics", "POST /school/rubrics", "GET /school/rubrics/{id}", "PATCH /school/rubrics/{id}"),
     # ---------------- Examinations & Results ----------------
     "exam_types": crud("GET /school/exam-types", "POST /school/exam-types", None, "PUT /school/exam-types/{id}",
                        get_via_list=True),
@@ -406,6 +406,10 @@ MAP = {
 # API-X### rows (Release = "Added"), rebuilt on every run.
 # (module, resource, operation, method, path, purpose, roles)
 EXTRA = [
+    ("Homework & Assignments", "rubrics", "Action", "POST", "/school/rubrics/{id}/criteria", "Add a criterion (frozen once work is marked against it)", "School Admin, Teacher (own rubric)"),
+    ("Homework & Assignments", "rubrics", "Action", "PUT", "/school/rubrics/criteria/{id}", "Edit a criterion", "School Admin, Teacher (own rubric)"),
+    ("Homework & Assignments", "rubrics", "Delete", "DELETE", "/school/rubrics/{id}", "Delete a rubric no homework uses", "School Admin, Teacher (own rubric)"),
+    ("Homework & Assignments", "task_submissions", "Action", "PUT", "/teacher/homework/submissions/{id}/rubric-scores", "Mark a submission criterion by criterion; total is computed", "Subject Teacher"),
     ("Academics & Curriculum", "learning_outcomes", "Action", "GET", "/school/learning-outcomes/coverage", "How far a section has met the outcomes, from the topics taught", "School Admin, Principal, Teacher"),
     ("Academics & Curriculum", "learning_outcomes", "Delete", "DELETE", "/school/learning-outcomes/{id}", "Delete an outcome", "School Admin, Subject Teacher"),
     ("Academics & Curriculum", "teaching_resources", "Action", "GET", "/school/teaching-resources/{id}/file", "Download the attached file", "School Admin, Principal, Teacher"),

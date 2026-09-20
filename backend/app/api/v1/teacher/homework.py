@@ -7,13 +7,15 @@ from sqlalchemy.orm import Session
 from app.core.deps import TeacherUser
 from app.database import get_db
 from app.schemas.homework import (
+    CloseIn,
     HomeworkCreate,
     HomeworkRead,
     HomeworkUpdate,
     SubmissionRead,
     SubmissionReview,
 )
-from app.services import homework_service
+from app.schemas.rubric import Marking, ScoresIn
+from app.services import homework_service, rubric_service
 
 
 router = APIRouter()
@@ -143,3 +145,36 @@ def review_submission(
         db, submission_id, current_user.id, current_user.school_id, payload
     )
     return SubmissionRead.model_validate(homework_service.submission_to_dict(db, sub))
+
+
+@router.post(
+    "/{homework_id}/close",
+    response_model=HomeworkRead,
+    summary="Close a homework so nothing more can be submitted (or reopen it)",
+)
+def close(
+    homework_id: int,
+    payload: CloseIn,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    h = homework_service.close(
+        db, homework_id, current_user.school_id, current_user.id, closed=payload.closed
+    )
+    return HomeworkRead.model_validate(
+        homework_service._to_read_dict(db, h, viewer_id=current_user.id)
+    )
+
+
+@router.put(
+    "/submissions/{submission_id}/rubric-scores",
+    response_model=Marking,
+    summary="Mark a submission against the homework's rubric",
+)
+def set_scores(
+    submission_id: int,
+    payload: ScoresIn,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return rubric_service.set_scores(db, current_user, submission_id, payload.scores)

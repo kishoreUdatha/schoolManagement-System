@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.enums import SubmissionStatus
+from app.schemas.rubric import Marking
 
 
 class HomeworkBase(BaseModel):
@@ -15,6 +16,7 @@ class HomeworkBase(BaseModel):
 
 class HomeworkCreate(HomeworkBase):
     class_subject_id: int
+    rubric_id: Optional[int] = None
     notify_parents: bool = Field(
         default=False,
         description="If true, also post a Notice to parents of the section(s) for this class",
@@ -26,6 +28,11 @@ class HomeworkUpdate(BaseModel):
     description: Optional[str] = Field(None, min_length=1)
     attachment_url: Optional[str] = Field(None, max_length=500)
     due_date: Optional[date] = None
+    rubric_id: Optional[int] = None
+
+
+class CloseIn(BaseModel):
+    closed: bool = True
 
 
 class HomeworkRead(BaseModel):
@@ -45,6 +52,11 @@ class HomeworkRead(BaseModel):
     created_at: datetime
     is_past_due: bool
     can_edit: bool  # tells the UI whether the current viewer can edit
+    rubric_id: Optional[int] = None
+    rubric_name: Optional[str] = None
+    is_closed: bool = False
+    closed_at: Optional[datetime] = None
+    closed_by_name: Optional[str] = None
 
 
 # --- Story 9.3 — Submissions ---
@@ -86,3 +98,4 @@ class SubmissionRead(BaseModel):
     reviewed_by_user_id: Optional[int] = None
     reviewed_by_name: Optional[str] = None
     reviewed_at: Optional[datetime] = None
+    marking: Optional[Marking] = None  # only when the homework uses a rubric

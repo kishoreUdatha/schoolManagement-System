@@ -31,7 +31,24 @@ type Homework = {
   created_at: string;
   is_past_due: boolean;
   can_edit: boolean;
+  rubric_id: number | null;
+  rubric_name: string | null;
+  is_closed: boolean;
+  closed_at: string | null;
+  closed_by_name: string | null;
 };
+
+type Rubric = { id: number; name: string; max_total: number; criteria: { id: number; title: string; max_points: number }[] };
+
+type MarkedCriterion = {
+  criterion_id: number;
+  criterion_title: string;
+  max_points: number;
+  points: number | null;
+  comment: string | null;
+};
+
+type Marking = { rubric_id: number; rubric_name: string; max_total: number; total: number | null; criteria: MarkedCriterion[] };
 
 type SubmissionStatus = "submitted" | "approved" | "rejected";
 
@@ -48,6 +65,7 @@ type Submission = {
   teacher_remark: string | null;
   reviewed_by_name: string | null;
   reviewed_at: string | null;
+  marking: Marking | null;
 };
 
 function todayIso() {
@@ -64,13 +82,29 @@ export default function HomeworkPage() {
   const [openCreate, setOpenCreate] = useState(false);
   const [editing, setEditing] = useState<Homework | null>(null);
   const [viewSubsFor, setViewSubsFor] = useState<Homework | null>(null);
+  const [rubrics, setRubrics] = useState<Rubric[]>([]);
 
   useEffect(() => {
     api
       .get<{ subject_teacher_of: SubjectTeacherCard[] }>("/api/v1/teacher/my-classes")
       .then((r) => setSubjects(r.data.subject_teacher_of))
       .catch((e) => setError(apiError(e)));
+    api
+      .get<Rubric[]>("/api/v1/school/rubrics")
+      .then((r) => setRubrics(r.data))
+      .catch(() => setRubrics([]));
   }, []);
+
+  async function setClosed(h: Homework, closed: boolean) {
+    try {
+      await api.post(`/api/v1/teacher/homework/${h.id}/close`, { closed });
+      setNotice(closed ? `"${h.title}" closed — no more submissions.` : `"${h.title}" is open again.`);
+      setError(null);
+      load();
+    } catch (e) {
+      setError(apiError(e));
+    }
+  }
 
   async function load() {
     try {
@@ -162,15 +196,19 @@ export default function HomeworkPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-slate-900">{h.title}</h3>
-                  {h.is_past_due ? (
+                  {h.is_closed ? (
+                    <Badge tone="rose">closed</Badge>
+                  ) : h.is_past_due ? (
                     <Badge tone="neutral">past due</Badge>
                   ) : (
                     <Badge tone="brand">{h.subject_code}</Badge>
                   )}
+                  {h.rubric_name && <Badge tone="brand">{h.rubric_name}</Badge>}
                 </div>
                 <div className="mt-0.5 text-xs text-slate-500">
                   {h.class_name} · {h.subject_name} · due{" "}
                   <strong>{h.due_date}</strong>
+                  {h.is_closed && h.closed_by_name && ` · closed by ${h.closed_by_name}`}
                 </div>
                 <p className="mt-2 whitespace-pre-line text-sm text-slate-700">
                   {h.description}
@@ -194,6 +232,15 @@ export default function HomeworkPage() {
                 >
                   Submissions
                 </Button>
+                {h.is_closed ? (
+                  <Button size="sm" variant="secondary" onClick={() => setClosed(h, false)}>
+                    Reopen
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="secondary" onClick={() => setClosed(h, true)}>
+                    Close
+                  </Button>
+                )}
                 {h.can_edit && (
                   <>
                     <Button size="sm" variant="secondary" onClick={() => setEditing(h)}>
@@ -221,6 +268,7 @@ export default function HomeworkPage() {
         <HomeworkFormModal
           existing={editing}
           subjects={subjects}
+          rubrics={rubrics}
           onClose={() => {
             setOpenCreate(false);
             setEditing(null);
@@ -246,11 +294,13 @@ export default function HomeworkPage() {
 function HomeworkFormModal({
   existing,
   subjects,
+  rubrics,
   onClose,
   onSaved,
 }: {
   existing: Homework | null;
   subjects: SubjectTeacherCard[];
+  rubrics: Rubric[];
   onClose: () => void;
   onSaved: (msg: string) => void;
 }) {
@@ -260,6 +310,7 @@ function HomeworkFormModal({
     description: existing?.description ?? "",
     attachment_url: existing?.attachment_url ?? "",
     due_date: existing?.due_date ?? todayIso(),
+    rubric_id: existing?.rubric_id ? String(existing.rubric_id) : "",
     notify_parents: false,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -275,6 +326,7 @@ function HomeworkFormModal({
         description: form.description,
         attachment_url: form.attachment_url || null,
         due_date: form.due_date,
+        rubric_id: form.rubric_id ? Number(form.rubric_id) : null,
       };
       if (existing) {
         await api.patch(`/api/v1/teacher/homework/${existing.id}`, payload);
@@ -351,6 +403,21 @@ function HomeworkFormModal({
             placeholder="https://…"
           />
         </div>
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-slate-700">Mark against a rubric</span>
+          <select
+            value={form.rubric_id}
+            onChange={(e) => setForm({ ...form, rubric_id: e.target.value })}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
+          >
+            <option value="">No rubric — approve or reject only</option>
+            {rubrics.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name} (out of {r.max_total})
+              </option>
+            ))}
+          </select>
+        </label>
         {!existing && (
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -397,6 +464,31 @@ function SubmissionsModal({
   const [error, setError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState<number | null>(null);
   const [remarkDraft, setRemarkDraft] = useState<Record<number, string>>({});
+  // marks being typed, keyed "<submission>:<criterion>"
+  const [marks, setMarks] = useState<Record<string, string>>({});
+  const [marking, setMarking] = useState<number | null>(null);
+
+  async function saveMarks(sub: Submission) {
+    if (!sub.marking) return;
+    const scores = sub.marking.criteria
+      .map((c) => ({ criterion_id: c.criterion_id, points: marks[`${sub.id}:${c.criterion_id}`] }))
+      .filter((x) => x.points !== undefined && x.points !== "")
+      .map((x) => ({ criterion_id: x.criterion_id, points: Number(x.points) }));
+    if (scores.length === 0) {
+      setError("Put a mark against at least one criterion.");
+      return;
+    }
+    setMarking(sub.id);
+    setError(null);
+    try {
+      await api.put(`/api/v1/teacher/homework/submissions/${sub.id}/rubric-scores`, { scores });
+      await load();
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setMarking(null);
+    }
+  }
 
   async function load() {
     try {
@@ -498,6 +590,34 @@ function SubmissionsModal({
                     )}
                   </div>
                 </div>
+                {s.marking && (
+                  <div className="mt-3 space-y-2 border-t border-slate-100 pt-2">
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span>{s.marking.rubric_name}</span>
+                      <span className="font-medium text-slate-700">
+                        {s.marking.total === null ? "Not marked" : `${s.marking.total} / ${s.marking.max_total}`}
+                      </span>
+                    </div>
+                    {s.marking.criteria.map((c) => (
+                      <div key={c.criterion_id} className="flex items-center gap-2 text-xs">
+                        <span className="flex-1 text-slate-700">{c.criterion_title}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={c.max_points}
+                          step="0.5"
+                          value={marks[`${s.id}:${c.criterion_id}`] ?? (c.points ?? "")}
+                          onChange={(e) => setMarks({ ...marks, [`${s.id}:${c.criterion_id}`]: e.target.value })}
+                          className="w-20 rounded-md border border-slate-300 px-2 py-1 text-right text-xs shadow-sm"
+                        />
+                        <span className="w-12 text-slate-500">/ {c.max_points}</span>
+                      </div>
+                    ))}
+                    <Button size="sm" variant="secondary" loading={marking === s.id} onClick={() => saveMarks(s)}>
+                      Save marks
+                    </Button>
+                  </div>
+                )}
                 <div className="mt-3 space-y-2 border-t border-slate-100 pt-2">
                   <textarea
                     rows={2}

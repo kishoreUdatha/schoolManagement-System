@@ -11,6 +11,7 @@ import {
   Handshake,
   Images,
   CheckSquare,
+  ClipboardList,
   ClipboardCheck,
   Clock,
   Cog,
@@ -105,6 +106,7 @@ const sections: NavSection[] = [
     icon: Sparkles,
     items: [
       { href: "/school/syllabus", label: "Syllabus", icon: ListChecks },
+      { href: "/school/rubrics", label: "Rubrics", icon: ClipboardList },
       { href: "/school/lesson-plans", label: "Lesson plans", icon: NotebookPen },
       { href: "/school/question-bank", label: "Question bank", icon: FileQuestion },
       { href: "/school/online-tests", label: "Online tests", icon: MonitorCheck },

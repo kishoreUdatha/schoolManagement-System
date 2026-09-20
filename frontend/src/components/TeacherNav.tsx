@@ -57,6 +57,7 @@ const sections: NavSection[] = [
       { href: "/teacher/question-bank", label: "Question bank", icon: FileQuestion },
       { href: "/teacher/online-tests", label: "Online tests", icon: MonitorCheck },
       { href: "/teacher/homework", label: "Homework", icon: BookOpen },
+      { href: "/teacher/rubrics", label: "Rubrics", icon: ClipboardList },
       { href: "/teacher/marks", label: "Marks", icon: ClipboardCheck },
       { href: "/teacher/report-cards", label: "Report cards", icon: FileBadge },
       { href: "/teacher/behaviour", label: "Behaviour", icon: Star },

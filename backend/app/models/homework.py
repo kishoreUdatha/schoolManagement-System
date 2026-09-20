@@ -51,6 +51,15 @@ class Homework(Base, PrimaryKeyMixin, TimestampMixin):
     created_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
+    # marking scheme this work is judged on, if any
+    rubric_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("rubrics.id", ondelete="SET NULL")
+    )
+    # closed = no more submissions or edits, whatever the due date says
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    closed_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
 
 
 class HomeworkSubmission(Base, PrimaryKeyMixin, TimestampMixin):

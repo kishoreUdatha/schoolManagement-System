@@ -59,6 +59,7 @@ from app.api.v1.school import (
     rbac as school_rbac,
     curriculum as school_curriculum,
     registers as school_registers,
+    rubrics as school_rubrics,
     report_cards as school_report_cards,
     sections as school_sections,
     staff as school_staff,
@@ -815,6 +816,12 @@ app.include_router(
     school_registers.router,
     prefix="/api/v1/school",
     tags=["school / attendance registers, visitors"],
+)
+
+app.include_router(
+    school_rubrics.router,
+    prefix="/api/v1/school/rubrics",
+    tags=["school / rubrics"],
 )
 
 app.include_router(

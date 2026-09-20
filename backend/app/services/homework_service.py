@@ -14,6 +14,7 @@ from app.core.enums import (
 from app.models.academic import SchoolClass, Section
 from app.models.homework import Homework, HomeworkSubmission
 from app.models.notice import Notice
+from app.models.rubric import Rubric
 from app.models.parent import ParentStudent
 from app.models.student import Student
 from app.models.subject import ClassSubject, Subject
@@ -25,6 +26,35 @@ from app.schemas.homework import (
     SubmissionReview,
     SubmissionUpdate,
 )
+from app.services import rubric_service
+
+
+def _check_open(h: Homework) -> None:
+    """A closed assignment is finished with: no more work in, no more edits."""
+    if h is not None and h.closed_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This homework has been closed by the teacher",
+        )
+
+
+def close(db: Session, homework_id: int, school_id: int, teacher_user_id: int, *, closed: bool) -> Homework:
+    """Close a homework so nothing more can be submitted, or reopen it."""
+    h = get(db, homework_id, school_id)
+    if h.created_by_user_id != teacher_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the teacher who posted this can close it",
+        )
+    if closed and h.closed_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="This homework is already closed"
+        )
+    h.closed_at = datetime.now(timezone.utc) if closed else None
+    h.closed_by_user_id = teacher_user_id if closed else None
+    db.commit()
+    db.refresh(h)
+    return h
 
 
 def _to_read_dict(db: Session, h: Homework, *, viewer_id: Optional[int] = None) -> dict:
@@ -37,7 +67,10 @@ def _to_read_dict(db: Session, h: Homework, *, viewer_id: Optional[int] = None) 
         viewer_id is not None
         and viewer_id == h.created_by_user_id
         and not is_past_due
+        and h.closed_at is None
     )
+    rubric = db.get(Rubric, h.rubric_id) if h.rubric_id else None
+    closer = db.get(User, h.closed_by_user_id) if h.closed_by_user_id else None
     return {
         "id": h.id,
         "class_subject_id": h.class_subject_id,
@@ -53,6 +86,11 @@ def _to_read_dict(db: Session, h: Homework, *, viewer_id: Optional[int] = None) 
         "created_at": h.created_at,
         "is_past_due": is_past_due,
         "can_edit": can_edit,
+        "rubric_id": h.rubric_id,
+        "rubric_name": rubric.name if rubric else None,
+        "is_closed": h.closed_at is not None,
+        "closed_at": h.closed_at,
+        "closed_by_name": closer.full_name if closer else None,
     }
 
 
@@ -123,6 +161,8 @@ def create(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="due_date cannot be in the past",
         )
+    if data.rubric_id:
+        rubric_service.get(db, data.rubric_id, school_id)
     h = Homework(
         tenant_id=tenant_id,
         school_id=school_id,
@@ -131,6 +171,7 @@ def create(
         description=data.description.strip(),
         attachment_url=data.attachment_url,
         due_date=data.due_date,
+        rubric_id=data.rubric_id,
         created_by_user_id=teacher_user_id,
     )
     db.add(h)
@@ -191,6 +232,9 @@ def update(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the teacher who posted this can edit it",
         )
+    _check_open(h)
+    if "rubric_id" in data.model_dump(exclude_unset=True) and data.rubric_id:
+        rubric_service.get(db, data.rubric_id, school_id)
     if h.due_date < date.today():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -221,6 +265,7 @@ def delete(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the teacher who posted this can delete it",
         )
+    _check_open(h)
     if h.due_date < date.today():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -335,6 +380,7 @@ def submission_to_dict(db: Session, sub: HomeworkSubmission) -> dict:
         "reviewed_by_user_id": sub.reviewed_by_user_id,
         "reviewed_by_name": reviewer.full_name if reviewer else None,
         "reviewed_at": sub.reviewed_at,
+        "marking": rubric_service.marking_for(db, sub.id),
     }
 
 
@@ -352,6 +398,7 @@ def parent_submit(
             status_code=status.HTTP_404_NOT_FOUND, detail="Homework not found"
         )
     _verify_homework_for_student(db, hw, student)
+    _check_open(hw)
 
     if not (data.attachment_url or data.comment):
         raise HTTPException(
@@ -417,6 +464,7 @@ def parent_edit_submission(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="No submission to edit"
         )
+    _check_open(db.get(Homework, homework_id))
     updates = data.model_dump(exclude_unset=True)
     for field, value in updates.items():
         setattr(sub, field, value)
