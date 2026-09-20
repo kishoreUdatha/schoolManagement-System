@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 
+import { AcademicYearProvider } from "@/components/AcademicYearProvider";
 import { BrandingProvider } from "@/components/BrandingProvider";
 import { PortalShell } from "@/components/PortalShell";
 import { SchoolAdminGuard } from "@/components/SchoolAdminGuard";
@@ -9,15 +10,17 @@ export default function SchoolProtectedLayout({ children }: { children: ReactNod
   return (
     <SchoolAdminGuard>
       <BrandingProvider>
-        <PortalShell
-          showYear
-          noticesHref="/school/notices"
-          messagesHref="/school/messages"
-          nav={<SchoolAdminNav />}
-          width="max-w-7xl"
-        >
-          {children}
-        </PortalShell>
+        <AcademicYearProvider>
+          <PortalShell
+            showYear
+            noticesHref="/school/notices"
+            messagesHref="/school/messages"
+            nav={<SchoolAdminNav />}
+            width="max-w-7xl"
+          >
+            {children}
+          </PortalShell>
+        </AcademicYearProvider>
       </BrandingProvider>
     </SchoolAdminGuard>
   );

@@ -10,11 +10,11 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
 import { api, apiError } from "@/lib/api";
+import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { dateTime, hhmm } from "@/lib/dates";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-type AcademicYear = { id: number; name: string; is_current: boolean };
 type SectionLite = { id: number; name: string; capacity: number };
 type SchoolClass = { id: number; name: string; sections: SectionLite[] };
 
@@ -76,8 +76,8 @@ export default function TimetableSetupPage() {
 function TimetableSetup() {
   const search = useSearchParams();
   const preset = search.get("section");
-  const [years, setYears] = useState<AcademicYear[]>([]);
-  const [yearId, setYearId] = useState<number | null>(null);
+  // One picker, in the top bar.
+  const yearId = useAcademicYear()?.yearId ?? null;
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [classId, setClassId] = useState<number | "">("");
   const [sectionId, setSectionId] = useState<number | "">("");
@@ -93,17 +93,6 @@ function TimetableSetup() {
     () => classes.find((c) => c.id === classId) ?? null,
     [classes, classId]
   );
-
-  useEffect(() => {
-    api
-      .get<AcademicYear[]>("/api/v1/school/academic-years")
-      .then((r) => {
-        setYears(r.data);
-        const cur = r.data.find((y) => y.is_current) ?? r.data[0];
-        if (cur) setYearId(cur.id);
-      })
-      .catch((e) => setError(apiError(e)));
-  }, []);
 
   useEffect(() => {
     if (!yearId) return;
@@ -229,17 +218,6 @@ function TimetableSetup() {
 
       <Card>
         <CardBody className="flex flex-wrap items-end gap-3">
-          <Select
-            label="Year"
-            value={yearId ?? ""}
-            onChange={(e) => setYearId(Number(e.target.value))}
-          >
-            {years.map((y) => (
-              <option key={y.id} value={y.id}>
-                {y.name}
-              </option>
-            ))}
-          </Select>
           <Select
             label="Class"
             value={classId}

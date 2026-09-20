@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { Select } from "@/components/ui/Field";
 import { api } from "@/lib/api";
+import { useAcademicYear } from "@/components/AcademicYearProvider";
 
 export type Audience = "everyone" | "staff" | "parents" | "class_parents" | "section_parents";
 type ClassRow = { id: number; name: string; sections?: { id: number; name: string }[] };
@@ -16,16 +17,15 @@ export const audienceText: Record<Audience, string> = {
   section_parents: "Parents of one section",
 };
 
-/** Classes of the current academic year, each with its sections. */
+/** Classes of the chosen academic year, each with its sections. */
 export function useClasses() {
   const [classes, setClasses] = useState<ClassRow[]>([]);
+  const yearId = useAcademicYear()?.yearId ?? null;
   useEffect(() => {
     (async () => {
       try {
-        const y = await api.get<{ id: number; is_current: boolean }[]>("/api/v1/school/academic-years");
-        const cur = y.data.find((x) => x.is_current) ?? y.data[0];
-        if (!cur) return;
-        const cs = await api.get<ClassRow[]>("/api/v1/school/classes", { params: { academic_year_id: cur.id } });
+        if (!yearId) return;
+        const cs = await api.get<ClassRow[]>("/api/v1/school/classes", { params: { academic_year_id: yearId } });
         const withSections = await Promise.all(
           cs.data.map(async (c) => {
             if (c.sections) return c;
@@ -42,7 +42,7 @@ export function useClasses() {
         setClasses([]);
       }
     })();
-  }, []);
+  }, [yearId]);
   return classes;
 }
 

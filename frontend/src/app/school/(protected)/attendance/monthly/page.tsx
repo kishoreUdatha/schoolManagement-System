@@ -17,9 +17,9 @@ import {
 import { Input } from "@/components/ui/Input";
 import { StatCard } from "@/components/ui/StatCard";
 import { api, apiError } from "@/lib/api";
+import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { openAuthed } from "@/lib/download";
 
-type AcademicYear = { id: number; name: string; is_current: boolean };
 type Section = { id: number; name: string };
 type SchoolClass = { id: number; name: string; sections: Section[] };
 
@@ -67,24 +67,23 @@ export default function MonthlyAttendancePage() {
   const [data, setData] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Sections come from the year chosen in the top bar, so switching the year
+  // re-points this page rather than pinning it to whichever year is current.
+  const yearId = useAcademicYear()?.yearId ?? null;
+
   useEffect(() => {
+    if (!yearId) return;
     api
-      .get<AcademicYear[]>("/api/v1/school/academic-years")
-      .then((r) => {
-        const current = r.data.find((y) => y.is_current) ?? r.data[0];
-        if (!current) return;
-        return api
-          .get<SchoolClass[]>("/api/v1/school/classes", {
-            params: { academic_year_id: current.id },
-          })
-          .then((c) => {
-            setClasses(c.data);
-            const first = c.data.find((k) => k.sections.length > 0);
-            if (first) setSectionId(first.sections[0].id);
-          });
+      .get<SchoolClass[]>("/api/v1/school/classes", {
+        params: { academic_year_id: yearId },
+      })
+      .then((c) => {
+        setClasses(c.data);
+        const first = c.data.find((k) => k.sections.length > 0);
+        setSectionId(first ? first.sections[0].id : "");
       })
       .catch((e) => setError(apiError(e)));
-  }, []);
+  }, [yearId]);
 
   const [year, monthNo] = month.split("-").map(Number);
 

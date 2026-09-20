@@ -8,6 +8,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { api, apiError } from "@/lib/api";
+import { useAcademicYear } from "@/components/AcademicYearProvider";
 
 type Audience =
   | "all_parents"
@@ -66,6 +67,7 @@ const statusTone: Record<NoticeStatus, "neutral" | "amber" | "emerald"> = {
 };
 
 export default function NoticesPage() {
+  const yearId = useAcademicYear()?.yearId ?? null;
   const [items, setItems] = useState<Notice[]>([]);
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -76,23 +78,15 @@ export default function NoticesPage() {
 
   async function load() {
     try {
-      const [n, y, c] = await Promise.all([
-        api.get<Notice[]>("/api/v1/school/notices"),
-        api.get<{ id: number; is_current: boolean }[]>(
-          "/api/v1/school/academic-years"
-        ),
-        // Will be filled after year is found
-        Promise.resolve(null),
-      ]);
+      const n = await api.get<Notice[]>("/api/v1/school/notices");
       setItems(n.data);
-      const cur = y.data.find((x) => x.is_current) ?? y.data[0];
-      if (cur) {
+      // The class list on the audience picker follows the top bar's year.
+      if (yearId) {
         const cs = await api.get<SchoolClass[]>("/api/v1/school/classes", {
-          params: { academic_year_id: cur.id },
+          params: { academic_year_id: yearId },
         });
         setClasses(cs.data);
       }
-      void c;
       setError(null);
     } catch (e) {
       setError(apiError(e));
@@ -101,7 +95,8 @@ export default function NoticesPage() {
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [yearId]);
 
   async function send(n: Notice) {
     if (

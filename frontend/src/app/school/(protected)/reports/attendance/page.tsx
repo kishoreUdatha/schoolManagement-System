@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { auth } from "@/lib/auth";
 import { api, apiError } from "@/lib/api";
 
@@ -99,21 +100,10 @@ function downloadCsv(path: string) {
 
 export default function AttendanceReportsPage() {
   const [tab, setTab] = useState<Tab>("daily");
-  const [years, setYears] = useState<AcademicYear[]>([]);
-  const [yearId, setYearId] = useState<number | null>(null);
+  // The year comes from the top bar now, so this report follows it.
+  const { years, yearId } = useAcademicYear() ?? { years: [], yearId: null };
   const [classes, setClasses] = useState<SchoolClass[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .get<AcademicYear[]>("/api/v1/school/academic-years")
-      .then((r) => {
-        setYears(r.data);
-        const cur = r.data.find((y) => y.is_current) ?? r.data[0];
-        if (cur) setYearId(cur.id);
-      })
-      .catch((e) => setError(apiError(e)));
-  }, []);
 
   useEffect(() => {
     if (!yearId) return;

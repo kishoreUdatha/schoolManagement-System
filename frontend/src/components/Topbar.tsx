@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Bell, ChevronDown, Menu, MessageSquare, Search } from "lucide-react";
 
+import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { useNavShell } from "@/components/NavShellContext";
 import { api } from "@/lib/api";
 import { auth } from "@/lib/auth";
 
-type Year = { id: number; name: string; is_current: boolean };
 type Hit = { label: string; detail?: string | null; href: string; kind: string };
 
 /** Where a person found in search opens, per role.
@@ -28,10 +28,8 @@ const STUDENT_HREF: Record<string, (id: number) => string> = {
 };
 
 interface TopbarProps {
-  /** Name the current academic year. School admin only — every route under
-   *  /school/academic-years is, and nothing in the app reads a globally
-   *  chosen year, so this states which year you are in rather than pretending
-   *  to be a switch that changes nothing. */
+  /** Offer the academic-year picker. School admin only, because every route
+   *  under /school/academic-years is. */
   showYear?: boolean;
   /** Where the bell and the envelope go for this role. */
   noticesHref?: string;
@@ -40,6 +38,7 @@ interface TopbarProps {
 
 export function Topbar({ showYear = false, noticesHref, messagesHref }: TopbarProps) {
   const shell = useNavShell();
+  const ay = useAcademicYear();
   // The pages search looks through are whatever the sidebar published. Held
   // steady when there is no shell, because it is a search effect's dependency.
   const pages = useMemo(() => shell?.pages ?? [], [shell?.pages]);
@@ -47,19 +46,10 @@ export function Topbar({ showYear = false, noticesHref, messagesHref }: TopbarPr
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
   const [open, setOpen] = useState(false);
-  const [year, setYear] = useState<string | null>(null);
   const [unread, setUnread] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const user = auth.getUser();
-
-  useEffect(() => {
-    if (!showYear) return;
-    api
-      .get<Year[]>("/api/v1/school/academic-years")
-      .then((r) => setYear(r.data.find((y) => y.is_current)?.name ?? null))
-      .catch(() => setYear(null));
-  }, [showYear]);
 
   // The dot on the bell. Two inboxes, and two roles with neither: a student
   // has no notice inbox of their own, and the platform admin sits above any
@@ -216,11 +206,21 @@ export function Topbar({ showYear = false, noticesHref, messagesHref }: TopbarPr
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
-        {year && (
+        {showYear && ay && ay.years.length > 0 && ay.yearId !== null && (
           <>
-            <span className="hidden rounded-lg border border-surface-border px-2.5 py-1.5 text-[12px] font-bold text-ink-muted lg:block">
-              Academic year {year}
-            </span>
+            <select
+              aria-label="Academic year"
+              value={ay.yearId}
+              onChange={(e) => ay.setYearId(Number(e.target.value))}
+              className="hidden rounded-lg border border-surface-border bg-surface-raised px-2.5 py-1.5 text-[12px] font-bold text-ink-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 lg:block"
+            >
+              {ay.years.map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.name}
+                  {y.is_current ? " (current)" : ""}
+                </option>
+              ))}
+            </select>
             <span className="hidden h-6 w-px bg-surface-border lg:block" />
           </>
         )}

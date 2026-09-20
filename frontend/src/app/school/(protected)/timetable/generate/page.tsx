@@ -20,10 +20,10 @@ import {
 import { Input } from "@/components/ui/Input";
 import { StatCard } from "@/components/ui/StatCard";
 import { api, apiError } from "@/lib/api";
+import { useAcademicYear } from "@/components/AcademicYearProvider";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-type AcademicYear = { id: number; name: string; is_current: boolean };
 type SectionLite = { id: number; name: string };
 type SchoolClass = { id: number; name: string; sections: SectionLite[] };
 
@@ -94,28 +94,27 @@ function GenerateTimetable() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
+  // Generate against the year on the top bar, not whichever is current.
+  const yearId = useAcademicYear()?.yearId ?? null;
 
   useEffect(() => {
+    if (!yearId) return;
     api
-      .get<AcademicYear[]>("/api/v1/school/academic-years")
-      .then((r) => {
-        const cur = r.data.find((y) => y.is_current) ?? r.data[0];
-        if (!cur) return;
-        return api
-          .get<SchoolClass[]>("/api/v1/school/classes", {
-            params: { academic_year_id: cur.id },
-          })
-          .then((c) => {
-            setClasses(c.data);
-            if (!preset) {
-              const first = c.data.find((k) => k.sections.length > 0);
-              if (first) setSectionId(first.sections[0].id);
-            }
-          });
+      .get<SchoolClass[]>("/api/v1/school/classes", {
+        params: { academic_year_id: yearId },
+      })
+      .then((c) => {
+        setClasses(c.data);
+        if (!preset) {
+          const first = c.data.find((k) => k.sections.length > 0);
+          setSectionId(first ? first.sections[0].id : "");
+        }
       })
       .catch((e) => setError(apiError(e)));
+    // `preset` is the section carried in on the URL; it is read once on
+    // arrival and must not re-seed the picker when the year changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [yearId]);
 
   const loadRequirements = useCallback(() => {
     if (!sectionId) {
