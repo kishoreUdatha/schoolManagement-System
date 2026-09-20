@@ -28,14 +28,15 @@ from app.models.fee import FeeHead, FeeStructure, StudentFee
 from app.models.fee_reminder import FeeReminderLog
 from app.models.notice import Notice, NoticeRecipient
 from app.models.user import User
+from scripts import devdata
 
 
 BASE = "http://localhost:8000/api/v1"
 SCHOOL_ADMIN = ("school@sms.local", "SchoolPass123!")
 PARENT = ("sharma@dev.local", "ParentPass123!")
-STUDENT_ID = 1  # Aarav, linked to sharma@dev.local
-TENANT_ID = 2
-SCHOOL_ID = 2
+STUDENT_ID = devdata.child_id()  # Aarav, linked to sharma@dev.local
+TENANT_ID = devdata.school()["tenant_id"]
+SCHOOL_ID = devdata.school()["school_id"]
 
 
 def request(method, path, *, token=None, body=None):
@@ -131,7 +132,7 @@ def ensure_smoke_fee_structure() -> tuple[int, int]:
                 school_id=SCHOOL_ID,
                 name="Smoke 13.3 Tuition",
                 code="SMOKE13",
-                frequency="monthly",
+                is_recurring=True,
             )
             db.add(head)
             db.flush()
@@ -145,11 +146,11 @@ def ensure_smoke_fee_structure() -> tuple[int, int]:
             struct = FeeStructure(
                 tenant_id=TENANT_ID,
                 school_id=SCHOOL_ID,
-                academic_year_id=2,
+                academic_year_id=devdata.year_id(),
+                class_id=devdata.klass().id,
                 fee_head_id=head.id,
                 amount=1000,
-                applies_from=date.today() - timedelta(days=365),
-                applies_to=None,
+                due_day_of_month=10,
             )
             db.add(struct)
             db.flush()

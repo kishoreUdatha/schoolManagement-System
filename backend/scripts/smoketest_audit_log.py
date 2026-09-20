@@ -23,6 +23,7 @@ from app.core.security import hash_password
 from app.database import SessionLocal
 from app.models.audit import AuditLog
 from app.models.user import User
+from scripts import devdata
 
 
 BASE = "http://localhost:8000/api/v1"
@@ -98,8 +99,8 @@ def main():
         "/school/students",
         token=token,
         body={
-            "academic_year_id": 2,
-            "section_id": 1,
+            "academic_year_id": devdata.year_id(),
+            "section_id": devdata.section_id("A"),
             "full_name": "Audit Smoke Student",
         },
     )

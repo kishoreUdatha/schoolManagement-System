@@ -23,7 +23,7 @@ from sqlalchemy import select
 
 from app.core.security import hash_password
 from app.database import SessionLocal
-from app.models.academic import AcademicYear, Section
+from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.datadesk import ExportJob, ImportJob, ReportDefinition
 from app.models.student import Student
 from app.models.user import User
@@ -87,9 +87,9 @@ def setup():
         sec = db.execute(
             select(Section).where(Section.school_id == admin.school_id).limit(1)
         ).scalar_one()
-        year = db.execute(
-            select(AcademicYear).where(AcademicYear.school_id == admin.school_id).limit(1)
-        ).scalar_one()
+        # the year has to be the section's own, or the import is refused
+        cls = db.get(SchoolClass, sec.class_id)
+        year = db.get(AcademicYear, cls.academic_year_id)
         db.commit()
         return dict(section_id=sec.id, academic_year_id=year.id, school_id=admin.school_id)
     finally:

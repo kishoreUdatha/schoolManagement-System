@@ -27,6 +27,7 @@ from app.database import SessionLocal
 from app.models.approval import ApprovalRequest
 from app.models.exam import Exam
 from app.models.user import User
+from scripts import devdata
 
 
 BASE = "http://localhost:8000/api/v1"
@@ -91,7 +92,7 @@ def ensure_unpublished_exam(school_id: int, tenant_id: int) -> int:
         ex = Exam(
             tenant_id=tenant_id,
             school_id=school_id,
-            academic_year_id=2,
+            academic_year_id=devdata.year_id(),
             name="Mid-term",
             kind=ExamKind.term,
             start_date="2026-06-01",

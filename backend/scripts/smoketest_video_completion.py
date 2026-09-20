@@ -26,13 +26,15 @@ from app.core.security import hash_password
 from app.database import SessionLocal
 from app.models.learning_video import LearningVideo, LearningVideoCompletion
 from app.models.user import User
+from scripts import devdata
 
 
 BASE = "http://localhost:8000/api/v1"
 TEACHER = ("iyer@dev.local", "TeacherPass123!")
 PARENT = ("sharma@dev.local", "ParentPass123!")
-CLASS_SUBJECT_ID = 1  # Math, Grade 1
-STUDENT_ID = 1  # Aarav
+CLASS_SUBJECT_ID = devdata.class_subject_id()  # Maths, Grade 1
+STUDENT_ID = devdata.child_id()  # Aarav
+OTHER_CHILD_ID = devdata.other_child_id()  # nobody links this parent to them
 
 
 def request(method, path, *, token=None, body=None):
@@ -162,10 +164,10 @@ def main():
     assert code == 201, mine
     assert mine["completion_count"] == 1, mine
 
-    section("Foreign child rejected (student_id=4 not linked to this parent)")
+    section("Foreign child rejected (not linked to this parent)")
     code, body_ = request(
         "POST",
-        f"/parent/me/children/4/videos/{video_id}/completion",
+        f"/parent/me/children/{OTHER_CHILD_ID}/videos/{video_id}/completion",
         token=parent_token,
     )
     print(f"  {code} {body_.get('detail') if isinstance(body_, dict) else ''}")

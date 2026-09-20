@@ -24,8 +24,10 @@ from datetime import date
 from sqlalchemy import select
 
 from app.core.security import hash_password
+from app.models.attendance import StudentAttendance
 from app.database import SessionLocal
 from app.models.user import User
+from scripts import devdata
 
 
 BASE = "http://localhost:8000/api/v1"
@@ -33,8 +35,8 @@ TEACHER_EMAIL = "iyer@dev.local"
 TEACHER_PASSWORD = "TeacherPass123!"
 PARENT_EMAIL = "sharma@dev.local"
 PARENT_PASSWORD = "ParentPass123!"
-SECTION_ID = 1  # Grade 1 A
-STUDENT_ID = 1  # Aarav Sharma — linked to parent sharma@dev.local
+SECTION_ID = devdata.section_id("A")
+STUDENT_ID = devdata.child_id()  # Aarav Sharma — linked to parent sharma@dev.local
 
 
 def request(method, path, *, token=None, body=None):
@@ -75,6 +77,22 @@ def reset_passwords():
         db.close()
 
 
+def clear_todays_attendance():
+    """The alert only fires the first time a child is marked absent on a day,
+    so a second run on the same day would see nothing new. Wipe today's row
+    for the child under test and the run starts from a clean slate."""
+    db = SessionLocal()
+    try:
+        db.execute(
+            StudentAttendance.__table__.delete().where(
+                StudentAttendance.student_id == STUDENT_ID,
+                StudentAttendance.date == date.today(),
+            )
+        )
+        db.commit()
+    finally:
+        db.close()
+
 def login(email, pw, role):
     code, data = request(
         "POST", f"/{role}/auth/login", body={"email": email, "password": pw}
@@ -92,6 +110,7 @@ def count_absence_notices(token):
 def main():
     section("RESET SEED PASSWORDS")
     reset_passwords()
+    clear_todays_attendance()
 
     teacher_token = login(TEACHER_EMAIL, TEACHER_PASSWORD, "teacher")
     parent_token = login(PARENT_EMAIL, PARENT_PASSWORD, "parent")

@@ -29,16 +29,48 @@ from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.attendance import StudentAttendance
 from app.models.student import Student
 from app.models.user import User
+from scripts import devdata
 
 
 BASE = "http://localhost:8000/api/v1"
 ADMIN_EMAIL = "school@sms.local"
 ADMIN_PASSWORD = "SchoolPass123!"
-SCHOOL_ID = 2
-SOURCE_SECTION_ID = 1  # Grade 1 A, year 2025-26 (existing seed)
+SCHOOL_ID = devdata.school_id()
+SOURCE_SECTION_ID = devdata.section_id("A")  # Grade 1 A, in the earlier year
+SAME_YEAR_SECTION_ID = devdata.section_id("B")  # Grade 1 B, same year as A
 TARGET_CLASS_NAME = "Grade 2"
 TARGET_SECTION_NAME = "A"
 TARGET_YEAR_NAME = "2026-27"
+# who belongs in Grade 1 A once the test has finished with them
+HOME_ROSTER = [
+    "Aarav Sharma", "Diya Patel", "Kabir Rao",
+    "Meera Nair", "Rohan Gupta", "Ananya Reddy",
+]
+
+
+def put_the_children_back() -> int:
+    """Promotion is a one-way door for the children it moves, so the test undoes
+    itself — otherwise every later test that wants a full Grade 1 A finds it
+    empty, and the suite only passes in alphabetical order."""
+    db = SessionLocal()
+    try:
+        year_id = devdata.year_id()
+        moved = list(db.execute(
+            select(Student).where(
+                Student.school_id == SCHOOL_ID,
+                Student.full_name.in_(HOME_ROSTER),
+            ).order_by(Student.id)
+        ).scalars())
+        for roll, child in enumerate(moved, start=1):
+            child.section_id = SOURCE_SECTION_ID
+            child.academic_year_id = year_id
+            child.roll_no = roll
+            child.is_active = True
+        db.commit()
+        return len(moved)
+    finally:
+        db.close()
+
 
 
 def request(method, path, *, token=None, body=None):
@@ -199,8 +231,8 @@ def main():
         token=token,
         body={
             "source_section_id": SOURCE_SECTION_ID,
-            # Section 2 is Grade 1 B in the SAME year — also year 2025-26
-            "target_section_id": 2,
+            # Grade 1 B is in the SAME year as A, so this must be refused
+            "target_section_id": SAME_YEAR_SECTION_ID,
         },
     )
     print(f"  {code} - {body_.get('detail')}")
@@ -290,6 +322,9 @@ def main():
     )
     print(f"  empty source → {code} {body_.get('detail')}")
     assert code == 400, body_
+
+    section("Put the children back where the rest of the suite expects them")
+    print(f"  returned {put_the_children_back()} children to Grade 1 A")
 
     print("\nALL CHECKS PASSED")
     return 0

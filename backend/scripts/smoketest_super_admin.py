@@ -62,6 +62,11 @@ def main() -> int:
         ],
     }
     code, plan = request("POST", "/plans", token=token, body=plan_payload)
+    if code in (400, 409) and "already exists" in str(plan.get("detail", "")):
+        # a previous run left it behind and a tenant is on it, so reuse it
+        code, listing = request("GET", "/plans", token=token)
+        plan = next(p for p in listing["items"] if p["name"] == "Premium")
+        code = 201
     print(f"  {code} - plan id={plan.get('id')} name={plan.get('name')} modules={len(plan.get('modules', []))}")
     assert code == 201, plan
     plan_id = plan["id"]

@@ -30,6 +30,50 @@ docker compose up --build
 # Postgres:      localhost:5433  (user: sms, db: sms)  -- 5433 to avoid clash with host PG
 ```
 
+## Dev data
+
+A fresh database has nothing in it to click on. Two scripts fill it:
+
+```bash
+# tenant + school + the school admin login
+docker exec sms-backend python -m scripts.seed_dev_school
+
+# the rest: years, Grade 1 with two sections, subjects, children,
+# a parent, staff logins, attendance history and a timetable
+docker exec sms-backend python -m scripts.seed_dev_data
+```
+
+| Login | Password | Who |
+|---|---|---|
+| `school@sms.local` | `SchoolPass123!` | school admin |
+| `iyer@dev.local` | `TeacherPass123!` | teacher, class teacher of Grade 1 A |
+| `sharma@dev.local` | `ParentPass123!` | parent of Aarav Sharma |
+| `principal@dev.local` | `PrincipalPass123!` | principal |
+| `accountant@dev.local` | `AccountantPass123!` | accountant |
+| `admin@sms.local` | `ChangeMe123!` | super admin |
+
+`seed_dev_data` is safe to run again: it looks every record up by name, so
+ids stay put and re-running it after the smoke tests puts back anything they
+moved.
+
+## Smoke tests
+
+Each module has an end-to-end script that drives the real API. They expect the
+dev data above and clean up after themselves, so they can be run in any order
+and as often as you like:
+
+```bash
+docker exec sms-backend python -m scripts.smoketest_registers
+
+# all of them
+for t in backend/scripts/smoketest_*.py; do \
+  docker exec sms-backend python -m scripts.$(basename "$t" .py); \
+done
+```
+
+They find their fixtures through `scripts/devdata.py` (by name, never by id),
+so they work against any seeded database.
+
 ## Project structure
 
 ```

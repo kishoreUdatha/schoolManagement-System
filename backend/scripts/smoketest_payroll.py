@@ -186,6 +186,7 @@ def main():
         assert Decimal(p["esi_employee"]) == exp_esi and Decimal(p["esi_employer"]) > 0, p
         print(f"  teacher net {t['net_pay']} (LOP 17), principal net {p['net_pay']} with ESI {p['esi_employee']}")
 
+        MINE = ("Dev Teacher", "Dev Principal", "Dev Accountant")
         section("Adjust + recalculate")
         code, adj = request("PATCH", f"/school/payroll/runs/{run['id']}/payslips/{t['id']}", token=tok,
                             body={"bonus": "1000", "lop_days": "16", "remarks": "Absence regularised"})
@@ -194,7 +195,9 @@ def main():
         code, _ = request("PUT", f"/school/payroll/staff/{ids['accountant']}/salary", token=tok,
                           body={"effective_from": f"{Y}-04-01", "basic": "12000", "bank_name": MARK})
         code, run2 = request("POST", f"/school/payroll/runs/{run['id']}/recalculate", token=tok)
-        assert code == 200 and run2["staff_count"] == 3 and not run2["skipped_without_salary"], run2
+        # other staff may exist without a salary structure; only this run's three matter
+        assert code == 200 and run2["staff_count"] == 3, run2
+        assert not (set(run2["skipped_without_salary"]) & set(MINE)), run2["skipped_without_salary"]
         s2 = {s["full_name"]: s for s in run2["payslips"]}
         assert Decimal(s2["Dev Teacher"]["lop_days"]) == 16, "manual LOP override kept"
         assert Decimal(s2["Dev Teacher"]["bonus"]) == 1000, "bonus kept"

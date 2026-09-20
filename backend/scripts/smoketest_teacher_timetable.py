@@ -21,12 +21,13 @@ from app.database import SessionLocal
 from app.models.subject import ClassSubject
 from app.models.timetable import Period, TimetableEntry
 from app.models.user import User
+from scripts import devdata
 
 
 BASE = "http://localhost:8000/api/v1"
 TEACHER = ("iyer@dev.local", "TeacherPass123!")
-SCHOOL_ID = 2
-TENANT_ID = 2
+SCHOOL_ID = devdata.school()["school_id"]
+TENANT_ID = devdata.school()["tenant_id"]
 
 
 def request(method, path, *, token=None, body=None):

@@ -106,19 +106,25 @@ def main() -> int:
     try:
         from app.models.subject import ClassSubject
         from app.models.academic import Section
+        from app.models.parent import ParentStudent
         from app.models.student import Student
 
         teacher_user_id = data["user"]["id"]
         class_id = db.execute(
             select(ClassSubject.class_id)
             .where(ClassSubject.teacher_user_id == teacher_user_id)
+            .order_by(ClassSubject.id)
             .limit(1)
         ).scalar_one()
-        # Pick a section that actually has at least one student so single_parent works
+        # Pick a section with a student whose parent we can check the inbox of.
+        # Ordering matters: an unordered pick can land on a section whose
+        # children have no parent linked, and the notice then reaches nobody.
         section_id, student_id = db.execute(
             select(Section.id, Student.id)
             .join(Student, Student.section_id == Section.id)
+            .join(ParentStudent, ParentStudent.student_id == Student.id)
             .where(Section.class_id == class_id, Student.is_active.is_(True))
+            .order_by(Section.id, Student.id)
             .limit(1)
         ).one()
         # An UN-owned class — pick any class on the school the teacher does NOT teach,

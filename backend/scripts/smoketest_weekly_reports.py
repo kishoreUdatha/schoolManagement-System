@@ -13,13 +13,14 @@ from app.core.security import hash_password
 from app.database import SessionLocal
 from app.models.user import User
 from app.models.weekly_report import WeeklyReport
+from scripts import devdata
 
 
 BASE = "http://localhost:8000/api/v1"
 TEACHER = ("iyer@dev.local", "TeacherPass123!")
 PARENT = ("sharma@dev.local", "ParentPass123!")
-SECTION_ID = 1  # Grade 1 A, iyer is the class teacher
-STUDENT_ID = 1
+SECTION_ID = devdata.section_id("A")  # iyer is the class teacher
+STUDENT_ID = devdata.child_id()
 
 
 def request(method, path, *, token=None, body=None):

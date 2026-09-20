@@ -30,6 +30,7 @@ from app.core.security import hash_password
 from app.database import SessionLocal
 from app.models.homework import Homework, HomeworkSubmission
 from app.models.user import User
+from scripts import devdata
 
 
 BASE = "http://localhost:8000/api/v1"
@@ -37,8 +38,9 @@ TEACHER_EMAIL = "iyer@dev.local"
 TEACHER_PASSWORD = "TeacherPass123!"
 PARENT_EMAIL = "sharma@dev.local"
 PARENT_PASSWORD = "ParentPass123!"
-CLASS_SUBJECT_ID = 1  # Math in Grade 1
-STUDENT_ID = 1
+CLASS_SUBJECT_ID = devdata.class_subject_id()  # Maths in Grade 1
+STUDENT_ID = devdata.child_id()
+OTHER_CHILD_ID = devdata.other_child_id()  # nobody links this parent to them
 
 
 def request(method, path, *, token=None, body=None):
@@ -175,7 +177,7 @@ def main():
     section("Parent: foreign child rejected (student 4 is not linked)")
     code, body_ = request(
         "POST",
-        f"/parent/me/children/4/homework/{hw_id}/submission",
+        f"/parent/me/children/{OTHER_CHILD_ID}/homework/{hw_id}/submission",
         token=parent_token,
         body={"comment": "should fail"},
     )
