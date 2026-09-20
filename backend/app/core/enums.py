@@ -833,3 +833,31 @@ class ResourceKind(str, enum.Enum):
     video = "video"
     image = "image"
     other = "other"
+
+
+class ImportType(str, enum.Enum):
+    students = "students"
+    staff = "staff"
+    marks = "marks"
+
+
+class ImportStatus(str, enum.Enum):
+    uploaded = "uploaded"
+    checked = "checked"      # validated, nothing written yet
+    imported = "imported"
+    failed = "failed"
+    cancelled = "cancelled"
+
+
+class ReportSource(str, enum.Enum):
+    students = "students"
+    staff = "staff"
+    fees = "fees"
+    marks = "marks"
+    attendance = "attendance"
+
+
+class ExportStatus(str, enum.Enum):
+    running = "running"
+    ready = "ready"
+    failed = "failed"

@@ -91,3 +91,42 @@ def content_disposition(filename: str, inline: bool = True) -> str:
     ascii_name = filename.encode("ascii", "ignore").decode().replace('"', "") or "file"
     kind = "inline" if inline else "attachment"
     return f"{kind}; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(filename)}"
+
+
+def save_csv_upload(school_id: int, area: str, upload: UploadFile) -> dict:
+    """A CSV upload, which has no magic bytes to check — so we check that it is
+    text we can actually read instead. Returns the same shape as save_upload."""
+    name = upload.filename or "file.csv"
+    if not name.lower().endswith(".csv"):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Upload a .csv file")
+    limit = settings.max_upload_mb * 1024 * 1024
+    data = upload.file.read(limit + 1)
+    if len(data) > limit:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File is larger than {settings.max_upload_mb} MB",
+        )
+    if not data.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File is empty")
+    try:
+        data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="That file isn't plain UTF-8 text — re-save it as CSV UTF-8",
+        )
+    return _write(school_id, area, "csv", data, "text/csv", os.path.basename(name)[:200])
+
+
+def save_generated(school_id: int, area: str, filename: str, data: bytes, content_type: str) -> dict:
+    """Store a file we produced ourselves (an export, an error report)."""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "bin"
+    return _write(school_id, area, ext, data, content_type, filename[:200])
+
+
+def _write(school_id: int, area: str, ext: str, data: bytes, content_type: str, original: str) -> dict:
+    key = f"{school_id}/{area}/{uuid.uuid4().hex}.{ext}"
+    path = _path(key)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+    return {"key": key, "content_type": content_type, "size_bytes": len(data), "original_name": original}

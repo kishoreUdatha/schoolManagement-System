@@ -383,21 +383,24 @@ MAP = {
         "revoke": (D, "POST /school/certificates/{id}/cancel", ""),
     },
     # ---------------- Reports, Settings & Audit ----------------
-    "report_definitions": crud((P, "GET /school/reports/attendance/*", "Fixed reports, not user-defined")),
+    "report_definitions": crud("GET /school/report-definitions", "POST /school/report-definitions",
+                               "GET /school/report-definitions/{id}", "PATCH /school/report-definitions/{id}"),
     "export_jobs": {
-        **crud((P, "GET /school/exports/*.csv", "Synchronous CSV exports"), (P, "GET /school/exports/*.csv", ""), None, (NA, "", "")),
-        "run": (D, "GET /school/exports/{students|staff|fees|marks|homework|behaviour}.csv", ""),
-        "download": (D, "GET /school/exports/*.csv", ""),
+        **crud("GET /school/export-jobs", "POST /school/report-definitions/{id}/export",
+               "GET /school/export-jobs/{id}", (NA, "", "An export is a finished file; run the report again instead")),
+        "run": (D, "POST /school/report-definitions/{id}/export; GET /school/exports/*.csv", "Saved reports, plus the fixed exports"),
+        "download": (D, "GET /school/export-jobs/{id}/file", ""),
     },
     "system_settings": crud((P, "GET /school/profile; GET /school/library/settings; GET /school/payroll/settings", "Per-module settings"),
                             (NA, "", ""), "GET /school/profile", "PATCH /school/profile; PATCH /school/library/settings; PATCH /school/payroll/settings"),
     "integration_configs": crud((P, "GET /school/payments/gateway", "Payment gateway only"), "PUT /school/payments/gateway",
                                 "GET /school/payments/gateway", "PUT /school/payments/gateway"),
     "import_jobs": {
-        **none("Students bulk import is synchronous"),
-        "upload": (P, "POST /school/students/bulk; GET /school/students/import-template.csv", "Students only"),
-        "validate": (P, "POST /school/students/bulk", "Validates and reports row errors"),
-        "commit": (P, "POST /school/students/bulk", ""),
+        **crud("GET /school/import-jobs", "POST /school/import-jobs", "GET /school/import-jobs/{id}",
+               (D, "PATCH /school/import-jobs/{id}", "Cancel an import that hasn't run")),
+        "upload": (D, "POST /school/import-jobs; GET /school/import-jobs/template.csv", "Students, staff or marks"),
+        "validate": (D, "POST /school/import-jobs", "Every upload is checked before anything is written"),
+        "commit": (D, "POST /school/import-jobs/{id}/commit", "Good rows only, or nothing until the file is fixed"),
     },
 }
 
@@ -406,6 +409,10 @@ MAP = {
 # API-X### rows (Release = "Added"), rebuilt on every run.
 # (module, resource, operation, method, path, purpose, roles)
 EXTRA = [
+    ("Reports, Settings & Audit", "report_definitions", "Action", "GET", "/school/report-sources", "What a report can be built on, with its columns and filters", "School Admin"),
+    ("Reports, Settings & Audit", "report_definitions", "Action", "POST", "/school/report-definitions/{id}/run", "Run a saved report and see the rows", "School Admin"),
+    ("Reports, Settings & Audit", "report_definitions", "Delete", "DELETE", "/school/report-definitions/{id}", "Delete a saved report", "School Admin"),
+    ("Reports, Settings & Audit", "import_jobs", "Action", "GET", "/school/import-jobs/{id}/errors.csv", "The rows that need fixing, as a spreadsheet", "School Admin"),
     ("Homework & Assignments", "rubrics", "Action", "POST", "/school/rubrics/{id}/criteria", "Add a criterion (frozen once work is marked against it)", "School Admin, Teacher (own rubric)"),
     ("Homework & Assignments", "rubrics", "Action", "PUT", "/school/rubrics/criteria/{id}", "Edit a criterion", "School Admin, Teacher (own rubric)"),
     ("Homework & Assignments", "rubrics", "Delete", "DELETE", "/school/rubrics/{id}", "Delete a rubric no homework uses", "School Admin, Teacher (own rubric)"),

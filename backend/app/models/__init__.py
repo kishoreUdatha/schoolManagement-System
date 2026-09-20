@@ -111,6 +111,7 @@ from app.models.pastoral import (
     DisciplineAction,
     DisciplineIncident,
 )
+from app.models.datadesk import ExportJob, ImportJob, ReportDefinition
 from app.models.curriculum import LearningOutcome, OutcomeTopic, TeachingResource
 from app.models.payroll import PayrollRun, PayrollSettings, Payslip, StaffSalary
 from app.models.plan import Plan, PlanModule
@@ -255,6 +256,9 @@ __all__ = [
     "UserOtp",
     "Visit",
     "AttendanceSession",
+    "ExportJob",
+    "ImportJob",
+    "ReportDefinition",
     "Rubric",
     "RubricCriterion",
     "RubricScore",

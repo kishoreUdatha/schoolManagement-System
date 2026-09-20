@@ -58,6 +58,7 @@ from app.api.v1.school import (
     profile as school_profile,
     rbac as school_rbac,
     curriculum as school_curriculum,
+    datadesk as school_datadesk,
     registers as school_registers,
     rubrics as school_rubrics,
     report_cards as school_report_cards,
@@ -816,6 +817,12 @@ app.include_router(
     school_registers.router,
     prefix="/api/v1/school",
     tags=["school / attendance registers, visitors"],
+)
+
+app.include_router(
+    school_datadesk.router,
+    prefix="/api/v1/school",
+    tags=["school / imports, reports, exports"],
 )
 
 app.include_router(

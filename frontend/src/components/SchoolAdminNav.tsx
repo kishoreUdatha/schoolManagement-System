@@ -11,6 +11,7 @@ import {
   Handshake,
   Images,
   CheckSquare,
+  DatabaseZap,
   ClipboardList,
   ClipboardCheck,
   Clock,
@@ -176,6 +177,7 @@ const sections: NavSection[] = [
       { href: "/school/roles", label: "Roles & branches", icon: KeyRound },
       { href: "/school/audit-log", label: "Audit log", icon: ScrollText },
       { href: "/school/exports", label: "Exports", icon: Download },
+      { href: "/school/data-desk", label: "Data desk", icon: DatabaseZap },
     ],
   },
 ];
