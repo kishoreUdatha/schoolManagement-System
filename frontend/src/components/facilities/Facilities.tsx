@@ -10,6 +10,7 @@ import { ErrorBox, NoticeBox, Select, Table, Textarea, humanize, td, tdStrong } 
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { api, apiError } from "@/lib/api";
+import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { cn } from "@/lib/utils";
 
 type Room = {
@@ -72,6 +73,8 @@ const ROOM_KINDS = ["classroom", "lab", "computer_lab", "library", "hall", "spor
 const today = () => new Date().toISOString().slice(0, 10);
 
 export function Facilities({ canManage }: { canManage: boolean }) {
+  // The class list on the lab-booking form follows the top bar's year.
+  const yearId = useAcademicYear()?.yearId ?? null;
   const [rooms, setRooms] = useState<Room[]>([]);
   const [labs, setLabs] = useState<Lab[]>([]);
   const [day, setDay] = useState(today());
@@ -100,16 +103,14 @@ export function Facilities({ canManage }: { canManage: boolean }) {
     loadMine();
     api.get<Staff[]>(`${base}/directory/staff`).then((r) => setStaff(r.data)).catch(() => setStaff([]));
     api.get<Subject[]>(`${base}/subjects`).then((r) => setSubjects(r.data)).catch(() => setSubjects([]));
-    api
-      .get<{ id: number; is_current: boolean }[]>(`${base}/academic-years`)
-      .then(async (y) => {
-        const cur = y.data.find((x) => x.is_current) ?? y.data[0];
-        if (!cur) return;
-        const cs = await api.get<ClassRow[]>(`${base}/classes`, { params: { academic_year_id: cur.id } });
-        setClasses(cs.data);
-      })
-      .catch(() => setClasses([]));
-  }, []);
+    if (yearId) {
+      api
+        .get<ClassRow[]>(`${base}/classes`, { params: { academic_year_id: yearId } })
+        .then((cs) => setClasses(cs.data))
+        .catch(() => setClasses([]));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [yearId]);
 
   useEffect(() => {
     loadAv();

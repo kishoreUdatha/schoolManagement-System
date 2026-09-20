@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, Select, Table, td, tdStrong } from "@/components/ui/Field";
 import { api, apiError } from "@/lib/api";
+import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { openAuthed } from "@/lib/download";
 
 type Row = {
@@ -28,6 +29,9 @@ type ExamType = { id: number; name: string };
 /** Report cards for one exam + section: remarks, approval, bulk PDF.
  * `mode` decides whether exam setup and approval are offered. */
 export function ReportCards({ mode }: { mode: "admin" | "principal" | "teacher" }) {
+  // Sections come from the year chosen in the top bar. Teachers read their
+  // own classes instead, so this is only consulted in the other two modes.
+  const yearId = useAcademicYear()?.yearId ?? null;
   const [exams, setExams] = useState<Exam[]>([]);
   const [sections, setSections] = useState<SectionOpt[]>([]);
   const [examId, setExamId] = useState("");
@@ -54,21 +58,20 @@ export function ReportCards({ mode }: { mode: "admin" | "principal" | "teacher" 
         .catch(() => setSections([]));
     } else {
       api.get<Exam[]>("/api/v1/school/exams").then((r) => setExams(r.data)).catch((e) => setError(apiError(e)));
-      api
-        .get<{ id: number; is_current: boolean }[]>("/api/v1/school/academic-years")
-        .then(async (y) => {
-          const cur = y.data.find((x) => x.is_current) ?? y.data[0];
-          if (!cur) return;
-          const cs = await api.get<{ id: number; name: string; sections: { id: number; name: string }[] }[]>("/api/v1/school/classes", {
-            params: { academic_year_id: cur.id },
-          });
-          setSections(cs.data.flatMap((c) => c.sections.map((s) => ({ id: s.id, label: `${c.name} ${s.name}` }))));
-        })
-        .catch(() => setSections([]));
+      if (yearId) {
+        api
+          .get<{ id: number; name: string; sections: { id: number; name: string }[] }[]>("/api/v1/school/classes", {
+            params: { academic_year_id: yearId },
+          })
+          .then((cs) =>
+            setSections(cs.data.flatMap((c) => c.sections.map((s) => ({ id: s.id, label: `${c.name} ${s.name}` }))))
+          )
+          .catch(() => setSections([]));
+      }
       api.get<Scale[]>("/api/v1/school/grade-scales").then((r) => setScales(r.data)).catch(() => setScales([]));
       api.get<ExamType[]>("/api/v1/school/exam-types").then((r) => setTypes(r.data)).catch(() => setTypes([]));
     }
-  }, [mode]);
+  }, [mode, yearId]);
 
   const load = () => {
     if (!examId || !sectionId) return setRows([]);

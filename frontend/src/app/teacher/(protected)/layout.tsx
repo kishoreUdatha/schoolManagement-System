@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 
+import { AcademicYearProvider } from "@/components/AcademicYearProvider";
 import { BrandingProvider } from "@/components/BrandingProvider";
 import { PortalShell } from "@/components/PortalShell";
 import { TeacherGuard } from "@/components/TeacherGuard";
@@ -9,14 +10,17 @@ export default function TeacherProtectedLayout({ children }: { children: ReactNo
   return (
     <TeacherGuard>
       <BrandingProvider>
-        <PortalShell
-          noticesHref="/teacher/notices"
-          messagesHref="/teacher/messages"
-          nav={<TeacherNav />}
-          width="max-w-6xl"
-        >
-          {children}
-        </PortalShell>
+        <AcademicYearProvider>
+          <PortalShell
+            showYear
+            noticesHref="/teacher/notices"
+            messagesHref="/teacher/messages"
+            nav={<TeacherNav />}
+            width="max-w-6xl"
+          >
+            {children}
+          </PortalShell>
+        </AcademicYearProvider>
       </BrandingProvider>
     </TeacherGuard>
   );

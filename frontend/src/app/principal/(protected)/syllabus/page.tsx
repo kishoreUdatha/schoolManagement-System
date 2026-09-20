@@ -7,7 +7,7 @@ export default function PrincipalSyllabusPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Syllabus" subtitle="Syllabus progress across classes." />
-      <SyllabusList linkBase="/principal/syllabus" yearPicker />
+      <SyllabusList linkBase="/principal/syllabus" />
     </div>
   );
 }

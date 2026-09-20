@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { ErrorBox, Select, Table, td, tdStrong } from "@/components/ui/Field";
 import { api, apiError } from "@/lib/api";
+import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { cn } from "@/lib/utils";
 
 export type SectionProgress = {
@@ -51,51 +52,30 @@ export function ProgressBar({ p, behind }: { p: SectionProgress; behind?: boolea
   );
 }
 
-/** Class-subjects with per-section progress. Reviewers get a year picker. */
-export function SyllabusList({ linkBase, yearPicker = false }: { linkBase: string; yearPicker?: boolean }) {
-  const [years, setYears] = useState<{ id: number; name: string; is_current: boolean }[]>([]);
-  const [yearId, setYearId] = useState("");
+/** Class-subjects with per-section progress, for the year on the top bar. */
+export function SyllabusList({ linkBase }: { linkBase: string }) {
+  // Admin, principal and teacher all see this, and all three now have the
+  // year picker in the top bar — so it had its own select and a fallback for
+  // principals who could not read the year list, and needs neither.
+  const { yearId, loading } = useAcademicYear() ?? { yearId: null, loading: false };
   const [rows, setRows] = useState<ClassSubjectSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!yearPicker) return;
-    api
-      .get<{ id: number; name: string; is_current: boolean }[]>("/api/v1/school/academic-years")
-      .then((r) => {
-        setYears(r.data);
-        const cur = r.data.find((y) => y.is_current) ?? r.data[0];
-        setYearId(cur ? String(cur.id) : "current");
-      })
-      // Not allowed to list years (principal): fall back to the current year.
-      .catch(() => setYearId("current"));
-  }, [yearPicker]);
-
-  useEffect(() => {
-    if (yearPicker && !yearId) return;
+    // Without a year the server falls back to the current one, which is the
+    // right answer while the list is still arriving.
+    if (loading) return;
     api
       .get<ClassSubjectSummary[]>("/api/v1/school/syllabus", {
-        params: yearId && yearId !== "current" ? { academic_year_id: yearId } : {},
+        params: yearId ? { academic_year_id: yearId } : {},
       })
       .then((r) => setRows(r.data))
       .catch((e) => setError(apiError(e)));
-  }, [yearId, yearPicker]);
+  }, [yearId, loading]);
 
   return (
     <div className="space-y-4">
       <ErrorBox>{error}</ErrorBox>
-      {yearPicker && years.length > 0 && (
-        <div className="max-w-xs">
-          <Select label="Academic year" value={yearId} onChange={(e) => setYearId(e.target.value)}>
-            {years.map((y) => (
-              <option key={y.id} value={y.id}>
-                {y.name}
-                {y.is_current ? " (current)" : ""}
-              </option>
-            ))}
-          </Select>
-        </div>
-      )}
       <Card>
         <Table head={["Class", "Subject", "Teacher", "Syllabus", "Progress by section"]} empty={rows.length === 0 && "No subjects assigned."}>
           {rows.map((r) => (

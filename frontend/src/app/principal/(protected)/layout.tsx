@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 
+import { AcademicYearProvider } from "@/components/AcademicYearProvider";
 import { BrandingProvider } from "@/components/BrandingProvider";
 import { PortalShell } from "@/components/PortalShell";
 import { PrincipalGuard } from "@/components/PrincipalGuard";
@@ -9,13 +10,16 @@ export default function PrincipalProtectedLayout({ children }: { children: React
   return (
     <PrincipalGuard>
       <BrandingProvider>
-        <PortalShell
-          noticesHref="/principal/reports"
-          nav={<PrincipalNav />}
-          width="max-w-6xl"
-        >
-          {children}
-        </PortalShell>
+        <AcademicYearProvider>
+          <PortalShell
+            showYear
+            noticesHref="/principal/reports"
+            nav={<PrincipalNav />}
+            width="max-w-6xl"
+          >
+            {children}
+          </PortalShell>
+        </AcademicYearProvider>
       </BrandingProvider>
     </PrincipalGuard>
   );

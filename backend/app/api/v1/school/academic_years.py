@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import SchoolAdminUser, allow
+from app.core.enums import UserRole
 from app.database import get_db
+from app.models.user import User
 from app.schemas.academic_year import (
     AcademicYearCreate,
     AcademicYearRead,
@@ -15,6 +17,23 @@ from app.services import academic_year_service
 
 
 router = APIRouter()
+
+# Reading which years the school has is not an administrative act: a teacher
+# picking last year's register needs the list, and it names nothing a person
+# who works in the building does not already know. Creating, archiving and
+# setting the current year stay with the school admin, below.
+AnyStaff = Annotated[
+    User,
+    Depends(
+        allow(
+            UserRole.school_admin,
+            UserRole.principal,
+            UserRole.teacher,
+            UserRole.accountant,
+            UserRole.staff,
+        )
+    ),
+]
 
 
 @router.post(
@@ -43,7 +62,7 @@ def create(
     summary="List academic years for this school",
 )
 def list_(
-    current_user: SchoolAdminUser,
+    current_user: AnyStaff,
     db: Annotated[Session, Depends(get_db)],
     include_archived: bool = Query(False),
 ):
@@ -56,7 +75,7 @@ def list_(
 @router.get("/{year_id}", response_model=AcademicYearRead)
 def get(
     year_id: int,
-    current_user: SchoolAdminUser,
+    current_user: AnyStaff,
     db: Annotated[Session, Depends(get_db)],
 ):
     year = academic_year_service.get_year(db, year_id, current_user.school_id)
