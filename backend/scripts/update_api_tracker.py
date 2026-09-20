@@ -224,7 +224,7 @@ MAP = {
                        "PUT /school/fees/late-fee-rules/{id}", get_via_list=True),
     "payments": {
         **crud("GET /school/accounts/collections; GET /school/payments/online", "POST /school/fees/student-fees/{id}/record-payment",
-               (P, "GET /school/payments/online/{id}/receipt.pdf", "Via receipt"), (NA, "", "Payments are reversed, not edited")),
+               "GET /school/accounts/collections/{id}", (NA, "", "Payments are reversed, not edited")),
         "create-intent": (D, "POST /parent/me/children/{id}/fees/pay", "Razorpay order"),
         "confirm": (D, "POST /parent/me/children/{id}/fees/pay/verify; POST /public/payments/razorpay/{school_id}/webhook", ""),
         "reconcile": (P, "POST /public/payments/razorpay/{school_id}/webhook", "Webhook settles late payments; no report"),
@@ -302,8 +302,9 @@ MAP = {
     },
     "reservations": crud("GET /school/library/reservations", "POST /school/library/reservations", None,
                          (P, "POST /school/library/reservations/{id}/cancel", "Cancel only"), get_via_list=True),
-    "library_fines": crud((P, "GET /school/library/loans", "Fines shown on loans"), "POST /school/library/loans/{id}/fine",
-                          (P, "GET /school/library/loans", ""), (P, "POST /school/library/loans/{id}/fine", "Collect / waive")),
+    "library_fines": crud("GET /school/library/fines", "POST /school/library/loans/{id}/fine",
+                          "GET /school/library/fines/{id}",
+                          (D, "PATCH /school/library/fines/{id}", "Correct while owed; frozen once settled")),
     # ---------------- Hostel ----------------
     "hostels": crud("GET /school/hostels", "POST /school/hostels", None, "PUT /school/hostels/{id}", get_via_list=True),
     "hostel_rooms": crud("GET /school/hostels/{id}/rooms", "POST /school/hostels/{id}/rooms", None, "PATCH /school/hostels/rooms/{id}",
@@ -319,7 +320,7 @@ MAP = {
                             "POST /school/hostels/outings; POST /parent/me/children/{id}/hostel/outings", None,
                             "POST /school/hostels/outings/{id}/decide | out | returned", get_via_list=True),
     # ---------------- Health, Counselling & Discipline ----------------
-    "medical_profiles": crud((P, "GET /school/health/alerts", "Alert list only"), "PUT /school/health/students/{id}/profile",
+    "medical_profiles": crud("GET /school/health/profiles", "PUT /school/health/students/{id}/profile",
                              "GET /school/health/students/{id}", "PUT /school/health/students/{id}/profile; PUT /parent/me/children/{id}/health/profile"),
     "clinic_visits": crud("GET /school/health/visits", "POST /school/health/visits", None, (P, "DELETE /school/health/visits/{id}", "Delete only"),
                           get_via_list=True),
@@ -354,8 +355,8 @@ MAP = {
     },
     "assets": crud("GET /school/inventory/assets", "POST /school/inventory/assets", "GET /school/inventory/assets/{id}",
                    "PATCH /school/inventory/assets/{id}"),
-    "asset_assignments": crud((P, "GET /school/inventory/assets/{id}", "History inside the asset"), "POST /school/inventory/assets/{id}/events",
-                              (P, "GET /school/inventory/assets/{id}", ""), (NA, "", "Recorded as events")),
+    "asset_assignments": crud("GET /school/inventory/assignments", "POST /school/inventory/assets/{id}/events",
+                              "GET /school/inventory/assignments/{id}", (NA, "", "Ended by a return, not edited")),
     "labs": crud("GET /school/labs", "POST /school/labs", None, "PUT /school/labs/{id}", get_via_list=True),
     "lab_bookings": crud("GET /school/lab-bookings", "POST /school/lab-bookings", None,
                          (D, "POST /school/lab-bookings/{id}/cancel", "Cancel; rebook for a change"), get_via_list=True),
@@ -394,9 +395,9 @@ MAP = {
         "run": (D, "POST /school/report-definitions/{id}/export; GET /school/exports/*.csv", "Saved reports, plus the fixed exports"),
         "download": (D, "GET /school/export-jobs/{id}/file", ""),
     },
-    "system_settings": crud((P, "GET /school/profile; GET /school/library/settings; GET /school/payroll/settings", "Per-module settings"),
+    "system_settings": crud("GET /school/settings",
                             (NA, "", ""), "GET /school/profile", "PATCH /school/profile; PATCH /school/library/settings; PATCH /school/payroll/settings"),
-    "integration_configs": crud((P, "GET /school/payments/gateway", "Payment gateway only"), "PUT /school/payments/gateway",
+    "integration_configs": crud("GET /school/integrations", "PUT /school/payments/gateway",
                                 "GET /school/payments/gateway", "PUT /school/payments/gateway"),
     "import_jobs": {
         **crud("GET /school/import-jobs", "POST /school/import-jobs", "GET /school/import-jobs/{id}",
@@ -412,6 +413,10 @@ MAP = {
 # API-X### rows (Release = "Added"), rebuilt on every run.
 # (module, resource, operation, method, path, purpose, roles)
 EXTRA = [
+    ("Library", "library_fines", "Action", "GET", "/school/library/fines", "Outstanding, collected and waived totals with the fines behind them", "School Admin"),
+    ("Inventory, Assets & Labs", "asset_assignments", "Action", "GET", "/school/inventory/assignments", "Who has what, and who had it before", "School Admin, Store keeper"),
+    ("Health & Wellness", "medical_profiles", "Action", "GET", "/school/health/profiles", "The health register, including children with nothing on file", "School Admin"),
+    ("Reports, Settings & Audit", "system_settings", "Action", "GET", "/school/integrations", "Outside services the school is wired to", "School Admin"),
     ("Examinations & Results", "results", "Action", "GET", "/school/result-decisions", "Results the school has withheld, graced or failed", "School Admin, Principal, exams.approve_results"),
     ("Examinations & Results", "results", "Delete", "DELETE", "/school/result-decisions/{id}", "Lift the decision; the computed result comes back", "School Admin, Principal, exams.approve_results"),
     ("Reports, Settings & Audit", "report_definitions", "Action", "GET", "/school/report-sources", "What a report can be built on, with its columns and filters", "School Admin"),

@@ -302,6 +302,78 @@ def list_assets(db: Session, school_id: int, *, q: Optional[str] = None, status_
     return list(db.execute(stmt.order_by(Asset.asset_tag)).scalars())
 
 
+def list_assignments(db: Session, school_id: int, *, user_id: Optional[int] = None,
+                     asset_id: Optional[int] = None, open_only: bool = False,
+                     limit: int = 300) -> list[dict]:
+    """Who has been given what, across every asset.
+
+    An assignment isn't a row of its own — it is the "assigned" event plus
+    whatever ended it (a return, a disposal, or being handed to someone else). This walks each asset's
+    events in order and pairs them up, so the office can answer "what is out,
+    and who has had this laptop?" without opening assets one at a time.
+    """
+    stmt = (
+        select(AssetEvent, Asset)
+        .join(Asset, Asset.id == AssetEvent.asset_id)
+        .where(Asset.school_id == school_id)
+        .order_by(AssetEvent.asset_id, AssetEvent.happened_on, AssetEvent.id)
+    )
+    if asset_id:
+        stmt = stmt.where(AssetEvent.asset_id == asset_id)
+    rows = list(db.execute(stmt))
+
+    # a move only changes where the thing is, not who holds it
+    ENDINGS = {AssetEventKind.returned, AssetEventKind.disposed}
+    open_by_asset: dict[int, dict] = {}
+    out: list[dict] = []
+    for event, asset in rows:
+        if event.kind == AssetEventKind.assigned:
+            if event.asset_id in open_by_asset:  # reassigned without a return
+                prev = open_by_asset.pop(event.asset_id)
+                prev.update(returned_on=event.happened_on, ended_by="reassigned")
+                out.append(prev)
+            who = db.get(User, event.to_user_id) if event.to_user_id else None
+            open_by_asset[event.asset_id] = {
+                "asset_id": asset.id,
+                "asset_tag": asset.asset_tag,
+                "asset_name": asset.name,
+                "event_id": event.id,
+                "user_id": event.to_user_id,
+                "user_name": who.full_name if who else None,
+                "assigned_on": event.happened_on,
+                "returned_on": None,
+                "ended_by": None,
+                "location": event.location,
+                "notes": event.notes,
+            }
+        elif event.kind in ENDINGS and event.asset_id in open_by_asset:
+            row = open_by_asset.pop(event.asset_id)
+            row.update(returned_on=event.happened_on, ended_by=event.kind.value)
+            out.append(row)
+    out.extend(open_by_asset.values())
+
+    if user_id:
+        out = [r for r in out if r["user_id"] == user_id]
+    if open_only:
+        out = [r for r in out if r["returned_on"] is None]
+    out.sort(key=lambda r: (r["returned_on"] is not None, r["assigned_on"]), reverse=True)
+    return out[:limit]
+
+
+def get_assignment(db: Session, event_id: int, school_id: int) -> dict:
+    """One assignment, found by the event that started it."""
+    event = db.get(AssetEvent, event_id)
+    if not event or event.kind != AssetEventKind.assigned:
+        raise _404("Assignment")
+    asset = db.get(Asset, event.asset_id)
+    if not asset or asset.school_id != school_id:
+        raise _404("Assignment")
+    for row in list_assignments(db, school_id, asset_id=asset.id, limit=1000):
+        if row["event_id"] == event_id:
+            return row
+    raise _404("Assignment")
+
+
 # --- Store ---
 
 def _next_bill_no(db: Session, school_id: int, on: date) -> str:

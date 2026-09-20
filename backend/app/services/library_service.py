@@ -33,6 +33,7 @@ from app.schemas.library import (
     CopiesAdd,
     CopyUpdate,
     FineAction,
+    FineCorrection,
     IssueRequest,
     LibrarySettingsUpdate,
     LostRequest,
@@ -790,3 +791,95 @@ def child_loans(db: Session, parent_user_id: int, student_id: int) -> list[Loan]
 
 def my_loans(db: Session, user_id: int) -> list[Loan]:
     return list(db.execute(select(Loan).where(Loan.user_id == user_id).order_by(Loan.issued_on.desc()).limit(100)).scalars())
+
+
+# --- Fines as a register of their own ---
+
+
+def fine_to_read(db: Session, l: Loan) -> dict:
+    """A loan seen as a fine: what is owed, by whom, and how it stands."""
+    copy = db.get(BookCopy, l.copy_id)
+    book = db.get(Book, copy.book_id)
+    name, _ = _borrower_name(db, l)
+    ended = l.returned_on or l.lost_on or date.today()
+    return {
+        "loan_id": l.id,
+        "accession_no": copy.accession_no,
+        "title": book.title,
+        "borrower_type": l.borrower_type,
+        "borrower_name": name,
+        "student_id": l.student_id,
+        "user_id": l.user_id,
+        "issued_on": l.issued_on,
+        "due_on": l.due_on,
+        "returned_on": l.returned_on,
+        "overdue_days": max((ended - l.due_on).days, 0),
+        "amount": l.fine_amount,
+        "status": l.fine_status,
+        "note": l.fine_note,
+    }
+
+
+def list_fines(
+    db: Session,
+    school_id: int,
+    *,
+    fine_status: Optional[FineStatus] = None,
+    student_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    limit: int = 300,
+) -> dict:
+    """Every fine the library has raised, with what is still outstanding."""
+    stmt = select(Loan).where(Loan.school_id == school_id, Loan.fine_status != FineStatus.none)
+    if fine_status:
+        stmt = stmt.where(Loan.fine_status == fine_status)
+    if student_id:
+        stmt = stmt.where(Loan.student_id == student_id)
+    if user_id:
+        stmt = stmt.where(Loan.user_id == user_id)
+    loans = list(db.execute(stmt.order_by(Loan.fine_status, Loan.due_on).limit(limit)).scalars())
+
+    totals = {FineStatus.pending: ZERO, FineStatus.paid: ZERO, FineStatus.waived: ZERO, FineStatus.billed: ZERO}
+    for row in db.execute(
+        select(Loan.fine_status, func.coalesce(func.sum(Loan.fine_amount), 0))
+        .where(Loan.school_id == school_id, Loan.fine_status != FineStatus.none)
+        .group_by(Loan.fine_status)
+    ):
+        totals[row[0]] = Decimal(row[1])
+    pending = db.execute(
+        select(func.count(Loan.id)).where(
+            Loan.school_id == school_id, Loan.fine_status == FineStatus.pending
+        )
+    ).scalar_one()
+    return {
+        "pending": pending,
+        "pending_amount": totals[FineStatus.pending],
+        "collected_amount": totals[FineStatus.paid],
+        "waived_amount": totals[FineStatus.waived],
+        "billed_amount": totals[FineStatus.billed],
+        "fines": [fine_to_read(db, l) for l in loans],
+    }
+
+
+def get_fine(db: Session, loan_id: int, school_id: int) -> dict:
+    loan = _loan(db, loan_id, school_id)
+    if loan.fine_status == FineStatus.none:
+        raise _404("Fine")
+    return fine_to_read(db, loan)
+
+
+def correct_fine(db: Session, loan_id: int, school_id: int, data: FineCorrection) -> dict:
+    """Change the amount or note while the fine is still owed. Once it has been
+    collected, waived or billed to the fees, it is history and stays put."""
+    loan = _loan(db, loan_id, school_id)
+    if loan.fine_status != FineStatus.pending:
+        raise _400(
+            f"This fine is already {loan.fine_status.value} — it can't be changed now"
+        )
+    if data.amount is not None:
+        loan.fine_amount = data.amount
+    if data.note is not None:
+        loan.fine_note = data.note.strip() or None
+    db.commit()
+    db.refresh(loan)
+    return fine_to_read(db, loan)

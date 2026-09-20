@@ -201,6 +201,59 @@ def health_record(db: Session, student: Student) -> dict:
     }
 
 
+def list_profiles(db: Session, school_id: int, *, section_id: Optional[int] = None,
+                  with_profile_only: bool = False, search: Optional[str] = None) -> list[dict]:
+    """Every child and what the school knows about their health.
+
+    The alerts list only shows children staff must be warned about; this shows
+    the whole roster, including the ones with nothing recorded yet, so the
+    office can see the gaps rather than assume silence means healthy.
+    """
+    stmt = (
+        select(Student, MedicalProfile)
+        .join(MedicalProfile, MedicalProfile.student_id == Student.id, isouter=True)
+        .where(Student.school_id == school_id, Student.is_active.is_(True))
+        .order_by(Student.full_name)
+    )
+    if section_id:
+        stmt = stmt.where(Student.section_id == section_id)
+    if with_profile_only:
+        stmt = stmt.where(MedicalProfile.id.is_not(None))
+    if search:
+        like = f"%{search.strip()}%"
+        stmt = stmt.where(or_(Student.full_name.ilike(like), Student.admission_no.ilike(like)))
+    rows = db.execute(stmt).all()
+    labels = section_labels(db, {s.section_id for s, _ in rows})
+    out = []
+    for student, profile in rows:
+        flags = [
+            label for label, value in (
+                ("allergies", getattr(profile, "allergies", None)),
+                ("conditions", getattr(profile, "chronic_conditions", None)),
+                ("medication", getattr(profile, "current_medications", None)),
+                ("dietary", getattr(profile, "dietary_restrictions", None)),
+                ("disabilities", getattr(profile, "disabilities", None)),
+            ) if (value or "").strip()
+        ]
+        out.append({
+            "student_id": student.id,
+            "admission_no": student.admission_no,
+            "student_name": student.full_name,
+            "section_label": labels.get(student.section_id),
+            "blood_group": student.blood_group,
+            "has_profile": profile is not None,
+            "flags": flags,
+            "allergies": getattr(profile, "allergies", None),
+            "chronic_conditions": getattr(profile, "chronic_conditions", None),
+            "current_medications": getattr(profile, "current_medications", None),
+            "emergency_contact_name": getattr(profile, "emergency_contact_name", None),
+            "emergency_contact_phone": getattr(profile, "emergency_contact_phone", None),
+            "doctor_name": getattr(profile, "doctor_name", None),
+            "updated_at": getattr(profile, "updated_at", None),
+        })
+    return out
+
+
 def alerts(db: Session, school_id: int, *, section_id: Optional[int] = None) -> list[dict]:
     """Students whose allergies / conditions / medication staff should know about."""
     stmt = (

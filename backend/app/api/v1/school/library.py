@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import SchoolAdminUser
+from app.core.enums import FineStatus
 from app.database import get_db
 from app.schemas.library import (
     BookCreate,
@@ -14,6 +15,9 @@ from app.schemas.library import (
     CopyRead,
     CopyUpdate,
     FineAction,
+    FineCorrection,
+    FineRead,
+    FineSummary,
     IssueRequest,
     LibraryDashboard,
     LibrarySettingsRead,
@@ -157,6 +161,29 @@ def lost(loan_id: int, payload: LostRequest, current_user: SchoolAdminUser, db: 
     return LoanRead.model_validate(
         svc.loan_to_read(db, svc.mark_lost(db, loan_id, current_user.school_id, current_user.id, payload))
     )
+
+
+@router.get("/fines", response_model=FineSummary, summary="Every fine raised, and what is still owed")
+def list_fines(
+    current_user: SchoolAdminUser,
+    db: Db,
+    fine_status: Optional[FineStatus] = Query(None, alias="status"),
+    student_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+):
+    return svc.list_fines(
+        db, current_user.school_id, fine_status=fine_status, student_id=student_id, user_id=user_id
+    )
+
+
+@router.get("/fines/{loan_id}", response_model=FineRead)
+def get_fine(loan_id: int, current_user: SchoolAdminUser, db: Db):
+    return svc.get_fine(db, loan_id, current_user.school_id)
+
+
+@router.patch("/fines/{loan_id}", response_model=FineRead, summary="Correct a fine that hasn't been settled")
+def correct_fine(loan_id: int, payload: FineCorrection, current_user: SchoolAdminUser, db: Db):
+    return svc.correct_fine(db, loan_id, current_user.school_id, payload)
 
 
 @router.post("/loans/{loan_id}/fine", response_model=LoanRead, summary="Collect, waive or add a fine to the student's fees")

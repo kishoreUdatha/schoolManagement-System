@@ -366,6 +366,27 @@ def collections(db: Session, school_id: int, frm: date, to: date, *, mode: Optio
     ]
 
 
+def collection(db: Session, school_id: int, collection_id: int) -> dict:
+    """One receipt, without having to know the day it was taken."""
+    row = db.execute(
+        select(FeeCollection, StudentFee, FeeHead, Student)
+        .join(StudentFee, FeeCollection.student_fee_id == StudentFee.id)
+        .join(FeeHead, StudentFee.fee_head_id == FeeHead.id)
+        .join(Student, FeeCollection.student_id == Student.id)
+        .where(FeeCollection.school_id == school_id, FeeCollection.id == collection_id)
+    ).first()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+    c, sf, h, s = row
+    who = db.get(User, c.collected_by_user_id) if c.collected_by_user_id else None
+    return {
+        "id": c.id, "receipt_no": c.receipt_no, "collected_on": c.collected_on, "student_id": s.id,
+        "student_name": s.full_name, "section_label": section_labels(db, {s.section_id}).get(s.section_id),
+        "fee_head_name": h.name, "period": sf.period, "amount": c.amount, "mode": c.mode,
+        "reference": c.reference, "collected_by_name": who.full_name if who else None,
+    }
+
+
 def cash_book(db: Session, school_id: int, frm: date, to: date) -> dict:
     if to < frm:
         raise _400("'to' is before 'from'")

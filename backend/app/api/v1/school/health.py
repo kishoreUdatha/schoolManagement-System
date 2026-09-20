@@ -10,6 +10,7 @@ from app.core.scoping import get_school_student, section_label
 from app.database import get_db
 from app.models.health import ClinicVisit, HealthCheckup, Immunization
 from app.schemas.health import (
+    ProfileRow,
     AlertRow,
     CheckupIn,
     CheckupRead,
@@ -32,6 +33,21 @@ Db = Annotated[Session, Depends(get_db)]
 @router.get("/dashboard", response_model=HealthDashboard)
 def dashboard(current_user: SchoolAdminUser, db: Db):
     return HealthDashboard.model_validate(svc.dashboard(db, current_user.school_id))
+
+
+@router.get("/profiles", response_model=list[ProfileRow],
+            summary="The health register: every child, and what is on file")
+def profiles(
+    current_user: SchoolAdminUser,
+    db: Db,
+    section_id: Optional[int] = Query(None),
+    with_profile_only: bool = Query(False),
+    search: Optional[str] = Query(None),
+):
+    return svc.list_profiles(
+        db, current_user.school_id, section_id=section_id,
+        with_profile_only=with_profile_only, search=search,
+    )
 
 
 @router.get("/alerts", response_model=list[AlertRow], summary="Students with allergies, conditions or medication")

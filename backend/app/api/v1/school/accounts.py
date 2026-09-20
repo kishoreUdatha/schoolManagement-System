@@ -137,6 +137,11 @@ def collections(
     return [CollectionRead.model_validate(c) for c in svc.collections(db, current_user.school_id, f, t, mode=mode, student_id=student_id)]
 
 
+@router.get("/collections/{collection_id}", response_model=CollectionRead, summary="One receipt by id")
+def collection(collection_id: int, current_user: Actor, db: Db):
+    return CollectionRead.model_validate(svc.collection(db, current_user.school_id, collection_id))
+
+
 @router.get("/cash-book", response_model=CashBook, summary="Money in and out for a period")
 def cash_book(current_user: Actor, db: Db, frm: Optional[date] = Query(None, alias="from"), to: Optional[date] = Query(None)):
     f, t = _range(frm, to)

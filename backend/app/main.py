@@ -61,6 +61,7 @@ from app.api.v1.school import (
     datadesk as school_datadesk,
     registers as school_registers,
     result_overrides as school_result_overrides,
+    settings_index as school_settings_index,
     rubrics as school_rubrics,
     report_cards as school_report_cards,
     sections as school_sections,
@@ -818,6 +819,12 @@ app.include_router(
     school_registers.router,
     prefix="/api/v1/school",
     tags=["school / attendance registers, visitors"],
+)
+
+app.include_router(
+    school_settings_index.router,
+    prefix="/api/v1/school",
+    tags=["school / settings, integrations"],
 )
 
 app.include_router(

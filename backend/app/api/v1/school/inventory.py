@@ -8,6 +8,7 @@ from app.core.deps import SchoolAdminOrAccountant
 from app.core.enums import AssetStatus
 from app.database import get_db
 from app.schemas.inventory import (
+    AssignmentRead,
     AssetDetail,
     AssetEventIn,
     AssetIn,
@@ -106,6 +107,25 @@ def assets(
 @router.post("/assets", response_model=AssetDetail, status_code=status.HTTP_201_CREATED)
 def create_asset(payload: AssetIn, current_user: Actor, db: Db):
     return AssetDetail.model_validate(svc.asset_to_read(db, svc.create_asset(db, current_user, payload), with_events=True))
+
+
+@router.get("/assignments", response_model=list[AssignmentRead],
+            summary="Who has been given what, across every asset")
+def assignments(
+    current_user: Actor,
+    db: Db,
+    user_id: Optional[int] = None,
+    asset_id: Optional[int] = None,
+    open_only: bool = False,
+):
+    return svc.list_assignments(
+        db, current_user.school_id, user_id=user_id, asset_id=asset_id, open_only=open_only
+    )
+
+
+@router.get("/assignments/{event_id}", response_model=AssignmentRead)
+def assignment(event_id: int, current_user: Actor, db: Db):
+    return svc.get_assignment(db, event_id, current_user.school_id)
 
 
 @router.get("/assets/{asset_id}", response_model=AssetDetail)

@@ -190,3 +190,37 @@ class LibraryDashboard(BaseModel):
     reservations_ready: int
     fines_pending: Decimal
     top_borrowed: list[dict]
+
+
+class FineCorrection(BaseModel):
+    """Correct a fine that hasn't been settled yet — a loan the office decides
+    was mis-priced, or a note the librarian wants on the record."""
+
+    amount: Optional[Decimal] = Field(None, ge=0, le=100000)
+    note: Optional[str] = Field(None, max_length=300)
+
+
+class FineRead(BaseModel):
+    loan_id: int
+    accession_no: str
+    title: str
+    borrower_type: BorrowerType
+    borrower_name: str
+    student_id: Optional[int] = None
+    user_id: Optional[int] = None
+    issued_on: date
+    due_on: date
+    returned_on: Optional[date] = None
+    overdue_days: int
+    amount: Decimal
+    status: FineStatus
+    note: Optional[str] = None
+
+
+class FineSummary(BaseModel):
+    pending: int
+    pending_amount: Decimal
+    collected_amount: Decimal
+    waived_amount: Decimal
+    billed_amount: Decimal
+    fines: list[FineRead]

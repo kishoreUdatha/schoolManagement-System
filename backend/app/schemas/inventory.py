@@ -206,3 +206,19 @@ class InventoryDashboard(BaseModel):
     warranty_expiring: int
     store_sales_today: Decimal
     store_sales_month: Decimal
+
+
+class AssignmentRead(BaseModel):
+    """One spell of an asset being in someone's hands."""
+
+    asset_id: int
+    asset_tag: str
+    asset_name: str
+    event_id: int
+    user_id: Optional[int]
+    user_name: Optional[str]
+    assigned_on: date
+    returned_on: Optional[date]
+    ended_by: Optional[str]
+    location: Optional[str]
+    notes: Optional[str]

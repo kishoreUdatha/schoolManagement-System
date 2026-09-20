@@ -120,3 +120,22 @@ class HealthDashboard(BaseModel):
     students_with_alerts: int
     immunizations_due: int
     follow_ups_due: int
+
+
+class ProfileRow(BaseModel):
+    """A child on the health register — including one with nothing recorded."""
+
+    student_id: int
+    admission_no: str
+    student_name: str
+    section_label: Optional[str] = None
+    blood_group: Optional[str] = None
+    has_profile: bool
+    flags: list[str] = []
+    allergies: Optional[str] = None
+    chronic_conditions: Optional[str] = None
+    current_medications: Optional[str] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    doctor_name: Optional[str] = None
+    updated_at: Optional[datetime] = None
