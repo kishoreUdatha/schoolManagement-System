@@ -64,3 +64,14 @@ export function daysLeft(iso: string | null | undefined): number | null {
   const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   return Math.round((then - midnight) / 86_400_000);
 }
+
+/** A Date as "YYYY-MM-DD", which is what <input type="date"> wants.
+ *
+ *  The inverse of localDate. Built from the local parts rather than
+ *  toISOString(), which converts to UTC first and so hands back yesterday
+ *  for anyone east of Greenwich after their afternoon.
+ */
+export function toIso(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}

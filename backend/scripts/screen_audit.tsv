@@ -21,13 +21,13 @@ SCR-017	Missing	Missing	-	No ticketing anywhere
 SCR-018	Partial	Partial	/	Online pill only, two health endpoints
 SCR-019	Missing	Missing	-	No global announcements
 SCR-020	Missing	Missing	-	No platform settings screen
-SCR-021	Partial	Done	/super-admin/tenants/[id]	Read-only header; patch endpoint unused
-SCR-022	Partial	Partial	/super-admin/tenants/[id]	Name and code list only
+SCR-021	Done	Done	/super-admin/schools	Organisation editable via the tenant patch
+SCR-022	Done	Done	/super-admin/schools	Searchable list with status and contact
 SCR-023	Partial	Partial	/super-admin/tenants	School only creatable with a new tenant
 SCR-024	Done	Done	/school/profile	Identity, contacts, address, timezone, currency
 SCR-025	Done	Done	/school/roles	Branches table with head and counts
 SCR-026	Done	Done	/school/roles	Inline branch form with head and main flag
-SCR-027	Partial	Done	/school/roles	Edit form, no branch detail page
+SCR-027	Done	Done	/school/branches/[id]	Branch with its sections and staff
 SCR-028	Done	Done	/school/academic-years	Create, set current, archive, terms
 SCR-029	Done	Done	/school/classes	Create, rename, delete, reorder
 SCR-030	Done	Done	/school/classes	Sections plus subject and teacher assignment
@@ -111,14 +111,14 @@ SCR-107	Done	Done	/school/facilities	Rooms with building, floor, kind, capacity
 SCR-108	Done	Done	/school/calendar	Events, holidays, exams and PTM in one feed
 SCR-109	Missing	Missing	-	No activity or club register
 SCR-110	Done	Done	/teacher/attendance	Roster, statuses, bulk set, edit window
-SCR-111	Missing	Missing	-	Attendance keyed by section and date only
-SCR-112	Partial	Done	/school/reports/attendance	Matrix is an admin tab; teachers have none
-SCR-113	Partial	Partial	/school/attendance-registers	Reopen only; no per-student correction request
+SCR-111	Done	Done	/school/attendance/periods	Lesson marks seeded from the day, never overwriting it
+SCR-112	Done	Done	/school/attendance/periods	Roster grid with the day register showing through
+SCR-113	Done	Done	/school/attendance/corrections	Only an approved request moves the register
 SCR-114	Done	Done	/parent/children/[id]/leave	Apply and history, parent-initiated
 SCR-115	Done	Done	/school/student-leaves	Approve or reject with note
-SCR-116	Partial	Partial	/school/front-desk	Gate passes cover exit, not late entry
-SCR-117	Partial	Done	/school/reports/attendance	One tab of three, with CSV
-SCR-118	Missing	Missing	-	No threshold, at-risk list or contact log
+SCR-116	Done	Done	/school/attendance/times	Late in and early out on the day row, repeat count shown
+SCR-117	Done	Done	/school/attendance/monthly	Its own page with the CSV
+SCR-118	Done	Done	/school/attendance/at-risk	At-risk list paired with who has rung home
 SCR-119	Done	Done	/school/reports/attendance	Daily, class and student views with CSV
 SCR-120	Partial	Partial	/school/timetable	Only a clashes panel, no dashboard stats
 SCR-121	Partial	Partial	/school/timetable	Grid assigns subject; entries carry no room
@@ -206,12 +206,12 @@ SCR-202	Done	Done	/school/library	Borrower and accession scan with due date
 SCR-203	Done	Done	/school/library	Return with damage flag and fine
 SCR-204	Done	Done	/school/library/reservations	Renew, reserve, queue and holds
 SCR-205	Done	Done	/school/library	Collect, waive, bill; lost and damaged
-SCR-206	Partial	Partial	/school/library/catalogue	A URL field only; no reader or entitlements
-SCR-207	Partial	Partial	/school/library	Stat tiles only; no date range or export
+SCR-206	Done	Done	/school/library/digital	A catalogue of links, stated as such; no reader exists
+SCR-207	Done	Done	/school/library/reports	Date-ranged issues, returns and fines
 SCR-208	Done	Done	/school/hostel	Hostel cards with kind, warden, fee, curfew
 SCR-209	Done	Done	/school/hostel	Rooms with bed count and occupancy grid
-SCR-210	Partial	Done	/school/hostel	Bed by bed only; no allocation register
-SCR-211	Partial	Partial	/school/hostel	Single warden field, no duty roster
+SCR-210	Done	Done	/school/hostel/allocations	Register with transfer and vacate
+SCR-211	Done	Partial	/school/hostel/wardens	Warden per hostel and their open work; no rota model exists
 SCR-212	Done	Done	/school/hostel	Morning and night roll call
 SCR-213	Done	Done	/school/hostel	Request, approve, signed out, returned
 SCR-214	Done	Done	/school/hostel	Seven-day, four-meal editable grid
@@ -229,23 +229,23 @@ SCR-225	Partial	Partial	/school/health	Contacts shown; no escalation chain
 SCR-226	Done	Done	/school/front-desk	Six stat cards including inside now
 SCR-227	Done	Done	/school/front-desk	Walk-in check-in with ID and host
 SCR-228	Done	Done	/school/front-desk	Host confirms or declines an expected visitor
-SCR-229	Partial	Partial	/school/front-desk	Pass number shown, nothing printable
+SCR-229	Done	Done	/school/front-desk/passes	Printable pass with a print-only stylesheet
 SCR-230	Done	Done	/school/front-desk	Check out with minutes inside
 SCR-231	Done	Done	/school/front-desk	Issue, approve, verify code, release
-SCR-232	Partial	Partial	/school/front-desk	Vehicle captured; no staff gate log
+SCR-232	Done	Partial	/school/front-desk/staff-log	Vehicle gate log; a visit cannot say the arriver is staff
 SCR-233	Done	Done	/school/front-desk	Log with time, place, severity, closure
 SCR-234	Done	Done	/school/inventory	Dashboard tiles, low stock, warranty list
 SCR-235	Done	Done	/school/inventory	Item list, search, SKU, reorder level
-SCR-236	Partial	Partial	/school/inventory	One item at a time; no multi-line receipt
-SCR-237	Partial	Done	/school/inventory	Free-text issued-to; no requisition register
+SCR-236	Done	Done	/school/inventory/receipts	Multi-line receipt; says lines are recorded individually
+SCR-237	Done	Done	/school/inventory/issues	Issue and return register over free-text issued-to
 SCR-238	Done	Done	/school/inventory	Supplier CRUD with contact and GSTIN
 SCR-239	Done	Done	/school/inventory	Tag, serial, status, cost, warranty, history
 SCR-240	Done	Done	/school/inventory	Assignments tab: what is out and with whom
-SCR-241	Partial	Partial	/school/inventory	Logs repairs; no schedule or AMC tracking
+SCR-241	Done	Partial	/school/inventory/maintenance	Repair log and warranty; no schedule field exists
 SCR-242	Done	Done	/school/facilities	Lab CRUD with room, subject, in-charge
-SCR-243	Partial	Missing	/school/facilities	Equipment is free text; no items or stock
+SCR-243	Done	Partial	/school/inventory/labs	Equipment is free text; says so and points at the store
 SCR-244	Done	Done	/school/facilities	Period grid, book, cancel, my bookings
-SCR-245	Partial	Partial	/school/inventory	Tiles and ledger; no date-range report
+SCR-245	Done	Done	/school/inventory/reports	Windowed stock and asset report with charts
 SCR-246	Done	Done	/school/calendar	Month grid and agenda across sources
 SCR-247	Done	Done	/school/events	Kind, dates, venue, audience, consent
 SCR-248	Partial	Partial	/school/events	Consent roster only; no attendance

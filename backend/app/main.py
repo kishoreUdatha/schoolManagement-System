@@ -24,6 +24,7 @@ from app.api.v1.school import (
     analytics as school_analytics,
     applications as school_applications,
     approvals as school_approvals,
+    attendance_ops as school_attendance_ops,
     attendance_reports as school_attendance_reports,
     audit_log as school_audit_log,
     auth as school_auth,
@@ -474,6 +475,11 @@ app.include_router(
     school_staff_attendance.router,
     prefix="/api/v1/school/staff-attendance",
     tags=["school / staff attendance"],
+)
+app.include_router(
+    school_attendance_ops.router,
+    prefix="/api/v1/school/attendance-ops",
+    tags=["school / attendance ops"],
 )
 app.include_router(
     school_attendance_reports.router,

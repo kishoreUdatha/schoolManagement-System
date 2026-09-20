@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CreditCard, LayoutDashboard } from "lucide-react";
+import { Building2, CreditCard, LayoutDashboard, School } from "lucide-react";
 
 import { Sidebar, type NavSection } from "@/components/Sidebar";
 
@@ -10,6 +10,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/super-admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
       { href: "/super-admin/tenants", label: "Tenants", icon: Building2 },
+      { href: "/super-admin/schools", label: "Schools", icon: School },
       { href: "/super-admin/plans", label: "Plans", icon: CreditCard },
     ],
   },

@@ -20,6 +20,11 @@ from app.models.application import (
 )
 from app.models.approval import ApprovalRequest
 from app.models.audit import AuditLog
+from app.models.attendance_ops import (
+    AbsenceContact,
+    AttendanceCorrection,
+    PeriodAttendance,
+)
 from app.models.attendance import StudentAttendance
 from app.models.behaviour import BehaviourRating
 from app.models.cover import StudentLeave, Substitution, TeacherUnavailability

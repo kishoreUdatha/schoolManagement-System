@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 from typing import Optional
 
 from sqlalchemy import (
@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     String,
+    Time,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -49,6 +50,12 @@ class StudentAttendance(Base, PrimaryKeyMixin, TimestampMixin):
         SAEnum(AttendanceStatus, name="attendance_status"), nullable=False
     )
     remark: Mapped[Optional[str]] = mapped_column(String(300))
+    # A child who arrived at half nine was still present that morning, so
+    # the time sits on the day's row rather than in a table of its own —
+    # two records of one arrival is how a register and a gate log start
+    # disagreeing about the same child.
+    arrived_at: Mapped[Optional[time]] = mapped_column(Time)
+    left_at: Mapped[Optional[time]] = mapped_column(Time)
     marked_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )

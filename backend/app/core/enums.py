@@ -878,3 +878,17 @@ class OtpPurpose(str, enum.Enum):
 
     login_2fa = "login_2fa"
     password_reset = "password_reset"
+
+
+class CorrectionStatus(str, enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
+
+class ContactMethod(str, enum.Enum):
+    phone = "phone"
+    message = "message"
+    email = "email"
+    meeting = "meeting"
+    home_visit = "home_visit"
