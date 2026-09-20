@@ -36,6 +36,8 @@ type View = {
   is_holiday: boolean;
   holiday_name: string | null;
   is_editable: boolean;
+  is_locked: boolean;
+  locked_at: string | null;
   edit_window_days: number;
   rows: Row[];
   summary: {
@@ -215,7 +217,14 @@ export default function AttendancePage() {
               {date} is a holiday ({view.holiday_name}). No attendance expected.
             </div>
           )}
-          {!view?.is_holiday && !canEdit && view && (
+          {view?.is_locked && (
+            <div className="rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
+              The office locked this register
+              {view.locked_at ? ` on ${new Date(view.locked_at).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}` : ""}.
+              Ask them to reopen it if something needs changing.
+            </div>
+          )}
+          {!view?.is_holiday && !view?.is_locked && !canEdit && view && (
             <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600">
               This date is outside the {view.edit_window_days}-day edit window.
               Existing entries are shown read-only.

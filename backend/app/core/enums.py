@@ -578,6 +578,11 @@ class ConsentResponse(str, enum.Enum):
     no = "no"
 
 
+class RegisterStatus(str, enum.Enum):
+    open = "open"
+    locked = "locked"
+
+
 class RoomKind(str, enum.Enum):
     classroom = "classroom"
     lab = "lab"

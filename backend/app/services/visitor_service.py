@@ -98,11 +98,19 @@ def _check_in(db: Session, v: Visit, actor_id: int) -> Visit:
 
 
 def create_visit(db: Session, tenant_id: int, school_id: int, actor_id: int, data: VisitIn) -> Visit:
+    from app.services import register_service
+
     _check_refs(db, school_id, data)
     digits = "".join(ch for ch in (data.id_number or "") if ch.isalnum())
+    master = register_service.upsert_visitor(
+        db, tenant_id, school_id, full_name=data.visitor_name, phone=data.phone,
+        company=data.company, id_type=data.id_type,
+        id_last4=digits[-4:] if digits else None,
+    )
     v = Visit(
         tenant_id=tenant_id,
         school_id=school_id,
+        visitor_id=master.id,
         visitor_name=data.visitor_name.strip(),
         phone=data.phone.strip(),
         id_type=data.id_type,

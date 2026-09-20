@@ -42,6 +42,8 @@ class AttendanceViewRead(BaseModel):
     is_holiday: bool
     holiday_name: Optional[str] = None
     is_editable: bool
+    is_locked: bool = False
+    locked_at: Optional[datetime] = None
     edit_window_days: int
     rows: list[AttendanceRow]
     summary: dict  # {'present': N, 'absent': N, 'late': N, 'half_day': N, 'unmarked': N, 'total': N}

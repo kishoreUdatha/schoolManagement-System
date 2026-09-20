@@ -140,9 +140,11 @@ MAP = {
                                None, (P, "PATCH /teacher/videos/{id}", "Videos only")),
     # ---------------- Attendance ----------------
     "attendance_sessions": {
-        **crud("GET /teacher/attendance", "POST /teacher/attendance/save", "GET /teacher/attendance", "POST /teacher/attendance/save"),
+        **crud("GET /school/attendance/registers; GET /teacher/attendance", "POST /teacher/attendance/save",
+               "GET /teacher/attendance", "POST /teacher/attendance/save"),
         "mark": (D, "POST /teacher/attendance/save", ""),
-        "lock": (N, "", ""), "reopen": (N, "", ""),
+        "lock": (D, "POST /school/attendance/registers/lock", "Also POST /school/attendance/registers/lock-day for the whole day"),
+        "reopen": (D, "POST /school/attendance/registers/reopen", "Reason required; kept against the register"),
     },
     "student_leave_requests": {
         **crud("GET /school/student-leaves; GET /parent/me/children/{id}/leaves", "POST /parent/me/children/{id}/leaves", None,
@@ -321,8 +323,11 @@ MAP = {
     "discipline_incidents": crud("GET /school/discipline/incidents", "POST /school/discipline/incidents",
                                  "GET /school/discipline/incidents/{id}", "PATCH /school/discipline/incidents/{id}"),
     # ---------------- Visitor & Security ----------------
-    "visitors": crud((P, "GET /school/front-desk/visits", "Visitor details are stored on each visit"), (P, "POST /school/front-desk/visits", ""),
-                     None, None),
+    "visitors": {
+        **crud("GET /school/front-desk/visitors", (D, "POST /school/front-desk/visits", "Created from the gate sign-in, matched on phone"),
+               "GET /school/front-desk/visitors/{id}", "PUT /school/front-desk/visitors/{id}"),
+        "block": (D, "POST /school/front-desk/visitors/{id}/block", "Bar from site or lift it; check-in refuses a barred visitor"),
+    },
     "visits": {
         **crud("GET /school/front-desk/visits", "POST /school/front-desk/visits", None,
                (P, "POST /school/front-desk/visits/{id}/cancel", "Cancel only"), get_via_list=True),
@@ -399,6 +404,10 @@ MAP = {
 # API-X### rows (Release = "Added"), rebuilt on every run.
 # (module, resource, operation, method, path, purpose, roles)
 EXTRA = [
+    ("Attendance", "attendance_sessions", "Action", "GET", "/school/attendance/registers", "Every section's register for a day: marked by, counts, lock state", "School Admin, Principal, Staff"),
+    ("Attendance", "attendance_sessions", "Action", "POST", "/school/attendance/registers/lock-day", "Lock every marked register for that day in one go", "School Admin, Principal, attendance.correct"),
+    ("Visitor & Security", "visitors", "Action", "GET", "/school/front-desk/visitors/{id}/visits", "Every past visit by that person", "School Admin, Principal, Front desk"),
+    ("Visitor & Security", "visitors", "Action", "POST", "/school/front-desk/visitors/backfill", "Build master records from visits logged before this screen existed", "School Admin, Principal, Front desk"),
     ("Online Exams & Question Bank", "questions", "List", "GET", "/school/questions", "Search the bank (subject, class level, chapter, Bloom, difficulty, kind)", "School Admin, Principal, Teacher"),
     ("Online Exams & Question Bank", "questions", "Create", "POST", "/school/questions", "Add a question (single/multiple/true-false/numeric/short)", "School Admin, Teacher (own subjects)"),
     ("Online Exams & Question Bank", "questions", "Get", "GET", "/school/questions/{id}", "Get a question", "School Admin, Principal, Teacher"),

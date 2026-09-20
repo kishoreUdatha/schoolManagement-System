@@ -43,6 +43,9 @@ class Visit(Base, PrimaryKeyMixin, TimestampMixin, _School):
         Index("ix_visits_school_checkin", "school_id", "check_in_at"),
     )
 
+    visitor_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("visitors.id", ondelete="SET NULL")
+    )
     visitor_name: Mapped[str] = mapped_column(String(160), nullable=False)
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
     id_type: Mapped[Optional[str]] = mapped_column(String(40))

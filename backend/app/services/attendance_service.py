@@ -91,7 +91,11 @@ def get_view(
         )
     ).scalars().all()
     by_student = {a.student_id: a for a in existing_rows}
+    from app.services import register_service
     from app.services.cover_service import leave_map
+
+    session = register_service.get_session(db, school_id, section_id, on_date)
+    locked = bool(session and session.status.value == "locked")
 
     on_leave = leave_map(db, [s.id for s in students], on_date)
 
@@ -131,7 +135,9 @@ def get_view(
         "date": on_date,
         "is_holiday": holiday is not None,
         "holiday_name": holiday.name if holiday else None,
-        "is_editable": is_editable and holiday is None,
+        "is_editable": is_editable and holiday is None and not locked,
+        "is_locked": locked,
+        "locked_at": session.locked_at if session else None,
         "edit_window_days": EDIT_WINDOW_DAYS,
         "rows": rows,
         "summary": summary,
@@ -196,7 +202,14 @@ def save(
     skipped = 0
     errors = []
     newly_absent: list[int] = []
+    from app.services import register_service
     from app.services.cover_service import leave_map
+
+    if register_service.is_locked(db, school_id, section_id, on_date):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This register is locked. Ask the office to reopen it.",
+        )
 
     # Parents who applied for leave don't need an "absent" alert.
     on_leave = leave_map(db, valid_student_ids, on_date)
@@ -250,6 +263,7 @@ def save(
         db.execute(stmt)
         saved += 1
 
+    register_service.touch(db, tenant_id, school_id, section_id, on_date, teacher_user_id)
     db.commit()
 
     alerts_sent = _send_absence_notices(

@@ -10,6 +10,7 @@ import { ErrorBox, NoticeBox, PageHeader, Select, Table, Textarea, humanize, td,
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { StatCard } from "@/components/ui/StatCard";
+import { VisitorMaster } from "@/components/frontdesk/VisitorMaster";
 import { api, apiError } from "@/lib/api";
 
 type Visit = {
@@ -76,7 +77,7 @@ const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString([],
 
 /** Reception & gate. `office` = school admin/principal (approve passes, create passes, close incidents). */
 export function FrontDesk({ office }: { office: boolean }) {
-  const [tab, setTab] = useState<"visitors" | "passes" | "incidents">("visitors");
+  const [tab, setTab] = useState<"visitors" | "passes" | "incidents" | "people">("visitors");
   const [dash, setDash] = useState<Dash | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -113,7 +114,7 @@ export function FrontDesk({ office }: { office: boolean }) {
         </div>
       )}
       <nav className="flex gap-1 border-b border-surface-border">
-        {(["visitors", "passes", "incidents"] as const).map((t) => (
+        {(["visitors", "passes", "incidents", "people"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -121,13 +122,14 @@ export function FrontDesk({ office }: { office: boolean }) {
               tab === t ? "border-brand-500 text-ink" : "border-transparent text-ink-muted hover:text-ink"
             }`}
           >
-            {t === "visitors" ? "Visitors" : t === "passes" ? "Early pickup" : "Incidents"}
+            {t === "visitors" ? "Today" : t === "passes" ? "Early pickup" : t === "incidents" ? "Incidents" : "Visitor records"}
           </button>
         ))}
       </nav>
       {tab === "visitors" && <Visitors onChange={flash} onError={setError} />}
       {tab === "passes" && <Passes office={office} onChange={flash} onError={setError} />}
       {tab === "incidents" && <Incidents office={office} onChange={flash} onError={setError} />}
+      {tab === "people" && <VisitorMaster onChange={flash} onError={setError} />}
     </div>
   );
 }

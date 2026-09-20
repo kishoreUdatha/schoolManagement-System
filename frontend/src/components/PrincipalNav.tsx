@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, BriefcaseBusiness, DoorClosed, FileSignature, CalendarClock, CalendarOff, FileBadge, Gavel, HandCoins, HeartHandshake, ClipboardCheck, Replace, FileQuestion, LayoutDashboard, ListChecks, MonitorCheck, NotebookPen, ReceiptText } from "lucide-react";
+import { BarChart3, BookLock, BriefcaseBusiness, DoorClosed, FileSignature, CalendarClock, CalendarOff, FileBadge, Gavel, HandCoins, HeartHandshake, ClipboardCheck, Replace, FileQuestion, LayoutDashboard, ListChecks, MonitorCheck, NotebookPen, ReceiptText } from "lucide-react";
 
 import { Sidebar, type NavSection } from "@/components/Sidebar";
 
@@ -24,6 +24,7 @@ const sections: NavSection[] = [
       { href: "/principal/leave-entitlement", label: "Leave entitlement", icon: CalendarClock },
       { href: "/principal/facilities", label: "Rooms & labs", icon: DoorClosed },
       { href: "/principal/cover", label: "Substitutions", icon: Replace },
+      { href: "/principal/attendance-registers", label: "Registers", icon: BookLock },
       { href: "/principal/student-leaves", label: "Student leave", icon: CalendarOff },
       { href: "/principal/payslips", label: "My payslips", icon: ReceiptText },
     ],

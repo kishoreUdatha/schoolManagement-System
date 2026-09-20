@@ -3,6 +3,7 @@
 import {
   BarChart3,
   Bell,
+  BookLock,
   BookOpen,
   Calendar,
   CalendarDays,
@@ -120,6 +121,7 @@ const sections: NavSection[] = [
     heading: "Attendance",
     icon: CheckSquare,
     items: [
+      { href: "/school/attendance-registers", label: "Registers", icon: BookLock },
       { href: "/school/student-leaves", label: "Student leave", icon: CalendarOff },
       { href: "/school/staff-attendance", label: "Staff attendance", icon: CheckSquare },
       { href: "/school/staff-leaves", label: "Staff leaves", icon: ClipboardCheck },
