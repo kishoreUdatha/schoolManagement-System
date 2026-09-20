@@ -89,6 +89,12 @@ from app.models.online_exam import (
     TestAttempt,
 )
 from app.models.parent import ParentStudent
+from app.models.pastoral import (
+    CounsellingCase,
+    CounsellingSession,
+    DisciplineAction,
+    DisciplineIncident,
+)
 from app.models.payroll import PayrollRun, PayrollSettings, Payslip, StaffSalary
 from app.models.plan import Plan, PlanModule
 from app.models.project import Project, ProjectProgress
@@ -228,6 +234,10 @@ __all__ = [
     "User",
     "UserOtp",
     "Visit",
+    "CounsellingCase",
+    "CounsellingSession",
+    "DisciplineAction",
+    "DisciplineIncident",
     "LateFeeRule",
     "Refund",
     "ExamType",

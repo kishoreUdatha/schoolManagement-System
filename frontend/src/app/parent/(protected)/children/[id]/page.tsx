@@ -164,6 +164,12 @@ export default function ChildDetailPage() {
             >
               Apply for leave →
             </Link>
+            <Link
+              href={`/parent/children/${params.id}/discipline`}
+              className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              School incidents →
+            </Link>
           </div>
         </CardBody>
       </Card>

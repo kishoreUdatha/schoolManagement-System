@@ -48,6 +48,7 @@ from app.api.v1.school import (
     online_exams as school_online_exams,
     online_payments as school_online_payments,
     parents as school_parents,
+    pastoral as school_pastoral,
     payroll as school_payroll,
     periods as school_periods,
     profile as school_profile,
@@ -74,6 +75,7 @@ from app.api.v1.parent import (
     auth as parent_auth,
     behaviour as parent_behaviour,
     children as parent_children,
+    discipline as parent_discipline,
     documents as parent_documents,
     events as parent_events,
     exams as parent_exams,
@@ -757,6 +759,18 @@ app.include_router(
     school_fee_extras.router,
     prefix="/api/v1/school/fees",
     tags=["school / late fees, refunds"],
+)
+
+app.include_router(
+    school_pastoral.router,
+    prefix="/api/v1/school/discipline",
+    tags=["school / discipline, counselling"],
+)
+
+app.include_router(
+    parent_discipline.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / discipline"],
 )
 
 

@@ -578,6 +578,63 @@ class ConsentResponse(str, enum.Enum):
     no = "no"
 
 
+class DisciplineCategory(str, enum.Enum):
+    bullying = "bullying"
+    fighting = "fighting"
+    cheating = "cheating"
+    disrespect = "disrespect"
+    property_damage = "property_damage"
+    phone_misuse = "phone_misuse"
+    uniform = "uniform"
+    late_or_absent = "late_or_absent"
+    unsafe_behaviour = "unsafe_behaviour"
+    other = "other"
+
+
+class IncidentStatus(str, enum.Enum):
+    reported = "reported"
+    investigating = "investigating"
+    action_taken = "action_taken"
+    closed = "closed"
+    dismissed = "dismissed"  # looked into, nothing to answer for
+
+
+class DisciplineActionKind(str, enum.Enum):
+    verbal_warning = "verbal_warning"
+    written_warning = "written_warning"
+    parent_meeting = "parent_meeting"
+    detention = "detention"
+    suspension = "suspension"
+    community_service = "community_service"
+    counselling_referral = "counselling_referral"
+    other = "other"
+
+
+class CounsellingCategory(str, enum.Enum):
+    academic = "academic"
+    behaviour = "behaviour"
+    emotional = "emotional"
+    family = "family"
+    bullying = "bullying"
+    peer_relations = "peer_relations"
+    career = "career"
+    health = "health"
+    other = "other"
+
+
+class CaseStatus(str, enum.Enum):
+    open = "open"
+    in_progress = "in_progress"
+    referred = "referred"  # sent to an outside professional
+    closed = "closed"
+
+
+class Priority(str, enum.Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+
+
 class LateFeeBasis(str, enum.Enum):
     per_day = "per_day"  # amount x days overdue (after the grace days)
     once = "once"  # one flat charge
