@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { Card } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { api, apiError } from "@/lib/api";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -72,20 +73,21 @@ export default function ChildTimetablePage() {
   }, [tt]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <Link
         href={`/parent/children/${params.id}`}
-        className="text-sm text-brand-700 hover:underline"
+        className="text-[13px] font-bold text-brand-600 hover:underline"
       >
         ← Back to child profile
       </Link>
 
-      <h1 className="text-2xl font-bold text-slate-900">
-        Timetable {tt?.section_label && `— ${tt.section_label}`}
-      </h1>
+      <PageHeader
+        title="Timetable"
+        subtitle={tt?.section_label ?? undefined}
+      />
 
       {error && (
-        <Card className="p-4 text-sm text-slate-700">
+        <Card className="px-5 py-4 text-[13px] text-ink-muted">
           {error === "Timetable is not published yet"
             ? "The school hasn't published the timetable yet. Check back soon."
             : error}
@@ -94,16 +96,17 @@ export default function ChildTimetablePage() {
 
       {tt && (
         <Card>
-          <table className="min-w-full border-separate border-spacing-0 text-sm">
+          <div className="overflow-x-auto">
+          <table className="min-w-[720px] border-separate border-spacing-0 text-[13px]">
             <thead>
-              <tr className="bg-slate-50 text-xs uppercase text-slate-500">
-                <th className="w-24 border-b border-slate-200 px-3 py-2 text-left">
+              <tr className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
+                <th className="w-24 border-b border-surface-border px-4 py-3">
                   Period
                 </th>
                 {DAYS.map((d) => (
                   <th
                     key={d}
-                    className="border-b border-slate-200 px-3 py-2 text-left"
+                    className="border-b border-surface-border px-4 py-3"
                   >
                     {d}
                   </th>
@@ -113,7 +116,7 @@ export default function ChildTimetablePage() {
             <tbody>
               {periodNumbers.map((pn) => (
                 <tr key={pn}>
-                  <td className="border-b border-slate-100 px-3 py-2 font-mono text-xs text-slate-500">
+                  <td className="border-b border-surface-border px-4 py-2 text-[12px] font-bold tabular-nums text-ink-muted">
                     P{pn}
                   </td>
                   {DAYS.map((_, i) => {
@@ -123,7 +126,7 @@ export default function ChildTimetablePage() {
                       return (
                         <td
                           key={day}
-                          className="border-b border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-300"
+                          className="border-b border-surface-border bg-surface-subtle px-4 py-2 text-center text-[12px] text-ink-subtle"
                         >
                           —
                         </td>
@@ -132,26 +135,26 @@ export default function ChildTimetablePage() {
                     return (
                       <td
                         key={day}
-                        className="border-b border-slate-100 px-3 py-2"
+                        className="border-b border-surface-border px-4 py-2 align-top"
                       >
-                        <div className="text-[10px] font-mono text-slate-400">
+                        <div className="text-[10px] tabular-nums text-ink-subtle">
                           {trim(period.start_time)} – {trim(period.end_time)}
                         </div>
                         {period.is_break ? (
-                          <div className="mt-0.5 text-amber-700 font-semibold">
+                          <div className="mt-1 inline-block rounded-md bg-[#FFF3D8] px-2 py-0.5 text-[12px] font-extrabold text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200">
                             {period.label ?? "Break"}
                           </div>
                         ) : entry ? (
                           <>
-                            <div className="mt-0.5 font-semibold text-slate-900">
+                            <div className="mt-0.5 font-extrabold text-ink">
                               {entry.subject_name}
                             </div>
-                            <div className="text-[11px] text-slate-500">
+                            <div className="text-[11px] text-ink-muted">
                               {entry.teacher_name ?? "TBD"}
                             </div>
                           </>
                         ) : (
-                          <div className="text-xs text-slate-300">free</div>
+                          <div className="mt-0.5 text-[12px] text-ink-subtle">free</div>
                         )}
                       </td>
                     );
@@ -160,6 +163,7 @@ export default function ChildTimetablePage() {
               ))}
             </tbody>
           </table>
+          </div>
         </Card>
       )}
     </div>

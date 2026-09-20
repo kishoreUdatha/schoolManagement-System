@@ -95,18 +95,18 @@ export default function TeacherTimetablePage() {
         <Card>
           <CardBody>
             <div className="flex items-start gap-3">
-              <div className="rounded-full bg-brand-500/20 p-2 text-brand-400 ring-1 ring-brand-500/30">
-                <Clock className="h-4 w-4" />
+              <div className="rounded-[10px] bg-brand-50 p-2.5 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+                <Clock className="h-[18px] w-[18px]" />
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wider text-ink-subtle">
+                <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">
                   Next class
                 </div>
-                <div className="mt-0.5 text-sm font-medium text-ink">
+                <div className="mt-1 text-[15px] font-extrabold text-ink">
                   {data.next_class.section_label} ·{" "}
                   {data.next_class.subject_name} ({data.next_class.subject_code})
                 </div>
-                <div className="text-xs text-ink-muted">
+                <div className="mt-0.5 text-[12px] text-ink-muted">
                   P{data.next_class.period_number} ·{" "}
                   {shortTime(data.next_class.start_time)} –{" "}
                   {shortTime(data.next_class.end_time)}
@@ -118,25 +118,25 @@ export default function TeacherTimetablePage() {
       )}
 
       {/* Day-of-week tabs */}
-      <div className="flex flex-wrap gap-1 rounded-md bg-surface-subtle p-1 text-sm">
+      <div className="flex flex-wrap gap-1 rounded-[12px] border border-surface-border bg-surface-subtle p-1.5 text-[13px]">
         {data.by_day.map((d) => (
           <button
             key={d.day_of_week}
             type="button"
             onClick={() => setSelectedDay(d.day_of_week)}
             className={
-              "rounded-md px-3 py-1.5 font-medium transition " +
+              "rounded-lg px-4 py-2 font-bold transition-colors " +
               (selectedDay === d.day_of_week
-                ? "bg-surface-raised text-ink shadow-sm"
-                : "text-ink-muted hover:bg-surface-hover")
+                ? "bg-brand-600 text-white"
+                : "text-ink-muted hover:bg-surface-hover hover:text-ink")
             }
           >
             {d.day_label}
             {d.is_today && (
-              <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-brand-500" />
+              <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-current opacity-70" />
             )}
             {d.items.length > 0 && (
-              <span className="ml-1 text-[10px] text-ink-subtle">
+              <span className="ml-1.5 text-[11px] opacity-70">
                 {d.items.length}
               </span>
             )}
@@ -147,7 +147,7 @@ export default function TeacherTimetablePage() {
       <Card>
         <CardHeader>
           <CardTitle>
-            <Calendar className="mr-2 inline h-4 w-4 text-brand-400" />
+            <Calendar className="mr-2 inline h-[18px] w-[18px] text-brand-600 dark:text-brand-300" />
             {active?.day_label}
             {active?.is_today && (
               <Badge tone="brand" className="ml-2">
@@ -158,18 +158,18 @@ export default function TeacherTimetablePage() {
         </CardHeader>
         <CardBody>
           {dayItems.length === 0 ? (
-            <p className="text-sm text-ink-muted">
+            <p className="py-6 text-center text-[13px] text-ink-muted">
               No classes scheduled for {active?.day_label}.
             </p>
           ) : (
-            <table className="min-w-full divide-y divide-surface-border text-sm">
-              <thead className="text-left text-xs uppercase text-ink-subtle">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <th className="px-3 py-2 font-medium">P #</th>
-                  <th className="px-3 py-2 font-medium">Time</th>
-                  <th className="px-3 py-2 font-medium">Section</th>
-                  <th className="px-3 py-2 font-medium">Subject</th>
-                  <th className="px-3 py-2 font-medium">Notes</th>
+                  <th className="px-4 py-3 font-bold">P #</th>
+                  <th className="px-4 py-3 font-bold">Time</th>
+                  <th className="px-4 py-3 font-bold">Section</th>
+                  <th className="px-4 py-3 font-bold">Subject</th>
+                  <th className="px-4 py-3 font-bold">Notes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
@@ -182,13 +182,13 @@ export default function TeacherTimetablePage() {
                       key={s.entry_id}
                       className={
                         "hover:bg-surface-hover " +
-                        (now ? "bg-brand-500/10" : "")
+                        (now ? "bg-brand-50 dark:bg-brand-500/10" : "")
                       }
                     >
-                      <td className="px-3 py-2 font-mono text-ink">
+                      <td className="px-4 py-3 font-bold tabular-nums text-ink">
                         {s.period_number}
                       </td>
-                      <td className="px-3 py-2 font-mono text-ink-muted">
+                      <td className="px-4 py-3 tabular-nums text-ink-muted">
                         {shortTime(s.start_time)} – {shortTime(s.end_time)}
                         {now && (
                           <Badge tone="emerald" className="ml-2">
@@ -196,14 +196,14 @@ export default function TeacherTimetablePage() {
                           </Badge>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-ink">{s.section_label}</td>
-                      <td className="px-3 py-2 text-ink">
-                        <div className="font-medium">{s.subject_name}</div>
-                        <div className="font-mono text-xs text-ink-subtle">
+                      <td className="px-4 py-3 text-ink">{s.section_label}</td>
+                      <td className="px-4 py-3 text-ink">
+                        <div className="font-bold">{s.subject_name}</div>
+                        <div className="text-[11px] text-ink-subtle">
                           {s.subject_code}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-xs text-ink-muted">
+                      <td className="px-4 py-3 text-[12px] text-ink-muted">
                         {s.notes ?? "—"}
                       </td>
                     </tr>
@@ -215,7 +215,7 @@ export default function TeacherTimetablePage() {
         </CardBody>
       </Card>
 
-      <p className="text-xs text-ink-subtle">
+      <p className="text-[12px] text-ink-subtle">
         Times are local. Free periods aren&apos;t shown.
       </p>
     </div>

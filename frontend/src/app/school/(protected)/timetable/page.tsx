@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ErrorBox, NoticeBox, PageHeader, Select } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
 import { api, apiError } from "@/lib/api";
 
@@ -202,57 +203,42 @@ export default function TimetablePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Timetable</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Pick a section, then click any slot to assign a subject. Period
-            slots come from{" "}
-            <Link className="text-brand-700 hover:underline" href="/school/periods">
-              Periods
-            </Link>
-            .
-          </p>
-        </div>
-        {tt && (
-          <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setCopyOpen(true)}>
-              Copy from…
-            </Button>
-            <Button
-              variant={tt.timetable_published_at ? "secondary" : "primary"}
-              onClick={togglePublish}
-            >
-              {tt.timetable_published_at ? "Unpublish" : "Publish"}
-            </Button>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="Timetable"
+        subtitle="Pick a section, then click any slot to assign a subject."
+        actions={
+          tt && (
+            <>
+              <Button variant="secondary" onClick={() => setCopyOpen(true)}>
+                Copy from…
+              </Button>
+              <Button
+                variant={tt.timetable_published_at ? "secondary" : "primary"}
+                onClick={togglePublish}
+              >
+                {tt.timetable_published_at ? "Unpublish" : "Publish"}
+              </Button>
+            </>
+          )
+        }
+      />
 
-      <form className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Year</span>
-          <select
-            value={yearId ?? ""}
-            onChange={(e) => setYearId(Number(e.target.value))}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
-          >
+      <Card>
+        <CardBody className="flex flex-wrap items-end gap-3">
+          <Select label="Year" value={yearId ?? ""} onChange={(e) => setYearId(Number(e.target.value))}>
             {years.map((y) => (
               <option key={y.id} value={y.id}>
                 {y.name}
               </option>
             ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Class</span>
-          <select
+          </Select>
+          <Select
+            label="Class"
             value={classId}
             onChange={(e) => {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
           >
             <option value="">Select…</option>
             {classes.map((c) => (
@@ -260,15 +246,12 @@ export default function TimetablePage() {
                 {c.name}
               </option>
             ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-slate-600">Section</span>
-          <select
+          </Select>
+          <Select
+            label="Section"
             value={sectionId}
-            onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm"
             disabled={!selectedClass}
+            onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
           >
             <option value="">Select…</option>
             {selectedClass?.sections.map((s) => (
@@ -276,140 +259,129 @@ export default function TimetablePage() {
                 {s.name}
               </option>
             ))}
-          </select>
-        </label>
-      </form>
+          </Select>
+          <p className="ml-auto text-[12px] text-ink-subtle">
+            Period slots come from{" "}
+            <Link className="font-bold text-brand-600 hover:underline" href="/school/periods">
+              Periods
+            </Link>
+            .
+          </p>
+        </CardBody>
+      </Card>
 
-      {error && (
-        <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
-      )}
-      {notice && (
-        <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</div>
-      )}
+      <ErrorBox>{error}</ErrorBox>
+      <NoticeBox>{notice}</NoticeBox>
 
       {tt && (
-        <>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-600">
-              <strong>{tt.section_label}</strong>
-            </span>
+        <Card>
+          <CardHeader>
+            <CardTitle>{tt.section_label}</CardTitle>
             {tt.timetable_published_at ? (
               <Badge tone="emerald">
-                published {new Date(tt.timetable_published_at).toLocaleDateString()}
+                Published {new Date(tt.timetable_published_at).toLocaleDateString()}
               </Badge>
             ) : (
-              <Badge tone="amber">draft</Badge>
+              <Badge tone="amber">Draft</Badge>
             )}
-          </div>
-
-          <Card>
-            <table className="min-w-full border-separate border-spacing-0 text-sm">
-              <thead>
-                <tr className="bg-slate-50 text-xs uppercase text-slate-500">
-                  <th className="w-32 border-b border-slate-200 px-3 py-2 text-left font-medium">
-                    Period
-                  </th>
-                  {DAYS.map((d, i) => (
-                    <th
-                      key={i}
-                      className="border-b border-slate-200 px-3 py-2 text-left font-medium"
-                    >
-                      {d}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {periodNumbers.map((pn) => (
-                  <tr key={pn}>
-                    <td className="border-b border-slate-100 px-3 py-2 font-mono text-xs text-slate-500">
-                      P{pn}
-                    </td>
-                    {DAYS.map((_, i) => {
-                      const day = i + 1;
-                      const period = periodMatrix[`${day}-${pn}`];
-                      if (!period) {
+          </CardHeader>
+          <CardBody className="p-0">
+            {/* A week never fits a phone, so the grid keeps its shape and
+                scrolls inside the panel rather than squashing the columns. */}
+            <div className="overflow-x-auto">
+              <table className="min-w-[760px] border-separate border-spacing-0 text-[13px]">
+                <thead>
+                  <tr className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
+                    <th className="w-28 border-b border-surface-border px-4 py-3">Period</th>
+                    {DAYS.map((d, i) => (
+                      <th key={i} className="border-b border-surface-border px-4 py-3">
+                        {d}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {periodNumbers.map((pn) => (
+                    <tr key={pn}>
+                      <td className="border-b border-surface-border px-4 py-2 text-[12px] font-bold tabular-nums text-ink-muted">
+                        P{pn}
+                      </td>
+                      {DAYS.map((_, i) => {
+                        const day = i + 1;
+                        const period = periodMatrix[`${day}-${pn}`];
+                        if (!period) {
+                          return (
+                            <td
+                              key={day}
+                              className="border-b border-surface-border bg-surface-subtle px-4 py-2 text-center text-[12px] text-ink-subtle"
+                            >
+                              —
+                            </td>
+                          );
+                        }
+                        const entry = entriesByPeriod.get(period.id);
                         return (
-                          <td
-                            key={day}
-                            className="border-b border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-300"
-                          >
-                            —
+                          <td key={day} className="border-b border-surface-border px-2 py-2 align-top">
+                            <button
+                              onClick={() => setEditing({ period, entry })}
+                              disabled={period.is_break}
+                              className={
+                                "block w-full rounded-lg border px-3 py-2 text-left text-[12px] transition-colors " +
+                                (period.is_break
+                                  ? "cursor-default border-transparent bg-[#FFF3D8] text-[#8E5C05] dark:bg-amber-500/15 dark:text-amber-200"
+                                  : entry
+                                  ? "border-transparent bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-500/15 dark:text-brand-200"
+                                  : "border-dashed border-surface-border bg-surface-raised text-ink-subtle hover:bg-surface-hover hover:text-ink-muted")
+                              }
+                            >
+                              <div className="text-[10px] tabular-nums text-ink-subtle">
+                                {trim(period.start_time)} – {trim(period.end_time)}
+                              </div>
+                              {period.is_break ? (
+                                <div className="mt-0.5 font-extrabold">{period.label ?? "Break"}</div>
+                              ) : entry ? (
+                                <>
+                                  <div className="mt-0.5 font-extrabold">{entry.subject_code}</div>
+                                  <div className="text-[11px] text-ink-muted">
+                                    {entry.teacher_name ?? "no teacher"}
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="mt-0.5 font-bold">+ assign</div>
+                              )}
+                            </button>
+                            {entry && !period.is_break && (
+                              <button
+                                onClick={() => clearCell(period.id)}
+                                className="mt-1 text-[10px] font-bold text-[#B82E45] hover:underline"
+                              >
+                                clear
+                              </button>
+                            )}
                           </td>
                         );
-                      }
-                      const entry = entriesByPeriod.get(period.id);
-                      return (
-                        <td
-                          key={day}
-                          className="border-b border-slate-100 px-2 py-2"
-                        >
-                          <button
-                            onClick={() => setEditing({ period, entry })}
-                            disabled={period.is_break}
-                            className={
-                              "block w-full rounded-md border px-2 py-1.5 text-left text-xs transition " +
-                              (period.is_break
-                                ? "border-amber-200 bg-amber-50 text-amber-700 cursor-default"
-                                : entry
-                                ? "border-brand-200 bg-brand-50 text-brand-900 hover:bg-brand-100"
-                                : "border-slate-200 bg-white text-slate-400 hover:bg-slate-50")
-                            }
-                          >
-                            <div className="font-mono text-[10px] text-slate-400">
-                              {trim(period.start_time)} – {trim(period.end_time)}
-                            </div>
-                            {period.is_break ? (
-                              <div className="font-semibold">
-                                {period.label ?? "Break"}
-                              </div>
-                            ) : entry ? (
-                              <>
-                                <div className="mt-0.5 font-semibold">
-                                  {entry.subject_code}
-                                </div>
-                                <div className="text-[11px] text-slate-600">
-                                  {entry.teacher_name ?? "no teacher"}
-                                </div>
-                              </>
-                            ) : (
-                              <div className="mt-0.5">+ assign</div>
-                            )}
-                          </button>
-                          {entry && !period.is_break && (
-                            <button
-                              onClick={() => clearCell(period.id)}
-                              className="mt-1 text-[10px] text-rose-600 hover:underline"
-                            >
-                              clear
-                            </button>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-                {periodNumbers.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={DAYS.length + 1}
-                      className="px-3 py-6 text-center text-slate-500"
-                    >
-                      No periods defined yet. Add some in{" "}
-                      <Link
-                        href="/school/periods"
-                        className="font-medium text-brand-700 hover:underline"
+                      })}
+                    </tr>
+                  ))}
+                  {periodNumbers.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={DAYS.length + 1}
+                        className="px-4 py-10 text-center text-[13px] text-ink-muted"
                       >
-                        Periods
-                      </Link>
-                      .
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </Card>
-        </>
+                        No periods defined yet. Add some in{" "}
+                        <Link href="/school/periods" className="font-bold text-brand-600 hover:underline">
+                          Periods
+                        </Link>
+                        .
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardBody>
+        </Card>
       )}
 
       {clashes.length > 0 && (
@@ -417,17 +389,17 @@ export default function TimetablePage() {
           <CardHeader>
             <CardTitle>School-wide teacher clashes ({clashes.length})</CardTitle>
           </CardHeader>
-          <CardBody className="space-y-2 text-sm">
+          <CardBody className="space-y-2">
             {clashes.map((c, i) => (
               <div
                 key={i}
-                className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2"
+                className="rounded-lg bg-[#FFEBEE] px-4 py-3 dark:bg-rose-500/15"
               >
-                <div className="font-medium text-rose-700">
+                <div className="text-[13px] font-bold text-[#B82E45] dark:text-rose-200">
                   {c.teacher_name} — {DAYS[c.day_of_week - 1]} period{" "}
                   {c.period_number}
                 </div>
-                <ul className="mt-1 list-disc pl-5 text-xs text-rose-900">
+                <ul className="mt-1 list-disc pl-5 text-[12px] text-ink-muted">
                   {c.sections.map((s, j) => (
                     <li key={j}>
                       {s.section_label} — {s.subject_name}
@@ -516,16 +488,15 @@ function AssignCellModal({
   return (
     <Modal open onClose={onClose} title={`Assign to P${period.period_number}`}>
       <form onSubmit={submit} className="space-y-4">
-        <p className="text-sm text-slate-500">
+        <p className="text-[13px] text-ink-muted">
           Slot: <strong>{period.label ?? `Period ${period.period_number}`}</strong>{" "}
           ({trim(period.start_time)} – {trim(period.end_time)})
         </p>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-700">Subject *</span>
-          <select
+        <div className="flex flex-col gap-1">
+          <Select
+            label="Subject *"
             value={csId}
             onChange={(e) => setCsId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
             required
           >
             <option value="">Select…</option>
@@ -535,17 +506,17 @@ function AssignCellModal({
                 {cs.teacher_user_id ? "" : " — no teacher"}
               </option>
             ))}
-          </select>
+          </Select>
           {classSubjects.length === 0 && (
-            <span className="text-xs text-slate-500">
+            <span className="text-[12px] text-ink-muted">
               No subjects assigned to this class yet. Go to{" "}
-              <Link href="/school/classes" className="text-brand-700 hover:underline">
+              <Link href="/school/classes" className="font-bold text-brand-600 hover:underline">
                 Classes → Subjects
               </Link>{" "}
               first.
             </span>
           )}
-        </label>
+        </div>
         {error && (
           <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
         )}
@@ -599,41 +570,33 @@ function CopyTimetableModal({
   return (
     <Modal open onClose={onClose} title="Copy from another section">
       {otherSections.length === 0 ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-[13px] text-ink-muted">
           No other sections in this class to copy from.
         </p>
       ) : (
         <form onSubmit={submit} className="space-y-4">
-          <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-700">Source section *</span>
-            <select
-              value={sourceId}
-              onChange={(e) =>
-                setSourceId(e.target.value ? Number(e.target.value) : "")
-              }
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm"
-              required
-            >
+          <Select
+            label="Source section *"
+            value={sourceId}
+            onChange={(e) => setSourceId(e.target.value ? Number(e.target.value) : "")}
+            required
+          >
               <option value="">Select…</option>
               {otherSections.map((s) => (
                 <option key={s.id} value={s.id}>
                   Section {s.name}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2 text-sm">
+          </Select>
+          <label className="flex items-center gap-2 text-[13px] text-ink-muted">
             <input
               type="checkbox"
               checked={overwrite}
               onChange={(e) => setOverwrite(e.target.checked)}
-              className="rounded border-slate-300"
             />
             Overwrite existing entries in this section
           </label>
-          {error && (
-            <div className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>
-          )}
+          <ErrorBox>{error}</ErrorBox>
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancel
