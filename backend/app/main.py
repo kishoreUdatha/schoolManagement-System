@@ -71,6 +71,7 @@ from app.api.v1.school import (
     staff as school_staff,
     staff_attendance as school_staff_attendance,
     staff_leaves as school_staff_leaves,
+    student_detail as school_student_detail,
     student_logins as school_student_logins,
     students as school_students,
     subjects as school_subjects,
@@ -483,6 +484,11 @@ app.include_router(
     school_exam_ops.router,
     prefix="/api/v1/school/exam-ops",
     tags=["school / exam operations"],
+)
+app.include_router(
+    school_student_detail.router,
+    prefix="/api/v1/school/student-detail",
+    tags=["school / student detail"],
 )
 app.include_router(
     school_student_logins.router,

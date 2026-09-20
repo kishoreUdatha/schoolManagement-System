@@ -43,43 +43,43 @@ SCR-039	Done	Done	/staff	Staff and leave panel, shown to whoever holds hr.manage
 SCR-040	Done	Done	/staff	Admissions panel, shown to whoever holds admissions.manage
 SCR-041	Done	Done	/staff	Transport panel, shown to whoever holds transport.manage
 SCR-042	Done	Done	/staff	Library panel, shown to whoever holds library.manage
-SCR-043	Partial	Done	/school/admissions	Stat cards atop the list; no dashboard page
+SCR-043	Done	Done	/school/admissions/dashboard	Funnel, plus what is waiting on us
 SCR-044	Done	Done	/school/admissions	Stage, source and follow-up filters with paging
 SCR-045	Done	Done	/school/admissions	New enquiry modal, full field set
 SCR-046	Done	Done	/school/admissions/[id]	Stage moves, timeline, convert, lost
-SCR-047	Partial	Partial	/school/admissions	Follow-ups-due checkbox; no calendar
+SCR-047	Done	Done	/school/admissions/follow-ups	Grouped overdue, today, this week, later
 SCR-048	Done	Done	/school/admissions/applications	Status filter, search, list
 SCR-049	Done	Done	/apply/[tenant]/[school]/application	Staff modal and public form both exist
 SCR-050	Done	Done	/school/admissions/applications	Profile, docs, assessments, fee, history
-SCR-051	Partial	Done	/school/admissions/applications	Verify inside modal; no verification queue
-SCR-052	Partial	Done	/school/admissions/applications	Scheduling fine; results captured by prompt
-SCR-053	Partial	Done	/school/admissions/applications	Approve and reject are prompt dialogs
+SCR-051	Done	Done	/school/admissions/verification	One queue across applications, verify or reject with a reason
+SCR-052	Done	Done	/school/admissions/assessments	A form, not a prompt; scheduled kept apart from marked
+SCR-053	Done	Done	/school/admissions/decisions	Approve and reject in a modal with the evidence on screen
 SCR-054	Done	Done	/school/admissions/applications	Creates student and parent login with password
 SCR-055	Done	Done	/school/students	Year, class, section, status filters and search
 SCR-056	Done	Done	/school/students	Admit modal plus bulk CSV import
 SCR-057	Done	Done	/school/students/[id]	Stats, attendance, exams, behaviour, homework
 SCR-058	Done	Done	/school/students	Edit name, section, roll, DOB, blood, address
-SCR-059	Partial	Done	/school/students/[id]	Year-by-year enrolment; no subject detail
+SCR-059	Done	Done	/school/students/[id]/academic	Subjects with teachers, and the years behind
 SCR-060	Done	Done	/school/students/[id]	Attendance tab: months, percent and days away
-SCR-061	Partial	Done	/school/students/[id]	Summary rows; per-paper detail is section-scoped
+SCR-061	Done	Done	/school/students/[id]/exams	Per paper, with unmarked kept apart from nought
 SCR-062	Done	Done	/school/students/[id]	Fees tab scoped to the child
 SCR-063	Done	Done	/school/students/[id]	Documents tab with download
 SCR-064	Done	Done	/school/students/[id]	Conduct tab: incidents for this child
 SCR-065	Done	Done	/school/health/students/[id]	Full per-student health record
 SCR-066	Done	Done	/school/transport/students	Search by student, assign, move, end
 SCR-067	Done	Done	/school/students/[id]	Library tab: loans, overdue and fines
-SCR-068	Partial	Done	/school/students/[id]	Guardians managed; siblings not shown
+SCR-068	Done	Done	/school/students/[id]/family	Siblings derived from shared parents, never stored
 SCR-069	Done	Done	/school/students	Bulk promote plus section change
-SCR-070	Partial	Done	/school/certificates	TC and deactivate; no alumni record
+SCR-070	Done	Done	/school/students/leavers	Derived from enrolment; flags leavers with no certificate
 SCR-071	Done	Done	/school/parents	Search, status filter, linked children
 SCR-072	Done	Done	/school/parents	Creates login, links a child, temp password
-SCR-073	Partial	Done	/school/parents	No parent profile page; name and phone only
+SCR-073	Done	Done	/school/parents/[id]	Profile, linked children, activate and reset
 SCR-074	Done	Done	/school/parents	Link and unlink children with relation
 SCR-075	Missing	Missing	-	No notification preference UI or model
 SCR-076	Done	Done	/school/parents	Activate, deactivate, reset password
 SCR-077	Partial	Partial	/school/ptm	Meetings and slots; messages are teacher-only
-SCR-078	Partial	Done	/school/fees/online	Paid and failed list, not per parent
-SCR-079	Missing	Partial	-	Only last login; audit log has no parent filter
+SCR-078	Done	Done	/school/parents/[id]/payments	Across all their children, not one at a time
+SCR-079	Done	Done	/school/parents/[id]/activity	Audit by actor and by subject, sign-ins stated as unrecorded
 SCR-080	Done	Done	/school/staff	Role and status filters with search
 SCR-081	Done	Done	/school/staff	Creates staff and login with temp password
 SCR-082	Partial	Done	/school/staff	No staff profile page, only a row and modal

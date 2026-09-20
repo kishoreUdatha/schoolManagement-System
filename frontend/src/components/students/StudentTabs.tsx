@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -18,6 +19,12 @@ import { openAuthed } from "@/lib/download";
  *  for one student_id. */
 const TABS = ["attendance", "fees", "documents", "library", "conduct"] as const;
 type Tab = (typeof TABS)[number];
+
+const MORE = [
+  { slug: "academic", label: "Subjects & years" },
+  { slug: "exams", label: "Results" },
+  { slug: "family", label: "Family" },
+];
 
 const base = "/api/v1/school";
 
@@ -138,6 +145,15 @@ export function StudentTabs({ studentId }: { studentId: string }) {
             >
               {humanize(t)}
             </button>
+          ))}
+        </nav>
+        {/* Links rather than tabs: these three are pages of their own, so they
+            can be sent to somebody, and they keep their own back button. */}
+        <nav className="flex flex-wrap gap-3 text-[12px] font-bold text-brand-600">
+          {MORE.map((m) => (
+            <Link key={m.slug} href={`/school/students/${studentId}/${m.slug}`} className="hover:underline">
+              {m.label}
+            </Link>
           ))}
         </nav>
       </CardHeader>

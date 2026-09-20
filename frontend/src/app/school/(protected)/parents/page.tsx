@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
@@ -175,7 +176,12 @@ export default function ParentsPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-slate-900">{p.full_name}</h3>
+                  <Link
+                    href={`/school/parents/${p.user_id}`}
+                    className="font-semibold text-slate-900 hover:text-brand-600 hover:underline"
+                  >
+                    {p.full_name}
+                  </Link>
                   {p.is_active ? (
                     <Badge tone="emerald">active</Badge>
                   ) : (

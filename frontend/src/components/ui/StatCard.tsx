@@ -13,6 +13,13 @@ interface StatCardProps {
 
 // The number carries the meaning, so it stays ink; the accent tints the chip
 // beside it. A wall of coloured numbers is harder to read, not easier.
+const dots = {
+  brand: "bg-brand-600",
+  emerald: "bg-[#07845E]",
+  amber: "bg-[#8E5C05]",
+  rose: "bg-[#B82E45]",
+};
+
 const accents = {
   brand: "bg-brand-50 text-brand-600",
   emerald: "bg-[#E9F7F0] text-[#07845E]",
@@ -31,13 +38,24 @@ export function StatCard({ label, value, hint, accent = "brand", icon: Icon }: S
           </div>
           {hint && <div className="mt-1.5 text-[11px] text-ink-subtle">{hint}</div>}
         </div>
-        {Icon && (
+        {Icon ? (
           <span
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${accents[accent]}`}
             aria-hidden="true"
           >
             <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
           </span>
+        ) : (
+          // An accent with no icon used to tint nothing at all, so a tile
+          // meant to read as a warning looked identical to a plain count.
+          // A dot keeps the number in ink — the wall of colour this component
+          // exists to avoid — while making the tone visible.
+          accent !== "brand" && (
+            <span
+              className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${dots[accent]}`}
+              aria-hidden="true"
+            />
+          )
         )}
       </div>
     </Card>
