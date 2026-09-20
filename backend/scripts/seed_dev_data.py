@@ -38,14 +38,27 @@ from __future__ import annotations
 
 import sys
 from datetime import date, time, timedelta
+from decimal import Decimal
 
 from sqlalchemy import select
 
-from app.core.enums import AttendanceStatus, Gender, ParentRelation, SubjectKind, UserRole
+from app.core.enums import (
+    AttendanceStatus,
+    BorrowerType,
+    CopyStatus,
+    CrewRole,
+    Gender,
+    ParentRelation,
+    SubjectKind,
+    TransportDirection,
+    UserRole,
+    VehicleKind,
+)
 from app.core.security import hash_password
 from app.database import SessionLocal
 from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.attendance import StudentAttendance
+from app.models.library import Book, BookCopy, LibrarySettings, Loan
 from app.models.parent import ParentStudent
 from app.models.plan import Plan, PlanModule
 from app.models.staff import Staff
@@ -54,6 +67,13 @@ from app.models.subject import ClassSubject, Subject
 from app.models.subscription import TenantSubscription
 from app.models.tenant import School, Tenant
 from app.models.timetable import Period, TimetableEntry
+from app.models.transport import (
+    TransportAssignment,
+    TransportCrew,
+    TransportRoute,
+    TransportStop,
+    Vehicle,
+)
 from app.models.user import User
 
 TENANT_CODE = "DEVSCHOOL"
@@ -100,6 +120,32 @@ PERIODS = [
     (4, time(11, 0), time(11, 45), "Period 4", False),
     (5, time(11, 45), time(12, 30), "Lunch break", True),
     (6, time(12, 30), time(13, 15), "Period 5", False),
+]
+
+# (title, authors, category, how many copies)
+BOOKS = [
+    ("The Jungle Book", "Rudyard Kipling", "Fiction", 3),
+    ("Wings of Fire", "A. P. J. Abdul Kalam", "Biography", 2),
+    ("Panchatantra Tales", "Vishnu Sharma", "Folklore", 3),
+    ("The Story of My Experiments with Truth", "M. K. Gandhi", "Biography", 2),
+    ("Malgudi Days", "R. K. Narayan", "Fiction", 2),
+]
+ACCESSION_PREFIX = "DEV-"
+
+# (full name, phone, licence number)
+DRIVERS = [
+    ("Ganesh Kumar", "9845012345", "KA0120190001234"),
+    ("Imran Shaikh", "9845067890", "KA0120180005678"),
+]
+
+# (name, code, registration, kind, seats, monthly fee, driver, [(stop, pickup)])
+# The van seats four and is given five children below — see the note there.
+ROUTES = [
+    ("North route", "RT-NORTH", "KA-01-AB-1234", VehicleKind.bus, 40, Decimal("1200.00"),
+     "Ganesh Kumar", [("Jayanagar", time(7, 10)), ("Banashankari", time(7, 25)),
+                      ("Basavanagudi", time(7, 40))]),
+    ("South route", "RT-SOUTH", "KA-01-CD-5678", VehicleKind.van, 4, Decimal("900.00"),
+     "Imran Shaikh", [("Koramangala", time(7, 15)), ("HSR Layout", time(7, 35))]),
 ]
 
 ATTENDANCE_DAYS = 14  # of history, so the promotion test has something to carry
@@ -367,6 +413,167 @@ def main() -> int:
                 slots += 1
         if slots:
             note(True, f"{slots} timetable slots for Grade 1 A")
+
+        # ---------- a library with books actually out ----------
+        settings = db.execute(
+            select(LibrarySettings).where(LibrarySettings.school_id == school.id)
+        ).scalar_one_or_none()
+        if settings is None:
+            settings = LibrarySettings(**ids)
+            db.add(settings)
+            db.flush()
+            note(True, "library settings (defaults)")
+
+        copies: list[BookCopy] = []
+        fresh_books = 0
+        for title, authors, category, n_copies in BOOKS:
+            book = db.execute(
+                select(Book).where(Book.school_id == school.id, Book.title == title)
+            ).scalar_one_or_none()
+            if book is None:
+                book = Book(**ids, title=title, authors=authors, category=category,
+                            language="English")
+                db.add(book)
+                db.flush()
+                fresh_books += 1
+            for n in range(1, n_copies + 1):
+                accession = f"{ACCESSION_PREFIX}{book.id:03d}-{n}"
+                copy = db.execute(
+                    select(BookCopy).where(BookCopy.accession_no == accession)
+                ).scalar_one_or_none()
+                if copy is None:
+                    copy = BookCopy(school_id=school.id, book_id=book.id, accession_no=accession,
+                                    status=CopyStatus.available, price=Decimal("250.00"),
+                                    acquired_on=date.today() - timedelta(days=400))
+                    db.add(copy)
+                    db.flush()
+                copies.append(copy)
+        if fresh_books:
+            note(True, f"{fresh_books} books, {len(copies)} copies on the shelf")
+
+        # Loans spread back over five months, so the usage report has a shape
+        # rather than a spike. Only the two most recent are still out, and they
+        # sit with different children: the library's own rule caps a child at
+        # max_books_student, and dev data that breaks the rule the app enforces
+        # puts the counter into a state the app itself could never produce.
+        # One of the two is overdue, so the overdue figure is never zero.
+        librarian = users["school@sms.local"]
+        borrowers = children[:4]
+        still_out = {len(copies) - 1, len(copies) - 2}
+        issued = 0
+        for n, copy in enumerate(copies):
+            if not borrowers:
+                break
+            if db.execute(
+                select(Loan).where(Loan.copy_id == copy.id)
+            ).first():
+                continue
+            child = borrowers[n % len(borrowers)]
+            # spread the issues over the last twenty weeks
+            issued_on = date.today() - timedelta(days=7 * (len(copies) - n) + 3)
+            due_on = issued_on + timedelta(days=settings.loan_days_student)
+
+            if n in still_out:
+                returned_on = None
+            else:
+                # everything older came back, two days before it was due
+                returned_on = min(due_on - timedelta(days=2), date.today())
+
+            db.add(Loan(
+                **ids, copy_id=copy.id, borrower_type=BorrowerType.student,
+                student_id=child.id, issued_on=issued_on, due_on=due_on,
+                returned_on=returned_on, issued_by_user_id=librarian.id,
+                returned_by_user_id=librarian.id if returned_on else None,
+            ))
+            copy.status = CopyStatus.available if returned_on else CopyStatus.issued
+            issued += 1
+        if issued:
+            note(True, f"{issued} library loans over the last five months")
+
+        # ---------- two bus routes, one of them oversubscribed ----------
+        crew: dict[str, TransportCrew] = {}
+        for full_name, phone, licence in DRIVERS:
+            person = db.execute(
+                select(TransportCrew).where(
+                    TransportCrew.school_id == school.id, TransportCrew.full_name == full_name
+                )
+            ).scalar_one_or_none()
+            if person is None:
+                person = TransportCrew(**ids, full_name=full_name, role=CrewRole.driver,
+                                       phone=phone, license_no=licence,
+                                       license_expiry=date.today() + timedelta(days=500))
+                db.add(person)
+                db.flush()
+                note(True, f"driver {full_name}")
+            crew[full_name] = person
+
+        routes: dict[str, TransportRoute] = {}
+        for name, code, reg, kind, capacity, fee, driver_name, stops in ROUTES:
+            vehicle = db.execute(
+                select(Vehicle).where(Vehicle.school_id == school.id, Vehicle.registration_no == reg)
+            ).scalar_one_or_none()
+            if vehicle is None:
+                vehicle = Vehicle(**ids, registration_no=reg, kind=kind,
+                                  capacity=capacity, label=f"{name} vehicle",
+                                  make_model="Tata Starbus",
+                                  driver_id=crew[driver_name].id,
+                                  insurance_expiry=date.today() + timedelta(days=300),
+                                  fitness_expiry=date.today() + timedelta(days=200))
+                db.add(vehicle)
+                db.flush()
+                note(True, f"vehicle {reg} ({capacity} seats)")
+
+            route = db.execute(
+                select(TransportRoute).where(
+                    TransportRoute.school_id == school.id, TransportRoute.code == code
+                )
+            ).scalar_one_or_none()
+            if route is None:
+                route = TransportRoute(**ids, name=name, code=code, vehicle_id=vehicle.id,
+                                       monthly_fee=fee, is_active=True)
+                db.add(route)
+                db.flush()
+                note(True, f"route {name}")
+            route.vehicle_id = vehicle.id
+            routes[code] = route
+
+            for seq, (stop_name, pickup) in enumerate(stops, start=1):
+                if db.execute(
+                    select(TransportStop).where(
+                        TransportStop.route_id == route.id, TransportStop.name == stop_name
+                    )
+                ).scalar_one_or_none():
+                    continue
+                db.add(TransportStop(route_id=route.id, name=stop_name, sequence=seq,
+                                     pickup_time=pickup,
+                                     drop_time=time(pickup.hour + 8, pickup.minute)))
+
+        db.flush()
+
+        # The van is deliberately given five children for its four seats. The
+        # utilisation report exists to catch exactly that, and a warning nobody
+        # has ever seen fire is a warning nobody trusts.
+        riding = 0
+        for n, child in enumerate(children):
+            code = "RT-SOUTH" if n < 5 else "RT-NORTH"
+            route = routes[code]
+            if db.execute(
+                select(TransportAssignment).where(
+                    TransportAssignment.student_id == child.id,
+                    TransportAssignment.end_date.is_(None),
+                )
+            ).scalar_one_or_none():
+                continue
+            stop = db.execute(
+                select(TransportStop).where(TransportStop.route_id == route.id)
+                .order_by(TransportStop.sequence)
+            ).scalars().first()
+            db.add(TransportAssignment(**ids, student_id=child.id, route_id=route.id,
+                                       stop_id=stop.id, direction=TransportDirection.both,
+                                       start_date=date.today() - timedelta(days=120)))
+            riding += 1
+        if riding:
+            note(True, f"{riding} children on the two routes")
 
         # ---------- leave the super admin test somewhere it can run again ----------
         premium = db.execute(select(Plan).where(Plan.name == "Premium")).scalar_one_or_none()

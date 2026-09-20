@@ -199,7 +199,11 @@ def main():
         assert code == 200, r
         code, r = request("POST", f"/parent/me/events/{trip['id']}/consent", token=ptok,
                           body={"student_id": sid, "response": "no", "note": "Unwell"})
-        assert code == 200 and r[0]["children"][0]["response"] == "no", r
+        # find the child by id rather than by position — a parent with more
+        # than one child in the class gets them back in no guaranteed order
+        assert code == 200, r
+        mine = next(c for c in r[0]["children"] if c["student_id"] == sid)
+        assert mine["response"] == "no", r
         code, rep = request("GET", f"/school/events/{trip['id']}/consents", token=tok)
         assert code == 200 and rep["no"] == 1 and rep["yes"] == 0 and rep["pending"] == rep["eligible"] - 1, rep
         row = next(x for x in rep["rows"] if x["student_id"] == sid)
