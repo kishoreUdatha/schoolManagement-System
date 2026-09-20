@@ -43,6 +43,7 @@ export default function TeacherLeavesPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [openApply, setOpenApply] = useState(false);
+  const [editing, setEditing] = useState<Leave | null>(null);
 
   async function load() {
     try {
@@ -122,9 +123,14 @@ export default function TeacherLeavesPage() {
                   </Badge>
                 </CardTitle>
                 {l.status === "pending" && (
-                  <Button size="sm" variant="secondary" onClick={() => cancel(l)}>
-                    Cancel
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => setEditing(l)}>
+                      Change
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => cancel(l)}>
+                      Cancel
+                    </Button>
+                  </div>
                 )}
               </CardHeader>
               <CardBody>
@@ -160,23 +166,36 @@ export default function TeacherLeavesPage() {
           }}
         />
       )}
+      {editing && (
+        <ApplyModal
+          existing={editing}
+          onClose={() => setEditing(null)}
+          onDone={() => {
+            setEditing(null);
+            setNotice("Leave updated.");
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }
 
 function ApplyModal({
+  existing,
   onClose,
   onDone,
 }: {
+  existing?: Leave;
   onClose: () => void;
   onDone: () => void;
 }) {
-  const [kind, setKind] = useState<LeaveKind>("casual");
+  const [kind, setKind] = useState<LeaveKind>(existing?.kind ?? "casual");
   const [types, setTypes] = useState<{ id: number; name: string; kind: LeaveKind }[]>([]);
   const [typeId, setTypeId] = useState("");
-  const [fromDate, setFromDate] = useState(todayIso());
-  const [toDate, setToDate] = useState(todayIso());
-  const [reason, setReason] = useState("");
+  const [fromDate, setFromDate] = useState(existing?.from_date ?? todayIso());
+  const [toDate, setToDate] = useState(existing?.to_date ?? todayIso());
+  const [reason, setReason] = useState(existing?.reason ?? "");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -185,13 +204,17 @@ function ApplyModal({
     setSubmitting(true);
     setError(null);
     try {
-      await api.post("/api/v1/staff/leaves", {
-        kind,
+      const body = {
         leave_type_id: typeId ? Number(typeId) : null,
         from_date: fromDate,
         to_date: toDate,
         reason: reason.trim() || null,
-      });
+      };
+      if (existing) {
+        await api.patch(`/api/v1/staff/leaves/${existing.id}`, body);
+      } else {
+        await api.post("/api/v1/staff/leaves", { ...body, kind });
+      }
       onDone();
     } catch (e) {
       setError(apiError(e));
@@ -205,16 +228,19 @@ function ApplyModal({
       .get<{ id: number; name: string; kind: LeaveKind }[]>("/api/v1/staff/leaves/types")
       .then((r) => {
         setTypes(r.data);
-        if (r.data[0]) {
-          setTypeId(String(r.data[0].id));
-          setKind(r.data[0].kind);
+        const mine = existing ? r.data.find((t) => t.kind === existing.kind) : undefined;
+        const pick = mine ?? r.data[0];
+        if (pick) {
+          setTypeId(String(pick.id));
+          setKind(pick.kind);
         }
       })
       .catch(() => setTypes([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <Modal open onClose={onClose} title="Apply for leave">
+    <Modal open onClose={onClose} title={existing ? "Change my leave" : "Apply for leave"}>
       <form onSubmit={submit} className="space-y-4">
         {types.length > 0 && (
           <label className="flex flex-col gap-1">
@@ -287,7 +313,7 @@ function ApplyModal({
             Cancel
           </Button>
           <Button type="submit" loading={submitting}>
-            Apply
+            {existing ? "Save" : "Apply"}
           </Button>
         </div>
       </form>

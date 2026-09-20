@@ -117,6 +117,7 @@ from app.models.payroll import PayrollRun, PayrollSettings, Payslip, StaffSalary
 from app.models.plan import Plan, PlanModule
 from app.models.project import Project, ProjectProgress
 from app.models.rbac import Branch, Permission, Role, RolePermission, UserRoleAssignment
+from app.models.result_override import ExamResultOverride
 from app.models.rubric import Rubric, RubricCriterion, RubricScore
 from app.models.register import AttendanceSession, Visitor
 from app.models.staff import Staff
@@ -256,6 +257,7 @@ __all__ = [
     "UserOtp",
     "Visit",
     "AttendanceSession",
+    "ExamResultOverride",
     "ExportJob",
     "ImportJob",
     "ReportDefinition",

@@ -1,7 +1,9 @@
 from datetime import date, datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.core.enums import ResultStatus
 
 
 class SubjectResult(BaseModel):
@@ -64,6 +66,11 @@ class ExamResultRead(BaseModel):
     section_name: Optional[str] = None
     subjects: list[SubjectResult]
     summary: ResultSummary
+    # only set when the school has decided something the marks don't say
+    result_status: str = "normal"
+    result_version: int = 1
+    override_reason: Optional[str] = None
+    parent_note: Optional[str] = None
     grade_scale: Optional[GradeScaleRead] = None
     rank: Optional[int] = None
     class_size: Optional[int] = None
@@ -80,3 +87,36 @@ class ExamSummaryForList(BaseModel):
     end_date: date
     published_at: Optional[datetime] = None
     summary: ResultSummary
+    result_status: str = "normal"
+    parent_note: Optional[str] = None
+
+
+class OverrideIn(BaseModel):
+    exam_id: int
+    student_id: int
+    result_status: ResultStatus
+    reason: str = Field(..., min_length=3, max_length=500)
+    parent_note: Optional[str] = Field(None, max_length=2000)
+
+
+class OverrideUpdate(BaseModel):
+    result_status: Optional[ResultStatus] = None
+    reason: Optional[str] = Field(None, min_length=3, max_length=500)
+    parent_note: Optional[str] = Field(None, max_length=2000)
+    # what the editor believed the version was; guards against a silent clash
+    expected_version: Optional[int] = None
+
+
+class OverrideRead(BaseModel):
+    id: int
+    exam_id: int
+    exam_name: Optional[str]
+    student_id: int
+    student_name: Optional[str]
+    student_admission_no: Optional[str]
+    result_status: ResultStatus
+    reason: str
+    parent_note: Optional[str]
+    version_no: int
+    decided_by_name: Optional[str]
+    decided_at: Optional[datetime]

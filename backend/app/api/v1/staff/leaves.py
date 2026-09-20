@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import CurrentUser
 from app.database import get_db
 from app.schemas.hr import BalanceRead, LeaveTypeRead
-from app.schemas.staff_leave import StaffLeaveCreate, StaffLeaveRead
+from app.schemas.staff_leave import StaffLeaveCreate, StaffLeaveRead, StaffLeaveUpdate
 from app.services import hr_service, staff_leave_service
 
 
@@ -56,6 +56,28 @@ def list_mine(
         StaffLeaveRead.model_validate(staff_leave_service.to_read_dict(db, l))
         for l in items
     ]
+
+
+@router.patch(
+    "/{leave_id}",
+    response_model=StaffLeaveRead,
+    summary="Change my leave application while it is still pending",
+)
+def update(
+    leave_id: int,
+    payload: StaffLeaveUpdate,
+    current_user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    if current_user.school_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User must be linked to a school",
+        )
+    l = staff_leave_service.update_own(
+        db, leave_id, current_user.id, current_user.school_id, payload
+    )
+    return StaffLeaveRead.model_validate(staff_leave_service.to_read_dict(db, l))
 
 
 @router.post(

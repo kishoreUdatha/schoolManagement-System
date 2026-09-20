@@ -6,6 +6,15 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.core.enums import StaffLeaveKind, StaffLeaveStatus
 
 
+class StaffLeaveUpdate(BaseModel):
+    """Edit an application that nobody has decided on yet."""
+
+    leave_type_id: Optional[int] = None
+    from_date: Optional[date] = None
+    to_date: Optional[date] = None
+    reason: Optional[str] = Field(None, max_length=2000)
+
+
 class StaffLeaveCreate(BaseModel):
     kind: StaffLeaveKind = StaffLeaveKind.casual
     # a configured leave type; its entitlement is then checked and used up

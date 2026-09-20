@@ -200,8 +200,10 @@ MAP = {
     "grade_scales": crud("GET /school/grade-scales", "POST /school/grade-scales; POST /school/grade-scales/seed-cbse",
                          "GET /school/grade-scales/{id}", "PUT /school/grade-scales/{id}"),
     "results": {
-        **crud((D, "GET /parent/me/children/{id}/exams/{exam_id}", "Computed from marks"), (N, "", "Computed on the fly"),
-               "GET /parent/me/children/{id}/exams/{exam_id}", (N, "", "")),
+        **crud((D, "GET /parent/me/children/{id}/exams/{exam_id}", "Computed from marks"),
+               (D, "POST /school/result-decisions", "The result is computed; this records a decision about it"),
+               "GET /school/result-decisions/exams/{exam_id}/students/{id}",
+               (D, "PATCH /school/result-decisions/{id}", "Versioned; a stale edit is refused")),
         "calculate": (D, "(computed on read)", ""),
         "approve": (D, "POST /school/exams/{id}/approve-results", "Principal/admin; can be required before publishing"),
         "publish": (D, "POST /school/exams/{id}/publish", ""),
@@ -255,7 +257,8 @@ MAP = {
     "leave_types": crud("GET /school/hr/leave-types; GET /staff/leaves/types", "POST /school/hr/leave-types", None,
                         "PUT /school/hr/leave-types/{id}", get_via_list=True),
     "leave_requests": {
-        **crud("GET /school/staff-leaves; GET /staff/leaves", "POST /staff/leaves", None, (N, "", ""), get_via_list=True),
+        **crud("GET /school/staff-leaves; GET /staff/leaves", "POST /staff/leaves", None,
+               (D, "PATCH /staff/leaves/{id}", "Re-date or re-word it while nobody has decided"), get_via_list=True),
         "submit": (D, "POST /staff/leaves", ""),
         "approve": (D, "POST /school/staff-leaves/{id}/decide", ""),
         "reject": (D, "POST /school/staff-leaves/{id}/decide", ""),
@@ -409,6 +412,8 @@ MAP = {
 # API-X### rows (Release = "Added"), rebuilt on every run.
 # (module, resource, operation, method, path, purpose, roles)
 EXTRA = [
+    ("Examinations & Results", "results", "Action", "GET", "/school/result-decisions", "Results the school has withheld, graced or failed", "School Admin, Principal, exams.approve_results"),
+    ("Examinations & Results", "results", "Delete", "DELETE", "/school/result-decisions/{id}", "Lift the decision; the computed result comes back", "School Admin, Principal, exams.approve_results"),
     ("Reports, Settings & Audit", "report_definitions", "Action", "GET", "/school/report-sources", "What a report can be built on, with its columns and filters", "School Admin"),
     ("Reports, Settings & Audit", "report_definitions", "Action", "POST", "/school/report-definitions/{id}/run", "Run a saved report and see the rows", "School Admin"),
     ("Reports, Settings & Audit", "report_definitions", "Delete", "DELETE", "/school/report-definitions/{id}", "Delete a saved report", "School Admin"),

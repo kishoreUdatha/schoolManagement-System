@@ -24,7 +24,7 @@ from app.core.enums import (
 from app.models.staff_attendance import StaffAttendance
 from app.models.staff_leave import StaffLeave
 from app.models.user import User
-from app.schemas.staff_leave import StaffLeaveCreate, StaffLeaveDecide
+from app.schemas.staff_leave import StaffLeaveCreate, StaffLeaveDecide, StaffLeaveUpdate
 from app.services import hr_service
 
 
@@ -157,6 +157,65 @@ def get(db: Session, leave_id: int, school_id: int) -> StaffLeave:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Leave not found"
         )
+    return l
+
+
+def update_own(
+    db: Session, leave_id: int, applicant_user_id: int, school_id: int, data: StaffLeaveUpdate
+) -> StaffLeave:
+    """Change the dates, type or reason while the office hasn't decided yet."""
+    l = get(db, leave_id, school_id)
+    if l.applicant_user_id != applicant_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only change your own leave",
+        )
+    if l.status != StaffLeaveStatus.pending:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"This leave is already {l.status.value} — apply again instead",
+        )
+    fields = data.model_dump(exclude_unset=True)
+    from_date = fields.get("from_date", l.from_date)
+    to_date = fields.get("to_date", l.to_date)
+    if to_date < from_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The last day can't be before the first",
+        )
+    overlap = db.execute(
+        select(StaffLeave).where(
+            StaffLeave.applicant_user_id == applicant_user_id,
+            StaffLeave.id != l.id,
+            StaffLeave.status.in_([StaffLeaveStatus.pending, StaffLeaveStatus.approved]),
+            StaffLeave.from_date <= to_date,
+            StaffLeave.to_date >= from_date,
+        )
+    ).scalar_one_or_none()
+    if overlap:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"You already have a {overlap.status.value} leave overlapping "
+                f"{from_date} – {to_date}"
+            ),
+        )
+    if "reason" in fields:
+        l.reason = (fields["reason"] or "").strip() or None
+    l.from_date, l.to_date = from_date, to_date
+    if "leave_type_id" in fields:
+        l.leave_type_id = fields["leave_type_id"]
+        if l.leave_type_id:
+            from app.models.hr import LeaveType
+
+            t = db.get(LeaveType, l.leave_type_id)
+            if not t or t.school_id != school_id or not t.is_active:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown leave type")
+            l.kind = t.kind
+    if l.leave_type_id:
+        hr_service.check_balance(db, l)
+    db.commit()
+    db.refresh(l)
     return l
 
 

@@ -193,6 +193,45 @@ def _build_result(
     }
 
 
+# ---------- overrides ----------
+
+
+def _override(db: Session, exam_id: int, student_id: int):
+    from app.models.result_override import ExamResultOverride
+
+    return db.execute(
+        select(ExamResultOverride).where(
+            ExamResultOverride.exam_id == exam_id, ExamResultOverride.student_id == student_id
+        )
+    ).scalar_one_or_none()
+
+
+def apply_override(db: Session, result: dict, *, for_parent: bool) -> dict:
+    """Fold the school's decision into a computed result. A withheld result
+    shows the note instead of the marks in the parent portal; staff still see
+    everything, flagged."""
+    from app.core.enums import ResultStatus
+
+    o = _override(db, result["exam_id"], result["student_id"])
+    result["result_status"] = (o.result_status.value if o else ResultStatus.normal.value)
+    result["result_version"] = o.version_no if o else 1
+    result["override_reason"] = o.reason if o else None
+    result["parent_note"] = o.parent_note if o else None
+    if not o:
+        return result
+    if o.result_status == ResultStatus.pass_by_grace:
+        result["summary"]["is_pass"] = True
+    elif o.result_status == ResultStatus.failed:
+        result["summary"]["is_pass"] = False
+    elif o.result_status == ResultStatus.withheld and for_parent:
+        result["subjects"] = []
+        result["summary"] = {
+            **result["summary"], "total_obtained": 0, "percentage": 0.0, "overall_grade": "-",
+            "overall_points": None, "is_pass": False,
+        }
+    return result
+
+
 def list_exams_for_child(
     db: Session, parent_user_id: int, student_id: int
 ) -> list[dict]:
@@ -203,7 +242,7 @@ def list_exams_for_child(
     exams = _published_exams_for_class(db, student.school_id, section.class_id)
     out = []
     for exam in exams:
-        full = _build_result(db, exam, student)
+        full = apply_override(db, _build_result(db, exam, student), for_parent=True)
         out.append(
             {
                 "exam_id": exam.id,
@@ -213,6 +252,8 @@ def list_exams_for_child(
                 "end_date": exam.end_date,
                 "published_at": exam.published_at,
                 "summary": full["summary"],
+                "result_status": full["result_status"],
+                "parent_note": full["parent_note"],
             }
         )
     return out
@@ -228,7 +269,8 @@ def get_child_exam_result(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Exam not found or not published",
         )
-    return add_report_card_extras(db, exam, student, _build_result(db, exam, student))
+    result = apply_override(db, _build_result(db, exam, student), for_parent=True)
+    return add_report_card_extras(db, exam, student, result)
 
 
 def build_student_result_for_admin(
@@ -244,7 +286,8 @@ def build_student_result_for_admin(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Exam not found"
         )
-    return _build_result(db, exam, student)  # plain result: rank/remarks added only for report cards
+    # plain result: rank/remarks are added only for report cards
+    return apply_override(db, _build_result(db, exam, student), for_parent=False)
 
 
 # ---------- PDF generation ----------

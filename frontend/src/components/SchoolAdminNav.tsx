@@ -108,6 +108,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/school/syllabus", label: "Syllabus", icon: ListChecks },
       { href: "/school/rubrics", label: "Rubrics", icon: ClipboardList },
+      { href: "/school/result-decisions", label: "Result decisions", icon: FileBadge },
       { href: "/school/lesson-plans", label: "Lesson plans", icon: NotebookPen },
       { href: "/school/question-bank", label: "Question bank", icon: FileQuestion },
       { href: "/school/online-tests", label: "Online tests", icon: MonitorCheck },

@@ -861,3 +861,10 @@ class ExportStatus(str, enum.Enum):
     running = "running"
     ready = "ready"
     failed = "failed"
+
+
+class ResultStatus(str, enum.Enum):
+    normal = "normal"        # whatever the marks say
+    withheld = "withheld"    # not shown to parents until released
+    pass_by_grace = "pass_by_grace"
+    failed = "failed"        # overridden to fail (e.g. malpractice)

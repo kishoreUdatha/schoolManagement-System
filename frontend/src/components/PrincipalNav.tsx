@@ -16,6 +16,7 @@ const sections: NavSection[] = [
       { href: "/principal/question-bank", label: "Question bank", icon: FileQuestion },
       { href: "/principal/online-tests", label: "Online tests", icon: MonitorCheck },
       { href: "/principal/report-cards", label: "Report cards", icon: FileBadge },
+      { href: "/principal/result-decisions", label: "Result decisions", icon: Gavel },
       { href: "/principal/refunds", label: "Refunds", icon: HandCoins },
       { href: "/principal/discipline", label: "Discipline", icon: Gavel },
       { href: "/principal/counselling", label: "Counselling", icon: HeartHandshake },
