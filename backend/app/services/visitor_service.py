@@ -24,7 +24,11 @@ from app.schemas.visitor import (
     IncidentUpdate,
     ParentGatePassIn,
     VisitIn,
+    VisitUpdate,
 )
+
+# who may answer for a host who is busy
+OFFICE = (UserRole.school_admin, UserRole.principal)
 
 
 def _404(what: str) -> HTTPException:
@@ -143,6 +147,61 @@ def _visit(db: Session, visit_id: int, school_id: int) -> Visit:
     return v
 
 
+def update_visit(db: Session, visit_id: int, school_id: int, data: VisitUpdate) -> Visit:
+    """Correct a pre-registration before the visitor turns up — a time that
+    moved, a different host, one more person in the car. Once they are through
+    the gate the visit is a record of what happened, so it stops being editable.
+    """
+    v = _visit(db, visit_id, school_id)
+    if v.status != VisitStatus.expected:
+        raise _400(f"This visit is {v.status.value.replace('_', ' ')} — it can no longer be changed")
+    fields = data.model_dump(exclude_unset=True)
+    if fields.get("host_user_id") and fields["host_user_id"] != v.host_user_id:
+        # a new host hasn't agreed to anything yet
+        v.host_approved_at = None
+        v.host_approved_by_user_id = None
+    for k, value in fields.items():
+        if k == "vehicle_no" and value:
+            value = value.strip().upper()
+        elif isinstance(value, str):
+            value = value.strip()
+        setattr(v, k, value)
+    db.commit()
+    db.refresh(v)
+    return v
+
+
+def host_decision(db: Session, visit_id: int, user: User, approved: bool, reason: Optional[str] = None) -> Visit:
+    """The host confirming they are expecting someone, or saying they aren't.
+
+    The desk can sign a visitor in either way — a parent at the gate shouldn't
+    be turned away because a teacher is mid-lesson — but the gate can see
+    whether the host has actually agreed, which is the point of asking.
+    """
+    v = _visit(db, visit_id, user.school_id)
+    if v.status != VisitStatus.expected:
+        raise _400("Only an expected visit is waiting on its host")
+    if v.host_user_id and v.host_user_id != user.id and user.role not in OFFICE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the host or the office can answer for this visit",
+        )
+    if approved:
+        v.host_approved_at = datetime.now(timezone.utc)
+        v.host_approved_by_user_id = user.id
+        v.host_declined_reason = None
+    else:
+        if not (reason or "").strip():
+            raise _400("Say why they aren't being seen, so the desk can tell them")
+        v.status = VisitStatus.denied
+        v.host_approved_at = None
+        v.host_approved_by_user_id = None
+        v.host_declined_reason = reason.strip()[:300]
+    db.commit()
+    db.refresh(v)
+    return v
+
+
 def check_in(db: Session, visit_id: int, school_id: int, actor_id: int) -> Visit:
     v = _visit(db, visit_id, school_id)
     if v.status != VisitStatus.expected:
@@ -182,6 +241,7 @@ def visit_to_read(db: Session, v: Visit) -> dict:
             "id", "visitor_name", "phone", "id_type", "id_last4", "company", "purpose", "purpose_detail",
             "host_user_id", "student_id", "people_count", "vehicle_no", "status", "expected_at",
             "check_in_at", "check_out_at", "pass_no", "notes",
+            "host_approved_at", "host_declined_reason",
         )},
         "host_name": host.full_name if host else None,
         "student_name": student.full_name if student else None,

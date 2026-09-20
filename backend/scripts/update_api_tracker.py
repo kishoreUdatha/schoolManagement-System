@@ -150,7 +150,7 @@ MAP = {
     },
     "student_leave_requests": {
         **crud("GET /school/student-leaves; GET /parent/me/children/{id}/leaves", "POST /parent/me/children/{id}/leaves", None,
-               (P, "POST /parent/me/children/{id}/leaves/{leave_id}/cancel", "Cancel only; re-apply to change dates"),
+               (D, "PATCH /parent/me/children/{id}/leaves/{leave_id}", "While the school hasn't answered"),
                get_via_list=True),
         "approve": (D, "POST /school/student-leaves/{id}/decide", "approve = true; class teacher or admin"),
         "reject": (D, "POST /school/student-leaves/{id}/decide", "approve = false, note required"),
@@ -217,9 +217,9 @@ MAP = {
     "fee_structures": crud("GET /school/fees/structures", "POST /school/fees/structures", None, "PATCH /school/fees/structures/{id}",
                            get_via_list=True),
     "student_fee_charges": crud("GET /school/fees/student-fees; GET /parent/me/children/{id}/fees", "POST /school/fees/generate",
-                                None, (P, "POST /school/fees/student-fees/{id}/waive", "Waive only"), get_via_list=True),
+                                None, (D, "PATCH /school/fees/student-fees/{id}", "Correct before anything is collected"), get_via_list=True),
     "concessions": crud("GET /school/accounts/concessions", "POST /school/accounts/concessions", None,
-                        (P, "POST /school/accounts/concessions/{id}/end", "End only"), get_via_list=True),
+                        (D, "PATCH /school/accounts/concessions/{id}", "Change one that is still running"), get_via_list=True),
     "fine_rules": crud("GET /school/fees/late-fee-rules", "POST /school/fees/late-fee-rules", None,
                        "PUT /school/fees/late-fee-rules/{id}", get_via_list=True),
     "payments": {
@@ -240,7 +240,7 @@ MAP = {
     },
     "finance_transactions": crud("GET /school/accounts/cash-book; GET /school/accounts/expenses; GET /school/accounts/income",
                                  "POST /school/accounts/expenses; POST /school/accounts/income", None,
-                                 (P, "POST /school/accounts/expenses/{id}/void", "Void only"), get_via_list=True),
+                                 (D, "PATCH /school/accounts/expenses/{id}", "Amend a voucher that isn't void"), get_via_list=True),
     "vendors": crud("GET /school/inventory/suppliers", "POST /school/inventory/suppliers", None, "PUT /school/inventory/suppliers/{id}",
                     get_via_list=True),
     # ---------------- HR & Payroll ----------------
@@ -280,7 +280,7 @@ MAP = {
                             (D, "PATCH /school/transport/routes/{id}", ""), (D, "GET /school/transport/routes/{id}", ""),
                             (D, "PATCH /school/transport/routes/{id}", "")),
     "transport_assignments": crud("GET /school/transport/assignments", "POST /school/transport/assignments", None,
-                                  (P, "POST /school/transport/assignments/{id}/end", "End only"), get_via_list=True),
+                                  (D, "PATCH /school/transport/assignments/{id}", "Stop, direction or start date"), get_via_list=True),
     "trips": {
         **crud("GET /school/transport/trips", "POST /school/transport/trips; POST /school/transport/trips/generate",
                "GET /school/transport/trips/{id}", "PATCH /school/transport/trips/{id}"),
@@ -295,13 +295,13 @@ MAP = {
                         (D, "GET /school/library/books/{id}", ""), "PATCH /school/library/copies/{id}"),
     "circulation_transactions": {
         **crud("GET /school/library/loans", "POST /school/library/loans", None,
-               (P, "POST /school/library/loans/{id}/lost", "Via actions"), get_via_list=True),
+               (D, "PATCH /school/library/loans/{id}", "Override the due date, outside the renewal rules"), get_via_list=True),
         "issue": (D, "POST /school/library/loans", ""),
         "return": (D, "POST /school/library/loans/{id}/return", ""),
         "renew": (D, "POST /school/library/loans/{id}/renew", ""),
     },
     "reservations": crud("GET /school/library/reservations", "POST /school/library/reservations", None,
-                         (P, "POST /school/library/reservations/{id}/cancel", "Cancel only"), get_via_list=True),
+                         (D, "PATCH /school/library/reservations/{id}", "Hold it a little longer"), get_via_list=True),
     "library_fines": crud("GET /school/library/fines", "POST /school/library/loans/{id}/fine",
                           "GET /school/library/fines/{id}",
                           (D, "PATCH /school/library/fines/{id}", "Correct while owed; frozen once settled")),
@@ -311,7 +311,7 @@ MAP = {
                          get_via_list=True),
     "hostel_allocations": {
         **crud("GET /school/hostels/{id}/residents", "POST /school/hostels/allocations", None,
-               (P, "POST /school/hostels/allocations/{id}/vacate", "Vacate only"), get_via_list=True),
+               (D, "POST /school/hostels/allocations/{id}/transfer", "Move beds in one step"), get_via_list=True),
         "allocate": (D, "POST /school/hostels/allocations", ""),
         "transfer": (P, "vacate + allocate", "No single transfer action"),
         "vacate": (D, "POST /school/hostels/allocations/{id}/vacate", ""),
@@ -322,7 +322,7 @@ MAP = {
     # ---------------- Health, Counselling & Discipline ----------------
     "medical_profiles": crud("GET /school/health/profiles", "PUT /school/health/students/{id}/profile",
                              "GET /school/health/students/{id}", "PUT /school/health/students/{id}/profile; PUT /parent/me/children/{id}/health/profile"),
-    "clinic_visits": crud("GET /school/health/visits", "POST /school/health/visits", None, (P, "DELETE /school/health/visits/{id}", "Delete only"),
+    "clinic_visits": crud("GET /school/health/visits", "POST /school/health/visits", None, (D, "PATCH /school/health/visits/{id}", "Fill in the treatment and outcome afterwards"),
                           get_via_list=True),
     "counselling_cases": crud("GET /school/discipline/counselling/cases", "POST /school/discipline/counselling/cases",
                               "GET /school/discipline/counselling/cases/{id}", "PATCH /school/discipline/counselling/cases/{id}"),
@@ -336,7 +336,7 @@ MAP = {
     },
     "visits": {
         **crud("GET /school/front-desk/visits", "POST /school/front-desk/visits", None,
-               (P, "POST /school/front-desk/visits/{id}/cancel", "Cancel only"), get_via_list=True),
+               (D, "PATCH /school/front-desk/visits/{id}", "While the visitor is still expected"), get_via_list=True),
         "approve": (P, "POST /school/front-desk/visits/{id}/deny", "Pre-registration + deny; no host approval step"),
         "check-in": (D, "POST /school/front-desk/visits/{id}/check-in", ""),
         "check-out": (D, "POST /school/front-desk/visits/{id}/check-out", ""),
@@ -372,7 +372,7 @@ MAP = {
         "publish": (D, "POST /school/notices/{id}/send", ""),
     },
     "message_threads": crud("GET /parent/me/conversations; GET /teacher/conversations", "POST /parent/me/conversations",
-                            "GET /teacher/conversations/{id}/messages", (P, "POST /teacher/conversations/{id}/mark-read", "Mark read only")),
+                            "GET /teacher/conversations/{id}/messages", (D, "PATCH /teacher/conversations/{id}", "Close a settled thread; a reply reopens it")),
     "messages": crud("GET /teacher/conversations/{id}/messages", "POST /teacher/conversations/{id}/messages", None,
                      (NA, "", "Messages aren't editable"), get_via_list=True),
     # ---------------- Documents & Certificates ----------------
@@ -413,6 +413,8 @@ MAP = {
 # API-X### rows (Release = "Added"), rebuilt on every run.
 # (module, resource, operation, method, path, purpose, roles)
 EXTRA = [
+    ("Visitor & Security", "visits", "Action", "POST", "/school/front-desk/visits/{id}/host-decision", "The host confirms they are expecting someone, or declines with a reason", "Host, School Admin, Principal"),
+    ("Hostel", "hostel_allocations", "Action", "POST", "/school/hostels/allocations/{id}/transfer", "Move a resident to another bed as one act", "School Admin, Warden"),
     ("Library", "library_fines", "Action", "GET", "/school/library/fines", "Outstanding, collected and waived totals with the fines behind them", "School Admin"),
     ("Inventory, Assets & Labs", "asset_assignments", "Action", "GET", "/school/inventory/assignments", "Who has what, and who had it before", "School Admin, Store keeper"),
     ("Health & Wellness", "medical_profiles", "Action", "GET", "/school/health/profiles", "The health register, including children with nothing on file", "School Admin"),

@@ -27,7 +27,7 @@ from app.models.student import Student
 from app.models.subject import ClassSubject, Subject
 from app.models.timetable import Period, TimetableEntry
 from app.models.user import User
-from app.schemas.cover import AssignIn, DecideIn, StudentLeaveIn, UnavailabilityIn
+from app.schemas.cover import AssignIn, DecideIn, StudentLeaveIn, StudentLeaveUpdate, UnavailabilityIn
 
 TEACHING_ROLES = (UserRole.teacher, UserRole.principal)
 
@@ -433,6 +433,43 @@ def child_leaves(db: Session, parent_user_id: int, student_id: int) -> list[Stud
     return list(db.execute(
         select(StudentLeave).where(StudentLeave.student_id == st.id).order_by(StudentLeave.from_date.desc())
     ).scalars())
+
+
+def update_leave(db: Session, parent_user_id: int, student_id: int, leave_id: int,
+                 data: StudentLeaveUpdate) -> StudentLeave:
+    """Change a request the school hasn't answered yet. Once it is decided the
+    dates have been acted on — the register may already be marked — so a change
+    means cancelling and applying again."""
+    st = require_linked_child(db, parent_user_id, student_id)
+    lv = db.get(StudentLeave, leave_id)
+    if not lv or lv.student_id != st.id:
+        raise _404("Leave")
+    if lv.status != StudentLeaveStatus.pending:
+        raise _400(f"This request is already {lv.status.value} — cancel it and apply again")
+    fields = data.model_dump(exclude_unset=True)
+    from_date = fields.get("from_date", lv.from_date)
+    to_date = fields.get("to_date", lv.to_date)
+    if to_date < from_date:
+        raise _400("The leave would end before it starts")
+    if (to_date - from_date).days > 60:
+        raise _400("A single leave can't be longer than 60 days")
+    if from_date < school_today(db, st.school_id) - timedelta(days=7):
+        raise _400("Leave can be applied at most a week after the fact")
+    overlap = db.execute(
+        select(StudentLeave.id).where(
+            StudentLeave.student_id == st.id,
+            StudentLeave.id != lv.id,
+            StudentLeave.status.in_([StudentLeaveStatus.pending, StudentLeaveStatus.approved]),
+            StudentLeave.from_date <= to_date, StudentLeave.to_date >= from_date,
+        ).limit(1)
+    ).first()
+    if overlap:
+        raise _400("There's already a leave request for some of these days")
+    for k, v in fields.items():
+        setattr(lv, k, v)
+    db.commit()
+    db.refresh(lv)
+    return lv
 
 
 def cancel(db: Session, parent_user_id: int, student_id: int, leave_id: int) -> StudentLeave:

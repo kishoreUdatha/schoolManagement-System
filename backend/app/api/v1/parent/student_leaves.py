@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import ParentUser
 from app.database import get_db
-from app.schemas.cover import StudentLeaveIn, StudentLeaveRead
+from app.schemas.cover import StudentLeaveIn, StudentLeaveRead, StudentLeaveUpdate
 from app.services import cover_service as svc
 
 
@@ -22,6 +22,13 @@ def leaves(student_id: int, current_user: ParentUser, db: Db):
              summary="Apply for leave (the class teacher is notified)")
 def apply(student_id: int, payload: StudentLeaveIn, current_user: ParentUser, db: Db):
     return svc.leaves_to_read(db, None, [svc.apply(db, current_user.id, student_id, payload)])[0]
+
+
+@router.patch("/{student_id}/leaves/{leave_id}", response_model=StudentLeaveRead,
+              summary="Change a request the school hasn't answered yet")
+def update(student_id: int, leave_id: int, payload: StudentLeaveUpdate, current_user: ParentUser, db: Db):
+    lv = svc.update_leave(db, current_user.id, student_id, leave_id, payload)
+    return svc.leaves_to_read(db, None, [lv])[0]
 
 
 @router.post("/{student_id}/leaves/{leave_id}/cancel", response_model=StudentLeaveRead)

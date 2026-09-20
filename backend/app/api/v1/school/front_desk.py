@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import FrontDeskUser, SchoolAdminUser
+from app.core.deps import CurrentUser, FrontDeskUser, SchoolAdminUser
 from app.core.enums import VisitStatus
 from app.database import get_db
 from app.schemas.visitor import (
@@ -14,11 +14,13 @@ from app.schemas.visitor import (
     GatePassIn,
     GatePassRead,
     GateVerify,
+    HostDecision,
     IncidentIn,
     IncidentRead,
     IncidentUpdate,
     VisitIn,
     VisitRead,
+    VisitUpdate,
 )
 from app.services import visitor_service as svc
 
@@ -73,6 +75,22 @@ def list_visits(
 def create_visit(payload: VisitIn, current_user: FrontDeskUser, db: Db):
     v = svc.create_visit(db, current_user.tenant_id, current_user.school_id, current_user.id, payload)
     return VisitRead.model_validate(svc.visit_to_read(db, v))
+
+
+@router.patch("/visits/{visit_id}", response_model=VisitRead,
+              summary="Correct a pre-registration before the visitor arrives")
+def update_visit(visit_id: int, payload: VisitUpdate, current_user: FrontDeskUser, db: Db):
+    return VisitRead.model_validate(
+        svc.visit_to_read(db, svc.update_visit(db, visit_id, current_user.school_id, payload))
+    )
+
+
+@router.post("/visits/{visit_id}/host-decision", response_model=VisitRead,
+             summary="The host confirms they are expecting this visitor, or says they aren't")
+def host_decision(visit_id: int, payload: HostDecision, current_user: CurrentUser, db: Db):
+    return VisitRead.model_validate(
+        svc.visit_to_read(db, svc.host_decision(db, visit_id, current_user, payload.approved, payload.reason))
+    )
 
 
 @router.post("/visits/{visit_id}/check-in", response_model=VisitRead)

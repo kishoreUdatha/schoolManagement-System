@@ -224,3 +224,16 @@ class FineSummary(BaseModel):
     waived_amount: Decimal
     billed_amount: Decimal
     fines: list[FineRead]
+
+
+class DueDateUpdate(BaseModel):
+    """Override when a loan is due back, outside the renewal rules."""
+
+    due_on: date
+    note: Optional[str] = Field(None, max_length=200)
+
+
+class HoldUpdate(BaseModel):
+    """Hold a reserved book a little longer."""
+
+    hold_until: date

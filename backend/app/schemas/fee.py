@@ -110,3 +110,11 @@ class GenerateResult(BaseModel):
     created: int
     skipped: int
     period: str
+
+
+class ChargeCorrection(BaseModel):
+    """Fix a charge raised in error, before anything is collected against it."""
+
+    amount_due: Optional[Decimal] = Field(None, gt=0)
+    due_date: Optional[date] = None
+    notes: Optional[str] = Field(None, max_length=300)

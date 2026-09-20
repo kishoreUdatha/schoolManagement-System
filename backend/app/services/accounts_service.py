@@ -10,7 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.enums import ChequeStatus, FeeStatus, MoneyMode, PayrollRunStatus, StorePayment
+from app.core.enums import ChequeStatus, ConcessionKind, FeeStatus, MoneyMode, PayrollRunStatus, StorePayment
 from app.core.scoping import get_school_student, section_label, section_labels
 from app.models.accounts import Cheque, Concession, Expense, ExpenseCategory, FeeCollection, OtherIncome
 from app.models.document import Document
@@ -19,7 +19,16 @@ from app.models.inventory import StoreSale, Supplier
 from app.models.payroll import PayrollRun, Payslip
 from app.models.student import Student
 from app.models.user import User
-from app.schemas.accounts import CategoryIn, ChequeAction, ChequeIn, ConcessionIn, ExpenseIn, IncomeIn
+from app.schemas.accounts import (
+    CategoryIn,
+    ChequeAction,
+    ChequeIn,
+    ConcessionIn,
+    ConcessionUpdate,
+    ExpenseIn,
+    ExpenseUpdate,
+    IncomeIn,
+)
 from app.schemas.fee import RecordPayment
 from app.services import ledger_service
 
@@ -89,6 +98,31 @@ def add_expense(db: Session, user: User, data: ExpenseIn) -> Expense:
         raise _400("Expense date is in the future")
     e = Expense(tenant_id=user.tenant_id, school_id=user.school_id, recorded_by_user_id=user.id, **data.model_dump())
     db.add(e)
+    db.commit()
+    db.refresh(e)
+    return e
+
+
+def update_expense(db: Session, expense_id: int, user: User, data: ExpenseUpdate) -> Expense:
+    """Amend a voucher — a mistyped amount, the wrong category, a bill number
+    that came later. A voided voucher stays as it was; that is the record of
+    what was cancelled."""
+    e = _scoped(db, Expense, expense_id, user.school_id, "Expense")
+    if e.is_void:
+        raise _400("This voucher is void — raise a new one instead")
+    fields = data.model_dump(exclude_unset=True)
+    if "category_id" in fields:
+        _scoped(db, ExpenseCategory, fields["category_id"], user.school_id, "Category")
+    if fields.get("supplier_id"):
+        _scoped(db, Supplier, fields["supplier_id"], user.school_id, "Supplier")
+    if fields.get("bill_document_id"):
+        _scoped(db, Document, fields["bill_document_id"], user.school_id, "Bill document")
+    if fields.get("spent_on") and fields["spent_on"] > date.today():
+        raise _400("Expense date is in the future")
+    for k, v in fields.items():
+        setattr(e, k, v)
+    if not e.supplier_id and not (e.payee or "").strip():
+        raise _400("Pick a supplier or enter who was paid")
     db.commit()
     db.refresh(e)
     return e
@@ -306,6 +340,27 @@ def add_concession(db: Session, user: User, data: ConcessionIn) -> tuple[Concess
     db.commit()
     db.refresh(c)
     return c, applied
+
+
+def update_concession(db: Session, concession_id: int, user: User, data: ConcessionUpdate) -> Concession:
+    """Change a concession that is still running — its value, the dates it
+    covers, or why it was given. Ending it is a separate action, because that
+    is a decision rather than a correction."""
+    c = _scoped(db, Concession, concession_id, user.school_id, "Concession")
+    if not c.is_active:
+        raise _400("This concession has ended — add a new one instead")
+    fields = data.model_dump(exclude_unset=True)
+    if fields.get("kind") == ConcessionKind.percent and Decimal(str(fields.get("value", c.value))) > 100:
+        raise _400("A percentage can't exceed 100")
+    valid_from = fields.get("valid_from", c.valid_from)
+    valid_to = fields.get("valid_to", c.valid_to)
+    if valid_to and valid_to < valid_from:
+        raise _400("The concession would end before it starts")
+    for k, v in fields.items():
+        setattr(c, k, v)
+    db.commit()
+    db.refresh(c)
+    return c
 
 
 def end_concession(db: Session, concession_id: int, user: User) -> Concession:

@@ -11,6 +11,7 @@ from app.core.enums import UserRole
 from app.database import get_db
 from app.models.user import User
 from app.schemas.hostel import (
+    TransferIn,
     AllocationIn,
     ComplaintIn,
     ComplaintRead,
@@ -78,6 +79,13 @@ def update_room(room_id: int, payload: RoomUpdate, current_user: Staff, db: Db):
 @router.post("/allocations", status_code=status.HTTP_201_CREATED, summary="Put a student in a bed (or move them)")
 def allocate(payload: AllocationIn, current_user: Staff, db: Db):
     a = svc.allocate(db, current_user, payload)
+    return {"id": a.id, "student_id": a.student_id, "bed_id": a.bed_id, "start_date": a.start_date}
+
+
+@router.post("/allocations/{allocation_id}/transfer", status_code=status.HTTP_201_CREATED,
+             summary="Move a resident to another bed in one step")
+def transfer(allocation_id: int, payload: TransferIn, current_user: Staff, db: Db):
+    a = svc.transfer(db, allocation_id, current_user, payload)
     return {"id": a.id, "student_id": a.student_id, "bed_id": a.bed_id, "start_date": a.start_date}
 
 

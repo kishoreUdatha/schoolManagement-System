@@ -33,7 +33,9 @@ from app.schemas.library import (
     CopiesAdd,
     CopyUpdate,
     FineAction,
+    DueDateUpdate,
     FineCorrection,
+    HoldUpdate,
     IssueRequest,
     LibrarySettingsUpdate,
     LostRequest,
@@ -473,6 +475,27 @@ def return_copy(db: Session, loan_id: int, school_id: int, actor_id: int, data: 
     return loan
 
 
+def set_due_date(db: Session, loan_id: int, school_id: int, data: DueDateUpdate) -> Loan:
+    """Override when a book is due back.
+
+    Renewing follows the school's rules (a limit, and nobody waiting). This is
+    the librarian overruling them for a reason — a child in hospital, a project
+    that runs past the holidays — so it takes a note and doesn't count as a
+    renewal.
+    """
+    loan = _loan(db, loan_id, school_id)
+    if loan.returned_on or loan.lost_on:
+        raise _400("This loan is closed")
+    if data.due_on < loan.issued_on:
+        raise _400("A book can't be due before it was issued")
+    loan.due_on = data.due_on
+    if data.note:
+        loan.fine_note = "; ".join(x for x in (loan.fine_note, data.note.strip()) if x)[:300]
+    db.commit()
+    db.refresh(loan)
+    return loan
+
+
 def renew(db: Session, loan_id: int, school_id: int) -> Loan:
     loan = _loan(db, loan_id, school_id)
     if loan.returned_on or loan.lost_on:
@@ -685,6 +708,29 @@ def reserve(db: Session, school_id: int, data) -> Reservation:
     db.add(r)
     db.commit()
     _promote_reservations(db, book.id)
+    db.refresh(r)
+    return r
+
+
+def extend_hold(db: Session, reservation_id: int, school_id: int, data: HoldUpdate) -> Reservation:
+    """Hold a book a little longer for someone who can't come in today.
+
+    Only while it is actually being held — a reservation still queueing has no
+    hold to extend, and a closed one is finished with.
+    """
+    r = db.get(Reservation, reservation_id)
+    if not r or r.school_id != school_id:
+        raise _404("Reservation")
+    if r.status != ReservationStatus.ready:
+        raise _400(
+            f"This reservation is {r.status.value} — only a book already on hold can be held longer"
+        )
+    if data.hold_until <= date.today():
+        raise _400("Pick a date in the future")
+    if r.hold_until and data.hold_until <= r.hold_until:
+        raise _400(f"It is already held until {r.hold_until}")
+    r.hold_until = data.hold_until
+    db.commit()
     db.refresh(r)
     return r
 

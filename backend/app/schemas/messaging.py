@@ -45,6 +45,7 @@ class ConversationRead(BaseModel):
     last_message_at: Optional[datetime] = None
     last_message_body: Optional[str] = None
     unread_for_viewer: int
+    is_closed: bool = False
     created_at: datetime
 
 
@@ -52,3 +53,9 @@ class TeacherContactCard(BaseModel):
     teacher_user_id: int
     teacher_name: str
     subjects: list[str]
+
+
+class ConversationClose(BaseModel):
+    """Put a settled conversation away, or bring it back."""
+
+    closed: bool = True

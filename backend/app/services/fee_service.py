@@ -13,6 +13,7 @@ from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.fee import FeeHead, FeeStructure, StudentFee
 from app.models.student import Student
 from app.schemas.fee import (
+    ChargeCorrection,
     FeeHeadCreate,
     FeeHeadUpdate,
     FeeStructureCreate,
@@ -525,6 +526,44 @@ def waive(
             status_code=status.HTTP_404_NOT_FOUND, detail="Fee record not found"
         )
     sf.status = FeeStatus.waived
+    sf.recorded_by_user_id = recorded_by_user_id
+    db.commit()
+    return get_student_fee(db, sf.id, school_id)
+
+
+def correct_charge(
+    db: Session, fee_id: int, school_id: int, recorded_by_user_id: int, data: ChargeCorrection
+) -> dict:
+    """Fix a charge that was raised wrong — the amount, when it falls due, or
+    the note explaining it. Only while nothing has been collected against it:
+    once a rupee is in, the charge is part of a receipt and has to be refunded
+    or waived rather than quietly rewritten.
+    """
+    sf = db.get(StudentFee, fee_id)
+    if not sf or sf.school_id != school_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Fee record not found"
+        )
+    if sf.status == FeeStatus.waived:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This charge has been waived — it can't be corrected",
+        )
+    if sf.amount_paid and sf.amount_paid > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"{sf.amount_paid} has already been collected against this charge — "
+                "refund or waive it instead of changing it"
+            ),
+        )
+    fields = data.model_dump(exclude_unset=True)
+    if "amount_due" in fields:
+        sf.amount_due = fields["amount_due"]
+    if "due_date" in fields:
+        sf.due_date = fields["due_date"]
+    if "notes" in fields:
+        sf.notes = (fields["notes"] or "").strip() or None
     sf.recorded_by_user_id = recorded_by_user_id
     db.commit()
     return get_student_fee(db, sf.id, school_id)

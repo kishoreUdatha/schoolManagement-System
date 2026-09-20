@@ -205,6 +205,14 @@ class AssignmentCreate(BaseModel):
     start_date: Optional[date] = None  # defaults to today
 
 
+class AssignmentUpdate(BaseModel):
+    """Correct a running assignment. The route is changed by assigning again."""
+
+    stop_id: Optional[int] = None
+    direction: Optional[TransportDirection] = None
+    start_date: Optional[date] = None
+
+
 class AssignmentRead(BaseModel):
     id: int
     student_id: int

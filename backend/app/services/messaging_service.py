@@ -42,6 +42,7 @@ def _conversation_read_dict(
         "last_message_at": c.last_message_at,
         "last_message_body": last_message.body if last_message else None,
         "unread_for_viewer": unread,
+        "is_closed": c.closed_at is not None,
         "created_at": c.created_at,
     }
 
@@ -216,13 +217,14 @@ def list_for_parent(
 # ----- Teacher-side -----
 
 def list_for_teacher(
-    db: Session, teacher_user_id: int
+    db: Session, teacher_user_id: int, *, include_closed: bool = False
 ) -> list[tuple[Conversation, Optional[Message]]]:
+    stmt = select(Conversation).where(Conversation.teacher_user_id == teacher_user_id)
+    if not include_closed:
+        stmt = stmt.where(Conversation.closed_at.is_(None))
     convs = list(
         db.execute(
-            select(Conversation)
-            .where(Conversation.teacher_user_id == teacher_user_id)
-            .order_by(Conversation.last_message_at.desc().nullslast())
+            stmt.order_by(Conversation.last_message_at.desc().nullslast())
         ).scalars().all()
     )
     out = []
@@ -235,6 +237,25 @@ def list_for_teacher(
         ).scalar_one_or_none()
         out.append((c, last))
     return out
+
+
+def set_closed(db: Session, conversation_id: int, user, closed: bool):
+    """Put a settled conversation away, or bring it back.
+
+    Nothing is deleted: a parent can still open it and reply, and a reply
+    reopens it. This is a teacher clearing their list, not ending the
+    conversation on the family's behalf.
+    """
+    c = get_conversation_for_viewer(db, conversation_id, user.id)
+    if closed and c.closed_at is None:
+        c.closed_at = datetime.now(timezone.utc)
+        c.closed_by_user_id = user.id
+    elif not closed:
+        c.closed_at = None
+        c.closed_by_user_id = None
+    db.commit()
+    db.refresh(c)
+    return c
 
 
 def get_conversation_for_viewer(
@@ -287,6 +308,8 @@ def _append_message(
     db.add(m)
     now = datetime.now(timezone.utc)
     c.last_message_at = now
+    c.closed_at = None  # someone is talking again
+    c.closed_by_user_id = None
     if sender_is_parent:
         c.teacher_unread = (c.teacher_unread or 0) + 1
     else:

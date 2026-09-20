@@ -11,6 +11,7 @@ from app.database import get_db
 from app.models.health import ClinicVisit, HealthCheckup, Immunization
 from app.schemas.health import (
     ProfileRow,
+    VisitUpdate,
     AlertRow,
     CheckupIn,
     CheckupRead,
@@ -85,6 +86,14 @@ def list_visits(
 def record_visit(payload: VisitIn, current_user: SchoolAdminUser, db: Db):
     v = svc.record_visit(db, current_user.school_id, current_user.id, payload)
     return VisitRead.model_validate(svc.visit_to_read(db, v))
+
+
+@router.patch("/visits/{visit_id}", response_model=VisitRead,
+              summary="Fill in or correct a sick-room note")
+def update_visit(visit_id: int, payload: VisitUpdate, current_user: SchoolAdminUser, db: Db):
+    return VisitRead.model_validate(
+        svc.visit_to_read(db, svc.update_visit(db, visit_id, current_user.school_id, payload))
+    )
 
 
 @router.delete("/visits/{visit_id}", status_code=status.HTTP_204_NO_CONTENT)

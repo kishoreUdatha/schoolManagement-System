@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import TeacherUser
 from app.database import get_db
-from app.schemas.messaging import ConversationRead, MessageRead, MessageSend
+from app.schemas.messaging import ConversationClose, ConversationRead, MessageRead, MessageSend
 from app.services import messaging_service
 
 
@@ -21,8 +21,9 @@ router = APIRouter()
 def list_conversations(
     current_user: TeacherUser,
     db: Annotated[Session, Depends(get_db)],
+    include_closed: bool = False,
 ):
-    items = messaging_service.list_for_teacher(db, current_user.id)
+    items = messaging_service.list_for_teacher(db, current_user.id, include_closed=include_closed)
     return [
         ConversationRead.model_validate(
             messaging_service._conversation_read_dict(
@@ -64,6 +65,23 @@ def send(
         db, conversation_id, current_user, payload.body, payload.attachment_url
     )
     return MessageRead.model_validate(messaging_service._message_dict(db, m))
+
+
+@router.patch(
+    "/conversations/{conversation_id}",
+    response_model=ConversationRead,
+    summary="Close a settled conversation, or bring it back",
+)
+def set_closed(
+    conversation_id: int,
+    payload: ConversationClose,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    c = messaging_service.set_closed(db, conversation_id, current_user, payload.closed)
+    return ConversationRead.model_validate(
+        messaging_service._conversation_read_dict(db, c, viewer_role="teacher")
+    )
 
 
 @router.post(

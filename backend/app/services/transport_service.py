@@ -32,6 +32,7 @@ from app.models.transport import (
 )
 from app.schemas.transport import (
     AssignmentCreate,
+    AssignmentUpdate,
     BoardingBulk,
     CrewCreate,
     CrewUpdate,
@@ -602,6 +603,37 @@ def assign(
         start_date=start,
     )
     db.add(a)
+    db.commit()
+    return _assignment_rows(db, TransportAssignment.id == a.id)[0]
+
+
+def update_assignment(db: Session, assignment_id: int, school_id: int, data: AssignmentUpdate) -> dict:
+    """Correct a running assignment — the wrong stop was picked, or the child
+    only rides home. Changing the route mid-term is a move, not a correction,
+    so that still goes through a new assignment which closes this one."""
+    a = _scoped(db, TransportAssignment, assignment_id, school_id, "Assignment")
+    if a.end_date is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This assignment has ended — create a new one instead",
+        )
+    fields = data.model_dump(exclude_unset=True)
+    if "stop_id" in fields:
+        stop = db.get(TransportStop, fields["stop_id"])
+        if not stop or stop.route_id != a.route_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="That stop isn't on this route — assign the child to the other route instead",
+            )
+        a.stop_id = stop.id
+    if "direction" in fields:
+        a.direction = fields["direction"]
+    if "start_date" in fields:
+        if fields["start_date"] > date.today():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="The start date is in the future"
+            )
+        a.start_date = fields["start_date"]
     db.commit()
     return _assignment_rows(db, TransportAssignment.id == a.id)[0]
 

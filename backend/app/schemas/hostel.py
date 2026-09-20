@@ -205,3 +205,10 @@ class ChildHostel(BaseModel):
     curfew: Optional[str] = None
     menu_today: dict[str, str] = {}
     attendance_last_7_days: list[dict] = []
+
+
+class TransferIn(BaseModel):
+    """Move a resident to another bed in one step."""
+
+    bed_id: int
+    moved_on: Optional[date] = None  # defaults to today

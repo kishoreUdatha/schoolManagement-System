@@ -12,7 +12,14 @@ from app.core.scoping import get_school_student, require_linked_child, section_l
 from app.models.health import ClinicVisit, HealthCheckup, Immunization, MedicalProfile
 from app.models.student import Student
 from app.models.user import User
-from app.schemas.health import CheckupIn, ImmunizationIn, ImmunizationRead, ProfileIn, VisitIn
+from app.schemas.health import (
+    CheckupIn,
+    ImmunizationIn,
+    ImmunizationRead,
+    ProfileIn,
+    VisitIn,
+    VisitUpdate,
+)
 
 
 OUTCOME_TEXT = {
@@ -134,6 +141,25 @@ def record_visit(db: Session, school_id: int, actor_id: int, data: VisitIn) -> C
         if v.outcome == ClinicOutcome.referred_hospital:
             lines.append("Please contact the school office immediately.")
         v.parent_notified = notify.student_parents(db, student, f"Health update: {student.full_name}", "\n".join(lines)) > 0
+    db.commit()
+    db.refresh(v)
+    return v
+
+
+def update_visit(db: Session, visit_id: int, school_id: int, data: VisitUpdate) -> ClinicVisit:
+    """Finish a sick-room note that was written in a hurry.
+
+    A nurse writes the complaint while the child is in front of her and fills
+    in the treatment and outcome afterwards, so the record has to stay editable.
+    The child it belongs to and the time it happened don't change — that would
+    be a different visit.
+    """
+    v = db.get(ClinicVisit, visit_id)
+    if not v or v.school_id != school_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Visit not found")
+    fields = data.model_dump(exclude_unset=True)
+    for k, value in fields.items():
+        setattr(v, k, value.strip() if isinstance(value, str) else value)
     db.commit()
     db.refresh(v)
     return v

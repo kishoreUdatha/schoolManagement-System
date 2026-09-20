@@ -44,6 +44,8 @@ class VisitRead(BaseModel):
     pass_no: Optional[str] = None
     minutes_inside: Optional[int] = None
     notes: Optional[str] = None
+    host_approved_at: Optional[datetime] = None
+    host_declined_reason: Optional[str] = None
 
 
 class GatePassIn(BaseModel):
@@ -139,3 +141,26 @@ class FrontDeskDashboard(BaseModel):
     gate_passes_today: int
     gate_passes_pending: int
     open_incidents: int
+
+
+class VisitUpdate(BaseModel):
+    """Correct a pre-registration before the visitor arrives."""
+
+    visitor_name: Optional[str] = Field(None, min_length=2, max_length=160)
+    phone: Optional[str] = Field(None, min_length=6, max_length=20)
+    company: Optional[str] = Field(None, max_length=160)
+    purpose: Optional[VisitPurpose] = None
+    purpose_detail: Optional[str] = Field(None, max_length=300)
+    host_user_id: Optional[int] = None
+    student_id: Optional[int] = None
+    people_count: Optional[int] = Field(None, ge=1, le=50)
+    vehicle_no: Optional[str] = Field(None, max_length=20)
+    expected_at: Optional[datetime] = None
+    notes: Optional[str] = Field(None, max_length=500)
+
+
+class HostDecision(BaseModel):
+    """A host saying whether they are expecting this visitor."""
+
+    approved: bool = True
+    reason: Optional[str] = Field(None, max_length=300)

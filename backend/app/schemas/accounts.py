@@ -180,3 +180,29 @@ class CashBook(BaseModel):
     net: Decimal
     by_mode: dict[str, dict[str, Decimal]]  # {"cash": {"in": x, "out": y}}
     daily: list[dict]  # [{date, in, out}]
+
+
+class ConcessionUpdate(BaseModel):
+    """Change a concession that is still running."""
+
+    kind: Optional[ConcessionKind] = None
+    value: Optional[Decimal] = Field(None, gt=0)
+    reason: Optional[str] = Field(None, min_length=2, max_length=80)
+    valid_from: Optional[date] = None
+    valid_to: Optional[date] = None
+    notes: Optional[str] = Field(None, max_length=1000)
+
+
+class ExpenseUpdate(BaseModel):
+    """Amend a voucher that hasn't been voided."""
+
+    spent_on: Optional[date] = None
+    category_id: Optional[int] = None
+    supplier_id: Optional[int] = None
+    payee: Optional[str] = Field(None, max_length=160)
+    amount: Optional[Decimal] = Field(None, gt=0)
+    tax_amount: Optional[Decimal] = Field(None, ge=0)
+    mode: Optional[MoneyMode] = None
+    reference: Optional[str] = Field(None, max_length=120)
+    description: Optional[str] = Field(None, min_length=2, max_length=300)
+    bill_document_id: Optional[int] = None

@@ -139,3 +139,14 @@ class ProfileRow(BaseModel):
     emergency_contact_phone: Optional[str] = None
     doctor_name: Optional[str] = None
     updated_at: Optional[datetime] = None
+
+
+class VisitUpdate(BaseModel):
+    """Fill in or correct a sick-room note. The child and the time stay put."""
+
+    complaint: Optional[str] = Field(None, min_length=2, max_length=300)
+    temperature_c: Optional[Decimal] = Field(None, ge=30, le=45)
+    treatment: Optional[str] = Field(None, max_length=2000)
+    medicine_given: Optional[str] = Field(None, max_length=300)
+    outcome: Optional[ClinicOutcome] = None
+    follow_up_on: Optional[date] = None

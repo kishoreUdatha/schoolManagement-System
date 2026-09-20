@@ -9,6 +9,7 @@ from app.core.deps import SchoolAdminUser
 from app.database import get_db
 from app.schemas.transport import (
     AssignmentCreate,
+    AssignmentUpdate,
     AssignmentEnd,
     AssignmentRead,
     BoardingBulk,
@@ -219,6 +220,19 @@ def list_assignments(
 def assign(payload: AssignmentCreate, current_user: SchoolAdminUser, db: Db):
     return AssignmentRead.model_validate(
         svc.assign(db, current_user.tenant_id, current_user.school_id, payload)
+    )
+
+
+@router.patch("/assignments/{assignment_id}", response_model=AssignmentRead,
+              summary="Correct a running assignment's stop, direction or start date")
+def update_assignment(
+    assignment_id: int,
+    payload: AssignmentUpdate,
+    current_user: SchoolAdminUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return AssignmentRead.model_validate(
+        svc.update_assignment(db, assignment_id, current_user.school_id, payload)
     )
 
 

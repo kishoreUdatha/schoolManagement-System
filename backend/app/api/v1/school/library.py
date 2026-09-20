@@ -15,7 +15,9 @@ from app.schemas.library import (
     CopyRead,
     CopyUpdate,
     FineAction,
+    DueDateUpdate,
     FineCorrection,
+    HoldUpdate,
     FineRead,
     FineSummary,
     IssueRequest,
@@ -151,6 +153,12 @@ def return_copy(loan_id: int, payload: ReturnRequest, current_user: SchoolAdminU
     )
 
 
+@router.patch("/loans/{loan_id}", response_model=LoanRead,
+              summary="Override when a book is due back")
+def set_due_date(loan_id: int, payload: DueDateUpdate, current_user: SchoolAdminUser, db: Db):
+    return LoanRead.model_validate(svc.loan_to_read(db, svc.set_due_date(db, loan_id, current_user.school_id, payload)))
+
+
 @router.post("/loans/{loan_id}/renew", response_model=LoanRead)
 def renew(loan_id: int, current_user: SchoolAdminUser, db: Db):
     return LoanRead.model_validate(svc.loan_to_read(db, svc.renew(db, loan_id, current_user.school_id)))
@@ -204,6 +212,14 @@ def list_reservations(current_user: SchoolAdminUser, db: Db, active_only: bool =
 @router.post("/reservations", response_model=ReservationRead, status_code=status.HTTP_201_CREATED)
 def reserve(payload: ReservationCreate, current_user: SchoolAdminUser, db: Db):
     return ReservationRead.model_validate(svc.reservation_to_read(db, svc.reserve(db, current_user.school_id, payload)))
+
+
+@router.patch("/reservations/{reservation_id}", response_model=ReservationRead,
+              summary="Hold a reserved book a little longer")
+def extend_hold(reservation_id: int, payload: HoldUpdate, current_user: SchoolAdminUser, db: Db):
+    return ReservationRead.model_validate(
+        svc.reservation_to_read(db, svc.extend_hold(db, reservation_id, current_user.school_id, payload))
+    )
 
 
 @router.post("/reservations/{reservation_id}/cancel", response_model=ReservationRead)

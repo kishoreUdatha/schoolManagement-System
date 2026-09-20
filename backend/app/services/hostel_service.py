@@ -47,6 +47,7 @@ from app.schemas.hostel import (
     HostelIn,
     MenuIn,
     OutingDecision,
+    TransferIn,
     OutingIn,
     ParentOutingIn,
     RollCallIn,
@@ -298,6 +299,45 @@ def allocate(db: Session, user: User, data: AllocationIn) -> HostelAllocation:
     db.commit()
     db.refresh(a)
     return a
+
+
+def transfer(db: Session, allocation_id: int, user: User, data: TransferIn) -> HostelAllocation:
+    """Move a resident to another bed.
+
+    Moving is one act, not "vacate then allocate": doing it as two leaves a
+    night where the child is in no bed at all, and a warden reading the
+    register can't tell a move from a child who went home. This closes the old
+    allocation the day before the new one starts and opens the new bed, so the
+    history reads as one continuous stay in two places.
+    """
+    _require_manager(user)
+    a = db.get(HostelAllocation, allocation_id)
+    if not a or a.school_id != user.school_id:
+        raise _404("Allocation")
+    if a.end_date:
+        raise _400("This resident has already moved out — allocate a bed instead")
+    bed = db.get(HostelBed, data.bed_id)
+    room = db.get(HostelRoom, bed.room_id) if bed else None
+    if not bed or not bed.is_active or not room or not room.is_active:
+        raise _404("Bed")
+    if bed.id == a.bed_id:
+        raise _400("That is the bed they are already in")
+    hostel = _hostel(db, room.hostel_id, user)
+    if not hostel.is_active:
+        raise _400("Hostel is inactive")
+    taken = _occupant(db, bed.id)
+    if taken:
+        raise _400(f"Bed {room.room_no}-{bed.label} is taken")
+    on = data.moved_on or date.today()
+    if on <= a.start_date:
+        raise _400("The move has to be after the stay began")
+    a.end_date = on - timedelta(days=1)
+    moved = HostelAllocation(tenant_id=a.tenant_id, school_id=a.school_id, student_id=a.student_id,
+                             bed_id=bed.id, start_date=on)
+    db.add(moved)
+    db.commit()
+    db.refresh(moved)
+    return moved
 
 
 def vacate(db: Session, allocation_id: int, user: User, end: Optional[date]) -> HostelAllocation:

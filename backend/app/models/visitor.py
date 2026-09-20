@@ -74,6 +74,12 @@ class Visit(Base, PrimaryKeyMixin, TimestampMixin, _School):
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
     notes: Mapped[Optional[str]] = mapped_column(String(500))
+    # the host saying "yes, I'm expecting them" before the gate lets them in
+    host_approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    host_approved_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
+    host_declined_reason: Mapped[Optional[str]] = mapped_column(String(300))
 
 
 class GatePass(Base, PrimaryKeyMixin, TimestampMixin, _School):

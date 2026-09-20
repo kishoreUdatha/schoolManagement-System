@@ -137,3 +137,12 @@ class StudentLeaveRead(BaseModel):
     decided_at: Optional[datetime]
     decision_note: Optional[str]
     can_decide: bool = False
+
+
+class StudentLeaveUpdate(BaseModel):
+    """Change a leave request the school hasn't answered yet."""
+
+    kind: Optional[StudentLeaveKind] = None
+    from_date: Optional[date] = None
+    to_date: Optional[date] = None
+    reason: Optional[str] = Field(None, min_length=3, max_length=2000)

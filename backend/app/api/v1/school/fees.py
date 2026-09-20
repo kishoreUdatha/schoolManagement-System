@@ -8,6 +8,7 @@ from app.core.deps import SchoolAdminOrAccountant
 from app.database import get_db
 from app.schemas.common import PaginatedResponse
 from app.schemas.fee import (
+    ChargeCorrection,
     FeeHeadCreate,
     FeeHeadRead,
     FeeHeadUpdate,
@@ -229,6 +230,22 @@ def record_payment(
         db, fee_id, current_user.school_id, payload, current_user.id
     )
     return StudentFeeRead.model_validate(data)
+
+
+@router.patch(
+    "/student-fees/{fee_id}",
+    response_model=StudentFeeRead,
+    summary="Correct a charge raised in error, before anything is collected",
+)
+def correct_charge(
+    fee_id: int,
+    payload: ChargeCorrection,
+    current_user: SchoolAdminOrAccountant,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return StudentFeeRead.model_validate(
+        fee_service.correct_charge(db, fee_id, current_user.school_id, current_user.id, payload)
+    )
 
 
 @router.post(

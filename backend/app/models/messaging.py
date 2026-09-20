@@ -53,6 +53,11 @@ class Conversation(Base, PrimaryKeyMixin, TimestampMixin):
     )
     parent_unread: Mapped[int] = mapped_column(default=0, nullable=False)
     teacher_unread: Mapped[int] = mapped_column(default=0, nullable=False)
+    # a settled conversation the teacher has put away; a new message reopens it
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    closed_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
 
 
 class Message(Base, PrimaryKeyMixin, TimestampMixin):

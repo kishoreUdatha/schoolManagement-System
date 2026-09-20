@@ -8,6 +8,8 @@ from app.core.deps import SchoolAdminOrAccountant
 from app.core.enums import ChequeStatus, MoneyMode
 from app.database import get_db
 from app.schemas.accounts import (
+    ConcessionUpdate,
+    ExpenseUpdate,
     CashBook,
     CategoryIn,
     CategoryRead,
@@ -64,6 +66,13 @@ def add_expense(payload: ExpenseIn, current_user: Actor, db: Db):
     return ExpenseRead.model_validate(svc.expense_to_read(db, svc.add_expense(db, current_user, payload)))
 
 
+@router.patch("/expenses/{expense_id}", response_model=ExpenseRead, summary="Amend a voucher")
+def update_expense(expense_id: int, payload: ExpenseUpdate, current_user: Actor, db: Db):
+    return ExpenseRead.model_validate(
+        svc.expense_to_read(db, svc.update_expense(db, expense_id, current_user, payload))
+    )
+
+
 @router.post("/expenses/{expense_id}/void", response_model=ExpenseRead)
 def void_expense(expense_id: int, payload: VoidIn, current_user: Actor, db: Db):
     return ExpenseRead.model_validate(svc.expense_to_read(db, svc.void_expense(db, expense_id, current_user, payload.reason)))
@@ -115,6 +124,14 @@ def concessions(current_user: Actor, db: Db, active_only: bool = Query(True)):
 def add_concession(payload: ConcessionIn, current_user: Actor, db: Db):
     c, applied = svc.add_concession(db, current_user, payload)
     return ConcessionRead.model_validate(svc.concession_to_read(db, c, applied))
+
+
+@router.patch("/concessions/{concession_id}", response_model=ConcessionRead,
+              summary="Change a concession that is still running")
+def update_concession(concession_id: int, payload: ConcessionUpdate, current_user: Actor, db: Db):
+    return ConcessionRead.model_validate(
+        svc.concession_to_read(db, svc.update_concession(db, concession_id, current_user, payload))
+    )
 
 
 @router.post("/concessions/{concession_id}/end", response_model=ConcessionRead)
