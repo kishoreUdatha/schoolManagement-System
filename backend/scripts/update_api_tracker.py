@@ -127,7 +127,8 @@ MAP = {
                       "GET /school/syllabus/{cs_id}", (D, "POST /school/syllabus/{cs_id}/copy; PUT /school/syllabus/{cs_id}/chapter-order", "")),
     "curriculum_units": crud((D, "GET /school/syllabus/{cs_id}", "Chapters + topics"), "POST /school/syllabus/{cs_id}/chapters",
                              (D, "GET /school/syllabus/{cs_id}", "Returned inside the syllabus"), "PUT /school/syllabus/chapters/{id}"),
-    "learning_outcomes": none(),
+    "learning_outcomes": crud("GET /school/learning-outcomes", "POST /school/learning-outcomes",
+                              "GET /school/learning-outcomes/{id}", "PATCH /school/learning-outcomes/{id}"),
     "lesson_plans": {
         **crud("GET /school/lesson-plans", "POST /school/lesson-plans", None, "PUT /school/lesson-plans/{id}", get_via_list=True),
         "submit": (D, "POST /school/lesson-plans/{id}/submit", ""),
@@ -136,8 +137,9 @@ MAP = {
     },
     "academic_calendar_events": crud("GET /school/events; GET /school/calendar", "POST /school/events", None,
                                      "PUT /school/events/{id}", get_via_list=True),
-    "teaching_resources": crud((P, "GET /teacher/videos", "Learning videos only"), (P, "POST /teacher/videos", "Videos only"),
-                               None, (P, "PATCH /teacher/videos/{id}", "Videos only")),
+    "teaching_resources": crud("GET /school/teaching-resources; GET /parent/me/children/{id}/resources",
+                               "POST /school/teaching-resources", "GET /school/teaching-resources/{id}",
+                               "PATCH /school/teaching-resources/{id}"),
     # ---------------- Attendance ----------------
     "attendance_sessions": {
         **crud("GET /school/attendance/registers; GET /teacher/attendance", "POST /teacher/attendance/save",
@@ -404,6 +406,11 @@ MAP = {
 # API-X### rows (Release = "Added"), rebuilt on every run.
 # (module, resource, operation, method, path, purpose, roles)
 EXTRA = [
+    ("Academics & Curriculum", "learning_outcomes", "Action", "GET", "/school/learning-outcomes/coverage", "How far a section has met the outcomes, from the topics taught", "School Admin, Principal, Teacher"),
+    ("Academics & Curriculum", "learning_outcomes", "Delete", "DELETE", "/school/learning-outcomes/{id}", "Delete an outcome", "School Admin, Subject Teacher"),
+    ("Academics & Curriculum", "teaching_resources", "Action", "GET", "/school/teaching-resources/{id}/file", "Download the attached file", "School Admin, Principal, Teacher"),
+    ("Academics & Curriculum", "teaching_resources", "Action", "GET", "/parent/me/children/{id}/resources/{rid}/file", "Download shared study material", "Parent"),
+    ("Academics & Curriculum", "teaching_resources", "Delete", "DELETE", "/school/teaching-resources/{id}", "Remove a resource", "School Admin, Subject Teacher"),
     ("Attendance", "attendance_sessions", "Action", "GET", "/school/attendance/registers", "Every section's register for a day: marked by, counts, lock state", "School Admin, Principal, Staff"),
     ("Attendance", "attendance_sessions", "Action", "POST", "/school/attendance/registers/lock-day", "Lock every marked register for that day in one go", "School Admin, Principal, attendance.correct"),
     ("Visitor & Security", "visitors", "Action", "GET", "/school/front-desk/visitors/{id}/visits", "Every past visit by that person", "School Admin, Principal, Front desk"),

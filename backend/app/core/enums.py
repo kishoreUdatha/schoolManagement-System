@@ -823,3 +823,13 @@ class PtmSlotStatus(str, enum.Enum):
     booked = "booked"
     done = "done"
     no_show = "no_show"
+
+
+class ResourceKind(str, enum.Enum):
+    document = "document"
+    worksheet = "worksheet"
+    presentation = "presentation"
+    link = "link"
+    video = "video"
+    image = "image"
+    other = "other"

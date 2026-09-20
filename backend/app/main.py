@@ -57,6 +57,7 @@ from app.api.v1.school import (
     periods as school_periods,
     profile as school_profile,
     rbac as school_rbac,
+    curriculum as school_curriculum,
     registers as school_registers,
     report_cards as school_report_cards,
     sections as school_sections,
@@ -100,6 +101,7 @@ from app.api.v1.parent import (
     profile as parent_profile,
     projects as parent_projects,
     student_leaves as parent_student_leaves,
+    resources as parent_resources,
     syllabus as parent_syllabus,
     timetable as parent_timetable,
     transport as parent_transport,
@@ -813,6 +815,18 @@ app.include_router(
     school_registers.router,
     prefix="/api/v1/school",
     tags=["school / attendance registers, visitors"],
+)
+
+app.include_router(
+    school_curriculum.router,
+    prefix="/api/v1/school",
+    tags=["school / learning outcomes, teaching resources"],
+)
+
+app.include_router(
+    parent_resources.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / study material"],
 )
 
 

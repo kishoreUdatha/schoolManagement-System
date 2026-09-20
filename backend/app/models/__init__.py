@@ -111,6 +111,7 @@ from app.models.pastoral import (
     DisciplineAction,
     DisciplineIncident,
 )
+from app.models.curriculum import LearningOutcome, OutcomeTopic, TeachingResource
 from app.models.payroll import PayrollRun, PayrollSettings, Payslip, StaffSalary
 from app.models.plan import Plan, PlanModule
 from app.models.project import Project, ProjectProgress
@@ -253,6 +254,9 @@ __all__ = [
     "UserOtp",
     "Visit",
     "AttendanceSession",
+    "LearningOutcome",
+    "OutcomeTopic",
+    "TeachingResource",
     "Visitor",
     "Lab",
     "LabBooking",

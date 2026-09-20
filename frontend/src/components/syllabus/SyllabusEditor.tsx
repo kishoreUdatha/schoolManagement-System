@@ -114,9 +114,12 @@ export function SyllabusEditor({ csId, backHref }: { csId: string; backHref: str
         title={`${d.subject_name} · ${d.class_name}`}
         subtitle={`${d.teacher_name ? `Teacher: ${d.teacher_name} · ` : ""}${d.chapters} chapters · ${d.topics} topics`}
         actions={
-          edit && (
-            <Button onClick={() => setChForm({ id: null, f: blankChapter })}>Add chapter</Button>
-          )
+          <>
+            <Link href={`${backHref}/${csId}/curriculum`}>
+              <Button variant="secondary">Outcomes &amp; resources</Button>
+            </Link>
+            {edit && <Button onClick={() => setChForm({ id: null, f: blankChapter })}>Add chapter</Button>}
+          </>
         }
       />
       <ErrorBox>{error}</ErrorBox>
