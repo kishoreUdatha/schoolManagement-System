@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  BookMarked,
+  Layers,
   AlertTriangle,
   ArrowLeftRight,
   Award,
@@ -98,6 +100,7 @@ const sections: NavSection[] = [
       { href: "/school/academic-years", label: "Years", icon: Calendar },
       { href: "/school/classes", label: "Classes", icon: GraduationCap },
       { href: "/school/subjects", label: "Subjects", icon: BookOpen },
+      { href: "/school/subjects/groups", label: "Subject groups", icon: Layers },
       { href: "/school/periods", label: "Periods", icon: Clock },
       { href: "/school/facilities", label: "Rooms & labs", icon: DoorClosed },
       { href: "/school/terms", label: "Terms", icon: CalendarDays },
@@ -125,6 +128,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/school/staff", label: "Staff", icon: Users },
       { href: "/school/staff/workload", label: "Teacher workload", icon: Gauge },
+      { href: "/school/staff/onboarding", label: "Onboarding", icon: ClipboardCheck },
       { href: "/school/staff/observations", label: "Lesson observations", icon: Eye },
       { href: "/school/staff/attendance-summary", label: "Staff attendance summary", icon: CalendarRange },
       { href: "/school/students", label: "Students", icon: User },
@@ -136,7 +140,9 @@ const sections: NavSection[] = [
     heading: "Academics",
     icon: Sparkles,
     items: [
+      { href: "/school/curriculum", label: "Curriculum", icon: BookMarked },
       { href: "/school/syllabus", label: "Syllabus", icon: ListChecks },
+      { href: "/school/activities", label: "Activities & clubs", icon: PartyPopper },
       { href: "/school/rubrics", label: "Rubrics", icon: ClipboardList },
       { href: "/school/result-decisions", label: "Result decisions", icon: FileBadge },
       { href: "/school/lesson-plans", label: "Lesson plans", icon: NotebookPen },
@@ -174,6 +180,7 @@ const sections: NavSection[] = [
       { href: "/school/staff-leaves", label: "Staff leaves", icon: ClipboardCheck },
       { href: "/school/leave-entitlement", label: "Leave entitlement", icon: CalendarClock },
       { href: "/school/recruitment", label: "Recruitment", icon: BriefcaseBusiness },
+      { href: "/school/recruitment/requisitions", label: "Requests to hire", icon: FileSignature },
       { href: "/school/recruitment/interviews", label: "Interview calendar", icon: CalendarRange },
       { href: "/school/reports/attendance", label: "Attendance reports", icon: BarChart3 },
     ],
@@ -262,6 +269,8 @@ const sections: NavSection[] = [
       { href: "/school/roles", label: "Roles & branches", icon: KeyRound },
       { href: "/school/roles/matrix", label: "Permission matrix", icon: Shield },
       { href: "/school/settings", label: "Settings", icon: Settings },
+      { href: "/school/settings/security", label: "Security", icon: Shield },
+      { href: "/school/settings/notifications", label: "Notifications", icon: Bell },
       { href: "/school/audit-log", label: "Audit log", icon: ScrollText },
       { href: "/school/exports", label: "Exports", icon: Download },
       { href: "/school/data-desk", label: "Data desk", icon: DatabaseZap },

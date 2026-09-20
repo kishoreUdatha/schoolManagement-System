@@ -6,7 +6,7 @@ SCR-002	Done	Not required	/workspace	Every portal, with a line on picking the ri
 SCR-003	Done	Done	/school/login and six other portals	Seven sign-in pages, each posts auth/login
 SCR-004	Done	Done	/account/forgot-password	Same answer whether the account exists or not
 SCR-005	Done	Done	/account/reset-password	Code dies on use, on reissue and after five guesses
-SCR-006	Missing	Missing	-	Parent login says OTP coming soon
+SCR-006	Done	Done	/parent/login	Two-step when the school requires it; no tokens without the code
 SCR-007	Done	Done	/account/change-password	Every guard forces it when somebody else set the password
 SCR-008	Done	Not required	/account/denied	Expired and forbidden, and the 401 interceptor routes here
 SCR-009	Done	Done	/super-admin	Usage counters, renewals, CSV export
@@ -75,7 +75,7 @@ SCR-071	Done	Done	/school/parents	Search, status filter, linked children
 SCR-072	Done	Done	/school/parents	Creates login, links a child, temp password
 SCR-073	Done	Done	/school/parents/[id]	Profile, linked children, activate and reset
 SCR-074	Done	Done	/school/parents	Link and unlink children with relation
-SCR-075	Missing	Missing	-	No notification preference UI or model
+SCR-075	Done	Done	/parent/preferences	Opt-out, and attendance and fees cannot be silenced
 SCR-076	Done	Done	/school/parents	Activate, deactivate, reset password
 SCR-077	Partial	Partial	/school/ptm	Meetings and slots; messages are teacher-only
 SCR-078	Done	Done	/school/parents/[id]/payments	Across all their children, not one at a time
@@ -97,8 +97,8 @@ SCR-093	Done	Done	/school/terms	Terms per year with overlap guard
 SCR-094	Done	Done	/school/classes	Create, rename, reorder, delete classes
 SCR-095	Done	Done	/school/classes	Sections are a nested list inside Classes (in a tab, complete)
 SCR-096	Done	Done	/school/subjects	CRUD, code, kind, department, bulk paste
-SCR-097	Missing	Missing	-	No subject-group entity anywhere
-SCR-098	Partial	Partial	/school/syllabus	No curriculum entity with board and status
+SCR-097	Done	Done	/school/subjects/groups	Groups of subjects, electives marked
+SCR-098	Done	Done	/school/curriculum	One active per class and year; activating retires the last
 SCR-099	Done	Done	/school/syllabus/[id]	Chapters, topics, progress, copy
 SCR-100	Done	Done	/school/syllabus/[id]	Chapter and topic tree, reorder, periods
 SCR-101	Done	Done	/school/syllabus/[id]/curriculum	Outcomes tab with coverage (in a tab, complete)
@@ -109,7 +109,7 @@ SCR-105	Done	Done	/school/syllabus	Per-section progress and behind-plan count
 SCR-106	Done	Done	/school/syllabus/[id]/curriculum	Resources tab, file or link (in a tab, complete)
 SCR-107	Done	Done	/school/facilities	Rooms with building, floor, kind, capacity
 SCR-108	Done	Done	/school/calendar	Events, holidays, exams and PTM in one feed
-SCR-109	Missing	Missing	-	No activity or club register
+SCR-109	Done	Done	/school/activities	Clubs and teams with a roll and a capacity
 SCR-110	Done	Done	/teacher/attendance	Roster, statuses, bulk set, edit window
 SCR-111	Done	Done	/school/attendance/periods	Lesson marks seeded from the day, never overwriting it
 SCR-112	Done	Done	/school/attendance/periods	Roster grid with the day register showing through
@@ -172,13 +172,13 @@ SCR-168	Done	Done	/school/purchasing/vendors	Payables derived from bills minus p
 SCR-169	Done	Done	/school/purchasing/orders	Orders, bills and payments; a bill cannot be overpaid
 SCR-170	Done	Done	/school/accounts	Cash book by mode across a date range
 SCR-171	Done	Done	/school/accounts/reports	Income against expenditure over a window
-SCR-172	Missing	Missing	-	No requisition or approval to hire
+SCR-172	Done	Done	/school/recruitment/requisitions	Cannot be approved by whoever raised it
 SCR-173	Done	Done	/school/recruitment	Create, publish, close, careers flag
 SCR-174	Done	Done	/school/recruitment	Opening and stage filters with moves
 SCR-175	Done	Done	/school/recruitment	Candidate detail in a modal only (in a tab, complete)
-SCR-176	Done	Partial	/school/recruitment/interviews	Week view with clashes; wants a list-interviews endpoint
+SCR-176	Done	Done	/school/recruitment/interviews	Now one query for a window, not eighty
 SCR-177	Done	Done	/school/recruitment	Draft, send, respond, hire creates staff
-SCR-178	Missing	Missing	-	No onboarding checklist anywhere
+SCR-178	Done	Done	/school/staff/onboarding	Standard tasks laid out, none assumed done
 SCR-179	Done	Done	/school/staff-attendance	Check in and out with override
 SCR-180	Done	Done	/school/leave-entitlement	Days, carry forward, paid, proof
 SCR-181	Done	Done	/school/staff-leaves	Pending and history across staff
@@ -211,7 +211,7 @@ SCR-207	Done	Done	/school/library/reports	Date-ranged issues, returns and fines
 SCR-208	Done	Done	/school/hostel	Hostel cards with kind, warden, fee, curfew
 SCR-209	Done	Done	/school/hostel	Rooms with bed count and occupancy grid
 SCR-210	Done	Done	/school/hostel/allocations	Register with transfer and vacate
-SCR-211	Done	Partial	/school/hostel/wardens	Warden per hostel and their open work; no rota model exists
+SCR-211	Done	Done	/school/hostel/wardens	A rota that names the nights nobody covers
 SCR-212	Done	Done	/school/hostel	Morning and night roll call
 SCR-213	Done	Done	/school/hostel	Request, approve, signed out, returned
 SCR-214	Done	Done	/school/hostel	Seven-day, four-meal editable grid
@@ -241,7 +241,7 @@ SCR-237	Done	Done	/school/inventory/issues	Issue and return register over free-t
 SCR-238	Done	Done	/school/inventory	Supplier CRUD with contact and GSTIN
 SCR-239	Done	Done	/school/inventory	Tag, serial, status, cost, warranty, history
 SCR-240	Done	Done	/school/inventory	Assignments tab: what is out and with whom
-SCR-241	Done	Partial	/school/inventory/maintenance	Repair log and warranty; no schedule field exists
+SCR-241	Done	Done	/school/inventory/maintenance	Service interval; no interval means not due, not overdue
 SCR-242	Done	Done	/school/facilities	Lab CRUD with room, subject, in-charge
 SCR-243	Done	Partial	/school/inventory/labs	Equipment is free text; says so and points at the store
 SCR-244	Done	Done	/school/facilities	Period grid, book, cancel, my bookings
@@ -254,7 +254,7 @@ SCR-250	Done	Done	/teacher/ptm	A teacher arranges for their own class only
 SCR-251	Done	Done	/parent/meetings	Slot grid, book, cancel, mark done
 SCR-252	Done	Done	/school/notices	Title, body, audience, attachment, send
 SCR-253	Done	Partial	/school/messages	Who is talking, not what they said; no admin participant exists
-SCR-254	Done	Partial	/school/notices/campaigns	Scheduling recorded; no scheduler runs it
+SCR-254	Done	Done	/school/notices/campaigns	A run command a cron or a button can call
 SCR-255	Done	Done	/school/notices/history	Delivery across notices, skipped kept apart from failed
 SCR-256	Done	Done	/school/documents	Owner, category, verification and expiry
 SCR-257	Done	Done	/school/documents/students	Expiring and unverified visible at a glance
@@ -291,9 +291,9 @@ SCR-287	Done	Done	/school/roles/matrix	Cross-role grid, editable, with a differe
 SCR-288	Done	Done	/school/roles	Assign person, role and branch
 SCR-289	Done	Done	/school/settings	Settings index with set-up state
 SCR-290	Done	Done	/school/grading	Grade scales and report-card settings
-SCR-291	Missing	Missing	-	No notification channel or template settings
+SCR-291	Done	Done	/school/settings/notifications	Channels and templates, with categories that carry meaning
 SCR-292	Done	Done	/school/settings	Outside services and whether they are connected
-SCR-293	Missing	Missing	-	No password policy anywhere
+SCR-293	Done	Done	/school/settings/security	Policy enforced on change and reset, not just displayed
 SCR-294	Done	Done	/school/audit-log	Filtered list with CSV export
 SCR-295	Done	Partial	/school/data-desk	Import and export done; no backup or restore
 SCR-296	Done	Done	/staff/inbox	That person own post, with unread falling when read

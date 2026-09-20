@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, CalendarHeart, CalendarRange, Handshake, Images, LayoutDashboard, MessageSquare, PartyPopper } from "lucide-react";
+import { Bell, CalendarHeart, CalendarRange, Handshake, Images, LayoutDashboard, MessageSquare, PartyPopper, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { NavBadge, Sidebar, type NavSection } from "@/components/Sidebar";
@@ -33,6 +33,7 @@ export function ParentNav() {
         { href: "/parent/meetings", label: "Teacher meetings", icon: Handshake },
         { href: "/parent/gallery", label: "Photo gallery", icon: Images },
         { href: "/parent/holidays", label: "Holidays", icon: PartyPopper },
+        { href: "/parent/preferences", label: "What we send you", icon: SlidersHorizontal },
       ],
     },
   ];

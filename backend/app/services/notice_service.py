@@ -201,8 +201,25 @@ def send(db: Session, notice_id: int, school_id: int) -> Notice:
     # Aggregate counter bumps so we do one UPSERT per channel, not one per recipient
     counter_bumps: dict[str, int] = {}
 
+    # Who has asked not to be sent this kind of thing, on this channel. One
+    # query per channel rather than one per person, and it can only ever
+    # return people for a category they are allowed to mute.
+    from app.services import comms_settings_service
+
+    muted: dict[NoticeChannel, set[int]] = {
+        ch: comms_settings_service.muted_user_ids(
+            db, [u.id for u in recipients], ch, n.category
+        )
+        for ch in channels
+    }
+
     for user in recipients:
         for ch in channels:
+            if user.id in muted[ch]:
+                # Not a failure and not a skip: they were never a recipient
+                # on this channel, so no row is written and nothing counts it
+                # as undelivered.
+                continue
             if ch in _LIVE_CHANNELS:
                 rec = NoticeRecipient(
                     tenant_id=n.tenant_id,

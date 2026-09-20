@@ -8,6 +8,7 @@ from sqlalchemy import (
     Date,
     Enum as SAEnum,
     ForeignKey,
+    Integer,
     Index,
     Numeric,
     String,
@@ -122,6 +123,10 @@ class Asset(Base, PrimaryKeyMixin, TimestampMixin, _School):
         BigInteger, ForeignKey("suppliers.id", ondelete="SET NULL")
     )
     warranty_until: Mapped[Optional[date]] = mapped_column(Date)
+    # How often this wants servicing. Null means nobody has said it needs
+    # any, which is why an asset without one never appears on the due list
+    # rather than appearing as overdue forever.
+    service_every_days: Mapped[Optional[int]] = mapped_column(Integer)
     notes: Mapped[Optional[str]] = mapped_column(Text)
 
 

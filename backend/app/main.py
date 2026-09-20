@@ -20,6 +20,7 @@ from app.api.v1.public import payments as public_payments
 from app.api.v1.public import transport as public_transport
 from app.api.v1.school import (
     academic_years as school_academic_years,
+    academics_ops as school_academics_ops,
     accounts as school_accounts,
     admissions as school_admissions,
     analytics as school_analytics,
@@ -51,6 +52,7 @@ from app.api.v1.school import (
     grading as school_grading,
     health as school_health,
     holidays as school_holidays,
+    hr_ops as school_hr_ops,
     hostel as school_hostel,
     hr as school_hr,
     inventory as school_inventory,
@@ -61,6 +63,7 @@ from app.api.v1.school import (
     parents as school_parents,
     pastoral as school_pastoral,
     payroll as school_payroll,
+    ops_gaps as school_ops_gaps,
     periods as school_periods,
     profile as school_profile,
     rbac as school_rbac,
@@ -77,6 +80,7 @@ from app.api.v1.school import (
     staff_attendance as school_staff_attendance,
     staff_leaves as school_staff_leaves,
     student_detail as school_student_detail,
+    settings_security as school_settings_security,
     student_logins as school_student_logins,
     students as school_students,
     subjects as school_subjects,
@@ -98,6 +102,7 @@ from app.api.v1.staff import (
     payslips as staff_payslips,
 )
 from app.api.v1.parent import (
+    preferences as parent_preferences,
     auth as parent_auth,
     behaviour as parent_behaviour,
     children as parent_children,
@@ -499,9 +504,34 @@ app.include_router(
     tags=["school / staff attendance"],
 )
 app.include_router(
+    school_ops_gaps.router,
+    prefix="/api/v1/school/ops",
+    tags=["school / operations"],
+)
+app.include_router(
     school_timetable_gen.router,
     prefix="/api/v1/school/timetable-gen",
     tags=["school / timetable generation"],
+)
+app.include_router(
+    school_settings_security.router,
+    prefix="/api/v1/school/settings",
+    tags=["school / settings"],
+)
+app.include_router(
+    parent_preferences.router,
+    prefix="/api/v1/parent/me/preferences",
+    tags=["parent / preferences"],
+)
+app.include_router(
+    school_academics_ops.router,
+    prefix="/api/v1/school/academics",
+    tags=["school / curriculum and activities"],
+)
+app.include_router(
+    school_hr_ops.router,
+    prefix="/api/v1/school/hr-ops",
+    tags=["school / hiring and onboarding"],
 )
 app.include_router(
     school_attendance_ops.router,

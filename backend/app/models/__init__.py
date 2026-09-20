@@ -1,3 +1,12 @@
+from app.models.academics_ops import (
+    Activity,
+    ActivityMember,
+    Curriculum,
+    CurriculumSubject,
+    SubjectGroup,
+    SubjectGroupMember,
+)
+from app.models.hr_ops import OnboardingTask, Requisition
 from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.accounts import (
     Cheque,
@@ -27,6 +36,11 @@ from app.models.attendance_ops import (
 )
 from app.models.attendance import StudentAttendance
 from app.models.behaviour import BehaviourRating
+from app.models.comms_settings import (
+    NotificationPreference,
+    NotificationTemplate,
+    SecurityPolicy,
+)
 from app.models.cover import StudentLeave, Substitution, TeacherUnavailability
 from app.models.document import (
     CertificateIssue,
@@ -77,6 +91,7 @@ from app.models.grading import (
 )
 from app.models.health import ClinicVisit, HealthCheckup, Immunization, MedicalProfile
 from app.models.holiday import Holiday
+from app.models.hostel_ops import WardenDuty
 from app.models.hostel import (
     Hostel,
     HostelAllocation,
@@ -337,6 +352,9 @@ __all__ = [
     "ReportCardSetting",
     "StudentLeave",
     "Substitution",
+    "NotificationPreference",
+    "NotificationTemplate",
+    "SecurityPolicy",
     "TeacherUnavailability",
     "AttemptAnswer",
     "OnlineTest",

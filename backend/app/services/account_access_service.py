@@ -131,6 +131,18 @@ def _find(db: Session, email: str, role: Optional[UserRole] = None) -> Optional[
     return match
 
 
+def validate_password(db: Session, school_id, password: str) -> None:
+    """The school's own password rules, read at the moment they are needed.
+
+    Imported lazily because comms_settings_service reads a policy row, and a
+    module-level import would make the two files depend on each other's
+    import order for no gain.
+    """
+    from app.services import comms_settings_service
+
+    comms_settings_service.validate_password(db, school_id, password)
+
+
 # ---------- forgotten password ----------
 
 
@@ -152,8 +164,7 @@ def complete_reset(db: Session, email: str, token: str, new_password: str) -> No
     if not user:
         # Same refusal as a bad token, for the same reason.
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That reset link is not valid any more.")
-    if len(new_password) < 8:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A password needs at least eight characters.")
+    validate_password(db, user.school_id, new_password)
     if not _spend(db, user, token, OtpPurpose.password_reset):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That reset link is not valid any more.")
 
@@ -165,8 +176,45 @@ def complete_reset(db: Session, email: str, token: str, new_password: str) -> No
 # ---------- second factor ----------
 
 
-def issue_login_code(db: Session, user: User) -> str:
-    return _issue(db, user, OtpPurpose.login_2fa, CODE_MINUTES)
+def issue_login_code(db: Session, user: User) -> tuple[str, str]:
+    """Start a second factor. Returns (challenge, code).
+
+    The challenge is what the half-finished sign-in carries back to us; the
+    code is what the person types. They are separate so the thing travelling
+    in the clear through a browser is not the thing that proves identity.
+    """
+    code = _issue(db, user, OtpPurpose.login_2fa, CODE_MINUTES)
+    row = db.execute(
+        select(UserOtp)
+        .where(
+            UserOtp.user_id == user.id,
+            UserOtp.purpose == OtpPurpose.login_2fa,
+            UserOtp.used_at.is_(None),
+        )
+        .order_by(UserOtp.created_at.desc())
+    ).scalars().first()
+    row.challenge = secrets.token_urlsafe(24)
+    db.commit()
+    return row.challenge, code
+
+
+def user_for_challenge(db: Session, challenge: str) -> Optional[User]:
+    """Who a half-finished sign-in belongs to, or None.
+
+    None for an expired, spent or invented challenge alike — the caller must
+    answer all three the same way, or the endpoint becomes a way of asking
+    whether a given handle was ever real.
+    """
+    row = db.execute(
+        select(UserOtp).where(
+            UserOtp.challenge == challenge,
+            UserOtp.purpose == OtpPurpose.login_2fa,
+            UserOtp.used_at.is_(None),
+        )
+    ).scalar_one_or_none()
+    if row is None or row.expires_at < _now():
+        return None
+    return db.get(User, row.user_id)
 
 
 def check_login_code(db: Session, user: User, code: str) -> None:
@@ -184,8 +232,7 @@ def change_password(db: Session, user: User, current: str, new: str) -> None:
     """Used by every role's own settings page, and by the forced change."""
     if not user.password_hash or not verify_password(current, user.password_hash):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "That is not your current password.")
-    if len(new) < 8:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "A password needs at least eight characters.")
+    validate_password(db, user.school_id, new)
     if hmac.compare_digest(current, new):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The new password is the same as the old one.")
     user.password_hash = hash_password(new)

@@ -70,6 +70,11 @@ class UserOtp(Base, PrimaryKeyMixin, TimestampMixin):
         server_default=OtpPurpose.login_2fa.value,
         default=OtpPurpose.login_2fa,
     )
+    # The handle a half-finished sign-in carries. Random rather than the
+    # row id: an id is sequential, so it both identifies the account and
+    # can be guessed at, and a challenge that names its user hands an
+    # attacker the one fact the login form is careful not to leak.
+    challenge: Mapped[Optional[str]] = mapped_column(String(64), index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     attempts: Mapped[int] = mapped_column(SmallInteger, nullable=False, server_default="0", default=0)

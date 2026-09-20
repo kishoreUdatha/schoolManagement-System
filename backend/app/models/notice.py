@@ -18,6 +18,7 @@ from app.core.enums import (
     NoticeStatus,
     RecipientStatus,
     NoticeChannel,
+    NotificationCategory,
 )
 from app.database import Base
 from app.models.base import PrimaryKeyMixin, TimestampMixin
@@ -57,6 +58,15 @@ class Notice(Base, PrimaryKeyMixin, TimestampMixin):
     )
 
     # Channel choice: stored as JSON array of strings (e.g. ["in_app","email"])
+    # What this is about. Without it a preference is decorative: the
+    # sender has no way to tell a fee reminder from a sports-day notice,
+    # so "mute events" could only ever mean "mute everything".
+    category: Mapped[NotificationCategory] = mapped_column(
+        SAEnum(NotificationCategory, name="notification_category"),
+        nullable=False,
+        server_default=NotificationCategory.general.value,
+        default=NotificationCategory.general,
+    )
     channels: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
 
     attachment_url: Mapped[Optional[str]] = mapped_column(String(500))

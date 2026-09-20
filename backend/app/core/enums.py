@@ -963,3 +963,74 @@ class BillStatus(str, enum.Enum):
     part_paid = "part_paid"
     paid = "paid"
     cancelled = "cancelled"
+
+
+class NotificationCategory(str, enum.Enum):
+    """What a message is about, so a parent can mute one kind without
+    muting the rest. A single "notifications on/off" switch is the reason
+    people miss the one message that mattered."""
+
+    attendance = "attendance"
+    fees = "fees"
+    exams = "exams"
+    homework = "homework"
+    events = "events"
+    general = "general"
+
+
+class TwoFactorScope(str, enum.Enum):
+    nobody = "nobody"
+    parents = "parents"
+    staff = "staff"
+    everybody = "everybody"
+
+
+class DutyShift(str, enum.Enum):
+    day = "day"
+    night = "night"
+    weekend = "weekend"
+
+
+class CurriculumStatus(str, enum.Enum):
+    """A curriculum is drafted, then in force, then history.
+
+    Retired rather than deleted: what a class was supposed to be taught two
+    years ago is a real question, usually asked by somebody inspecting.
+    """
+
+    draft = "draft"
+    active = "active"
+    retired = "retired"
+
+
+class ActivityKind(str, enum.Enum):
+    club = "club"
+    sport = "sport"
+    arts = "arts"
+    service = "service"
+    other = "other"
+
+
+class RequisitionStatus(str, enum.Enum):
+    draft = "draft"
+    submitted = "submitted"
+    approved = "approved"
+    rejected = "rejected"
+    filled = "filled"
+    cancelled = "cancelled"
+
+
+class OnboardingArea(str, enum.Enum):
+    """What a new starter needs before they can begin.
+
+    Deliberately not ClearanceArea. Leaving is about handing things back;
+    arriving is about being given them, and the two lists only look alike.
+    """
+
+    hr = "hr"
+    it = "it"
+    payroll = "payroll"
+    workspace = "workspace"
+    induction = "induction"
+    safeguarding = "safeguarding"
+    library = "library"
