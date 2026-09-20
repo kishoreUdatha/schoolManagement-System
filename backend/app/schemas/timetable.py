@@ -50,6 +50,9 @@ class PeriodRead(BaseModel):
 
 class TimetableEntrySet(BaseModel):
     class_subject_id: int
+    # Optional because most classes sit in their own room all day; it matters
+    # for the shared ones, where two sections can be sent to the same lab.
+    room_id: Optional[int] = None
     notes: Optional[str] = Field(None, max_length=200)
 
 
@@ -64,6 +67,8 @@ class TimetableEntryRead(BaseModel):
     subject_code: str
     teacher_user_id: Optional[int] = None
     teacher_name: Optional[str] = None
+    room_id: Optional[int] = None
+    room_name: Optional[str] = None
     notes: Optional[str] = None
 
 

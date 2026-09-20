@@ -948,3 +948,18 @@ class FirstAidOutcome(str, enum.Enum):
     rested_in_clinic = "rested_in_clinic"
     sent_home = "sent_home"
     referred_out = "referred_out"
+
+
+class PurchaseOrderStatus(str, enum.Enum):
+    draft = "draft"
+    sent = "sent"
+    part_received = "part_received"
+    received = "received"
+    cancelled = "cancelled"
+
+
+class BillStatus(str, enum.Enum):
+    unpaid = "unpaid"
+    part_paid = "part_paid"
+    paid = "paid"
+    cancelled = "cancelled"

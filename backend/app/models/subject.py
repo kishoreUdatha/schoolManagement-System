@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    SmallInteger,
     String,
     UniqueConstraint,
 )
@@ -86,6 +87,12 @@ class ClassSubject(Base, PrimaryKeyMixin, TimestampMixin):
     # Set later in Story 2.5 once teacher accounts exist
     teacher_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
+    # How many periods a week this subject wants. The generator needs a
+    # target to aim at; without one it can only be told to fill every
+    # slot, which is not a timetable, just a grid with no empty squares.
+    periods_per_week: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, server_default="0", default=0
     )
     is_optional: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

@@ -34,6 +34,7 @@ from app.models.document import (
     CertificateTemplate,
     Document,
 )
+from app.models.event_ops import EventAttendance
 from app.models.events import (
     EventConsent,
     GalleryAlbum,
@@ -50,6 +51,13 @@ from app.models.exam_ops import (
     MarkComponent,
 )
 from app.models.facility import Lab, LabBooking, Room
+from app.models.fee_plan import StudentFeeAssignment
+from app.models.purchasing import (
+    PurchaseOrder,
+    PurchaseOrderLine,
+    VendorBill,
+    VendorPayment,
+)
 from app.models.fee import FeeHead, FeeStructure, StudentFee
 from app.models.fee_extra import LateFeeRule, Refund
 from app.models.fee_reminder import FeeReminderLog

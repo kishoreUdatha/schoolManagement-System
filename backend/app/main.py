@@ -36,6 +36,7 @@ from app.api.v1.school import (
     dashboard as school_dashboard,
     directory as school_directory,
     documents as school_documents,
+    event_ops as school_event_ops,
     events as school_events,
     exam_ops as school_exam_ops,
     exams as school_exams,
@@ -43,6 +44,7 @@ from app.api.v1.school import (
     facilities as school_facilities,
     fee_extras as school_fee_extras,
     fee_reminders as school_fee_reminders,
+    finance as school_finance,
     fees as school_fees,
     foundation as school_foundation,
     front_desk as school_front_desk,
@@ -79,6 +81,7 @@ from app.api.v1.school import (
     students as school_students,
     subjects as school_subjects,
     syllabus as school_syllabus,
+    timetable_gen as school_timetable_gen,
     timetable as school_timetable,
     transport as school_transport,
     videos as school_videos,
@@ -86,6 +89,7 @@ from app.api.v1.school import (
 )
 from app.api.v1.accountant import dashboard as accountant_dashboard
 from app.api.v1.staff import (
+    inbox as staff_inbox,
     dashboard as staff_dashboard,
     attendance as staff_attendance_routes,
     auth as staff_auth,
@@ -345,6 +349,11 @@ app.include_router(
     tags=["parent / timetable"],
 )
 app.include_router(
+    school_finance.router,
+    prefix="/api/v1/school/finance",
+    tags=["school / finance"],
+)
+app.include_router(
     school_fees.router,
     prefix="/api/v1/school/fees",
     tags=["school / fees"],
@@ -490,6 +499,11 @@ app.include_router(
     tags=["school / staff attendance"],
 )
 app.include_router(
+    school_timetable_gen.router,
+    prefix="/api/v1/school/timetable-gen",
+    tags=["school / timetable generation"],
+)
+app.include_router(
     school_attendance_ops.router,
     prefix="/api/v1/school/attendance-ops",
     tags=["school / attendance ops"],
@@ -523,6 +537,16 @@ app.include_router(
     student_portal.router,
     prefix="/api/v1/student",
     tags=["student / portal"],
+)
+app.include_router(
+    school_event_ops.router,
+    prefix="/api/v1/school/event-ops",
+    tags=["school / events and communication"],
+)
+app.include_router(
+    staff_inbox.router,
+    prefix="/api/v1/staff/inbox",
+    tags=["staff / inbox"],
 )
 app.include_router(
     school_analytics.router,

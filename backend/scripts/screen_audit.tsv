@@ -120,13 +120,13 @@ SCR-116	Done	Done	/school/attendance/times	Late in and early out on the day row,
 SCR-117	Done	Done	/school/attendance/monthly	Its own page with the CSV
 SCR-118	Done	Done	/school/attendance/at-risk	At-risk list paired with who has rung home
 SCR-119	Done	Done	/school/reports/attendance	Daily, class and student views with CSV
-SCR-120	Partial	Partial	/school/timetable	Only a clashes panel, no dashboard stats
-SCR-121	Partial	Partial	/school/timetable	Grid assigns subject; entries carry no room
+SCR-120	Done	Done	/school/timetable	How complete every week is, and who clashes
+SCR-121	Done	Done	/school/timetable/setup	The week, with a room against a slot
 SCR-122	Done	Done	/school/periods	Per-day periods with times
-SCR-123	Partial	Partial	/school/cover	Date-range blocks, not a weekly grid
-SCR-124	Missing	Missing	-	No generator; manual entry and copy only
+SCR-123	Done	Done	/school/timetable/availability	Weekly grid over the recurring blocks
+SCR-124	Done	Done	/school/timetable/generate	Places what fits and names what it could not
 SCR-125	Done	Done	/school/timetable	Section grid with publish; parent read-only
-SCR-126	Partial	Partial	/teacher/timetable	Own week only; no coordinator view
+SCR-126	Done	Done	/school/timetable/coordinator	One day across every section
 SCR-127	Done	Done	/school/cover	Uncovered slots, candidates, assign, auto-assign
 SCR-128	Done	Done	/teacher/homework	List with due dates, counts, close and reopen
 SCR-129	Done	Done	/teacher/homework	Create modal with rubric and attachment
@@ -154,24 +154,24 @@ SCR-150	Done	Done	/principal/exams	Principal publishes, told what is outstanding
 SCR-151	Done	Done	/student/exams/[examId]	Published only, withheld stays withheld
 SCR-152	Done	Done	/student/exams/[examId]	Same renderer as the school and the parents
 SCR-153	Done	Done	/school/exams/[id]/promotion	Result-driven suggestion, review kept apart from fail
-SCR-154	Partial	Done	/accountant	Accountant dashboard is a placeholder
+SCR-154	Done	Done	/school/fees/dashboard	Collected against owed, with the month trend
 SCR-155	Done	Done	/school/fees/structures	Per class, head and year
 SCR-156	Done	Done	/school/fees/structures	Amount, due day, recurring flag
-SCR-157	Missing	Missing	-	No per-student fee plan; class structures only
+SCR-157	Done	Done	/school/fees/assignments	Names an absolute amount or adds a head; concessions still subtract
 SCR-158	Done	Done	/school/fees	Record payment with mode and reference
 SCR-159	Done	Done	/parent/children/[id]/fees	Razorpay checkout, verify, failures
 SCR-160	Done	Done	/parent/children/[id]/fees	Per-order receipt PDF
-SCR-161	Partial	Partial	/parent/children/[id]/fees	No staff-side per-student ledger
-SCR-162	Partial	Partial	/school/fees	A filter, not a dues or ageing report
+SCR-161	Done	Done	/school/fees/ledger/[studentId]	Derived running balance, fees and receipts in date order
+SCR-162	Done	Done	/school/fees/dues	Ageing buckets with the reminder run
 SCR-163	Done	Done	/school/accounts	Concessions: add, amend, end
 SCR-164	Done	Done	/school/fees/late-refunds	Rule CRUD with preview and charge
 SCR-165	Done	Done	/school/fees/late-refunds	Request, decide, pay out with reference
 SCR-166	Done	Done	/school/accounts	Other income with source, mode, void
 SCR-167	Done	Done	/school/accounts	Expenses with void and reason
-SCR-168	Partial	Done	/school/inventory	Supplier master; no ledger or payables
-SCR-169	Partial	Partial	/school/inventory	No purchase order, bill or payment tracking
+SCR-168	Done	Done	/school/purchasing/vendors	Payables derived from bills minus payments
+SCR-169	Done	Done	/school/purchasing/orders	Orders, bills and payments; a bill cannot be overpaid
 SCR-170	Done	Done	/school/accounts	Cash book by mode across a date range
-SCR-171	Partial	Partial	/school/exports	CSV and builder; no finance report pack
+SCR-171	Done	Done	/school/accounts/reports	Income against expenditure over a window
 SCR-172	Missing	Missing	-	No requisition or approval to hire
 SCR-173	Done	Done	/school/recruitment	Create, publish, close, careers flag
 SCR-174	Done	Done	/school/recruitment	Opening and stage filters with moves
@@ -248,14 +248,14 @@ SCR-244	Done	Done	/school/facilities	Period grid, book, cancel, my bookings
 SCR-245	Done	Done	/school/inventory/reports	Windowed stock and asset report with charts
 SCR-246	Done	Done	/school/calendar	Month grid and agenda across sources
 SCR-247	Done	Done	/school/events	Kind, dates, venue, audience, consent
-SCR-248	Partial	Partial	/school/events	Consent roster only; no attendance
+SCR-248	Done	Done	/school/events/[id]	Attendance kept apart from consent; unticked is not absent
 SCR-249	Done	Done	/parent/events	Deadline and per-child consent with report
-SCR-250	Partial	Partial	/school/ptm	Admin-only setup; teachers cannot create
+SCR-250	Done	Done	/teacher/ptm	A teacher arranges for their own class only
 SCR-251	Done	Done	/parent/meetings	Slot grid, book, cancel, mark done
 SCR-252	Done	Done	/school/notices	Title, body, audience, attachment, send
-SCR-253	Partial	Partial	/teacher/messages	Teacher and parent only; admin has no inbox
-SCR-254	Partial	Partial	/school/notices	SMS and email skipped; schedule not wired
-SCR-255	Partial	Partial	/school/notices	Per-notice delivery only, no history log
+SCR-253	Done	Partial	/school/messages	Who is talking, not what they said; no admin participant exists
+SCR-254	Done	Partial	/school/notices/campaigns	Scheduling recorded; no scheduler runs it
+SCR-255	Done	Done	/school/notices/history	Delivery across notices, skipped kept apart from failed
 SCR-256	Done	Done	/school/documents	Owner, category, verification and expiry
 SCR-257	Done	Done	/school/documents/students	Expiring and unverified visible at a glance
 SCR-258	Done	Done	/school/documents/staff	Same view, filtered to staff
@@ -296,4 +296,4 @@ SCR-292	Done	Done	/school/settings	Outside services and whether they are connect
 SCR-293	Missing	Missing	-	No password policy anywhere
 SCR-294	Done	Done	/school/audit-log	Filtered list with CSV export
 SCR-295	Done	Partial	/school/data-desk	Import and export done; no backup or restore
-SCR-296	Partial	Partial	/parent/notices	Parents only; staff have no inbox page
+SCR-296	Done	Done	/staff/inbox	That person own post, with unread falling when read

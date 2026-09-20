@@ -89,4 +89,10 @@ class TimetableEntry(Base, PrimaryKeyMixin, TimestampMixin):
         ForeignKey("class_subjects.id", ondelete="CASCADE"),
         nullable=False,
     )
+    # Which room the lesson is in. Nullable because most primary classes
+    # sit in their own room all day and naming it on every entry would be
+    # noise; it matters for labs and halls, which are shared.
+    room_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("rooms.id", ondelete="SET NULL")
+    )
     notes: Mapped[Optional[str]] = mapped_column(String(200))

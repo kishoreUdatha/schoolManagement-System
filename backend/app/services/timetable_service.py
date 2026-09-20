@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.models.academic import SchoolClass, Section
+from app.models.facility import Room
 from app.models.subject import ClassSubject, Subject
 from app.models.timetable import Period, TimetableEntry
 from app.models.user import User
@@ -108,14 +109,15 @@ def _section_label(db: Session, sec: Section) -> str:
 
 def _entries_for_section(db: Session, section_id: int) -> list[dict]:
     rows = db.execute(
-        select(TimetableEntry, ClassSubject, Subject, User)
+        select(TimetableEntry, ClassSubject, Subject, User, Room.name)
         .join(ClassSubject, TimetableEntry.class_subject_id == ClassSubject.id)
         .join(Subject, ClassSubject.subject_id == Subject.id)
         .outerjoin(User, ClassSubject.teacher_user_id == User.id)
+        .outerjoin(Room, TimetableEntry.room_id == Room.id)
         .where(TimetableEntry.section_id == section_id)
     ).all()
     out = []
-    for entry, cs, subj, teacher in rows:
+    for entry, cs, subj, teacher, room_name in rows:
         out.append(
             {
                 "id": entry.id,
@@ -126,6 +128,8 @@ def _entries_for_section(db: Session, section_id: int) -> list[dict]:
                 "subject_code": subj.code,
                 "teacher_user_id": teacher.id if teacher else None,
                 "teacher_name": teacher.full_name if teacher else None,
+                "room_id": entry.room_id,
+                "room_name": room_name,
                 "notes": entry.notes,
             }
         )
@@ -222,6 +226,7 @@ def set_entry(
 
     if existing:
         existing.class_subject_id = cs.id
+        existing.room_id = data.room_id
         existing.notes = data.notes
         db.commit()
         db.refresh(existing)
@@ -232,6 +237,7 @@ def set_entry(
             section_id=section_id,
             period_id=period_id,
             class_subject_id=cs.id,
+            room_id=data.room_id,
             notes=data.notes,
         )
         db.add(new)

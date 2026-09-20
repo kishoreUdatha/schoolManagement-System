@@ -1,6 +1,14 @@
 "use client";
 
-import { BedDouble, DoorOpen, Library, Lock, ReceiptText, UserCog } from "lucide-react";
+import {
+  BedDouble,
+  DoorOpen,
+  Inbox,
+  Library,
+  Lock,
+  ReceiptText,
+  UserCog,
+} from "lucide-react";
 
 import { Sidebar, type NavSection } from "@/components/Sidebar";
 
@@ -16,6 +24,7 @@ const sections: NavSection[] = [
     heading: "Account",
     icon: UserCog,
     items: [
+      { href: "/staff/inbox", label: "Inbox", icon: Inbox },
       { href: "/staff/payslips", label: "My payslips", icon: ReceiptText },
       { href: "/staff/library", label: "Library books", icon: Library },
       { href: "/staff/change-password", label: "Change password", icon: Lock },

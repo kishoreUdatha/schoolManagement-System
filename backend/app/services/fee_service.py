@@ -225,6 +225,32 @@ def delete_structure(db: Session, structure_id: int, school_id: int) -> None:
     db.commit()
 
 
+def _base_amount(
+    db: Session, student: Student, head: FeeHead, class_amount: Decimal,
+    academic_year_id: Optional[int], on: date,
+) -> tuple[Decimal, Optional[str]]:
+    """What this child is charged before any concession comes off.
+
+    The class structure, unless an assignment names a different number for
+    this child. Concessions are applied by the caller on top, because the two
+    answer different questions: an assignment says what the charge is, a
+    concession says what comes off it.
+    """
+    from app.services import finance_service
+
+    if not academic_year_id:
+        return class_amount, None
+    a = finance_service.active_assignment(db, student.id, head.id, academic_year_id, on)
+    if a is None:
+        return class_amount, None
+    if a.period and a.period != _period_of(on):
+        return class_amount, None
+    return a.amount, f"Own rate ({a.reason}): {a.amount:,.2f} in place of {class_amount:,.2f}."
+
+
+def _period_of(on: date) -> str:
+    return f"{on:%Y-%m}"
+
 # ----- Generation -----
 
 def _compute_due_date(period: str, due_day: int) -> date:
@@ -268,7 +294,11 @@ def generate_monthly(
         ).scalars().all()
 
         for student in students:
-            amount, note = ledger_service.discounted(db, student.id, head.id, structure.amount, due_date)
+            base, base_note = _base_amount(
+                db, student, head, structure.amount, data.academic_year_id, due_date
+            )
+            amount, note = ledger_service.discounted(db, student.id, head.id, base, due_date)
+            note = " ".join(x for x in (base_note, note) if x) or None
             try:
                 with db.begin_nested():
                     db.add(
@@ -291,8 +321,95 @@ def generate_monthly(
                 created += 1
             except IntegrityError:
                 skipped += 1
+
+    extra, extra_skipped = _generate_extras(
+        db, tenant_id, school_id, data.academic_year_id, data.period
+    )
     db.commit()
-    return {"created": created, "skipped": skipped, "period": data.period}
+    return {
+        "created": created + extra,
+        "skipped": skipped + extra_skipped,
+        "period": data.period,
+        "extras": extra,
+    }
+
+
+def _generate_extras(
+    db: Session, tenant_id: int, school_id: int, academic_year_id: int, period: str
+) -> tuple[int, int]:
+    """Charge the heads a child has been assigned that their class does not have.
+
+    The loop above walks fee structures, so a head with no structure for this
+    class is never reached by it — which is exactly the case an assignment
+    exists to cover (a child taking music their year group does not take).
+
+    These rows carry source='assignment' rather than a structure id, which is
+    what StudentFee's partial unique index on (student, source, source_id,
+    period) already keys on, so running this twice is safe without a new
+    constraint.
+    """
+    from app.services import finance_service
+    from app.models.fee_plan import StudentFeeAssignment
+
+    rows = db.execute(
+        select(StudentFeeAssignment, FeeHead, Student)
+        .join(FeeHead, FeeHead.id == StudentFeeAssignment.fee_head_id)
+        .join(Student, Student.id == StudentFeeAssignment.student_id)
+        .where(
+            StudentFeeAssignment.school_id == school_id,
+            StudentFeeAssignment.academic_year_id == academic_year_id,
+            StudentFeeAssignment.is_active.is_(True),
+            Student.is_active.is_(True),
+            FeeHead.is_active.is_(True),
+        )
+    ).all()
+
+    created = skipped = 0
+    for a, head, student in rows:
+        if a.period and a.period != period:
+            continue
+        due_date = _compute_due_date(period, a.due_day_of_month)
+        if a.starts_on > due_date or (a.ends_on and a.ends_on < due_date):
+            continue
+
+        section = db.get(Section, student.section_id) if student.section_id else None
+        if section:
+            has_structure = db.execute(
+                select(FeeStructure.id).where(
+                    FeeStructure.class_id == section.class_id,
+                    FeeStructure.fee_head_id == head.id,
+                    FeeStructure.academic_year_id == academic_year_id,
+                )
+            ).scalars().first()
+            if has_structure:
+                continue  # the structure loop already charged this child
+
+        amount, note = ledger_service.discounted(db, student.id, head.id, a.amount, due_date)
+        detail = f"Own rate ({a.reason}): {a.amount:,.2f}."
+        try:
+            with db.begin_nested():
+                db.add(
+                    StudentFee(
+                        tenant_id=tenant_id,
+                        school_id=school_id,
+                        student_id=student.id,
+                        fee_structure_id=None,
+                        source="assignment",
+                        source_id=a.id,
+                        fee_head_id=head.id,
+                        period=period,
+                        amount_due=amount,
+                        amount_paid=Decimal("0"),
+                        due_date=due_date,
+                        status=FeeStatus.pending if amount > 0 else FeeStatus.waived,
+                        notes=" ".join(x for x in (detail, note) if x) or None,
+                    )
+                )
+                db.flush()
+            created += 1
+        except IntegrityError:
+            skipped += 1
+    return created, skipped
 
 
 def generate_one_time_for_student(
@@ -331,7 +448,11 @@ def generate_one_time_for_student(
             today.year, today.month,
             min(structure.due_day_of_month, monthrange(today.year, today.month)[1]),
         )
-        amount, note = ledger_service.discounted(db, student.id, head.id, structure.amount, today)
+        base, base_note = _base_amount(
+            db, student, head, structure.amount, student.academic_year_id, today
+        )
+        amount, note = ledger_service.discounted(db, student.id, head.id, base, today)
+        note = " ".join(x for x in (base_note, note) if x) or None
         try:
             with db.begin_nested():
                 db.add(

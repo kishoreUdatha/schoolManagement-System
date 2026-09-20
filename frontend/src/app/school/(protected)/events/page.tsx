@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useEffect, useState } from "react";
 
 import { hhmm } from "@/components/events/CalendarFeed";
@@ -120,7 +122,14 @@ export default function EventsPage() {
                 </div>
               </td>
               <td className={tdStrong}>
-                <span className={ev.is_cancelled ? "line-through" : ""}>{ev.title}</span>
+                {/* The title is the way into the register; without a link the
+                    coach-door list exists but nobody finds it. */}
+                <Link
+                  href={`/school/events/${ev.id}`}
+                  className={`hover:text-brand-600 hover:underline ${ev.is_cancelled ? "line-through" : ""}`}
+                >
+                  {ev.title}
+                </Link>
                 <div className="text-xs font-normal text-ink-subtle">
                   {humanize(ev.kind)}
                   {ev.venue && ` · ${ev.venue}`}

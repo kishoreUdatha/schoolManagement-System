@@ -23,15 +23,33 @@ export function Select({
   );
 }
 
+/** The same props as Input, because a form should not care which of the two
+ *  a field happens to be — hint and error were Input-only, so writing one on
+ *  a Textarea was a type error rather than a note under the box. */
 export function Textarea({
   label,
+  hint,
+  error,
   className,
   ...rest
-}: TextareaHTMLAttributes<HTMLTextAreaElement> & { label?: string }) {
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & {
+  label?: string;
+  hint?: string;
+  error?: string;
+}) {
   return (
     <label className="flex flex-col gap-1">
       {label && <span className="text-[12px] font-bold text-ink-muted">{label}</span>}
-      <textarea rows={2} className={cn(fieldClass, className)} {...rest} />
+      <textarea
+        rows={2}
+        className={cn(fieldClass, error && "border-[#B82E45]", className)}
+        {...rest}
+      />
+      {error ? (
+        <span className="text-[11px] font-medium text-[#B82E45]">{error}</span>
+      ) : hint ? (
+        <span className="text-[11px] text-ink-subtle">{hint}</span>
+      ) : null}
     </label>
   );
 }
