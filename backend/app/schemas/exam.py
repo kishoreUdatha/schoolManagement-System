@@ -95,6 +95,8 @@ class ExamUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     term_id: Optional[int] = None
+    exam_type_id: Optional[int] = None
+    grade_scale_id: Optional[int] = None
 
 
 class ExamRead(BaseModel):
@@ -110,6 +112,10 @@ class ExamRead(BaseModel):
     is_published: bool
     published_at: Optional[datetime] = None
     term_id: Optional[int] = None
+    exam_type_id: Optional[int] = None
+    exam_type_name: Optional[str] = None
+    grade_scale_id: Optional[int] = None
+    results_approved_at: Optional[datetime] = None
     created_at: datetime
     papers: list[ExamPaperRead] = []
     papers_count: int = 0

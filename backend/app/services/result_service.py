@@ -2,7 +2,7 @@ import io
 from typing import Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.enums import MarkStatus
@@ -13,7 +13,7 @@ from app.models.parent import ParentStudent
 from app.models.student import Student
 from app.models.subject import ClassSubject, Subject
 from app.models.tenant import School
-from app.schemas.exam import grade_for_percent
+from app.services import grading_service
 
 
 def _verify_parent_link(db: Session, parent_user_id: int, student_id: int) -> Student:
@@ -141,7 +141,10 @@ def _build_result(
         )
 
     percentage = (total_obtained / total_max * 100) if total_max > 0 else 0.0
-    overall_grade = grade_for_percent(percentage) if total_max > 0 else "—"
+    scale = grading_service.scale_for_exam(db, exam)
+    overall_grade, overall_points, _ = (
+        grading_service.grade_for(scale, percentage) if total_max > 0 else ("—", None, None)
+    )
     overall_pass = (
         subjects_failed == 0
         and subjects_absent == 0
@@ -154,6 +157,7 @@ def _build_result(
         "total_obtained": total_obtained,
         "percentage": round(percentage, 2),
         "overall_grade": overall_grade,
+        "overall_points": float(overall_points) if overall_points is not None else None,
         "is_pass": overall_pass,
         "subjects_total": len(subjects),
         "subjects_passed": subjects_passed,
@@ -167,6 +171,13 @@ def _build_result(
         "exam_id": exam.id,
         "exam_name": exam.name,
         "exam_kind": exam.kind.value,
+        "grade_scale": (
+            {"name": scale.name,
+             "bands": [{"grade": b.grade, "min_percent": float(b.min_percent), "max_percent": float(b.max_percent),
+                        "points": float(b.points) if b.points is not None else None, "remark": b.remark}
+                       for b in sorted(scale.bands, key=lambda b: b.min_percent, reverse=True)]}
+            if scale else None
+        ),
         "start_date": exam.start_date,
         "end_date": exam.end_date,
         "is_published": exam.is_published,
@@ -217,7 +228,7 @@ def get_child_exam_result(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Exam not found or not published",
         )
-    return _build_result(db, exam, student)
+    return add_report_card_extras(db, exam, student, _build_result(db, exam, student))
 
 
 def build_student_result_for_admin(
@@ -233,10 +244,41 @@ def build_student_result_for_admin(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Exam not found"
         )
-    return _build_result(db, exam, student)
+    return _build_result(db, exam, student)  # plain result: rank/remarks added only for report cards
 
 
 # ---------- PDF generation ----------
+
+def add_report_card_extras(db: Session, exam: Exam, student: Student, result: dict, ranks=None) -> dict:
+    """Attendance, rank and remarks, per the school's report card settings."""
+    from app.models.attendance import StudentAttendance
+    from app.core.enums import AttendanceStatus
+
+    cfg = grading_service.settings(db, exam.school_id)
+    if cfg.show_attendance:
+        rows = db.execute(
+            select(StudentAttendance.status, func.count())
+            .where(StudentAttendance.student_id == student.id,
+                   StudentAttendance.date.between(exam.start_date.replace(month=1, day=1), exam.end_date))
+            .group_by(StudentAttendance.status)
+        ).all()
+        total = sum(n for _, n in rows)
+        present = sum(n for st, n in rows if st != AttendanceStatus.absent)
+        result["attendance_percent"] = grading_service.percent(present, total)
+    if cfg.show_rank and student.section_id:
+        ranks = grading_service.rank_map(db, student.section_id, exam.id) if ranks is None else ranks
+        result["rank"] = ranks.get(student.id)
+        result["class_size"] = len(ranks)
+    if cfg.show_remarks:
+        r = grading_service.remarks_for(db, exam.id, [student.id]).get(student.id)
+        if r:
+            result["teacher_remark"] = r.teacher_remark
+            result["principal_remark"] = r.principal_remark
+    if not cfg.show_grade_scale:
+        result["grade_scale"] = None
+    result["_settings"] = cfg
+    return result
+
 
 def _draw_report_card(elements: list, result: dict, school: School) -> None:
     """Append one student's report card pages to a Platypus 'elements' list."""
@@ -381,6 +423,47 @@ def _draw_report_card(elements: list, result: dict, school: School) -> None:
         )
     )
     elements.append(sum_tbl)
+
+    extras = []
+    if result.get("attendance_percent") is not None:
+        extras.append(["Attendance:", f"{result['attendance_percent']}%"])
+    if result.get("rank"):
+        extras.append(["Rank in class:", f"{result['rank']} of {result.get('class_size') or '—'}"])
+    if summary.get("overall_points") is not None:
+        extras.append(["Grade points:", str(summary["overall_points"])])
+    if extras:
+        ex_tbl = Table(extras, colWidths=[3.2 * cm, 4.5 * cm])
+        ex_tbl.setStyle(TableStyle([
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("TEXTCOLOR", (0, 0), (0, -1), colors.grey),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        elements.append(Spacer(1, 0.25 * cm))
+        elements.append(ex_tbl)
+
+    for label, key in (("Class teacher's remark", "teacher_remark"), ("Principal's remark", "principal_remark")):
+        if result.get(key):
+            elements.append(Paragraph(label, sect))
+            elements.append(Paragraph(result[key], small))
+
+    scale = result.get("grade_scale")
+    if scale and scale.get("bands"):
+        elements.append(Paragraph(f"Grading scale — {scale['name']}", sect))
+        legend = [["Grade", "Marks %", "Points", "Meaning"]] + [
+            [b["grade"], f"{b['min_percent']:g}–{b['max_percent']:g}",
+             "" if b.get("points") is None else f"{b['points']:g}", b.get("remark") or ""]
+            for b in scale["bands"]
+        ]
+        lg = Table(legend, colWidths=[1.6 * cm, 2.6 * cm, 1.8 * cm, 6 * cm])
+        lg.setStyle(TableStyle([
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("GRID", (0, 0), (-1, -1), 0.3, colors.lightgrey),
+            ("ALIGN", (0, 1), (2, -1), "CENTER"),
+        ]))
+        elements.append(lg)
+
     elements.append(Spacer(1, 1.0 * cm))
 
     # Signature line
@@ -461,7 +544,12 @@ def section_report_cards(
             detail="No active students in this section",
         )
 
-    results = [_build_result(db, exam, s) for s in students]
+    cfg = grading_service.settings(db, school_id)
+    ranks = grading_service.rank_map(db, section_id, exam.id) if cfg.show_rank else {}
+    results = [
+        add_report_card_extras(db, exam, s, _build_result(db, exam, s), ranks=ranks)
+        for s in students
+    ]
     pdf_bytes = generate_report_card_pdf(db, results, school_id)
     filename = f"report-cards-{exam.name.replace(' ', '_')}-section-{section.id}.pdf"
     return pdf_bytes, filename

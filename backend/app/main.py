@@ -37,6 +37,7 @@ from app.api.v1.school import (
     fees as school_fees,
     foundation as school_foundation,
     front_desk as school_front_desk,
+    grading as school_grading,
     health as school_health,
     holidays as school_holidays,
     hostel as school_hostel,
@@ -743,6 +744,12 @@ app.include_router(
     parent_student_leaves.router,
     prefix="/api/v1/parent/me/children",
     tags=["parent / student leave"],
+)
+
+app.include_router(
+    school_grading.router,
+    prefix="/api/v1/school",
+    tags=["school / grading, report cards"],
 )
 
 

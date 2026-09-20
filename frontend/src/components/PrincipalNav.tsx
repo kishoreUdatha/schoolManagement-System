@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, CalendarOff, ClipboardCheck, Replace, FileQuestion, LayoutDashboard, ListChecks, MonitorCheck, NotebookPen, ReceiptText } from "lucide-react";
+import { BarChart3, CalendarOff, FileBadge, ClipboardCheck, Replace, FileQuestion, LayoutDashboard, ListChecks, MonitorCheck, NotebookPen, ReceiptText } from "lucide-react";
 
 import { Sidebar, type NavSection } from "@/components/Sidebar";
 
@@ -15,6 +15,7 @@ const sections: NavSection[] = [
       { href: "/principal/lesson-plans", label: "Lesson plans", icon: NotebookPen },
       { href: "/principal/question-bank", label: "Question bank", icon: FileQuestion },
       { href: "/principal/online-tests", label: "Online tests", icon: MonitorCheck },
+      { href: "/principal/report-cards", label: "Report cards", icon: FileBadge },
       { href: "/principal/cover", label: "Substitutions", icon: Replace },
       { href: "/principal/student-leaves", label: "Student leave", icon: CalendarOff },
       { href: "/principal/payslips", label: "My payslips", icon: ReceiptText },

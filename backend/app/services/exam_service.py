@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models.academic import AcademicYear, SchoolClass
 from app.models.exam import Exam, ExamSubject
+from app.models.grading import ExamType, GradeScale
 from app.models.subject import ClassSubject, Subject
 from app.schemas.exam import (
     ExamCreate,
@@ -80,6 +81,10 @@ def _exam_to_read_dict(db: Session, e: Exam) -> dict:
         "is_published": e.is_published,
         "published_at": e.published_at,
         "term_id": e.term_id,
+        "exam_type_id": e.exam_type_id,
+        "exam_type_name": db.get(ExamType, e.exam_type_id).name if e.exam_type_id else None,
+        "grade_scale_id": e.grade_scale_id,
+        "results_approved_at": e.results_approved_at,
         "created_at": e.created_at,
         "papers": paper_dicts,
         "papers_count": len(papers),
@@ -171,6 +176,14 @@ def update_exam(
             detail="Unpublish the exam before editing it",
         )
     updates = data.model_dump(exclude_unset=True)
+    if updates.get("exam_type_id") is not None:
+        t = db.get(ExamType, updates["exam_type_id"])
+        if not t or t.school_id != school_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown exam type")
+    if updates.get("grade_scale_id") is not None:
+        sc = db.get(GradeScale, updates["grade_scale_id"])
+        if not sc or sc.school_id != school_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown grade scale")
     if updates.get("term_id") is not None:
         foundation_service.check_term(db, school_id, e.academic_year_id, updates["term_id"])
     if "name" in updates and updates["name"]:
@@ -225,6 +238,9 @@ def publish(db: Session, exam_id: int, school_id: int) -> Exam:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Add at least one subject paper before publishing",
         )
+    from app.services import grading_service
+
+    grading_service.check_publishable(db, e)
     e.is_published = True
     e.published_at = datetime.now(timezone.utc)
     db.commit()

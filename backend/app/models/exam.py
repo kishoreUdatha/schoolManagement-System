@@ -60,6 +60,17 @@ class Exam(Base, PrimaryKeyMixin, TimestampMixin):
     term_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("terms.id", ondelete="SET NULL")
     )
+    exam_type_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("exam_types.id", ondelete="SET NULL")
+    )
+    # pin a grade scale; empty = the school's default
+    grade_scale_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("grade_scales.id", ondelete="SET NULL")
+    )
+    results_approved_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
+    results_approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
     created_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")

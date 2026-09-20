@@ -41,6 +41,13 @@ from app.models.foundation import (
     StudentGuardian,
     Term,
 )
+from app.models.grading import (
+    ExamType,
+    GradeBand,
+    GradeScale,
+    ReportCardRemark,
+    ReportCardSetting,
+)
 from app.models.health import ClinicVisit, HealthCheckup, Immunization, MedicalProfile
 from app.models.holiday import Holiday
 from app.models.hostel import (
@@ -220,6 +227,11 @@ __all__ = [
     "User",
     "UserOtp",
     "Visit",
+    "ExamType",
+    "GradeBand",
+    "GradeScale",
+    "ReportCardRemark",
+    "ReportCardSetting",
     "StudentLeave",
     "Substitution",
     "TeacherUnavailability",

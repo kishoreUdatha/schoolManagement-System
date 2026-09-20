@@ -12,14 +12,16 @@ from app.models.exam import Exam, ExamSubject
 from app.models.mark import Mark
 from app.models.student import Student
 from app.models.subject import ClassSubject, Subject
-from app.schemas.exam import grade_for_percent
 from app.schemas.mark import MarkEntry
 
 
-def _grade_and_pass(marks: int, max_marks: int, pass_marks: int) -> tuple[str, bool]:
+def _grade_and_pass(db: Session, exam: Exam, marks: int, max_marks: int, pass_marks: int) -> tuple[str, bool]:
+    from app.services import grading_service
+
     pct = (marks / max_marks * 100) if max_marks else 0
-    grade = grade_for_percent(pct)
-    is_pass = marks >= pass_marks
+    grade, _points, band_pass = grading_service.grade_for(grading_service.scale_for_exam(db, exam), pct)
+    # the paper's pass marks win; a scale band only decides pass/fail if it's stricter
+    is_pass = marks >= pass_marks and (band_pass is not False)
     return grade, is_pass
 
 
@@ -260,7 +262,7 @@ def save_marks(
                 skipped += 1
                 continue
             grade, is_pass = _grade_and_pass(
-                e.marks_obtained, paper.max_marks, paper.pass_marks
+                db, exam, e.marks_obtained, paper.max_marks, paper.pass_marks
             )
             marks_value = e.marks_obtained
         elif e.status == MarkStatus.absent:

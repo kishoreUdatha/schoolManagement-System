@@ -23,6 +23,7 @@ class ResultSummary(BaseModel):
     total_obtained: int
     percentage: float
     overall_grade: str
+    overall_points: Optional[float] = None
     is_pass: bool  # all considered subjects passed
     subjects_total: int
     subjects_passed: int
@@ -30,6 +31,19 @@ class ResultSummary(BaseModel):
     subjects_absent: int
     subjects_exempt: int
     subjects_pending: int  # not yet graded
+
+
+class GradeBandRead(BaseModel):
+    grade: str
+    min_percent: float
+    max_percent: float
+    points: Optional[float] = None
+    remark: Optional[str] = None
+
+
+class GradeScaleRead(BaseModel):
+    name: str
+    bands: list[GradeBandRead]
 
 
 class ExamResultRead(BaseModel):
@@ -50,6 +64,12 @@ class ExamResultRead(BaseModel):
     section_name: Optional[str] = None
     subjects: list[SubjectResult]
     summary: ResultSummary
+    grade_scale: Optional[GradeScaleRead] = None
+    rank: Optional[int] = None
+    class_size: Optional[int] = None
+    attendance_percent: Optional[int] = None
+    teacher_remark: Optional[str] = None
+    principal_remark: Optional[str] = None
 
 
 class ExamSummaryForList(BaseModel):
