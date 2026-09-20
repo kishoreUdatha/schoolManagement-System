@@ -281,7 +281,7 @@ export function Sidebar({
       {/* Desktop sidebar — pinned to viewport height so the footer
           (user info, sign out, theme toggle) is always visible even on
           tall main content pages. */}
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-sidebar-border bg-sidebar md:flex md:flex-col">
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-sidebar-edge bg-sidebar md:flex md:flex-col">
         {navContent}
       </aside>
 
@@ -293,7 +293,7 @@ export function Sidebar({
         >
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <aside
-            className="absolute left-0 top-0 flex h-full w-64 flex-col border-r border-sidebar-border shadow-2xl"
+            className="absolute left-0 top-0 flex h-full w-64 flex-col border-r border-sidebar-edge shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button

@@ -43,7 +43,12 @@
     --sidebar-ink-muted: 23 52 92;     /* the same: 100% opacity throughout */
     --sidebar-active: 43 93 170;       /* #2B5DAA selected */
     --sidebar-hover: 237 242 250;      /* #EDF2FA */
-    --sidebar-border: 220 228 239;     /* #DCE4EF, as the page */
+    /* Two different jobs. The rules inside the panel separate a heading
+       from a list and should stay quiet. The outer edge is the only thing
+       dividing a white sidebar from a white page, so it carries 3.3:1 —
+       at #DCE4EF it was 1.28:1 and effectively invisible. */
+    --sidebar-border: 220 228 239;     /* #DCE4EF internal rules */
+    --sidebar-edge: 118 144 178;       /* #7690B2 panel against page */
 
     /* Status. These were written out as raw hex in 350-odd places; naming
        them means a school can be told what red means once. */
@@ -97,6 +102,7 @@
     --sidebar-active: 43 93 170;
     --sidebar-hover: 26 44 72;
     --sidebar-border: 30 50 80;
+    --sidebar-edge: 30 50 80;
 
     --success: 52 199 148;
     --success-bg: 10 58 44;

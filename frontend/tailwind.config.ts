@@ -46,6 +46,7 @@ const config: Config = {
           active: "rgb(var(--sidebar-active) / <alpha-value>)",
           hover: "rgb(var(--sidebar-hover) / <alpha-value>)",
           border: "rgb(var(--sidebar-border) / <alpha-value>)",
+          edge: "rgb(var(--sidebar-edge) / <alpha-value>)",
         },
         // Status, named once so a colour means the same thing everywhere.
         success: {
