@@ -43,6 +43,7 @@ from decimal import Decimal
 from sqlalchemy import select
 
 from app.core.enums import (
+    AssetStatus,
     AttendanceStatus,
     BorrowerType,
     CopyStatus,
@@ -51,6 +52,7 @@ from app.core.enums import (
     ParentRelation,
     SubjectKind,
     TransportDirection,
+    StockMoveKind,
     UserRole,
     VehicleKind,
 )
@@ -58,8 +60,10 @@ from app.core.security import hash_password
 from app.database import SessionLocal
 from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.attendance import StudentAttendance
+from app.models.inventory import Asset, InventoryItem, StockMove, Supplier
 from app.models.library import Book, BookCopy, LibrarySettings, Loan
 from app.models.parent import ParentStudent
+from app.models.payroll import PayrollRun
 from app.models.plan import Plan, PlanModule
 from app.models.staff import Staff
 from app.models.student import Student
@@ -75,6 +79,8 @@ from app.models.transport import (
     Vehicle,
 )
 from app.models.user import User
+from app.schemas.payroll import RunPaid, SalaryIn
+from app.services import payroll_service
 
 TENANT_CODE = "DEVSCHOOL"
 
@@ -147,6 +153,74 @@ ROUTES = [
     ("South route", "RT-SOUTH", "KA-01-CD-5678", VehicleKind.van, 4, Decimal("900.00"),
      "Imran Shaikh", [("Koramangala", time(7, 15)), ("HSR Layout", time(7, 35))]),
 ]
+
+SUPPLIER_NAME = "Sri Supplies"
+PO_PREFIX = "PO-DEV-"
+
+# (name, sku, category, unit, reorder level, bought, unit cost, issued,
+#  sellable, sale price) — markers and handwash end below their reorder
+#  level and chalk runs out entirely, so the low-stock warning has something
+#  to say without anybody having to arrange it by hand.
+STOCK = [
+    ("A4 paper", "STA-A4", "Stationery", "ream", Decimal("20"), Decimal("120"),
+     Decimal("240.00"), Decimal("40"), False, None),
+    ("Whiteboard markers", "STA-MKR", "Stationery", "piece", Decimal("50"), Decimal("200"),
+     Decimal("35.00"), Decimal("170"), False, None),
+    ("Chalk boxes", "STA-CHK", "Stationery", "box", Decimal("10"), Decimal("60"),
+     Decimal("45.00"), Decimal("60"), False, None),
+    ("School shirt", "UNI-SHT", "Uniform", "piece", Decimal("25"), Decimal("150"),
+     Decimal("320.00"), Decimal("60"), True, Decimal("450.00")),
+    ("School trousers", "UNI-TRS", "Uniform", "piece", Decimal("25"), Decimal("140"),
+     Decimal("380.00"), Decimal("50"), True, Decimal("520.00")),
+    ("Phenyl", "CLN-PHN", "Cleaning", "litre", Decimal("15"), Decimal("80"),
+     Decimal("90.00"), Decimal("30"), False, None),
+    ("Handwash refill", "CLN-HWS", "Cleaning", "litre", Decimal("20"), Decimal("60"),
+     Decimal("110.00"), Decimal("48"), False, None),
+    ("Footballs", "SPT-FTB", "Sports", "piece", Decimal("5"), Decimal("18"),
+     Decimal("650.00"), Decimal("4"), False, None),
+]
+
+# (tag, name, category, status, cost, location)
+ASSETS = [
+    ("AST-0001", "Projector — Hall", "Electronics", AssetStatus.in_use,
+     Decimal("42000.00"), "Assembly hall"),
+    ("AST-0002", "Projector — Grade 1 A", "Electronics", AssetStatus.in_use,
+     Decimal("38000.00"), "Grade 1 A"),
+    ("AST-0003", "Desktop — office", "Computers", AssetStatus.in_use,
+     Decimal("55000.00"), "Front office"),
+    ("AST-0004", "Desktop — staff room", "Computers", AssetStatus.under_repair,
+     Decimal("52000.00"), "Staff room"),
+    ("AST-0005", "Laser printer", "Computers", AssetStatus.in_store,
+     Decimal("18500.00"), "Main store"),
+    ("AST-0006", "Water purifier", "Utilities", AssetStatus.in_use,
+     Decimal("24000.00"), "Corridor"),
+    ("AST-0007", "Photocopier (old)", "Office", AssetStatus.disposed,
+     Decimal("65000.00"), "Disposed"),
+]
+
+# Monthly pay by role. Realistic enough that PF and ESI ceilings actually
+# bite, which is the part of a payslip most likely to be wrong.
+SALARY_BANDS = {
+    UserRole.principal: {"basic": Decimal("60000"), "da": Decimal("6000"),
+                         "hra": Decimal("24000"), "conveyance": Decimal("2000"),
+                         "special": Decimal("5000"), "tds": Decimal("4500")},
+    UserRole.teacher: {"basic": Decimal("32000"), "da": Decimal("3200"),
+                       "hra": Decimal("12800"), "conveyance": Decimal("1600"),
+                       "special": Decimal("2000"), "tds": Decimal("1200")},
+    UserRole.accountant: {"basic": Decimal("28000"), "da": Decimal("2800"),
+                          "hra": Decimal("11200"), "conveyance": Decimal("1600"),
+                          "special": Decimal("1500"), "tds": Decimal("800")},
+    UserRole.staff: {"basic": Decimal("18000"), "da": Decimal("1800"),
+                     "hra": Decimal("7200"), "conveyance": Decimal("1200"),
+                     "special": Decimal("1000"), "tds": Decimal("0")},
+}
+SALARY_FROM = date(2024, 4, 1)
+
+# One member of staff is left without a salary on purpose. A payroll run
+# reports who it had to skip, and a screen where that list is always empty
+# hides the one thing it exists to tell you. The payroll smoke test leans on
+# this person too.
+NO_SALARY = {"ACC001"}
 
 ATTENDANCE_DAYS = 14  # of history, so the promotion test has something to carry
 
@@ -574,6 +648,134 @@ def main() -> int:
             riding += 1
         if riding:
             note(True, f"{riding} children on the two routes")
+
+        # ---------- a store with stock actually moving ----------
+        storekeeper = admin_user = users["school@sms.local"]
+        supplier = db.execute(
+            select(Supplier).where(Supplier.school_id == school.id, Supplier.name == SUPPLIER_NAME)
+        ).scalar_one_or_none()
+        if supplier is None:
+            supplier = Supplier(**ids, name=SUPPLIER_NAME, contact_person="Ravi Menon",
+                                phone="9845098765", email="sales@srisupplies.dev",
+                                gstin="29ABCDE1234F1Z5")
+            db.add(supplier)
+            db.flush()
+            note(True, f"supplier {SUPPLIER_NAME}")
+
+        stocked = 0
+        for (name, sku, category, unit, reorder, bought, cost,
+             issued, sellable, price) in STOCK:
+            item = db.execute(
+                select(InventoryItem).where(InventoryItem.school_id == school.id,
+                                            InventoryItem.sku == sku)
+            ).scalar_one_or_none()
+            if item is None:
+                item = InventoryItem(**ids, name=name, sku=sku, category=category, unit=unit,
+                                     reorder_level=reorder, is_sellable=sellable,
+                                     sale_price=price, location="Main store")
+                db.add(item)
+                db.flush()
+            if db.execute(select(StockMove).where(StockMove.item_id == item.id)).first():
+                continue
+
+            # Bought once, then drawn down over the term. The purchase carries
+            # the unit cost because that is what the valuation is priced on;
+            # an issue has no cost of its own.
+            db.add(StockMove(**ids, item_id=item.id, kind=StockMoveKind.purchase, qty=bought,
+                             unit_cost=cost, moved_on=date.today() - timedelta(days=150),
+                             supplier_id=supplier.id, reference=f"{PO_PREFIX}{sku}",
+                             recorded_by_user_id=storekeeper.id))
+            if issued:
+                for part, days in ((issued / 2, 90), (issued - issued / 2, 30)):
+                    if part <= 0:
+                        continue
+                    db.add(StockMove(**ids, item_id=item.id, kind=StockMoveKind.issue, qty=part,
+                                     moved_on=date.today() - timedelta(days=days),
+                                     issued_to="Staff room",
+                                     recorded_by_user_id=storekeeper.id))
+            stocked += 1
+        if stocked:
+            note(True, f"{stocked} stock items with purchases and issues")
+
+        fresh_assets = 0
+        for tag, name, category, status, cost, where in ASSETS:
+            if db.execute(
+                select(Asset).where(Asset.school_id == school.id, Asset.asset_tag == tag)
+            ).scalar_one_or_none():
+                continue
+            db.add(Asset(**ids, asset_tag=tag, name=name, category=category, status=status,
+                         cost=cost, location=where, supplier_id=supplier.id,
+                         purchase_date=date.today() - timedelta(days=600),
+                         warranty_until=date.today() + timedelta(days=200)))
+            fresh_assets += 1
+        if fresh_assets:
+            note(True, f"{fresh_assets} assets on the register")
+
+        # ---------- salaries, and three months of payroll behind them ----------
+        staff_rows = db.execute(
+            select(Staff, User).join(User, Staff.user_id == User.id)
+            .where(Staff.school_id == school.id, User.is_active.is_(True))
+            .order_by(Staff.id)
+        ).all()
+
+        paid_set = 0
+        for n, (st, u) in enumerate(staff_rows):
+            if st.employee_no in NO_SALARY:
+                continue
+            if payroll_service.current_salary(db, st.id, date.today()):
+                continue
+            band = SALARY_BANDS.get(u.role, SALARY_BANDS[UserRole.staff])
+            payroll_service.set_salary(
+                db, school.tenant_id, school.id, st.id,
+                SalaryIn(
+                    effective_from=SALARY_FROM,
+                    basic=band["basic"], da=band["da"], hra=band["hra"],
+                    conveyance=band["conveyance"], special_allowance=band["special"],
+                    pf_applicable=True, esi_applicable=True,
+                    professional_tax=Decimal("200.00"), tds_monthly=band["tds"],
+                    bank_name="HDFC Bank",
+                    bank_account_no=f"5010{st.id:08d}",
+                    bank_ifsc="HDFC0001234",
+                    pan=f"ABCPD{1000 + n}X",
+                    uan=f"{100000000000 + st.id}",
+                ),
+            )
+            paid_set += 1
+        if paid_set:
+            note(True, f"salary on file for {paid_set} staff")
+
+        # Four months back, so the payroll screen shows a run in each state
+        # rather than only the happy ending: two paid, one finalized and one
+        # left in draft the way a half-finished month really looks.
+        #
+        # The current month is deliberately left alone. The payroll smoke test
+        # runs against it and refuses to touch a period that already has a real
+        # run, which is the right instinct for anything that moves money —
+        # seeding over it would make the suite abort rather than pass.
+        runs_made = 0
+        month = (date.today().replace(day=1) - timedelta(days=1)).replace(day=1)
+        periods = []
+        for _ in range(4):
+            periods.append(f"{month:%Y-%m}")
+            month = (month - timedelta(days=1)).replace(day=1)
+        for n, period in enumerate(reversed(periods)):
+            if db.execute(
+                select(PayrollRun).where(PayrollRun.school_id == school.id,
+                                         PayrollRun.period == period)
+            ).scalar_one_or_none():
+                continue
+            run, skipped = payroll_service.create_run(
+                db, school.tenant_id, school.id, admin_user.id, period)
+            if n < len(periods) - 1:
+                payroll_service.finalize(db, run.id, school.id, admin_user.id)
+            if n < len(periods) - 2:
+                payroll_service.mark_paid(
+                    db, run.id, school.id,
+                    RunPaid(paid_on=date(int(period[:4]), int(period[5:]), 28),
+                            payment_ref=f"NEFT/{period.replace('-', '')}"))
+            runs_made += 1
+        if runs_made:
+            note(True, f"{runs_made} payroll runs ({periods[-1]} to {periods[0]})")
 
         # ---------- leave the super admin test somewhere it can run again ----------
         premium = db.execute(select(Plan).where(Plan.name == "Premium")).scalar_one_or_none()

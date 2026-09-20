@@ -195,8 +195,10 @@ def main():
         code, _ = request("PUT", f"/school/payroll/staff/{ids['accountant']}/salary", token=tok,
                           body={"effective_from": f"{Y}-04-01", "basic": "12000", "bank_name": MARK})
         code, run2 = request("POST", f"/school/payroll/runs/{run['id']}/recalculate", token=tok)
-        # other staff may exist without a salary structure; only this run's three matter
-        assert code == 200 and run2["staff_count"] == 3, run2
+        # other staff may exist with a salary of their own; only this run's
+        # three matter, so count those rather than the whole run
+        assert code == 200, run2
+        assert {*MINE} <= {s["full_name"] for s in run2["payslips"]}, run2["payslips"]
         assert not (set(run2["skipped_without_salary"]) & set(MINE)), run2["skipped_without_salary"]
         s2 = {s["full_name"]: s for s in run2["payslips"]}
         assert Decimal(s2["Dev Teacher"]["lop_days"]) == 16, "manual LOP override kept"
