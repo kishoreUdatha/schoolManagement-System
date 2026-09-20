@@ -19,7 +19,7 @@ import json
 import sys
 import urllib.error
 import urllib.request
-from datetime import date, timedelta
+from datetime import timedelta
 
 from sqlalchemy import func, select
 
@@ -32,6 +32,8 @@ from app.models.parent import ParentStudent
 from app.models.pastoral import CounsellingCase, CounsellingSession, DisciplineAction, DisciplineIncident
 from app.models.student import Student
 from app.models.user import User
+
+from scripts import devdata
 
 
 BASE = "http://localhost:8000/api/v1"
@@ -138,7 +140,7 @@ def main():
     cleanup()
     ctx = setup()
     sid = ctx["sid"]
-    today = date.today()
+    today = devdata.today()  # the school's date, which is what the API writes
     try:
         tok = login("school", *ADMIN)
         ttok = login("teacher", *TEACHER)

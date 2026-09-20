@@ -33,6 +33,8 @@ from app.models.parent import ParentStudent
 from app.models.student import Student
 from app.models.user import User
 
+from scripts import devdata
+
 
 BASE = "http://localhost:8000/api/v1"
 ADMIN = ("school@sms.local", "SchoolPass123!")
@@ -149,7 +151,7 @@ def login(role, email, pw):
 
 def main():
     cleanup()
-    today = date.today()
+    today = devdata.today()  # the school's date, which is what the API writes
     due = today - timedelta(days=15)
     ctx = setup(due)
     try:

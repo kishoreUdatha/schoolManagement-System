@@ -63,6 +63,26 @@ def school_id() -> int:
     return school()["school_id"]
 
 
+def today():
+    """Today in the school's timezone — the same date the API will use.
+
+    Not `date.today()`. The containers run on UTC and the dev school is in
+    Asia/Kolkata, so from 18:30 UTC the server is already on tomorrow's date
+    while `date.today()` is still on yesterday's. Tests that mixed the two
+    passed all morning and failed every evening.
+
+    It calls the application's own helper rather than naming a timezone here,
+    so a test can never disagree with the endpoint it is checking.
+    """
+    from app.core.scoping import school_today
+
+    db = SessionLocal()
+    try:
+        return school_today(db, school_id())
+    finally:
+        db.close()
+
+
 def year_id(name: str = CURRENT_YEAR) -> int:
     return _one(
         select(AcademicYear).where(

@@ -25,6 +25,7 @@ from sqlalchemy import select
 
 from app.core.security import hash_password
 from app.models.attendance import StudentAttendance
+from app.models.notice import Notice
 from app.models.register import AttendanceSession
 from app.database import SessionLocal
 from app.models.user import User
@@ -94,6 +95,11 @@ def clear_todays_attendance():
         db.execute(
             AttendanceSession.__table__.delete().where(AttendanceSession.date == date.today())
         )
+        # Every run leaves a notice behind, and the inbox read is a window:
+        # once enough have piled up, the new one is off the end and the count
+        # stops moving even though the alert fired. Recipients go with them,
+        # the foreign key cascades.
+        db.execute(Notice.__table__.delete().where(Notice.title.like("Absence notice:%")))
         db.commit()
     finally:
         db.close()

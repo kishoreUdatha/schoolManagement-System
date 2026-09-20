@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import CurrentUser
 from app.core.enums import CaseStatus, IncidentStatus, UserRole
+from app.core.scoping import school_today
 from app.database import get_db
 from app.models.user import User
 from app.schemas.pastoral import (
@@ -63,7 +64,10 @@ def create_incident(payload: IncidentIn, current_user: Staff, db: Db):
 
 @router.get("/incidents/summary", response_model=DisciplineSummary)
 def summary(current_user: Staff, db: Db, frm: Optional[date] = Query(None, alias="from"), to: Optional[date] = None):
-    to = to or date.today()
+    # The school's date, not the server's. Incidents are dated with
+    # school_today when they are reported and closed, so a window ending on
+    # the UTC date drops today's incidents for the hours the two disagree.
+    to = to or school_today(db, current_user.school_id)
     frm = frm or to - timedelta(days=90)
     return svc.discipline_summary(db, current_user, frm, to)
 
