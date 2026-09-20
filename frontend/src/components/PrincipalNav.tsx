@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, BriefcaseBusiness, CalendarClock, CalendarOff, FileBadge, Gavel, HandCoins, HeartHandshake, ClipboardCheck, Replace, FileQuestion, LayoutDashboard, ListChecks, MonitorCheck, NotebookPen, ReceiptText } from "lucide-react";
+import { BarChart3, BriefcaseBusiness, FileSignature, CalendarClock, CalendarOff, FileBadge, Gavel, HandCoins, HeartHandshake, ClipboardCheck, Replace, FileQuestion, LayoutDashboard, ListChecks, MonitorCheck, NotebookPen, ReceiptText } from "lucide-react";
 
 import { Sidebar, type NavSection } from "@/components/Sidebar";
 
@@ -19,6 +19,7 @@ const sections: NavSection[] = [
       { href: "/principal/refunds", label: "Refunds", icon: HandCoins },
       { href: "/principal/discipline", label: "Discipline", icon: Gavel },
       { href: "/principal/counselling", label: "Counselling", icon: HeartHandshake },
+      { href: "/principal/applications", label: "Applications", icon: FileSignature },
       { href: "/principal/recruitment", label: "Recruitment", icon: BriefcaseBusiness },
       { href: "/principal/leave-entitlement", label: "Leave entitlement", icon: CalendarClock },
       { href: "/principal/cover", label: "Substitutions", icon: Replace },

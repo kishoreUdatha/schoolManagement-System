@@ -29,6 +29,7 @@ import {
   FileText,
   Award,
   Library,
+  FileSignature,
   BriefcaseBusiness,
   CalendarClock,
   Gavel,
@@ -82,6 +83,7 @@ const sections: NavSection[] = [
     icon: UserPlus,
     items: [
       { href: "/school/admissions", label: "Enquiries", icon: UserPlus, exact: true },
+      { href: "/school/admissions/applications", label: "Applications", icon: FileSignature },
       { href: "/school/admissions/campaigns", label: "Campaigns", icon: BarChart3 },
     ],
   },

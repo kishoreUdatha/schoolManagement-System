@@ -1,0 +1,132 @@
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/Button";
+import { Card, CardBody } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { api, apiError } from "@/lib/api";
+
+type SchoolInfo = { school_name: string; address: string | null; phone: string | null; email: string | null };
+
+export default function PublicApplicationPage() {
+  const params = useParams<{ tenant: string; school: string }>();
+  const base = `/api/v1/public/admissions/${encodeURIComponent(params.tenant)}/${encodeURIComponent(params.school)}`;
+  const [info, setInfo] = useState<SchoolInfo | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [f, setF] = useState({
+    student_name: "",
+    dob: "",
+    gender: "",
+    applying_for_class: "",
+    previous_school: "",
+    guardian_name: "",
+    father_name: "",
+    mother_name: "",
+    phone: "",
+    email: "",
+    address: "",
+    notes: "",
+    sibling_in_school: false,
+    website: "", // honeypot
+  });
+
+  useEffect(() => {
+    api.get<SchoolInfo>(base).then((r) => setInfo(r.data)).catch(() => setNotFound(true));
+  }, [base]);
+
+  const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await api.post<{ application_no: string; message: string }>(`${base}/applications`, {
+        ...f,
+        dob: f.dob || null,
+        gender: f.gender || null,
+        email: f.email || null,
+        father_name: f.father_name || null,
+        mother_name: f.mother_name || null,
+        previous_school: f.previous_school || null,
+        address: f.address || null,
+        notes: f.notes || null,
+      });
+      setDone(r.data.message);
+    } catch (err) {
+      setError(apiError(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (notFound) return <div className="p-10 text-center text-ink-muted">This admission form isn&apos;t available.</div>;
+  if (done)
+    return (
+      <div className="mx-auto max-w-lg p-10 text-center">
+        <h1 className="text-xl font-bold text-ink">Thank you</h1>
+        <p className="mt-2 text-ink-muted">{done}</p>
+        <p className="mt-4 text-sm text-ink-subtle">Please keep your application number for any follow-up.</p>
+      </div>
+    );
+
+  return (
+    <div className="mx-auto max-w-2xl space-y-4 p-6">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-ink">{info?.school_name ?? "Admission application"}</h1>
+        <p className="text-sm text-ink-muted">Admission application</p>
+        {info?.phone && <p className="text-xs text-ink-subtle">{info.phone}</p>}
+      </div>
+      {error && <div className="rounded-md bg-rose-500/10 px-3 py-2 text-sm text-rose-400">{error}</div>}
+      <Card>
+        <CardBody>
+          <form onSubmit={submit} className="space-y-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input label="Student's name *" value={f.student_name} onChange={set("student_name")} required minLength={2} />
+              <Input label="Date of birth" type="date" max={new Date().toISOString().slice(0, 10)} value={f.dob} onChange={set("dob")} />
+              <label className="flex flex-col gap-1 text-sm text-ink-muted">
+                Gender
+                <select value={f.gender} onChange={set("gender")} className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm text-ink">
+                  <option value="">—</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <Input label="Applying for class" value={f.applying_for_class} onChange={set("applying_for_class")} placeholder="Class 1" />
+              <Input label="Present / previous school" value={f.previous_school} onChange={set("previous_school")} />
+              <Input label="Parent or guardian *" value={f.guardian_name} onChange={set("guardian_name")} required minLength={2} />
+              <Input label="Father's name" value={f.father_name} onChange={set("father_name")} />
+              <Input label="Mother's name" value={f.mother_name} onChange={set("mother_name")} />
+              <Input label="Phone *" value={f.phone} onChange={set("phone")} required minLength={6} />
+              <Input label="Email" type="email" value={f.email} onChange={set("email")} />
+            </div>
+            <Input label="Address" value={f.address} onChange={set("address")} />
+            <Input label="Anything the school should know" value={f.notes} onChange={set("notes")} />
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input type="checkbox" checked={f.sibling_in_school} onChange={(e) => setF({ ...f, sibling_in_school: e.target.checked })} />
+              A brother or sister already studies here
+            </label>
+            <input className="hidden" tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} aria-hidden />
+            <Button type="submit" disabled={busy}>
+              {busy ? "Sending…" : "Send application"}
+            </Button>
+            <p className="text-xs text-ink-subtle">
+              Just want to enquire first?{" "}
+              <Link href={`/apply/${params.tenant}/${params.school}`} className="text-brand-500 hover:underline">
+                Send an enquiry instead
+              </Link>
+              .
+            </p>
+          </form>
+        </CardBody>
+      </Card>
+    </div>
+  );
+}

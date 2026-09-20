@@ -12,6 +12,12 @@ from app.models.admission import (
     AdmissionCampaign,
     AdmissionEnquiry,
 )
+from app.models.application import (
+    AdmissionApplication,
+    AdmissionAssessment,
+    ApplicationDocument,
+    ApplicationStatusHistory,
+)
 from app.models.approval import ApprovalRequest
 from app.models.audit import AuditLog
 from app.models.attendance import StudentAttendance
@@ -243,6 +249,10 @@ __all__ = [
     "User",
     "UserOtp",
     "Visit",
+    "AdmissionApplication",
+    "AdmissionAssessment",
+    "ApplicationDocument",
+    "ApplicationStatusHistory",
     "Candidate",
     "CandidateApplication",
     "InterviewSchedule",

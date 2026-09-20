@@ -578,6 +578,33 @@ class ConsentResponse(str, enum.Enum):
     no = "no"
 
 
+class ApplicationStatus(str, enum.Enum):
+    draft = "draft"
+    submitted = "submitted"
+    verification = "verification"  # checking the documents
+    assessment = "assessment"  # test / interaction stage
+    approved = "approved"
+    fee_pending = "fee_pending"  # place offered, waiting for the admission fee
+    admitted = "admitted"
+    rejected = "rejected"
+    withdrawn = "withdrawn"
+
+
+class AssessmentKind(str, enum.Enum):
+    written_test = "written_test"
+    interaction = "interaction"
+    interview = "interview"
+    audition = "audition"
+    other = "other"
+
+
+class AssessmentStatus(str, enum.Enum):
+    scheduled = "scheduled"
+    done = "done"
+    absent = "absent"
+    cancelled = "cancelled"
+
+
 class EmploymentType(str, enum.Enum):
     full_time = "full_time"
     part_time = "part_time"
