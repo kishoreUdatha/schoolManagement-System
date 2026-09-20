@@ -33,6 +33,7 @@ from app.api.v1.school import (
     events as school_events,
     exams as school_exams,
     exports as school_exports,
+    fee_extras as school_fee_extras,
     fee_reminders as school_fee_reminders,
     fees as school_fees,
     foundation as school_foundation,
@@ -750,6 +751,12 @@ app.include_router(
     school_grading.router,
     prefix="/api/v1/school",
     tags=["school / grading, report cards"],
+)
+
+app.include_router(
+    school_fee_extras.router,
+    prefix="/api/v1/school/fees",
+    tags=["school / late fees, refunds"],
 )
 
 

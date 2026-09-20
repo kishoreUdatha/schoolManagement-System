@@ -578,6 +578,19 @@ class ConsentResponse(str, enum.Enum):
     no = "no"
 
 
+class LateFeeBasis(str, enum.Enum):
+    per_day = "per_day"  # amount x days overdue (after the grace days)
+    once = "once"  # one flat charge
+    percent_per_month = "percent_per_month"  # % of the unpaid amount, per started month
+
+
+class RefundStatus(str, enum.Enum):
+    requested = "requested"
+    approved = "approved"
+    rejected = "rejected"
+    processed = "processed"
+
+
 class StudentLeaveKind(str, enum.Enum):
     sick = "sick"
     family = "family"

@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, Calculator, CreditCard, IndianRupee, LayoutDashboard, Package, ReceiptText, Wallet } from "lucide-react";
+import { Banknote, Calculator, CreditCard, HandCoins, IndianRupee, LayoutDashboard, Package, ReceiptText, Wallet } from "lucide-react";
 
 import { Sidebar, type NavSection } from "@/components/Sidebar";
 
@@ -17,6 +17,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/accountant/fees", label: "Fees", icon: IndianRupee },
       { href: "/accountant/online-payments", label: "Online payments", icon: CreditCard },
+      { href: "/accountant/late-refunds", label: "Late fees & refunds", icon: HandCoins },
       { href: "/accountant/accounts", label: "Accounts", icon: Calculator },
       { href: "/accountant/payroll", label: "Payroll", icon: Banknote },
       { href: "/accountant/inventory", label: "Inventory & store", icon: Package },

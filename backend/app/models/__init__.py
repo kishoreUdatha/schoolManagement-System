@@ -33,6 +33,7 @@ from app.models.events import (
 )
 from app.models.exam import Exam, ExamSubject
 from app.models.fee import FeeHead, FeeStructure, StudentFee
+from app.models.fee_extra import LateFeeRule, Refund
 from app.models.fee_reminder import FeeReminderLog
 from app.models.foundation import (
     Department,
@@ -227,6 +228,8 @@ __all__ = [
     "User",
     "UserOtp",
     "Visit",
+    "LateFeeRule",
+    "Refund",
     "ExamType",
     "GradeBand",
     "GradeScale",

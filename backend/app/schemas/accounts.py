@@ -174,7 +174,7 @@ class CashBook(BaseModel):
     from_date: date
     to_date: date
     income: dict  # {"fees": {mode: amt}, "fees_by_head": {head: amt}, "other": {source: amt}, "store": {payment: amt}}
-    expenses: dict  # {"by_category": {cat: amt}, "payroll": amt}
+    expenses: dict  # {"by_category": {cat: amt}, "payroll": amt, "refunds": amt}
     total_in: Decimal
     total_out: Decimal
     net: Decimal

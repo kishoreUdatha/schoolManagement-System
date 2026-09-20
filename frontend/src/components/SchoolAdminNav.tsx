@@ -29,6 +29,7 @@ import {
   FileText,
   Award,
   Library,
+  HandCoins,
   Ruler,
   FileBadge,
   Replace,
@@ -145,6 +146,7 @@ const sections: NavSection[] = [
     items: [
       { href: "/school/fees", label: "Fees", icon: IndianRupee },
       { href: "/school/fees/online", label: "Online payments", icon: CreditCard },
+      { href: "/school/fees/late-refunds", label: "Late fees & refunds", icon: HandCoins },
       { href: "/school/accounts", label: "Accounts", icon: Calculator },
       { href: "/school/payroll", label: "Payroll", icon: Banknote },
       { href: "/school/inventory", label: "Inventory & store", icon: Package },

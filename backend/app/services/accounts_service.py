@@ -420,13 +420,21 @@ def cash_book(db: Session, school_id: int, frm: date, to: date) -> dict:
         by_mode[MoneyMode.bank_transfer.value]["out"] += net
         daily[run.paid_on]["out"] += net
 
+    from app.services import fee_extras_service
+
+    refunds = ZERO
+    for r in fee_extras_service.processed_rows(db, school_id, frm, to):
+        refunds += r.amount
+        by_mode[r.mode.value]["out"] += r.amount
+        daily[r.processed_on]["out"] += r.amount
+
     total_in = sum(fees_by_mode.values(), ZERO) + sum(other.values(), ZERO) + sum(store.values(), ZERO)
-    total_out = sum(by_cat.values(), ZERO) + payroll
+    total_out = sum(by_cat.values(), ZERO) + payroll + refunds
     return {
         "from_date": frm,
         "to_date": to,
         "income": {"fees": dict(fees_by_mode), "fees_by_head": dict(fees_by_head), "other": dict(other), "store": dict(store)},
-        "expenses": {"by_category": dict(by_cat), "payroll": payroll},
+        "expenses": {"by_category": dict(by_cat), "payroll": payroll, "refunds": refunds},
         "total_in": total_in,
         "total_out": total_out,
         "net": total_in - total_out,
