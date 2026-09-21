@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
@@ -11,6 +12,8 @@ import { date, label, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import type { PublicLink } from "@/features/admissions/types";
+import { careersPath } from "@/features/public/links";
 import type { Department, Opening, OpeningStatus } from "./types";
 import { Dialog, Field, KV, useNewFlag } from "./ui";
 
@@ -36,7 +39,11 @@ function asInput(o: Opening, patch: Partial<Opening> = {}) {
   };
 }
 
-/** SCR-173, live: GET/POST /api/v1/school/hr/openings, PUT/DELETE /{id}, POST /{id}/status. */
+/**
+ * SCR-173, live: GET/POST /api/v1/school/hr/openings, GET/PUT/DELETE /{id}
+ * (the detail dialog, also opened by ?id=), POST /{id}/status. The careers
+ * link uses GET /admissions/public-link for the school's codes.
+ */
 export function JobOpenings() {
   const [status, setStatus] = useState("");
   const [deptId, setDeptId] = useState("");
@@ -44,7 +51,14 @@ export function JobOpenings() {
   const list = useApi<Opening[]>(BASE, { status });
   const depts = useApi<Department[]>("/api/v1/school/departments");
   const [creating, closeCreate] = useNewFlag();
-  const [open, setOpen] = useState<Opening | null>(null);
+  // The opening shown in the dialog: ?id= from a link, or a row's View. Its
+  // record comes fresh from GET /openings/{id}; the row fills in meanwhile.
+  const idParam = useSearchParams().get("id");
+  const [openId, setOpenId] = useState<number | null>(idParam ? Number(idParam) : null);
+  const detail = useApi<Opening>(openId ? `${BASE}/${openId}` : null);
+  const open = openId ? (detail.data?.id === openId ? detail.data : (list.data?.find((o) => o.id === openId) ?? null)) : null;
+  const setOpen = (o: Opening | null) => setOpenId(o?.id ?? null);
+  const link = useApi<PublicLink>("/api/v1/school/admissions/public-link");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -71,6 +85,7 @@ export function JobOpenings() {
       const r = await fn();
       notify(done);
       list.reload();
+      detail.reload();
       return r;
     } catch (e) {
       setError(errorText(e));
@@ -209,9 +224,17 @@ export function JobOpenings() {
               ["Salary", open.salary_min ? `${money(open.salary_min)}${open.salary_max ? ` – ${money(open.salary_max)}` : ""} a year` : "—"],
               ["Posted", date(open.posted_on)],
               ["Closes", date(open.closes_on)],
-              ["Careers page", open.is_public ? "Shown once published" : "Not shown"],
+              ["Careers page", open.is_public ? (open.status === "open" ? "Shown now" : "Shown once published") : "Not shown"],
             ]}
           />
+          {detail.error && detail.data?.id !== openId ? <p className="small muted">{`Showing the list's copy: ${detail.error}`}</p> : null}
+          {open.is_public && open.status === "open" && link.data ? (
+            <p className="small">
+              <a href={careersPath(link.data.tenant_code, link.data.code)} target="_blank" rel="noreferrer">
+                Open the public careers page
+              </a>
+            </p>
+          ) : null}
           {open.description ? <p>{open.description}</p> : null}
           {open.requirements ? <p>{open.requirements}</p> : null}
           <div className="row" style={{ flexWrap: "wrap", marginTop: 14, gap: 8 }}>

@@ -1,7 +1,7 @@
 // SCR-050 · Application Details
 // Module: Admissions & Enquiries · Role: Admission Officer · Release: Phase 2 · Stories: US-0099 / US-0100
 // Mock: screens/SCR-050_Application_Details.html
-// Wired: GET /api/v1/school/admissions/applications/{id} (?id=); POST /submit, /status, /fee, /withdraw. Hand-maintained.
+// Wired: GET /api/v1/school/admissions/applications/{id} (?id=); POST /submit, /status, /fee, /withdraw; multipart POST /applications/{id}/documents, GET /applications/documents/{doc}/file, DELETE /applications/documents/{doc}; edit links to SCR-049 ?id= (PUT /applications/{id}). Hand-maintained.
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";

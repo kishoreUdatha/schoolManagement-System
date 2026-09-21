@@ -38,7 +38,8 @@ function decision(tests: Assessment[]): string {
 /**
  * SCR-052, live: applications at the assessment stage (GET /applications?status=assessment,
  * then GET /applications/{id} for the tests). PUT /applications/assessments/{id}
- * records a result; POST /applications/{id}/assessments schedules one.
+ * records a result; POST /applications/{id}/assessments schedules one;
+ * DELETE /applications/assessments/{id} removes one not yet marked.
  */
 export function EntranceAssessment() {
   const router = useRouter();
@@ -149,6 +150,23 @@ function ResultForm({ scheduled }: { scheduled: { a: Application; t: Assessment 
     }
   }
 
+  /** DELETE /applications/assessments/{id}: only one not yet marked done. */
+  async function remove() {
+    if (!chosen || !window.confirm(`Remove the ${label(chosen.t.kind).toLowerCase()} for ${chosen.a.student_name} on ${dateTime(chosen.t.scheduled_at)}?`)) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api.delete(`${APPS}/assessments/${chosen.t.id}`);
+      notify("Assessment removed.");
+      setPick("");
+      emitChange();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <form id="assessment-result" className="panel" onSubmit={submit}>
       <div className="panel-head">
@@ -203,10 +221,17 @@ function ResultForm({ scheduled }: { scheduled: { a: Application; t: Assessment 
           </label>
         </div>
         <div className="gap" />
-        <button type="submit" className="btn primary" disabled={saving || !pick}>
-          <Icon name="check" className="sm" />
-          {saving ? "Saving…" : "Save assessment"}
-        </button>
+        <div className="row" style={{ gap: 8 }}>
+          <button type="submit" className="btn primary" disabled={saving || !pick}>
+            <Icon name="check" className="sm" />
+            {saving ? "Saving…" : "Save assessment"}
+          </button>
+          {chosen ? (
+            <button type="button" className="btn text" disabled={saving} onClick={remove}>
+              Remove this assessment
+            </button>
+          ) : null}
+        </div>
       </div>
     </form>
   );
