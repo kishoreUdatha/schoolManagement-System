@@ -8,3 +8,75 @@
 .tenant-name{font-size:12px;font-weight:800;line-height:1.3;white-space:nowrap}
 .tenant-name small{display:block;color:var(--muted);font-size:10px;font-weight:500}
 @media(max-width:700px){.tenant-name{display:none}.tenant-switch{padding:4px 8px 4px 4px}}
+
+/* ------------------------------------------------------------------
+   Bright theme. The mocks use one blue and a lot of grey; this adds a
+   small accent palette and crisper text so screens read as lively
+   without changing any layout. Remove this block to get the mock back.
+   ------------------------------------------------------------------ */
+:root{
+  --ink:#0f1f4d;--muted:#4f6285;--line:#dfe8f7;--bg:#eef4ff;
+  --blue:#2563eb;--blue-grad:linear-gradient(135deg,#2563eb 0%,#3b82f6 55%,#38bdf8 100%);
+  --c-blue:#2563eb;--c-blue-bg:#e6efff;
+  --c-violet:#7c3aed;--c-violet-bg:#f0e9ff;
+  --c-teal:#0d9488;--c-teal-bg:#dcf6f2;
+  --c-amber:#d97706;--c-amber-bg:#fff1d6;
+  --c-pink:#db2777;--c-pink-bg:#ffe6f1;
+  --c-green:#16a34a;--c-green-bg:#e2f7e9;
+  --lift:0 1px 2px rgba(15,31,77,.04),0 10px 28px -16px rgba(37,99,235,.22);
+}
+body{background:radial-gradient(1200px 500px at 70% -10%,#dfeaff 0%,rgba(223,234,255,0) 60%),var(--bg);background-attachment:fixed}
+.crumb{color:#5a6f95}
+
+/* brand + primary actions */
+.brand-mark{background:var(--blue-grad);box-shadow:0 6px 14px -6px rgba(37,99,235,.6)}
+.btn.primary{background:var(--blue-grad);border-color:transparent;box-shadow:0 6px 16px -8px rgba(37,99,235,.7)}
+.btn.primary:hover{background:linear-gradient(135deg,#1d4ed8,#2563eb 55%,#0ea5e9)}
+.hero{background:linear-gradient(120deg,#1d4ed8 0%,#2563eb 40%,#3b82f6 75%,#38bdf8 100%)}
+.hero.student-hero{background:linear-gradient(120deg,#1565d8,#1f8ef1 60%,#22c3ee)}
+
+/* sidebar: coloured icons, a vivid active item */
+.nav{color:#2f426b}
+.nav-label{color:#5d71a0}
+.nav .ico{color:var(--c-blue)}
+.nav:nth-of-type(6n+2) .ico{color:var(--c-violet)}
+.nav:nth-of-type(6n+3) .ico{color:var(--c-teal)}
+.nav:nth-of-type(6n+4) .ico{color:var(--c-amber)}
+.nav:nth-of-type(6n+5) .ico{color:var(--c-pink)}
+.nav:nth-of-type(6n) .ico{color:var(--c-green)}
+.nav.active{background:var(--blue-grad);color:#fff;box-shadow:0 8px 18px -10px rgba(37,99,235,.8)}
+.nav.active .ico{color:#fff}
+.nav.active .count{background:rgba(255,255,255,.25);color:#fff}
+.nav .count{background:#ffe1ec;color:#be185d}
+
+/* panels and figures */
+.panel,.stat-strip,.aside-panel{box-shadow:var(--lift)}
+.stat-label{color:#3f5380}
+.stat-value{color:var(--ink)}
+.stat .mini-icon{background:var(--c-blue-bg);color:var(--c-blue)}
+.stat:nth-child(4n+2) .mini-icon{background:var(--c-violet-bg);color:var(--c-violet)}
+.stat:nth-child(4n+3) .mini-icon{background:var(--c-green-bg);color:var(--c-green)}
+.stat:nth-child(4n) .mini-icon{background:var(--c-amber-bg);color:var(--c-amber)}
+
+/* quick actions get their own colours */
+.quick-action{background:var(--c-blue-bg);color:var(--c-blue)}
+.quick-action:nth-child(4n+2){background:var(--c-violet-bg);color:var(--c-violet)}
+.quick-action:nth-child(4n+3){background:var(--c-teal-bg);color:var(--c-teal)}
+.quick-action:nth-child(4n){background:var(--c-amber-bg);color:var(--c-amber)}
+
+/* status pills: stronger, still readable */
+.badge{background:#dcf5e7;color:#047a4a}
+.badge.warn{background:#ffecc2;color:#9a5b00}
+.badge.bad{background:#ffe0e6;color:#c0223f}
+.badge.blue{background:#dde8ff;color:#1d4ed8}
+.badge.neutral{background:#e9edf5;color:#4a5874}
+
+/* tables and tabs */
+.data-table th{background:#f3f7ff;color:#3f5380}
+.data-table tbody tr:hover{background:#f5f9ff}
+.module-tabs a,.module-tabs button{color:#4f6285}
+.stat-label::before{content:'';display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:7px;vertical-align:1px;background:var(--c-blue)}
+.stat:nth-child(4n+2) .stat-label::before{background:var(--c-violet)}
+.stat:nth-child(4n+3) .stat-label::before{background:var(--c-green)}
+.stat:nth-child(4n) .stat-label::before{background:var(--c-amber)}
+.bar-track i{background:var(--blue-grad)}
