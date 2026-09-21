@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 import { PreviewInteractions } from "@/components/preview/PreviewInteractions";
 import "@/styles/styles.css";
@@ -6,9 +7,12 @@ import "@/styles/app.css";
 
 export const metadata: Metadata = { title: "BrightCampus · School ERP" };
 
+// Self-hosted by Next at build time; no request to Google from the browser.
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body>
         {children}
         <div className="toast" id="toast" role="status" aria-live="polite" />

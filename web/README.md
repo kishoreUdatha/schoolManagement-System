@@ -25,7 +25,10 @@ Next.js page per screen under `src/app/(screens)/<module>/<screen>/page.tsx`
   data to wire a page.**
 - Each page's header comment names the old `frontend/` route that talked to
   the backend for that screen, so you know where to find its API calls.
-- `assets/styles.css` from the mocks is used verbatim (`src/styles`).
+- `src/styles/styles.css` is the mocks' stylesheet with the type adapted:
+  Inter instead of Manrope, 9–14px text raised to 11–15px, weights eased one
+  step. `src/styles/app.css` holds everything else we changed on top of the
+  mocks (bright palette, white page, school card in the top bar).
 - `PreviewInteractions` is the mock's `app.js`, ported. It drives table
   search and filters, form validation, attendance and marks totals, and
   similar behaviour through `data-*` attributes. Once a page is wired, give its

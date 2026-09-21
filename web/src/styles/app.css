@@ -85,3 +85,10 @@ body{background:#fff}
    read-only and weekend cells keep their grey because it means something. */
 .pages button,.steps,.schedule-header,.day-head,.assessment-prompt,.upload-zone,.topsearch kbd{background:#fff}
 .tree-row.child,.tree-row.leaf{background:#fff}
+
+/* Type: Inter everywhere, including chart and map labels drawn in SVG,
+   with smoother rendering and tabular figures for numbers. */
+body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-feature-settings:"cv11","ss01"}
+svg text{font-family:var(--font-sans)}
+.mono,.stat-value,.data-table td{font-variant-numeric:tabular-nums}
+h1,h2,h3{letter-spacing:-.02em}
