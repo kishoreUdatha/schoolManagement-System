@@ -13,7 +13,8 @@ import { date, dateTime, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { Field, Kv, ago, minutesSince, time12, today } from "./kit";
+import { Dialog } from "@/components/ui/Dialog";
+import { Field, Kv, ago, formNum, formText, minutesSince, time12, today } from "./kit";
 import type { LocationPoint, Route, Trip, TripDetail, TripStudent, Vehicle } from "./types";
 
 const TRIPS = "/api/v1/school/transport/trips";
@@ -27,7 +28,26 @@ function TripPicker({ screen }: { screen: number }) {
   const trips = useApi<Trip[]>(TRIPS, { on: day });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const routes = useApi<Route[]>(adding ? "/api/v1/school/transport/routes" : null);
   const items = trips.data ?? [];
+
+  // POST /transport/trips: one trip sheet for one route, outside the daily generation (a trip on a Saturday, an extra run).
+  async function addTrip(e: FormEvent<HTMLFormElement>) {
+    const f = new FormData(e.currentTarget);
+    setBusy(true);
+    setError(null);
+    try {
+      const t = await api.post<Trip>(TRIPS, { route_id: formNum(f, "route_id"), trip_date: formText(f, "trip_date"), direction: formText(f, "direction") });
+      notify(`Trip sheet created: ${tripName(t)}.`);
+      setAdding(false);
+      router.push(`${routeOf(screen)}?id=${t.id}`);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function generate() {
     setBusy(true);
@@ -52,8 +72,12 @@ function TripPicker({ screen }: { screen: number }) {
           <Icon name="calendar" className="sm" />
           {busy ? "Generating…" : "Generate trip sheets for this day"}
         </button>
+        <button type="button" className="btn" onClick={() => (setError(null), setAdding(true))}>
+          <Icon name="plus" className="sm" />
+          One-off trip
+        </button>
       </div>
-      <ErrorNote>{error ?? trips.error}</ErrorNote>
+      <ErrorNote>{!adding ? (error ?? trips.error) : trips.error}</ErrorNote>
       <Panel title="Trips" sub={`${date(day)} · choose a trip to open its sheet`} flush>
         <DataTable
           columns={["Trip", "Vehicle", "Driver", "Boarded", "Absent", "Status"]}
@@ -63,6 +87,49 @@ function TripPicker({ screen }: { screen: number }) {
           empty={trips.loading ? "Loading trips…" : "No trip sheets for this day. Generate them from the active routes."}
         />
       </Panel>
+      <Dialog
+        open={adding}
+        title="One-off trip"
+        onClose={() => setAdding(false)}
+        onSubmit={addTrip}
+        actions={
+          <>
+            <button type="button" className="btn" onClick={() => setAdding(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn primary" disabled={busy}>
+              <Icon name="check" className="sm" />
+              {busy ? "Creating…" : "Create trip sheet"}
+            </button>
+          </>
+        }
+      >
+        <ErrorNote>{error ?? routes.error}</ErrorNote>
+        <div className="form-grid">
+          <Field label="Route" required>
+            <select name="route_id" required defaultValue="">
+              <option value="">{routes.loading ? "Loading routes…" : "Select route"}</option>
+              {(routes.data ?? [])
+                .filter((r) => r.is_active)
+                .map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {`${r.code} · ${r.name}${r.vehicle_label ? ` · ${r.vehicle_label}` : " · no vehicle"}`}
+                  </option>
+                ))}
+            </select>
+          </Field>
+          <Field label="Date" required>
+            <input type="date" name="trip_date" required defaultValue={day} />
+          </Field>
+          <Field label="Direction" required>
+            <select name="direction" required defaultValue="pickup">
+              <option value="pickup">Morning pickup</option>
+              <option value="drop">Afternoon drop</option>
+            </select>
+          </Field>
+        </div>
+        <p className="muted small">The sheet takes the route&apos;s vehicle, driver and students. A route has one sheet per direction per day.</p>
+      </Dialog>
     </>
   );
 }

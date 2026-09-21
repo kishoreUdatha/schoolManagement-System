@@ -10,7 +10,7 @@ import { useApi } from "@/lib/useApi";
 import { AssetCreateDialog, AssetDetailDialog } from "./AssetDialogs";
 import { ASSET_STATUS, INV, useNewFlag, type Asset } from "./common";
 
-/** SCR-239, live: GET /inventory/assets (q, status); register an asset; open one for its history. */
+/** SCR-239, live: GET /inventory/assets (q, status); register an asset; open one for its history or to edit it (PATCH /inventory/assets/{id}). */
 export function AssetRegister() {
   const [typed, setTyped] = useState("");
   const [search, setSearch] = useState("");
@@ -81,7 +81,7 @@ export function AssetRegister() {
         />
       </Panel>
       {adding ? <AssetCreateDialog onClose={closeAdd} onSaved={() => (closeAdd(), list.reload())} /> : null}
-      {open !== null ? <AssetDetailDialog assetId={open} onClose={() => setOpen(null)} onChanged={list.reload} /> : null}
+      {open !== null ? <AssetDetailDialog assetId={open} editable onClose={() => setOpen(null)} onChanged={list.reload} /> : null}
     </>
   );
 }

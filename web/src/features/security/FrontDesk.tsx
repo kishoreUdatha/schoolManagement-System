@@ -21,6 +21,14 @@ import { PURPOSES, VISIT_STATUS, type FrontDeskDashboard, type GatePass, type Ho
 const FD = "/api/v1/school/front-desk";
 const clock = (iso: string | null) => (iso ? dateTime(iso).split(", ")[1] : "—");
 /** An expected visit whose host has not answered yet. */
+/** datetime-local value from an ISO timestamp, in the viewer's zone. */
+function localInput(v: string | null): string {
+  if (!v) return "";
+  const d = new Date(v);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 const awaitingHost = (v: Visit) => v.status === "expected" && v.host_user_id !== null && !v.host_approved_at && !v.host_declined_reason;
 
 const WEEKDAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
@@ -320,7 +328,7 @@ export function VisitorCheckIn() {
   );
 }
 
-/** SCR-228, live: GET /front-desk/visits?on=, POST …/{id}/host-decision, …/check-in, …/deny, …/cancel. */
+/** SCR-228, live: GET /front-desk/visits?on=, POST …/{id}/host-decision, …/check-in, …/deny, …/cancel; PATCH /front-desk/visits/{id} to correct an expected visit. */
 export function VisitorApproval() {
   const [day, setDay] = useState(today());
   const [typed, setTyped] = useState("");
@@ -331,6 +339,9 @@ export function VisitorApproval() {
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Visit | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const hosts = useApi<Host[]>(editing ? `${FD}/hosts` : null);
   const all = (visits.data ?? []).filter((v) => v.status === "expected");
   const items = all.filter((v) => (show === "pending" ? awaitingHost(v) : true));
   const sel = all.find((v) => v.id === picked) ?? null;
@@ -351,6 +362,36 @@ export function VisitorApproval() {
       visits.reload();
     } catch (err) {
       setError(errorText(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  /** Only an expected visit can change; the API refuses once the visitor is through the gate. */
+  async function saveEdit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const at = formText(f, "expected_at");
+    setSaving(true);
+    setEditError(null);
+    try {
+      await api.patch(`${FD}/visits/${editing!.id}`, {
+        visitor_name: formText(f, "visitor_name"),
+        phone: formText(f, "phone"),
+        company: formText(f, "company"),
+        purpose: formText(f, "purpose"),
+        purpose_detail: formText(f, "purpose_detail"),
+        host_user_id: formNum(f, "host_user_id"),
+        people_count: formNum(f, "people_count") ?? 1,
+        vehicle_no: formText(f, "vehicle_no"),
+        notes: formText(f, "notes"),
+        ...(at ? { expected_at: new Date(at).toISOString() } : {}),
+      });
+      notify("Visit updated.");
+      setEditing(null);
+      visits.reload();
+    } catch (err) {
+      setEditError(errorText(err));
     } finally {
       setSaving(false);
     }
@@ -444,6 +485,9 @@ export function VisitorApproval() {
                   <button type="button" className="btn" disabled={saving} onClick={() => act(sel, "cancel", {}, "Visit cancelled.")}>
                     Cancel visit
                   </button>
+                  <button type="button" className="btn" disabled={saving} onClick={() => (setEditError(null), setEditing(sel))}>
+                    Edit
+                  </button>
                 </div>
               </>
             ) : (
@@ -484,6 +528,61 @@ export function VisitorApproval() {
           </Panel>
         </aside>
       </div>
+      {editing ? (
+        <Modal title={`Edit visit · ${editing.visitor_name}`} onClose={() => setEditing(null)}>
+          <form onSubmit={saveEdit}>
+            <ErrorNote>{editError ?? hosts.error}</ErrorNote>
+            <div className="form-grid" key={hosts.data ? "hosts" : "wait"}>
+              <Field label="Visitor name" required>
+                <input name="visitor_name" required minLength={2} maxLength={160} defaultValue={editing.visitor_name} />
+              </Field>
+              <Field label="Mobile number" required>
+                <input type="tel" name="phone" required minLength={6} maxLength={20} defaultValue={editing.phone} />
+              </Field>
+              <Field label="Purpose" required>
+                <select name="purpose" required defaultValue={editing.purpose}>
+                  {Object.entries(PURPOSES).map(([k, t]) => (
+                    <option key={k} value={k}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Host">
+                <select name="host_user_id" defaultValue={editing.host_user_id ?? ""}>
+                  <option value="">No host (front office)</option>
+                  {editing.host_user_id && !hosts.data?.some((h) => h.user_id === editing.host_user_id) ? <option value={editing.host_user_id}>{editing.host_name ?? "Current host"}</option> : null}
+                  {hosts.data?.map((h) => (
+                    <option key={h.user_id} value={h.user_id}>
+                      {`${h.full_name} · ${label(h.role)}`}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Expected at" required>
+                <input type="datetime-local" name="expected_at" required defaultValue={localInput(editing.expected_at)} />
+              </Field>
+              <Field label="People in group">
+                <input type="number" name="people_count" min={1} max={50} defaultValue={editing.people_count} />
+              </Field>
+              <Field label="Organisation">
+                <input name="company" maxLength={160} defaultValue={editing.company ?? ""} />
+              </Field>
+              <Field label="Vehicle number">
+                <input name="vehicle_no" maxLength={20} defaultValue={editing.vehicle_no ?? ""} />
+              </Field>
+              <Field label="Purpose details" full>
+                <input name="purpose_detail" maxLength={300} defaultValue={editing.purpose_detail ?? ""} />
+              </Field>
+              <Field label="Notes" full>
+                <input name="notes" maxLength={500} defaultValue={editing.notes ?? ""} />
+              </Field>
+            </div>
+            <p className="muted small">Choosing a different host asks the new host to confirm again.</p>
+            <ModalActions onClose={() => setEditing(null)} saving={saving} label="Save visit" />
+          </form>
+        </Modal>
+      ) : null}
     </>
   );
 }

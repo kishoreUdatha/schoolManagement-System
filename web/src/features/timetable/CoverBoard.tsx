@@ -13,13 +13,25 @@ import { ASSIGN_EVENT } from "./events";
 import { Modal, span, todayIso, useHeadEvent } from "./shared";
 import type { Candidate, CoverDay, CoverSlot, StaffLite } from "./types";
 
+type CoverStat = { user_id: number; full_name: string; covers: number };
+type MyCover = { id: number; sub_date: string; period_number: number; start_time: string; end_time: string; section_label: string; subject_name: string; absent_name: string | null; note: string | null };
+
+/** YYYY-MM-DD shifted by whole days. */
+function shiftDay(iso: string, days: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const t = new Date(y, m - 1, d + days);
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
+
 const REASON: Record<string, string> = { leave: "on leave", pending_leave: "leave pending", marked_absent: "marked absent", manual: "cover arranged" };
 const STATUS: Record<Candidate["status"], string> = { free: "Available", busy_teaching: "Busy · teaching", busy_covering: "Busy · covering", on_leave: "On leave", unavailable: "Unavailable" };
 
 /**
  * SCR-127, live: GET /school/cover/day?date=&absent= lists the lessons left by
  * absent teachers; GET /cover/candidates for a slot; POST /cover/assign
- * (force after a 409 warning), POST /cover/auto-assign, DELETE /cover/{id}.
+ * (force after a 409 warning), POST /cover/auto-assign, DELETE /cover/{id};
+ * who has covered most (GET /cover/stats) and the viewer's own cover duties
+ * (GET /cover/mine).
  */
 export function CoverBoard() {
   const [date, setDate] = useState(todayIso());
@@ -30,6 +42,9 @@ export function CoverBoard() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const day = useApi<CoverDay>("/api/v1/school/cover/day", { date, absent: extra.join(",") });
+  const [rangeDays, setRangeDays] = useState(30);
+  const stats = useApi<CoverStat[]>("/api/v1/school/cover/stats", { start: shiftDay(date, -rangeDays), end: date });
+  const mine = useApi<MyCover[]>("/api/v1/school/cover/mine");
   const staff = useApi<StaffLite[]>("/api/v1/school/directory/staff");
   const teachers = (staff.data ?? []).filter((s) => s.role === "teacher" || s.role === "principal");
   const d = day.data;
@@ -64,6 +79,7 @@ export function CoverBoard() {
       const r = await api.post<{ assigned: number }>("/api/v1/school/cover/auto-assign", { date, absent: extra });
       notify(`${r.assigned} slot(s) filled.`);
       day.reload();
+      stats.reload();
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -138,6 +154,38 @@ export function CoverBoard() {
         <Icon name="shield" className="sm" />
         <span>Absences come from approved and pending staff leave and today&apos;s staff attendance. Add anyone else who is away above; the substitute is notified when assigned.</span>
       </div>
+      <div className="gap" />
+      <div className="two-col">
+        <Panel
+          title="Cover load"
+          sub={`Lessons covered per teacher, ${fmtDate(shiftDay(date, -rangeDays))} – ${fmtDate(date)}`}
+          action={
+            <select aria-label="Period" value={rangeDays} onChange={(e) => setRangeDays(Number(e.target.value))}>
+              <option value={7}>Last 7 days</option>
+              <option value={30}>Last 30 days</option>
+              <option value={90}>Last 90 days</option>
+            </select>
+          }
+          flush
+        >
+          <DataTable
+            columns={["Teacher", "Covers"]}
+            rows={[...(stats.data ?? [])].sort((a, b) => b.covers - a.covers).map((x) => [x.full_name, String(x.covers)])}
+            selectable={false}
+            rowAction={false}
+            empty={stats.loading ? "Loading…" : (stats.error ?? "Nobody has covered a lesson in this period.")}
+          />
+        </Panel>
+        <Panel title="Your cover duties" sub="Lessons you are covering, from yesterday to two weeks ahead" flush>
+          <DataTable
+            columns={["Date", "Period", "Class", "Subject", "For"]}
+            rows={(mine.data ?? []).map((c) => [fmtDate(c.sub_date), `Period ${c.period_number} · ${span(c.start_time, c.end_time)}`, c.section_label, c.subject_name, c.absent_name ?? "—"])}
+            selectable={false}
+            rowAction={false}
+            empty={mine.loading ? "Loading…" : (mine.error ?? "You are not covering any lessons.")}
+          />
+        </Panel>
+      </div>
       {pick ? (
         <PickSubstitute
           date={date}
@@ -147,6 +195,8 @@ export function CoverBoard() {
             setPick(null);
             notify(msg);
             day.reload();
+            stats.reload();
+            mine.reload();
           }}
         />
       ) : null}

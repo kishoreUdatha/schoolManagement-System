@@ -5,6 +5,7 @@
  * campus security) share. They only use the mock's existing classes.
  */
 
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { api, type Paginated } from "@/lib/api";
@@ -198,3 +199,24 @@ export function StudentPicker({ value, onChange, label = "Student", required = f
 }
 
 export const n = (v: number | undefined | null) => (v === undefined || v === null ? "…" : v.toLocaleString("en-IN"));
+
+/**
+ * `?new=1` in the address opens a screen's "add" dialog, so a page-head link
+ * (a server component) can open it. Returns [open, close].
+ */
+export function useNewFlag(): [boolean, () => void] {
+  const params = useSearchParams();
+  const router = useRouter();
+  const path = usePathname();
+  const open = params.get("new") === "1";
+  const close = () => {
+    const q = new URLSearchParams(params.toString());
+    q.delete("new");
+    const s = q.toString();
+    router.replace(s ? `${path}?${s}` : path, { scroll: false });
+  };
+  return [open, close];
+}
+
+/** Ask before a destructive step; the message says what will happen. */
+export const confirmed = (message: string) => typeof window !== "undefined" && window.confirm(message);

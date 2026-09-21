@@ -1,7 +1,7 @@
 // SCR-127 · Substitution / Replacement
 // Module: Timetable & Substitution · Role: Academic Coordinator · Release: Phase 3 · Stories: US-0253 / US-0254
 // Mock: screens/SCR-127_Substitution_Replacement.html
-// Wired: GET /api/v1/school/cover/day, /cover/candidates, /directory/staff; POST /cover/assign, /cover/auto-assign; DELETE /cover/{id}. Hand-maintained.
+// Wired: GET /api/v1/school/cover/day, /cover/candidates, /cover/stats, /cover/mine, /directory/staff; POST /cover/assign, /cover/auto-assign; DELETE /cover/{id}. Hand-maintained.
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";

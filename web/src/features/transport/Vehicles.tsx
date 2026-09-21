@@ -249,8 +249,9 @@ export function VehicleForm() {
   );
 }
 
-/** SCR-188, live: GET /transport/vehicles/{id}, its logs, its route and its driver's licence. */
+/** SCR-188, live: GET /transport/vehicles/{id}, its logs, its route and its driver's licence; DELETE /transport/vehicles/{id}. */
 export function VehicleDetails() {
+  const router = useRouter();
   const id = useSearchParams().get("id");
   const vehicle = useApi<Vehicle>(id ? `${VEHICLES}/${id}` : null);
   const logs = useApi<VehicleLog[]>(id ? `${VEHICLES}/${id}/logs` : null);
@@ -268,6 +269,19 @@ export function VehicleDetails() {
   const driver = crew.data?.find((c) => c.id === v.driver_id);
   const first = route?.stops[0];
   const services = (logs.data ?? []).filter((l) => l.kind !== "fuel");
+
+  // The API refuses while an active route uses the vehicle and says which one.
+  async function remove() {
+    const name = vehicleName(v!);
+    if (!window.confirm(`Delete ${name} (${v!.registration_no}) for good? Its fuel, service and GPS history goes with it. To keep the history, edit it and set it Inactive instead.`)) return;
+    try {
+      await api.delete(`${VEHICLES}/${v!.id}`);
+      notify(`${name} deleted.`);
+      router.push(routeOf(186));
+    } catch (e) {
+      setError(errorText(e));
+    }
+  }
 
   async function makeKey() {
     if (v!.gps_enabled && !window.confirm("Generate a new key? The tracker using the old key will stop reporting.")) return;
@@ -294,7 +308,12 @@ export function VehicleDetails() {
               <p>{`${KIND_LABEL[v.kind]} · ${v.capacity} seats${route ? ` · ${route.name}` : ""}`}</p>
             </div>
           </div>
-          <Badge>{statusOf(v)}</Badge>
+          <div className="row">
+            <Badge>{statusOf(v)}</Badge>
+            <button type="button" className="btn" onClick={remove}>
+              Delete vehicle
+            </button>
+          </div>
         </div>
       </section>
       <div className="two-col">
