@@ -95,7 +95,8 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3">
+    // BrightCampus .page-head
+    <div className="flex flex-wrap items-center justify-between gap-5">
       <div>
         <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{title}</h1>
         {subtitle && <p className="mt-1.5 text-[13px] text-ink-muted">{subtitle}</p>}

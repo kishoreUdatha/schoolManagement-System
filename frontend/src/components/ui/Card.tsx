@@ -6,7 +6,8 @@ export function Card({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "rounded-[14px] border border-surface-border bg-surface-raised shadow-card",
+        // BrightCampus .panel
+        "rounded-panel border border-surface-border bg-surface-raised shadow-card",
         className
       )}
       {...rest}
@@ -18,7 +19,10 @@ export function CardHeader({ className, ...rest }: HTMLAttributes<HTMLDivElement
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center justify-between gap-3 border-b border-surface-border px-5 py-4",
+        // .panel-head — no rule beneath it. Where a table follows, the line
+        // is the table's own top border; where nothing does, the mock lets
+        // the heading sit on the surface.
+        "flex flex-wrap items-center justify-between gap-3.5 px-[22px] py-5",
         className
       )}
       {...rest}
@@ -39,5 +43,5 @@ export function CardTitle({ className, ...rest }: HTMLAttributes<HTMLHeadingElem
 }
 
 export function CardBody({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-5", className)} {...rest} />;
+  return <div className={cn("p-[22px]", className)} {...rest} />;
 }

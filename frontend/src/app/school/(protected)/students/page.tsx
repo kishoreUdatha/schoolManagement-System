@@ -5,12 +5,26 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { PageHeader } from "@/components/ui/Field";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { Modal } from "@/components/ui/Modal";
+import { GraduationCap, Grid2x2, Layers, UserCheck } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 type Gender = "male" | "female" | "other";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Student = {
   id: number;
@@ -61,6 +75,10 @@ export default function StudentsPage() {
   const selectedClass = useMemo(
     () => classes.find((c) => c.id === classId) ?? null,
     [classes, classId]
+  );
+  const selectedYear = useMemo(
+    () => years.find((y) => y.id === yearId) ?? null,
+    [years, yearId]
   );
 
   async function loadYears() {
@@ -159,24 +177,55 @@ export default function StudentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Students</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Admit students individually or import a class roster via CSV.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setOpenPromote(true)}>
-            Promote students
-          </Button>
-          <Button variant="secondary" onClick={() => setOpenBulk(true)}>
-            Bulk import (CSV)
-          </Button>
-          <Button onClick={() => setOpenCreate(true)}>+ New student</Button>
-        </div>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Students"
+        subtitle="Admit students individually or import a class roster via CSV."
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setOpenPromote(true)}>
+              Promote students
+            </Button>
+            <Button variant="secondary" onClick={() => setOpenBulk(true)}>
+              Bulk import (CSV)
+            </Button>
+            <Button onClick={() => setOpenCreate(true)}>+ New student</Button>
+          </>
+        }
+      />
+
+      {/* The figures the server already returns for this filter, not a
+          second set of queries: the total it counted, how many of the rows
+          on this page are active, and the shape of the year being looked
+          at. A summary of what you are looking at is the point. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Students",
+            value: data ? data.total.toLocaleString("en-IN") : "—",
+            note: selectedYear ? `${selectedYear.name} academic year` : "All years",
+            icon: GraduationCap,
+          },
+          {
+            label: "Active on this page",
+            value: data ? data.items.filter((s) => s.is_active).length : "—",
+            note: data ? `of ${data.items.length} shown` : undefined,
+            icon: UserCheck,
+          },
+          {
+            label: "Classes",
+            value: classes.length || "—",
+            note: selectedClass ? `Filtered to ${selectedClass.name}` : "All classes",
+            icon: Layers,
+          },
+          {
+            label: "Sections",
+            value: classes.reduce((n, c) => n + c.sections.length, 0) || "—",
+            note: selectedClass ? `${selectedClass.sections.length} in this class` : "Across all classes",
+            icon: Grid2x2,
+          },
+        ]}
+      />
 
       <form
         onSubmit={(e) => {
@@ -184,14 +233,19 @@ export default function StudentsPage() {
           setPage(1);
           load();
         }}
-        className="flex flex-wrap items-end gap-2"
       >
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Year</span>
+        <FilterBar>
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            placeholder="Search name or admission no…"
+            label="Search student directory"
+          />
           <select
+            aria-label="Academic year"
             value={yearId ?? ""}
             onChange={(e) => setYearId(Number(e.target.value))}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
             {years.map((y) => (
               <option key={y.id} value={y.id}>
@@ -200,62 +254,50 @@ export default function StudentsPage() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Class</span>
           <select
+            aria-label="Class"
             value={classId}
             onChange={(e) => {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
-            <option value="">All</option>
+            <option value="">All classes</option>
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Section</span>
           <select
+            aria-label="Section"
             value={sectionId}
             onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
             disabled={!selectedClass}
           >
-            <option value="">All</option>
+            <option value="">All sections</option>
             {selectedClass?.sections.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Status</span>
           <select
+            aria-label="Status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
-            <option value="">All</option>
+            <option value="">All statuses</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-        </label>
-        <Input
-          placeholder="Search name or admission no"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-56"
-        />
-        <Button type="submit" variant="secondary">
-          Search
-        </Button>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
       </form>
 
       {error && (
@@ -266,6 +308,18 @@ export default function StudentsPage() {
       )}
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>All students</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">{[
+          selectedYear?.name,
+          selectedClass ? selectedClass.name : "All classes",
+          statusFilter ? statusFilter : "Every status",
+            ]
+              .filter(Boolean)
+              .join(" · ")}</p>
+          </div>
+        </CardHeader>
         <table className="min-w-full divide-y divide-surface-border text-[13px]">
           <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
@@ -283,7 +337,9 @@ export default function StudentsPage() {
               <tr key={s.id} className="hover:bg-surface-subtle">
                 <td className="px-4 py-3 font-mono text-ink-muted">{s.admission_no}</td>
                 <td className="px-4 py-3 text-ink-muted">{s.roll_no}</td>
-                <td className="px-4 py-3 font-medium text-ink">{s.full_name}</td>
+                <td className="px-4 py-3">
+                  <PersonCell name={s.full_name} sub={s.admission_no} />
+                </td>
                 <td className="px-4 py-3 text-ink-muted">{sectionName(s.section_id)}</td>
                 <td className="px-4 py-3 text-ink-muted">
                   <div>{s.gender ?? "—"}</div>
@@ -321,33 +377,39 @@ export default function StudentsPage() {
             )}
           </tbody>
         </table>
+        {data && (
+          <PanelFooter
+            left={`Showing ${data.items.length} of ${data.total.toLocaleString("en-IN")} records`}
+            right={
+              data.pages > 1 ? (
+                <span className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    ← Prev
+                  </Button>
+                  <span className="text-[11px] font-bold text-ink-muted">
+                    Page {data.page} of {data.pages}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={page >= data.pages}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next →
+                  </Button>
+                </span>
+              ) : (
+                "All records on this page"
+              )
+            }
+          />
+        )}
       </Card>
-
-      {data && data.pages > 1 && (
-        <div className="flex items-center justify-between text-sm text-ink-muted">
-          <div>
-            Page {data.page} of {data.pages} ({data.total} total)
-          </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              ← Prev
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={page >= data.pages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next →
-            </Button>
-          </div>
-        </div>
-      )}
 
       <CreateStudentModal
         open={openCreate}
