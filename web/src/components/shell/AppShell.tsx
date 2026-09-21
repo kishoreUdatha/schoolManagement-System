@@ -34,10 +34,9 @@ const ROLE_NAV: Record<string, NavLink[]> = {
   Librarian: [[42, "Dashboard", "grid"], [198, "Book catalogue", "book"], [201, "Library members", "users"], [202, "Issue book", "book"], [203, "Return book", "check"], [204, "Renew & reserve", "calendar"], [205, "Fines & lost books", "money"], [206, "Digital library", "folder"], [207, "Library reports", "chart"]],
 };
 
-/** Modules without a place in the main menu, reached from "More modules". */
-const SIDE_MODULES = [1, 17, 18, 19, 20, 22];
-/** Modules that show a "Current module" link above the main menu. */
-const CURRENT_MODULE = [0, 1, 17, 18, 19, 20, 22];
+/** Modules without a place in the main menu, listed under "More modules". */
+const SIDE_MODULES: [number, IconName][] = [[1, "building"], [17, "building"], [18, "heart"], [19, "shield"], [20, "folder"], [22, "file"]];
+const MOD_LABEL = (i: number) => SCREENS.find((x) => x.module === MODULES[i])!.moduleShort;
 
 export function viewerFor(n: number): { who: string; role: string } {
   if (n === 35) return { who: "Ananya Rao", role: "Teacher" };
@@ -55,7 +54,6 @@ export function viewerFor(n: number): { who: string; role: string } {
 
 function Sidebar({ s }: { s: Screen }) {
   const { who, role } = viewerFor(s.n);
-  const mi = MODULES.indexOf(s.module);
   const roleNav = ROLE_NAV[role];
 
   return (
@@ -81,30 +79,18 @@ function Sidebar({ s }: { s: Screen }) {
           </>
         ) : (
           <>
-            {CURRENT_MODULE.includes(mi) ? (
-              <>
-                <div className="nav-label">CURRENT MODULE</div>
-                <Link className="nav active" href={s.route}>
-                  <Icon name="folder" />
-                  <span>{s.moduleShort}</span>
-                </Link>
-              </>
-            ) : null}
             {NAV.map(([title, links]) => (
-              <NavGroup key={title} title={title} links={links} mi={mi} />
+              <div key={title}>
+                <div className="nav-label">{title.toUpperCase()}</div>
+                {links.map(([n, label, icon, mods], i) => (
+                  <ModuleGroup key={n} label={label} icon={icon} mods={mods} current={s} tone={i} count={label === "Admissions" ? 12 : undefined} />
+                ))}
+              </div>
             ))}
             <div className="nav-label">MORE MODULES</div>
-            <select aria-label="More modules" className="select-plain" style={{ width: "100%", margin: "0 0 18px" }} data-navigate="">
-              <option value="">Choose module</option>
-              {SIDE_MODULES.map((i) => {
-                const first = SCREENS.find((x) => x.module === MODULES[i])!;
-                return (
-                  <option key={i} value={first.route}>
-                    {first.moduleShort}
-                  </option>
-                );
-              })}
-            </select>
+            {SIDE_MODULES.map(([i, icon], k) => (
+              <ModuleGroup key={i} label={MOD_LABEL(i)} icon={icon} mods={[i]} current={s} tone={k} />
+            ))}
           </>
         )}
       </div>
@@ -115,18 +101,29 @@ function Sidebar({ s }: { s: Screen }) {
   );
 }
 
-function NavGroup({ title, links, mi }: { title: string; links: [number, string, IconName, number[]][]; mi: number }) {
+/**
+ * One module in the menu: a heading that opens to list the module's screens.
+ * The module you are in starts open; the rest start closed.
+ */
+function ModuleGroup({ label, icon, mods, current, tone, count }: { label: string; icon: IconName; mods: number[]; current: Screen; tone: number; count?: number }) {
+  const screens = SCREENS.filter((x) => mods.includes(MODULES.indexOf(x.module)));
+  const here = mods.includes(MODULES.indexOf(current.module));
   return (
-    <>
-      <div className="nav-label">{title.toUpperCase()}</div>
-      {links.map(([n, label, icon, mods]) => (
-        <Link key={n} href={routeOf(n)} className={`nav ${mods.includes(mi) ? "active" : ""}`}>
-          <Icon name={icon} />
-          <span>{label}</span>
-          {label === "Admissions" ? <span className="count">12</span> : null}
-        </Link>
-      ))}
-    </>
+    <details className={`nav-group tone-${tone % 6}`} open={here}>
+      <summary className={`nav ${here ? "active" : ""}`}>
+        <Icon name={icon} />
+        <span>{label}</span>
+        {count ? <span className="count">{count}</span> : null}
+        <Icon name="down" className="sm caret" />
+      </summary>
+      <div className="subnav-list">
+        {screens.map((x) => (
+          <Link key={x.id} href={x.route} className={`subnav ${x.id === current.id ? "active" : ""}`}>
+            {x.name}
+          </Link>
+        ))}
+      </div>
+    </details>
   );
 }
 

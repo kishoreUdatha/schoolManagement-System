@@ -97,3 +97,22 @@ h1,h2,h3{letter-spacing:-.02em}
    the native option list they open. */
 select,option,.filterbar select,.select-plain,.field select,.field input:not([type=checkbox]),.field textarea{color:var(--ink)}
 option{background:#fff}
+
+/* Sidebar modules open to list their screens. */
+.nav-group>summary{list-style:none;cursor:pointer;user-select:none}
+.nav-group>summary::-webkit-details-marker{display:none}
+.nav-group .caret{margin-left:auto;width:14px;height:14px;opacity:.7;transition:transform .18s}
+.nav-group .count+.caret{margin-left:6px}
+.nav-group[open]>summary .caret{transform:rotate(180deg)}
+.nav-group>summary.active{background:#eaf2ff;color:var(--blue);box-shadow:none}
+.nav-group>summary.active .ico{color:var(--blue)}
+.nav-group.tone-1>summary:not(.active) .ico:not(.caret){color:var(--c-violet)}
+.nav-group.tone-2>summary:not(.active) .ico:not(.caret){color:var(--c-teal)}
+.nav-group.tone-3>summary:not(.active) .ico:not(.caret){color:var(--c-amber)}
+.nav-group.tone-4>summary:not(.active) .ico:not(.caret){color:var(--c-pink)}
+.nav-group.tone-5>summary:not(.active) .ico:not(.caret){color:var(--c-green)}
+.nav-group .caret{color:#6b7c9c!important}
+.subnav-list{margin:2px 0 8px 22px;padding-left:12px;border-left:2px solid #e3eaf5;display:grid;gap:1px}
+.subnav{display:block;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:500;color:#40527a;line-height:1.35}
+.subnav:hover{background:#f1f6ff;color:var(--blue)}
+.subnav.active{background:var(--blue-grad);color:#fff;font-weight:600;box-shadow:0 6px 14px -8px rgba(37,99,235,.7)}

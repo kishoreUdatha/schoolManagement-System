@@ -65,6 +65,9 @@ def tokens(html, strip_chrome):
     for el in body.find_all(["script", "next-route-announcer"]):
         el.decompose()
     # Deliberate departure: the school card moved from the sidebar to the top bar.
+    # ...and the menu lists every module's screens in collapsible groups.
+    for el in body.select(".sidebar .nav-scroll"):
+        el.decompose()
     for el in body.select(".school-switch, .tenant-switch"):
         el.decompose()
     for el in body.select(".topbar-left"):
