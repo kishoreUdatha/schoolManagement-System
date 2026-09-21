@@ -4,10 +4,17 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, PersonCell } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A control sized for the filter bar: one row of equal-height controls,
+ *  with the label carried by aria-label rather than stacked above. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Status = "present" | "late" | "absent" | "on_leave" | "sick" | "holiday";
 
@@ -88,39 +95,34 @@ export default function StaffAttendancePage() {
   }, [date, userId]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Staff attendance</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            See check-ins and override status (on leave, sick, etc.).
-          </p>
-        </div>
-        <Button onClick={() => setOverrideOpen(true)}>Override status</Button>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Staff attendance"
+        subtitle="See check-ins and override status (on leave, sick, etc.)."
+        actions={<Button onClick={() => setOverrideOpen(true)}>Override status</Button>}
+      />
 
-      <div className="flex flex-wrap items-end gap-2">
-        <Input
-          label="Date"
+      <FilterBar>
+        <input
           type="date"
+          aria-label="Date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
+          className={filterSelect}
         />
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Staff member</span>
-          <select
-            value={userId}
-            onChange={(e) => setUserId(e.target.value ? Number(e.target.value) : "")}
-            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-          >
-            <option value="">All</option>
-            {staff.map((s) => (
-              <option key={s.user_id} value={s.user_id}>
-                {s.full_name} ({s.employee_no}) — {s.role}
-              </option>
-            ))}
-          </select>
-        </label>
+        <select
+          aria-label="Staff member"
+          value={userId}
+          onChange={(e) => setUserId(e.target.value ? Number(e.target.value) : "")}
+          className={filterSelect}
+        >
+          <option value="">All staff</option>
+          {staff.map((s) => (
+            <option key={s.user_id} value={s.user_id}>
+              {s.full_name} ({s.employee_no}) — {s.role}
+            </option>
+          ))}
+        </select>
         <Button
           variant="secondary"
           onClick={() => {
@@ -130,7 +132,7 @@ export default function StaffAttendancePage() {
         >
           Clear
         </Button>
-      </div>
+      </FilterBar>
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
@@ -140,6 +142,19 @@ export default function StaffAttendancePage() {
       )}
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Attendance records</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                date ? date : "Every date",
+                userId
+                  ? staff.find((s) => s.user_id === userId)?.full_name ?? "One staff member"
+                  : "All staff",
+              ].join(" · ")}
+            </p>
+          </div>
+        </CardHeader>
         <table className="min-w-full divide-y divide-surface-border text-[13px]">
           <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
@@ -156,8 +171,11 @@ export default function StaffAttendancePage() {
             {records.map((r) => (
               <tr key={r.id} className="hover:bg-surface-subtle">
                 <td className="px-4 py-3 text-[12px] tabular-nums">{r.date}</td>
-                <td className="px-4 py-3 font-medium text-ink">
-                  {r.user_full_name}
+                <td className="px-4 py-3">
+                  <PersonCell
+                    name={r.user_full_name ?? "—"}
+                    sub={staff.find((s) => s.user_id === r.user_id)?.employee_no}
+                  />
                 </td>
                 <td className="px-4 py-3 text-ink-muted">{r.user_role}</td>
                 <td className="px-4 py-3">{fmtTime(r.check_in_at)}</td>
@@ -182,6 +200,10 @@ export default function StaffAttendancePage() {
             )}
           </tbody>
         </table>
+        <PanelFooter
+          left={`Showing ${records.length} record${records.length === 1 ? "" : "s"}`}
+          right={date ? `For ${date}` : "Every date"}
+        />
       </Card>
 
       {overrideOpen && (

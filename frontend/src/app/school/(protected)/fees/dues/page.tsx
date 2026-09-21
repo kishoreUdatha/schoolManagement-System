@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Send } from "lucide-react";
+import { AlertTriangle, CalendarClock, IndianRupee, Send, Users } from "lucide-react";
 
 import { BreakdownChart, ChartCard } from "@/components/charts/Charts";
 import { SERIES, VERDICT } from "@/components/charts/theme";
@@ -20,7 +20,7 @@ import {
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
 
@@ -130,7 +130,7 @@ export default function OutstandingDuesPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Outstanding dues"
         subtitle="Unpaid fees by how long they have been overdue, and who to chase."
@@ -144,21 +144,35 @@ export default function OutstandingDuesPage() {
       <ErrorBox>{error}</ErrorBox>
       {note && <NoticeBox>{note}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Outstanding" value={data ? inr(data.total) : "—"} accent="amber" />
-        <StatCard
-          label="Overdue"
-          value={data ? inr(total - notYetDue) : "—"}
-          hint={data ? `${inr(notYetDue)} not yet due` : undefined}
-          accent="amber"
-        />
-        <StatCard
-          label="Over 90 days"
-          value={data ? inr(old) : "—"}
-          accent={old > 0 ? "rose" : "emerald"}
-        />
-        <StatCard label="Families owing" value={data?.students_owing ?? "—"} />
-      </div>
+      {/* The same ageing figures the endpoint returned, summarised. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Outstanding",
+            value: data ? inr(data.total) : "—",
+            note: data ? `As at ${data.as_of}` : undefined,
+            icon: IndianRupee,
+          },
+          {
+            label: "Overdue",
+            value: data ? inr(total - notYetDue) : "—",
+            note: data ? `${inr(notYetDue)} not yet due` : undefined,
+            icon: CalendarClock,
+          },
+          {
+            label: "Over 90 days",
+            value: data ? inr(old) : "—",
+            note: old > 0 ? "Needs a conversation" : "Nothing that old",
+            icon: AlertTriangle,
+          },
+          {
+            label: "Families owing",
+            value: data?.students_owing ?? "—",
+            note: "With something unpaid",
+            icon: Users,
+          },
+        ]}
+      />
 
       {old > 0 && (
         <WarnBox>
@@ -185,7 +199,12 @@ export default function OutstandingDuesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Who owes it</CardTitle>
+          <div>
+            <CardTitle>Who owes it</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Every family with something unpaid, oldest bill first.
+            </p>
+          </div>
           <Select
             value={bucket}
             onChange={(e) => setBucket(e.target.value)}
@@ -206,13 +225,8 @@ export default function OutstandingDuesPage() {
             {shown.map((d) => (
               <tr key={d.student_id}>
                 <td className={td}>{d.admission_no}</td>
-                <td className={tdStrong}>
-                  {d.student_name}
-                  {d.section_label && (
-                    <span className="block text-[11px] font-normal text-ink-subtle">
-                      {d.section_label}
-                    </span>
-                  )}
+                <td className="px-4 py-3">
+                  <PersonCell name={d.student_name} sub={d.section_label} />
                 </td>
                 <td className={tdStrong}>{inr(d.owed)}</td>
                 <td className={td}>{d.items}</td>
@@ -235,11 +249,20 @@ export default function OutstandingDuesPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${shown.length} famil${shown.length === 1 ? "y" : "ies"}`}
+          right={data ? `${inr(data.total)} outstanding in total` : undefined}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Reminders already sent</CardTitle>
+          <div>
+            <CardTitle>Reminders already sent</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              The most recent twenty-five, newest first.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -255,6 +278,10 @@ export default function OutstandingDuesPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${sent.length} reminder${sent.length === 1 ? "" : "s"} logged`}
+          right={sent.length > 25 ? "Showing the latest 25" : undefined}
+        />
       </Card>
 
       <p className="text-[12px] text-ink-subtle">

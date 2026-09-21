@@ -8,16 +8,21 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   PageHeader,
-  Select,
   Table,
   WarnBox,
   humanize,
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { CalendarClock, PenLine, Send, Timer } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Channel = {
   channel: string;
@@ -84,33 +89,52 @@ export default function CampaignsPage() {
       <PageHeader
         title="Campaigns"
         subtitle="Every notice the school has written, and how far each one got."
-        actions={
-          <Select
-            label="Show"
-            value={state}
-            onChange={(e) => setState(e.target.value)}
-            aria-label="Filter by state"
-          >
-            {STATES.map((s) => (
-              <option key={s || "all"} value={s}>
-                {s ? humanize(s) : "Everything"}
-              </option>
-            ))}
-          </Select>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Sent" value={data?.sent ?? "—"} accent="emerald" />
-        <StatCard label="Scheduled" value={data?.scheduled ?? "—"} />
-        <StatCard label="Draft" value={data?.draft ?? "—"} />
-        <StatCard
-          label="Past their time"
-          value={data?.overdue ?? "—"}
-          accent={data && data.overdue > 0 ? "amber" : "emerald"}
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Sent",
+            value: data?.sent ?? "—",
+            note: "Gone out to somebody",
+            icon: Send,
+          },
+          {
+            label: "Scheduled",
+            value: data?.scheduled ?? "—",
+            note: "Waiting for a time",
+            icon: CalendarClock,
+          },
+          {
+            label: "Draft",
+            value: data?.draft ?? "—",
+            note: "Written, not yet aimed anywhere",
+            icon: PenLine,
+          },
+          {
+            label: "Past their time",
+            value: data?.overdue ?? "—",
+            note: "Scheduled for a moment that has gone",
+            icon: Timer,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Filter by state"
+          value={state}
+          onChange={(e) => setState(e.target.value)}
+          className={filterSelect}
+        >
+          {STATES.map((s) => (
+            <option key={s || "all"} value={s}>
+              {s ? humanize(s) : "Everything"}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
 
       {data && !data.scheduler_running && data.scheduled > 0 && (
         <WarnBox>
@@ -122,7 +146,13 @@ export default function CampaignsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Notices</CardTitle>
+          <div>
+            <CardTitle>Notices</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {state ? humanize(state) : "Every state"} · who it was aimed at, when it
+              went, and how many opened it.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -187,6 +217,10 @@ export default function CampaignsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${rows.length} notice(s) shown`}
+          right={`${rows.reduce((n, r) => n + r.recipients, 0)} recipient(s) across them`}
+        />
       </Card>
 
       {open !== null &&
@@ -196,7 +230,12 @@ export default function CampaignsPage() {
           return (
             <Card>
               <CardHeader>
-                <CardTitle>{r.title} — delivery</CardTitle>
+                <div>
+                  <CardTitle>{r.title} — delivery</CardTitle>
+                  <p className="mt-[5px] text-[11px] text-ink-muted">
+                    One row per channel, with skipped kept apart from failed.
+                  </p>
+                </div>
               </CardHeader>
               <CardBody className="space-y-3 p-0">
                 <Table
@@ -225,6 +264,10 @@ export default function CampaignsPage() {
                   a gateway.
                 </p>
               </CardBody>
+              <PanelFooter
+                left={`${r.delivery.length} channel(s) · ${r.recipients} recipient(s)`}
+                right={`${r.read} read`}
+              />
             </Card>
           );
         })()}

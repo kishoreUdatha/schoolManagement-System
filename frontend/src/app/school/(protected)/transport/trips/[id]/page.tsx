@@ -7,8 +7,9 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ErrorBox, Table, Textarea, humanize, td, tdStrong } from "@/components/ui/Field";
+import { ErrorBox, PageHeader, Table, Textarea, humanize, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 import { Trip } from "../../TransportTabs";
@@ -83,39 +84,41 @@ export default function TripSheetPage() {
       <Link href="/school/transport" className="text-sm text-ink-muted hover:underline">
         ← Transport
       </Link>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
-            {trip.route_name} · {humanize(trip.direction)}
-          </h1>
-          <div className="mt-1.5 text-[13px] text-ink-muted">
-            {trip.trip_date} · {trip.vehicle_label ?? "no vehicle"} · {trip.driver_name ?? "no driver"} ·{" "}
+      <PageHeader
+        title={`${trip.route_name} · ${humanize(trip.direction)}`}
+        subtitle={`${trip.trip_date} · ${trip.vehicle_label ?? "no vehicle"} · ${
+          trip.driver_name ?? "no driver"
+        }`}
+        actions={
+          <>
+            {/* The trip's own state sits with the buttons that change it. */}
             <Badge>{humanize(trip.status)}</Badge>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {trip.status === "scheduled" && <Button onClick={() => patch({ status: "in_progress" })}>Start trip</Button>}
-          {trip.status === "in_progress" && <Button onClick={() => patch({ status: "completed" })}>Complete trip</Button>}
-          {editable && (
-            <Button variant="ghost" onClick={() => patch({ status: "cancelled" })}>
-              Cancel trip
-            </Button>
-          )}
-          {trip.status === "cancelled" && (
-            <Button variant="secondary" onClick={() => patch({ status: "scheduled" })}>
-              Reinstate
-            </Button>
-          )}
-        </div>
-      </div>
+            {trip.status === "scheduled" && <Button onClick={() => patch({ status: "in_progress" })}>Start trip</Button>}
+            {trip.status === "in_progress" && <Button onClick={() => patch({ status: "completed" })}>Complete trip</Button>}
+            {editable && (
+              <Button variant="ghost" onClick={() => patch({ status: "cancelled" })}>
+                Cancel trip
+              </Button>
+            )}
+            {trip.status === "cancelled" && (
+              <Button variant="secondary" onClick={() => patch({ status: "scheduled" })}>
+                Reinstate
+              </Button>
+            )}
+          </>
+        }
+      />
       <ErrorBox>{error}</ErrorBox>
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            Students · {trip.boarded}/{trip.expected} {present}
-            {trip.absent ? ` · ${trip.absent} absent` : ""}
-          </CardTitle>
+          <div className="min-w-0">
+            <CardTitle>Students</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {trip.boarded}/{trip.expected} {present}
+              {trip.absent ? ` · ${trip.absent} absent` : ""}
+            </p>
+          </div>
           {editable && unmarked.length > 0 && (
             <Button size="sm" variant="secondary" onClick={() => mark(unmarked.map((s) => ({ student_id: s.student_id, status: present })))}>
               Mark remaining {present}
@@ -153,6 +156,14 @@ export default function TripSheetPage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${trip.students.length} child${trip.students.length === 1 ? "" : "ren"} on this run`}
+          right={
+            unmarked.length
+              ? `${unmarked.length} not marked yet`
+              : "Everybody accounted for"
+          }
+        />
       </Card>
 
       <Card>

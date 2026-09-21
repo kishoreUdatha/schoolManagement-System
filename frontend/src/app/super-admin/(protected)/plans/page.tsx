@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { api, apiError } from "@/lib/api";
@@ -63,15 +64,11 @@ export default function PlansPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Plans</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Subscription tiers — define quotas and which modules each plan unlocks.
-          </p>
-        </div>
-        <Button onClick={() => setOpen(true)}>+ New plan</Button>
-      </div>
+      <PageHeader
+        title="Plans"
+        subtitle="Subscription tiers — define quotas and which modules each plan unlocks."
+        actions={<Button onClick={() => setOpen(true)}>+ New plan</Button>}
+      />
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>

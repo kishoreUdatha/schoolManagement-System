@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { CheckCircle2, RotateCcw, SlidersHorizontal } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -15,7 +15,7 @@ import {
   tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
 
@@ -97,7 +97,7 @@ export default function PlatformSettingsPage() {
   const setCount = rows.filter((r) => r.set).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Platform settings"
         subtitle="The knobs that apply to every school at once."
@@ -105,15 +105,19 @@ export default function PlatformSettingsPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Settings" value={rows.length} />
-        <StatCard label="Set" value={setCount} accent="emerald" />
-        <StatCard
-          label="On their default"
-          value={rows.length - setCount}
-          hint="Nothing stored yet"
-        />
-      </div>
+      {/* Counted off the settings already listed. */}
+      <StatStrip
+        stats={[
+          { label: "Settings", value: rows.length, note: "Known to the platform", icon: SlidersHorizontal },
+          { label: "Set", value: setCount, note: "Stored by somebody", icon: CheckCircle2 },
+          {
+            label: "On their default",
+            value: rows.length - setCount,
+            note: "Nothing stored yet",
+            icon: RotateCcw,
+          },
+        ]}
+      />
 
       <NoticeBox>
         A setting that has never been touched shows here anyway, so nobody has to guess
@@ -123,7 +127,12 @@ export default function PlatformSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Settings</CardTitle>
+          <div>
+            <CardTitle>Settings</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Every knob, whether or not it has ever been set.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -187,6 +196,10 @@ export default function PlatformSettingsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${rows.length} setting${rows.length === 1 ? "" : "s"} · ${setCount} set`}
+          right="Saving one applies it to every school at once"
+        />
       </Card>
     </div>
   );

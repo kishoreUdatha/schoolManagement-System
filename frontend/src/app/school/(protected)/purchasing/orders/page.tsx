@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, ClipboardList, Plus, ReceiptText, Trash2, Wallet } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { daysLeft, readableDate, toIso } from "@/lib/dates";
 
@@ -270,24 +270,44 @@ export default function PurchaseOrdersPage() {
       <ErrorBox>{error}</ErrorBox>
       {note && <NoticeBox>{note}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Orders open" value={openOrders.length} />
-        <StatCard label="Bills unpaid" value={unpaid.length} accent={unpaid.length ? "amber" : "emerald"} />
-        <StatCard
-          label="Owed"
-          value={inr(unpaid.reduce((n, b) => n + Number(b.outstanding), 0))}
-          accent="amber"
-        />
-        <StatCard
-          label="Overdue bills"
-          value={overdue.length}
-          accent={overdue.length ? "rose" : "emerald"}
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Orders open",
+            value: openOrders.length,
+            note: `of ${orders.length} raised`,
+            icon: ClipboardList,
+          },
+          {
+            label: "Bills unpaid",
+            value: unpaid.length,
+            note: `of ${bills.length} recorded`,
+            icon: ReceiptText,
+          },
+          {
+            label: "Owed",
+            value: inr(unpaid.reduce((n, b) => n + Number(b.outstanding), 0)),
+            note: "Outstanding on unpaid bills",
+            icon: Wallet,
+          },
+          {
+            label: "Overdue bills",
+            value: overdue.length,
+            note: overdue.length ? "Past their due date" : "Nothing is late",
+            icon: AlertTriangle,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Purchase orders</CardTitle>
+          <div>
+            <CardTitle>Purchase orders</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              What was committed to a supplier, and how much of it has been billed
+              for.
+            </p>
+          </div>
           <Link
             href="/school/purchasing/vendors"
             className="text-[13px] font-bold text-brand-600 hover:underline"
@@ -344,11 +364,25 @@ export default function PurchaseOrdersPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${orders.length} order(s) · ${openOrders.length} still open`}
+          right={
+            orders.length
+              ? `${inr(orders.reduce((n, o) => n + Number(o.total), 0))} ordered in total`
+              : "Nothing ordered yet"
+          }
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Bills</CardTitle>
+          <div>
+            <CardTitle>Bills</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              What a supplier has asked for, what has been paid against it, and what
+              is still owed.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -403,6 +437,10 @@ export default function PurchaseOrdersPage() {
             })}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${bills.length} bill(s) · ${unpaid.length} unpaid`}
+          right={overdue.length ? `${overdue.length} past their due date` : "None overdue"}
+        />
       </Card>
 
       {/* ---- new order ---- */}

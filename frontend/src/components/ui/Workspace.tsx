@@ -13,6 +13,12 @@ import { cn } from "@/lib/utils";
  *  styles.css`. A page that uses these is the mock's layout by construction,
  *  which is the only way 296 of them stay consistent with each other.
  *
+ *  None of these carries a bottom margin, though the mock's CSS does. The
+ *  mock's pages stack their blocks with nothing between them, so each block
+ *  owns its own gap; ours wrap the page in a `space-y-*`, which already
+ *  supplies one. Keeping both gave 103 of 113 screens a double gap under
+ *  their figures. Spacing belongs to whoever is doing the stacking.
+ *
  *  Only what was missing is here. The mock's .panel is Card and its
  *  .page-head is PageHeader — 275 files and 171 pages already call those,
  *  so they were corrected in place rather than duplicated under new names.
@@ -39,7 +45,7 @@ export function StatStrip({ stats, className }: { stats: Stat[]; className?: str
   return (
     <div
       className={cn(
-        "mb-[22px] grid grid-cols-1 gap-y-4 rounded-panel border border-surface-border bg-surface-raised px-[5px] py-[21px] sm:grid-cols-2",
+        "grid grid-cols-1 gap-y-4 rounded-panel border border-surface-border bg-surface-raised px-[5px] py-[21px] sm:grid-cols-2",
         stats.length >= 4 ? "lg:grid-cols-4" : "lg:grid-cols-3",
         className
       )}
@@ -78,7 +84,7 @@ export function StatStrip({ stats, className }: { stats: Stat[]; className?: str
 
 /** The row above a table: search first and widest, then the narrowing. */
 export function FilterBar({ children }: { children: ReactNode }) {
-  return <div className="mb-[18px] flex flex-wrap items-center gap-2.5">{children}</div>;
+  return <div className="flex flex-wrap items-center gap-2.5">{children}</div>;
 }
 
 export function SearchBox({
@@ -229,7 +235,7 @@ export function Hero({
   action?: ReactNode;
 }) {
   return (
-    <section className="mb-[22px] min-h-[178px] overflow-hidden rounded-[16px] bg-brand-600">
+    <section className="min-h-[178px] overflow-hidden rounded-[16px] bg-brand-600">
       <div className="relative z-[2] px-[30px] py-[27px]">
         {eyebrow && (
           <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.7px] text-brand-50">
@@ -260,7 +266,7 @@ export type QuickAction = { label: string; href: string; icon?: LucideIcon };
 export function QuickActions({ actions }: { actions: QuickAction[] }) {
   if (actions.length === 0) return null;
   return (
-    <div className="mb-[22px] flex flex-wrap items-center gap-x-4 gap-y-2.5">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
       <span className="text-[12px] font-bold text-ink-muted">Quick actions</span>
       <div className="flex flex-wrap gap-2.5">
         {actions.map((a) => {

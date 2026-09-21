@@ -9,7 +9,8 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Table, inr, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
+import { AlertTriangle, BookOpen, IndianRupee, Library, Bookmark } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 import { LibraryTabs, Loan } from "./LibraryTabs";
@@ -90,20 +91,39 @@ export default function CirculationPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader title="Library" subtitle="Issue and return books, handle renewals, lost copies and fines." />
       <LibraryTabs />
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
       {dash && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <StatCard label="Titles" value={dash.titles} hint={`${dash.copies} copies`} />
-          <StatCard label="On loan" value={dash.on_loan} />
-          <StatCard label="Overdue" value={dash.overdue} accent={dash.overdue ? "rose" : "brand"} />
-          <StatCard label="Ready for pickup" value={dash.reservations_ready} accent={dash.reservations_ready ? "amber" : "brand"} />
-          <StatCard label="Fines to collect" value={inr(dash.fines_pending)} accent={Number(dash.fines_pending) ? "amber" : "brand"} />
-        </div>
+        // The five figures the library dashboard endpoint already returns.
+        <StatStrip
+          className="lg:grid-cols-5"
+          stats={[
+            { label: "Titles", value: dash.titles, note: `${dash.copies} copies`, icon: Library },
+            { label: "On loan", value: dash.on_loan, note: "Out with a borrower", icon: BookOpen },
+            {
+              label: "Overdue",
+              value: dash.overdue,
+              note: dash.overdue ? "Past their return date" : "Nothing late",
+              icon: AlertTriangle,
+            },
+            {
+              label: "Ready for pickup",
+              value: dash.reservations_ready,
+              note: "Held at the counter",
+              icon: Bookmark,
+            },
+            {
+              label: "Fines to collect",
+              value: inr(dash.fines_pending),
+              note: Number(dash.fines_pending) ? "Outstanding at the counter" : "Nothing owed",
+              icon: IndianRupee,
+            },
+          ]}
+        />
       )}
 
       <Card>
@@ -129,15 +149,29 @@ export default function CirculationPage() {
         </CardBody>
       </Card>
 
-      <div className="flex gap-2">
+      <FilterBar>
         {(["open", "overdue", "fines"] as View[]).map((v) => (
           <Button key={v} size="sm" variant={view === v ? "primary" : "secondary"} onClick={() => setView(v)}>
             {v === "open" ? "On loan" : v === "overdue" ? "Overdue" : "Fines to collect"}
           </Button>
         ))}
-      </div>
+      </FilterBar>
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>
+              {view === "open" ? "On loan" : view === "overdue" ? "Overdue" : "Fines to collect"}
+            </CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {view === "open"
+                ? "Every copy currently out, and what is owed on it."
+                : view === "overdue"
+                  ? "Copies past their return date."
+                  : "Loans with a fine still to settle."}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Book", "Borrower", "Issued", "Due", "Fine", ""]} empty={loans.length === 0 && "Nothing here."}>
           {loans.map((l) => {
             const overdue = !l.returned_on && !l.lost_on && l.due_on < today;
@@ -147,9 +181,8 @@ export default function CirculationPage() {
                   {l.title}
                   <div className="text-xs font-normal text-ink-subtle">{l.accession_no}</div>
                 </td>
-                <td className={td}>
-                  {l.borrower_name}
-                  <div className="text-xs text-ink-subtle">{l.borrower_detail}</div>
+                <td className="px-4 py-3">
+                  <PersonCell name={l.borrower_name} sub={l.borrower_detail} />
                 </td>
                 <td className={td}>{l.issued_on}</td>
                 <td className={`px-3 py-2 ${overdue ? "font-medium text-danger" : "text-ink-muted"}`}>
@@ -203,6 +236,10 @@ export default function CirculationPage() {
             );
           })}
         </Table>
+        <PanelFooter
+          left={`Showing ${loans.length} loan${loans.length === 1 ? "" : "s"}`}
+          right={dash ? `${dash.overdue} overdue across the library` : undefined}
+        />
       </Card>
 
       {dash && dash.top_borrowed.length > 0 && (

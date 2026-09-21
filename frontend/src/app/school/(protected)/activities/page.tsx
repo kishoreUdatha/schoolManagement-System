@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, UserMinus } from "lucide-react";
+import { CalendarCheck, DoorClosed, Layers, Plus, UserMinus, Users } from "lucide-react";
 
 import { StudentPicker, type PickedStudent } from "@/components/StudentPicker";
 import { Badge } from "@/components/ui/Badge";
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { hhmm, readableDate } from "@/lib/dates";
 
@@ -173,7 +173,7 @@ export default function ActivitiesPage() {
   const full = rows.filter((r) => r.is_full);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Activities and clubs"
         subtitle="What the school runs outside lessons, and who is in it."
@@ -187,16 +187,39 @@ export default function ActivitiesPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Activities" value={rows.length} />
-        <StatCard label="Running" value={running.length} accent="emerald" />
-        <StatCard label="Places taken" value={rows.reduce((n, r) => n + r.members, 0)} />
-        <StatCard label="Full" value={full.length} accent={full.length ? "amber" : "neutral"} />
-      </div>
+      {/* Added up from the list already on screen — the same rows, counted. */}
+      <StatStrip
+        stats={[
+          { label: "Activities", value: rows.length, note: "Set up in the school", icon: Layers },
+          {
+            label: "Running",
+            value: running.length,
+            note: running.length === rows.length ? "All of them" : "Still taking part",
+            icon: CalendarCheck,
+          },
+          {
+            label: "Places taken",
+            value: rows.reduce((n, r) => n + r.members, 0),
+            note: "Children on a roster",
+            icon: Users,
+          },
+          {
+            label: "Full",
+            value: full.length,
+            note: full.length ? "No places left" : "Room in every one",
+            icon: DoorClosed,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Everything on offer</CardTitle>
+          <div>
+            <CardTitle>Everything on offer</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Click an activity to see who is in it.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -252,6 +275,10 @@ export default function ActivitiesPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${rows.length} activit${rows.length === 1 ? "y" : "ies"} · ${running.length} running`}
+          right={full.length ? `${full.length} full` : "Room in every one"}
+        />
       </Card>
 
       {open && (
@@ -274,7 +301,9 @@ export default function ActivitiesPage() {
             >
               {(open.roster ?? []).map((m) => (
                 <tr key={m.member_id}>
-                  <td className={tdStrong}>{m.student_name}</td>
+                  <td className="px-4 py-3">
+                    <PersonCell name={m.student_name} sub={m.admission_no} />
+                  </td>
                   <td className={td}>{m.admission_no}</td>
                   <td className={td}>{readableDate(m.joined_on)}</td>
                   <td className={td}>{m.role ?? "—"}</td>
@@ -300,6 +329,16 @@ export default function ActivitiesPage() {
               ))}
             </Table>
           </CardBody>
+          <PanelFooter
+            left={`${(open.roster ?? []).filter((m) => m.is_current).length} in it now · ${
+              (open.roster ?? []).length
+            } on the record`}
+            right={
+              open.capacity
+                ? `${open.members} of ${open.capacity} places taken`
+                : "No limit on places"
+            }
+          />
         </Card>
       )}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CheckCircle2, ClipboardList, Hourglass, Send } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -16,7 +17,7 @@ import {
   tdStrong,
 } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Exam = {
@@ -103,7 +104,7 @@ export default function PrincipalExamsPage() {
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Exam results"
         subtitle="What is ready to go to families, what is still missing, and the decision to release it."
@@ -111,23 +112,40 @@ export default function PrincipalExamsPage() {
       <ErrorBox>{error}</ErrorBox>
       {done && <NoticeBox>{done}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Exams" value={exams.length} />
-        <StatCard label="Published" value={published} accent="emerald" />
-        <StatCard
-          label="Ready to publish"
-          value={waiting}
-          accent={waiting ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Not ready"
-          value={exams.length - published - waiting}
-        />
-      </div>
+      {/* Counted off the exams already listed and the readiness check each
+          one returned — nothing here is a second question to the server. */}
+      <StatStrip
+        stats={[
+          { label: "Exams", value: exams.length, note: "Set up this year", icon: ClipboardList },
+          {
+            label: "Published",
+            value: published,
+            note: "Families can see these",
+            icon: Send,
+          },
+          {
+            label: "Ready to publish",
+            value: waiting,
+            note: waiting ? "Marked and signed off" : "Nothing waiting on you",
+            icon: CheckCircle2,
+          },
+          {
+            label: "Not ready",
+            value: exams.length - published - waiting,
+            note: "Still missing marks or sign-off",
+            icon: Hourglass,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Every exam</CardTitle>
+          <div>
+            <CardTitle>Every exam</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              What is marked, what is signed off, and what has gone to families.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -187,6 +205,10 @@ export default function PrincipalExamsPage() {
             })}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${exams.length} exam${exams.length === 1 ? "" : "s"} · ${published} published`}
+          right={waiting ? `${waiting} ready for your decision` : "Nothing waiting on you"}
+        />
       </Card>
 
       <Modal

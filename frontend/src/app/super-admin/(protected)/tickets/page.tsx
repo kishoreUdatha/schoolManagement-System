@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lock, MessageSquarePlus, Plus } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Hourglass,
+  Inbox,
+  Lock,
+  MessageSquarePlus,
+  Plus,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -19,9 +27,13 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
+
+/** A select sized for the filter bar: one row of equal-height controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Reply = {
   id: number;
@@ -150,46 +162,58 @@ export default function TicketsPage() {
   const rows = queue?.tickets ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Support"
         subtitle="What schools have reported, and what we have done about it."
         actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Select
-              aria-label="Status"
-              value={state}
-              onChange={(e) => setState(e.target.value)}
-            >
-              <option value="">Every ticket</option>
-              <option value="open">Open</option>
-              <option value="waiting">Waiting on the school</option>
-              <option value="resolved">Resolved</option>
-              <option value="closed">Closed</option>
-            </Select>
-            <Button onClick={() => setRaising(true)}>
-              <Plus className="mr-1.5 h-4 w-4" />
-              Raise one
-            </Button>
-          </div>
+          <Button onClick={() => setRaising(true)}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            Raise one
+          </Button>
         }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Open"
-          value={queue?.open ?? "—"}
-          accent={queue && queue.open ? "rose" : "emerald"}
-        />
-        <StatCard label="Waiting on the school" value={queue?.waiting ?? "—"} accent="amber" />
-        <StatCard label="Resolved" value={queue?.resolved ?? "—"} accent="emerald" />
-        <StatCard
-          label="Urgent and open"
-          value={queue?.urgent_open ?? "—"}
-          accent={queue && queue.urgent_open ? "rose" : "emerald"}
-        />
-      </div>
+      {/* The counts the queue endpoint already returns, not a second call. */}
+      <StatStrip
+        stats={[
+          { label: "Open", value: queue?.open ?? "—", note: "Still with us", icon: Inbox },
+          {
+            label: "Waiting on the school",
+            value: queue?.waiting ?? "—",
+            note: "We have asked something",
+            icon: Hourglass,
+          },
+          {
+            label: "Resolved",
+            value: queue?.resolved ?? "—",
+            note: "Answered and closed off",
+            icon: CheckCircle2,
+          },
+          {
+            label: "Urgent and open",
+            value: queue?.urgent_open ?? "—",
+            note: queue && queue.urgent_open ? "Waiting on us now" : "Nothing urgent outstanding",
+            icon: AlertTriangle,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Status"
+          value={state}
+          onChange={(e) => setState(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">Every ticket</option>
+          <option value="open">Open</option>
+          <option value="waiting">Waiting on the school</option>
+          <option value="resolved">Resolved</option>
+          <option value="closed">Closed</option>
+        </select>
+      </FilterBar>
 
       {queue && queue.urgent_open > 0 && (
         <WarnBox>
@@ -199,7 +223,12 @@ export default function TicketsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>The queue</CardTitle>
+          <div>
+            <CardTitle>The queue</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {state ? humanize(state) : "Every ticket"} · newest first · click a row to open it
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -232,6 +261,10 @@ export default function TicketsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} ticket${rows.length === 1 ? "" : "s"}`}
+          right={queue ? `${queue.closed} closed in total` : undefined}
+        />
       </Card>
 
       <Modal

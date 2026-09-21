@@ -5,9 +5,16 @@ import { FormEvent, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type SubjectTeacherCard = {
   class_subject_id: number;
@@ -140,38 +147,36 @@ export default function HomeworkPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Homework</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Post homework to a class-subject. Visible to parents of every section
-            in that class.
-          </p>
-        </div>
-        <Button onClick={() => setOpenCreate(true)} disabled={subjects.length === 0}>
-          + New homework
-        </Button>
-      </div>
+      <PageHeader
+        title="Homework"
+        subtitle="Post homework to a class-subject. Visible to parents of every section in that class."
+        actions={
+          <Button onClick={() => setOpenCreate(true)} disabled={subjects.length === 0}>
+            + New homework
+          </Button>
+        }
+      />
 
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Class-subject</span>
-          <select
-            value={classSubjectFilter}
-            onChange={(e) =>
-              setClassSubjectFilter(e.target.value ? Number(e.target.value) : "")
-            }
-            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-          >
-            <option value="">All</option>
-            {subjects.map((s) => (
-              <option key={s.class_subject_id} value={s.class_subject_id}>
-                {s.class_name} → {s.subject_name} ({s.subject_code})
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-sm">
+      {/* The two controls this page already had, read as one row rather than
+          as a stray select and a stray checkbox. There is no search state
+          here, so the bar does not pretend to offer one. */}
+      <FilterBar>
+        <select
+          aria-label="Class-subject"
+          value={classSubjectFilter}
+          onChange={(e) =>
+            setClassSubjectFilter(e.target.value ? Number(e.target.value) : "")
+          }
+          className={filterSelect}
+        >
+          <option value="">All class-subjects</option>
+          {subjects.map((s) => (
+            <option key={s.class_subject_id} value={s.class_subject_id}>
+              {s.class_name} → {s.subject_name} ({s.subject_code})
+            </option>
+          ))}
+        </select>
+        <label className="flex items-center gap-2 text-[12px] font-bold text-ink-muted">
           <input
             type="checkbox"
             checked={includePast}
@@ -180,7 +185,7 @@ export default function HomeworkPage() {
           />
           Include past due
         </label>
-      </div>
+      </FilterBar>
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>

@@ -3,12 +3,18 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { DoorClosed, FileText, NotebookPen } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ErrorBox, Select, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { ErrorBox, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
+import { FilterBar, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 import { hhmm, readableDate } from "@/lib/dates";
 import { openAuthed } from "@/lib/download";
 
@@ -100,11 +106,12 @@ export default function AdmitCardsPage() {
     <div className="space-y-6">
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="max-w-xs">
-        <Select
-          label="Class"
+      <FilterBar>
+        <select
+          aria-label="Class"
           value={classId}
           onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : "")}
+          className={filterSelect}
         >
           <option value="">Choose a class</option>
           {classes.map((c) => (
@@ -112,24 +119,36 @@ export default function AdmitCardsPage() {
               {c.name}
             </option>
           ))}
-        </Select>
-      </div>
+        </select>
+      </FilterBar>
 
       {classId !== "" && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <StatCard label="Cards ready" value={loading ? "—" : cards.length} />
-            <StatCard
-              label="Missing a room"
-              value={loading ? "—" : incomplete.length}
-              accent={incomplete.length ? "amber" : "emerald"}
-              hint={incomplete.length ? "at least one paper each" : undefined}
-            />
-            <StatCard
-              label="Papers on each card"
-              value={loading ? "—" : cards[0]?.sittings.length ?? 0}
-            />
-          </div>
+          {/* Counted from the cards already fetched for this class. */}
+          <StatStrip
+            stats={[
+              {
+                label: "Cards ready",
+                value: loading ? "—" : cards.length,
+                note: "One per child on the roll",
+                icon: FileText,
+              },
+              {
+                label: "Missing a room",
+                value: loading ? "—" : incomplete.length,
+                note: incomplete.length
+                  ? "At least one paper each"
+                  : "Every paper has a room",
+                icon: DoorClosed,
+              },
+              {
+                label: "Papers on each card",
+                value: loading ? "—" : cards[0]?.sittings.length ?? 0,
+                note: "From this exam's datesheet",
+                icon: NotebookPen,
+              },
+            ]}
+          />
 
           {incomplete.length > 0 && (
             <WarnBox>

@@ -6,9 +6,20 @@ import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ErrorBox, NoticeBox, Select, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { ErrorBox, NoticeBox, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  StatStrip,
+} from "@/components/ui/Workspace";
+import { CircleCheck, Eye, RotateCcw, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Suggestion = "promoted" | "repeated" | "review";
 
@@ -85,20 +96,34 @@ export default function PromotionPage() {
         looking at them rather than from memory.
       </NoticeBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Children" value={data?.total ?? "—"} />
-        <StatCard
-          label="Passed everything"
-          value={data?.counts.promoted ?? "—"}
-          accent="emerald"
-        />
-        <StatCard label="Failed a subject" value={data?.counts.repeated ?? "—"} accent="amber" />
-        <StatCard
-          label="Needs a look"
-          value={data?.counts.review ?? "—"}
-          accent={needsLook.length ? "rose" : "emerald"}
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Children",
+            value: data?.total ?? "—",
+            note: data?.exam_name,
+            icon: Users,
+          },
+          {
+            label: "Passed everything",
+            value: data?.counts.promoted ?? "—",
+            note: "Suggested for promotion",
+            icon: CircleCheck,
+          },
+          {
+            label: "Failed a subject",
+            value: data?.counts.repeated ?? "—",
+            note: "Suggested to repeat the year",
+            icon: RotateCcw,
+          },
+          {
+            label: "Needs a look",
+            value: data?.counts.review ?? "—",
+            note: "Absent or unmarked papers",
+            icon: Eye,
+          },
+        ]}
+      />
 
       {needsLook.length > 0 && (
         <WarnBox>
@@ -109,20 +134,28 @@ export default function PromotionPage() {
         </WarnBox>
       )}
 
+      <FilterBar>
+        <select
+          aria-label="Filter by suggestion"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as Suggestion | "all")}
+          className={filterSelect}
+        >
+          <option value="all">Everyone</option>
+          <option value="promoted">Passed everything</option>
+          <option value="repeated">Failed a subject</option>
+          <option value="review">Needs a look</option>
+        </select>
+      </FilterBar>
+
       <Card>
         <CardHeader>
-          <CardTitle>What the marks suggest</CardTitle>
-          <div className="w-48">
-            <Select
-              aria-label="Filter by suggestion"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value as Suggestion | "all")}
-            >
-              <option value="all">Everyone</option>
-              <option value="promoted">Passed everything</option>
-              <option value="repeated">Failed a subject</option>
-              <option value="review">Needs a look</option>
-            </Select>
+          <div>
+            <CardTitle>What the marks suggest</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Read off the marks entered for this exam. A suggestion is not a decision
+              — nothing here moves a child.
+            </p>
           </div>
         </CardHeader>
         <CardBody className="p-0">
@@ -151,13 +184,11 @@ export default function PromotionPage() {
                 <td className={td}>{s.admission_no}</td>
                 <td className={tdStrong}>
                   <Link href={`/school/students/${s.student_id}`} className="hover:underline">
-                    {s.student_name}
+                    <PersonCell
+                      name={s.student_name}
+                      sub={[s.class_name, s.section_name].filter(Boolean).join(" ") || null}
+                    />
                   </Link>
-                  {(s.class_name || s.section_name) && (
-                    <span className="block text-[11px] font-normal text-ink-subtle">
-                      {[s.class_name, s.section_name].filter(Boolean).join(" ")}
-                    </span>
-                  )}
                 </td>
                 <td className={td}>{s.subjects}</td>
                 <td className={td}>{s.passed}</td>
@@ -182,6 +213,14 @@ export default function PromotionPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${shown.length} of ${students.length} child(ren)`}
+          right={
+            data?.is_published
+              ? "Results are published"
+              : "Results are not published yet"
+          }
+        />
       </Card>
 
       <Card>

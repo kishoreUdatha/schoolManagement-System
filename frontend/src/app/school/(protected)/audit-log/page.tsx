@@ -5,8 +5,14 @@ import { FormEvent, Fragment, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
+import { PageHeader } from "@/components/ui/Field";
+import { FilterBar, PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type AuditAction = "create" | "update" | "delete";
 
@@ -103,77 +109,75 @@ export default function AuditLogPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Audit log</h1>
-        <p className="mt-1.5 text-[13px] text-ink-muted">
-          Who changed what, when. Tracks create / update / delete on critical
-          entities.
-        </p>
-      </div>
+      <PageHeader
+        title="Audit log"
+        subtitle="Who changed what, when. Tracks create / update / delete on critical entities."
+        actions={
+          <Button type="button" variant="secondary" onClick={downloadCsv}>
+            Download CSV
+          </Button>
+        }
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardBody>
-          <form
-            onSubmit={load}
-            className="flex flex-wrap items-end gap-3 text-sm"
+      <form onSubmit={load}>
+        <FilterBar>
+          <select
+            aria-label="Action"
+            value={action}
+            onChange={(e) => setAction(e.target.value as typeof action)}
+            className={filterSelect}
           >
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-ink-muted">Action</span>
-              <select
-                value={action}
-                onChange={(e) => setAction(e.target.value as typeof action)}
-                className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-1.5"
-              >
-                <option value="">All</option>
-                <option value="create">Create</option>
-                <option value="update">Update</option>
-                <option value="delete">Delete</option>
-              </select>
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-ink-muted">Entity</span>
-              <select
-                value={entityType}
-                onChange={(e) => setEntityType(e.target.value)}
-                className="rounded-lg border border-surface-border bg-surface-subtle px-3 py-1.5"
-              >
-                <option value="">All</option>
-                {KNOWN_ENTITIES.map((e) => (
-                  <option key={e} value={e}>
-                    {e}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Input
-              label="Entity ID"
+            <option value="">All actions</option>
+            <option value="create">Create</option>
+            <option value="update">Update</option>
+            <option value="delete">Delete</option>
+          </select>
+          <select
+            aria-label="Entity"
+            value={entityType}
+            onChange={(e) => setEntityType(e.target.value)}
+            className={filterSelect}
+          >
+            <option value="">All entities</option>
+            {KNOWN_ENTITIES.map((e) => (
+              <option key={e} value={e}>
+                {e}
+              </option>
+            ))}
+          </select>
+          <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+            ID
+            <input
+              type="number"
+              aria-label="Entity ID"
               value={entityId}
               onChange={(e) => setEntityId(e.target.value)}
-              type="number"
-              className="w-28"
+              className={`${filterSelect} w-24`}
             />
-            <Input
-              label="From"
+          </label>
+          <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+            From
+            <input
+              type="date"
+              aria-label="From"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
-              type="date"
+              className={filterSelect}
             />
-            <Input
-              label="To"
+          </label>
+          <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+            To
+            <input
+              type="date"
+              aria-label="To"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
-              type="date"
+              className={filterSelect}
             />
-            <Button type="submit">Apply</Button>
-            <Button type="button" variant="secondary" onClick={downloadCsv}>
-              Download CSV
-            </Button>
-          </form>
-        </CardBody>
-      </Card>
+          </label>
+          <Button type="submit">Apply</Button>
+        </FilterBar>
+      </form>
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
@@ -193,7 +197,16 @@ export default function AuditLogPage() {
         </Card>
       ) : (
         <Card>
-          <CardBody>
+          <CardHeader>
+            <div>
+              <CardTitle>Changes</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                Newest first. Open a row&rsquo;s diff to see the values before and
+                after the change.
+              </p>
+            </div>
+          </CardHeader>
+          <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-surface-border text-[13px]">
               <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
@@ -262,7 +275,11 @@ export default function AuditLogPage() {
                 ))}
               </tbody>
             </table>
-          </CardBody>
+          </div>
+          <PanelFooter
+            left={`${items.length} entr${items.length === 1 ? "y" : "ies"} match these filters`}
+            right={`${Object.values(expanded).filter(Boolean).length} diff(s) open`}
+          />
         </Card>
       )}
     </div>

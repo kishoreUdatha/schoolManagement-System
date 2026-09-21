@@ -8,10 +8,16 @@ import { hhmm } from "@/components/events/CalendarFeed";
 import { EventForm, type SchoolEvent } from "@/components/events/EventForm";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ErrorBox, NoticeBox, PageHeader, Select, Table, humanize, inr, td, tdStrong } from "@/components/ui/Field";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ErrorBox, NoticeBox, PageHeader, Table, humanize, inr, td, tdStrong } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type ConsentReport = {
   eligible: number;
@@ -103,14 +109,31 @@ export default function EventsPage() {
       />
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
-      <div className="max-w-xs">
-        <Select label="Show" value={when} onChange={(e) => setWhen(e.target.value as typeof when)}>
+      {/* The one control this page has, in the bar the rest of the ERP puts
+          its filters in. There is no search state here to put first. */}
+      <FilterBar>
+        <select
+          aria-label="Show"
+          value={when}
+          onChange={(e) => setWhen(e.target.value as typeof when)}
+          className={filterSelect}
+        >
           <option value="upcoming">Upcoming</option>
           <option value="past">Past</option>
           <option value="all">All</option>
-        </Select>
-      </div>
+        </select>
+      </FilterBar>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>
+              {when === "upcoming" ? "Upcoming events" : when === "past" ? "Past events" : "All events"}
+            </CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Drafts are visible only here; publishing is what tells the audience.
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["When", "Event", "Audience", "Consent", "Status", ""]} empty={items.length === 0 && "No events."}>
           {items.map((ev) => (
             <tr key={ev.id}>
@@ -189,6 +212,10 @@ export default function EventsPage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${items.length} event(s) shown`}
+          right={`${items.filter((ev) => ev.is_published && !ev.is_cancelled).length} published · ${items.filter((ev) => !ev.is_published && !ev.is_cancelled).length} draft`}
+        />
       </Card>
 
       <EventForm

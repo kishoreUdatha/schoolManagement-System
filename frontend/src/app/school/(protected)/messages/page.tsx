@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { MailOpen } from "lucide-react";
+// Aliased: this file already has a type called Inbox.
+import { Clock, Inbox as InboxIcon, MailOpen, MessageSquare } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -14,9 +15,8 @@ import {
   Table,
   WarnBox,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
 
@@ -97,20 +97,34 @@ export default function SchoolMessagesPage() {
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Unread notices" value={unread} accent={unread ? "amber" : "emerald"} />
-        <StatCard label="Conversations" value={convos?.count ?? "—"} />
-        <StatCard
-          label="Waiting on a teacher"
-          value={convos?.awaiting_teacher ?? "—"}
-          accent={convos && convos.awaiting_teacher > 0 ? "amber" : "emerald"}
-        />
-        <StatCard label="Notices shown" value={items.length} />
-      </div>
+      {/* All four already come back from the two requests this page makes. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Unread notices",
+            value: unread,
+            note: unread ? "Waiting on you" : "Nothing outstanding",
+            icon: MailOpen,
+          },
+          { label: "Conversations", value: convos?.count ?? "—", icon: MessageSquare },
+          {
+            label: "Waiting on a teacher",
+            value: convos?.awaiting_teacher ?? "—",
+            note: convos && convos.awaiting_teacher > 0 ? "A parent is waiting" : "Nobody left waiting",
+            icon: Clock,
+          },
+          { label: "Notices shown", value: items.length, icon: InboxIcon },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Your notices</CardTitle>
+          <div>
+            <CardTitle>Your notices</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Up to ten of the notices addressed to you.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="space-y-3">
           {items.length === 0 && (
@@ -143,7 +157,12 @@ export default function SchoolMessagesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Parent and teacher conversations</CardTitle>
+          <div>
+            <CardTitle>Parent and teacher conversations</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Every thread between a parent and a teacher, open or closed.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="space-y-3 p-0">
           <div className="px-5 pt-4">
@@ -159,7 +178,13 @@ export default function SchoolMessagesPage() {
           >
             {(convos?.rows ?? []).map((c) => (
               <tr key={c.conversation_id}>
-                <td className={tdStrong}>{c.parent_name ?? "—"}</td>
+                <td className="px-4 py-2">
+                  {c.parent_name ? (
+                    <PersonCell name={c.parent_name} />
+                  ) : (
+                    <span className="text-ink-muted">—</span>
+                  )}
+                </td>
                 <td className={td}>{c.teacher_name ?? "—"}</td>
                 <td className={td}>{c.student_name ?? "—"}</td>
                 <td className={td}>{c.messages}</td>
@@ -183,6 +208,14 @@ export default function SchoolMessagesPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${convos?.rows.length ?? 0} conversation(s)`}
+          right={
+            convos && convos.awaiting_teacher > 0
+              ? `${convos.awaiting_teacher} waiting on a teacher`
+              : "Nobody is waiting on a reply"
+          }
+        />
       </Card>
 
       <p className="text-[12px] text-ink-subtle">

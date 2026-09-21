@@ -86,14 +86,18 @@ export default function ParentMeetingsPage() {
         const child = Number(childFor[m.id] ?? m.eligible_children[0]);
         return (
           <Card key={m.id}>
+            {/* CardHeader spreads its children apart, so the when-and-where
+                belongs inside the title's own block rather than beside it. */}
             <CardHeader>
-              <CardTitle>{m.title}</CardTitle>
-              <div className="text-sm text-ink-muted">
-                {m.meeting_date} · {hhmm(m.start_time)}–{hhmm(m.end_time)}
-                {m.venue && ` · ${m.venue}`}
-                {m.booking_closes_at && ` · bookings close ${new Date(m.booking_closes_at).toLocaleString()}`}
+              <div>
+                <CardTitle>{m.title}</CardTitle>
+                <p className="mt-[5px] text-[11px] text-ink-muted">
+                  {m.meeting_date} · {hhmm(m.start_time)}–{hhmm(m.end_time)}
+                  {m.venue && ` · ${m.venue}`}
+                  {m.booking_closes_at && ` · bookings close ${new Date(m.booking_closes_at).toLocaleString()}`}
+                </p>
+                {m.notes && <p className="mt-1.5 text-[13px] text-ink">{m.notes}</p>}
               </div>
-              {m.notes && <p className="mt-1 text-sm text-ink">{m.notes}</p>}
             </CardHeader>
             <CardBody className="space-y-4">
               {!m.booking_open && <Badge tone="amber">booking closed</Badge>}

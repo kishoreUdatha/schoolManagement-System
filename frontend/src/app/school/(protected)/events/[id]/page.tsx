@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { BusFront, ChevronLeft, CircleHelp, FileCheck2, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -16,10 +16,9 @@ import {
   WarnBox,
   humanize,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { readableDate } from "@/lib/dates";
 
@@ -151,20 +150,38 @@ export default function EventRegisterPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Eligible" value={data?.eligible ?? "—"} />
-        <StatCard
-          label="Consented"
-          value={data ? data.consented : "—"}
-          hint={data?.requires_consent ? undefined : "This event does not ask for consent"}
-        />
-        <StatCard label="Boarded" value={data?.attended ?? "—"} accent="emerald" />
-        <StatCard
-          label="Not counted yet"
-          value={data?.unmarked ?? "—"}
-          accent={data && data.unmarked > 0 ? "amber" : "emerald"}
-        />
-      </div>
+      {/* The register the API returned, counted four ways — nothing fetched
+          a second time. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Eligible",
+            value: data?.eligible ?? "—",
+            note: "Children who may go",
+            icon: Users,
+          },
+          {
+            label: "Consented",
+            value: data ? data.consented : "—",
+            note: data?.requires_consent
+              ? "Parents who said yes"
+              : "This event does not ask for consent",
+            icon: FileCheck2,
+          },
+          {
+            label: "Boarded",
+            value: data?.attended ?? "—",
+            note: "Counted at the coach door",
+            icon: BusFront,
+          },
+          {
+            label: "Not counted yet",
+            value: data?.unmarked ?? "—",
+            note: data && data.unmarked > 0 ? "Neither here nor absent" : "Everybody counted",
+            icon: CircleHelp,
+          },
+        ]}
+      />
 
       {data && data.consented_absent > 0 && (
         <WarnBox>
@@ -181,10 +198,12 @@ export default function EventRegisterPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Register</CardTitle>
-          <span className="text-[12px] font-bold text-ink-muted">
-            Ticking counts a child as boarded
-          </span>
+          <div>
+            <CardTitle>Register</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Ticking counts a child as boarded
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -199,7 +218,9 @@ export default function EventRegisterPage() {
                   className={r.consented_absent ? "bg-danger-bg/40" : undefined}
                 >
                   <td className={td}>{r.admission_no}</td>
-                  <td className={tdStrong}>{r.student_name}</td>
+                  <td className="px-4 py-3">
+                    <PersonCell name={r.student_name} sub={r.admission_no} />
+                  </td>
                   <td className={td}>{r.class_label ?? "—"}</td>
                   <td className={td}>
                     {r.consent === "yes" ? (
@@ -254,6 +275,14 @@ export default function EventRegisterPage() {
             })}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${rows.length} child(ren) on this register`}
+          right={
+            dirty.length
+              ? `${dirty.length} change(s) not saved yet`
+              : "Nothing waiting to be saved"
+          }
+        />
       </Card>
 
       <p className="text-[12px] text-ink-subtle">

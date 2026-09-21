@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { readableDate, toIso } from "@/lib/dates";
 
@@ -123,19 +123,27 @@ export default function DisciplineActionsPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Showing" value={rows.length} />
-        <StatCard
-          label="Outstanding"
-          value={data?.outstanding ?? 0}
-          accent={data?.outstanding ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Overdue"
-          value={data?.overdue ?? 0}
-          accent={data?.overdue ? "rose" : "emerald"}
-        />
-      </div>
+      {/* The three counts the endpoint already returned, as one summary of
+          the screen rather than three separate cards. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Showing",
+            value: rows.length,
+            note: outstandingOnly ? "Outstanding only" : "Every sanction recorded",
+          },
+          {
+            label: "Outstanding",
+            value: data?.outstanding ?? 0,
+            note: "Set but not signed off",
+          },
+          {
+            label: "Overdue",
+            value: data?.overdue ?? 0,
+            note: "Past their end date",
+          },
+        ]}
+      />
 
       {(data?.overdue ?? 0) > 0 && (
         <WarnBox>
@@ -147,7 +155,14 @@ export default function DisciplineActionsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Sanctions</CardTitle>
+          <div>
+            <CardTitle>Sanctions</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {outstandingOnly
+                ? "Only what is still outstanding · newest incidents first"
+                : "Everything set, served or not · newest incidents first"}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -229,6 +244,10 @@ export default function DisciplineActionsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} sanction${rows.length === 1 ? "" : "s"}`}
+          right={`${data?.outstanding ?? 0} outstanding · ${data?.overdue ?? 0} overdue`}
+        />
       </Card>
 
       <Modal

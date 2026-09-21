@@ -2,13 +2,24 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Armchair, DoorClosed, TriangleAlert, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ErrorBox, Select, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { ErrorBox, Select, Table, WarnBox, td } from "@/components/ui/Field";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Paper = {
   id: number;
@@ -163,12 +174,13 @@ export default function ExamHallsPage() {
     <div className="space-y-6">
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="max-w-md">
-        <Select
-          label="Paper"
+      <FilterBar>
+        <select
+          aria-label="Paper"
           value={paperId}
           onChange={(e) => pickPaper(Number(e.target.value))}
           disabled={papers.length === 0}
+          className={filterSelect}
         >
           {papers.length === 0 && <option value="">No papers have been added yet</option>}
           {papers.map((p) => (
@@ -177,30 +189,51 @@ export default function ExamHallsPage() {
               {p.start_time ? ` ${p.start_time.slice(0, 5)}` : ""}
             </option>
           ))}
-        </Select>
-      </div>
+        </select>
+      </FilterBar>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Sitting this paper" value={alloc?.candidates ?? "—"} />
-        <StatCard label="Seated" value={alloc?.seated ?? "—"} />
-        <StatCard
-          label="Nowhere to sit"
-          value={alloc ? unplaced.length : "—"}
-          accent={unplaced.length ? "amber" : "emerald"}
-        />
-        <StatCard label="Rooms in use" value={alloc?.rooms.length ?? "—"} />
-      </div>
+      {/* The allocation the API just returned, read four ways — no extra call. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Sitting this paper",
+            value: alloc?.candidates ?? "—",
+            note: alloc?.subject_name ?? "Pick a paper",
+            icon: Users,
+          },
+          {
+            label: "Seated",
+            value: alloc?.seated ?? "—",
+            note: alloc ? `of ${alloc.candidates} candidate(s)` : undefined,
+            icon: Armchair,
+          },
+          {
+            label: "Nowhere to sit",
+            value: alloc ? unplaced.length : "—",
+            note: unplaced.length ? "Allocate another room" : "Everybody has a seat",
+            icon: TriangleAlert,
+          },
+          {
+            label: "Rooms in use",
+            value: alloc?.rooms.length ?? "—",
+            note: `${rooms.length} room(s) set up`,
+            icon: DoorClosed,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Choose rooms</CardTitle>
-          <span className="text-[12px] font-bold text-ink-muted">
-            {chosen.length === 0
-              ? "Ticked in order; the first fills first"
-              : chosenSeats === null
-              ? `${chosen.length} room(s), one with no capacity recorded`
-              : `${chosen.length} room(s), ${chosenSeats} seat(s) for ${alloc?.candidates ?? "—"} children`}
-          </span>
+          <div>
+            <CardTitle>Choose rooms</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {chosen.length === 0
+                ? "Ticked in order; the first fills first"
+                : chosenSeats === null
+                ? `${chosen.length} room(s), one with no capacity recorded`
+                : `${chosen.length} room(s), ${chosenSeats} seat(s) for ${alloc?.candidates ?? "—"} children`}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="space-y-4">
           {rooms.length === 0 ? (
@@ -253,20 +286,31 @@ export default function ExamHallsPage() {
           </WarnBox>
           <Card>
             <CardHeader>
-              <CardTitle>Not yet seated</CardTitle>
+              <div>
+                <CardTitle>Not yet seated</CardTitle>
+                <p className="mt-[5px] text-[11px] text-ink-muted">
+                  Children sitting {alloc?.subject_name ?? "this paper"} with no room
+                </p>
+              </div>
             </CardHeader>
             <CardBody className="p-0">
               <Table head={["Admission no", "Student", "Section", "Roll"]}>
                 {unplaced.map((s) => (
                   <tr key={s.student_id}>
                     <td className={td}>{s.admission_no}</td>
-                    <td className={tdStrong}>{s.student_name}</td>
+                    <td className="px-4 py-3">
+                      <PersonCell name={s.student_name} sub={s.admission_no} />
+                    </td>
                     <td className={td}>{s.section_name ?? "—"}</td>
                     <td className={td}>{s.roll_no ?? "—"}</td>
                   </tr>
                 ))}
               </Table>
             </CardBody>
+            <PanelFooter
+              left={`${unplaced.length} child(ren) with nowhere to sit`}
+              right={`${alloc?.seated ?? 0} of ${alloc?.candidates ?? 0} seated`}
+            />
           </Card>
         </>
       )}
@@ -284,7 +328,13 @@ export default function ExamHallsPage() {
       {alloc?.rooms.map((room) => (
         <Card key={room.room_id}>
           <CardHeader>
-            <CardTitle>{room.room_name}</CardTitle>
+            <div>
+              <CardTitle>{room.room_name}</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                {room.capacity ? `${room.capacity} seat(s)` : "Capacity not recorded"}
+                {room.over_capacity ? " · more children than seats" : ""}
+              </p>
+            </div>
             <Badge tone={room.over_capacity ? "rose" : "neutral"}>
               {room.seated}
               {room.capacity ? ` of ${room.capacity}` : ""} seated
@@ -298,7 +348,9 @@ export default function ExamHallsPage() {
               {room.students.map((s) => (
                 <tr key={s.student_id}>
                   <td className={td}>{s.admission_no}</td>
-                  <td className={tdStrong}>{s.student_name}</td>
+                  <td className="px-4 py-3">
+                    <PersonCell name={s.student_name} sub={s.admission_no} />
+                  </td>
                   <td className={td}>{s.section_name ?? "—"}</td>
                   <td className={td}>{s.roll_no ?? "—"}</td>
                   <td className={td}>
@@ -322,6 +374,10 @@ export default function ExamHallsPage() {
               ))}
             </Table>
           </CardBody>
+          <PanelFooter
+            left={`${room.students.length} child(ren) seated here`}
+            right={room.capacity ? `${room.capacity} seat(s)` : "Capacity not recorded"}
+          />
         </Card>
       ))}
     </div>

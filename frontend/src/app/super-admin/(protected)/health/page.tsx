@@ -15,7 +15,8 @@ import {
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { Activity, Building2, LifeBuoy, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 type Check = {
@@ -84,24 +85,43 @@ export default function HealthPage() {
         </WarnBox>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Active schools" value={data?.tenants_active ?? "—"} />
-        <StatCard label="Active users" value={data?.users_active ?? "—"} />
-        <StatCard
-          label="Usage rows today"
-          value={data?.usage_rows_today ?? "—"}
-          hint="Schools that have sent something"
-        />
-        <StatCard
-          label="Open tickets"
-          value={data?.open_tickets ?? "—"}
-          accent={data && data.open_tickets ? "amber" : "emerald"}
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Active schools",
+            value: data?.tenants_active ?? "—",
+            note: data ? `As at ${data.checked_at.slice(0, 16).replace("T", " ")}` : undefined,
+            icon: Building2,
+          },
+          {
+            label: "Active users",
+            value: data?.users_active ?? "—",
+            note: "Across every school",
+            icon: Users,
+          },
+          {
+            label: "Usage rows today",
+            value: data?.usage_rows_today ?? "—",
+            note: "Schools that have sent something",
+            icon: Activity,
+          },
+          {
+            label: "Open tickets",
+            value: data?.open_tickets ?? "—",
+            note: data && data.open_tickets ? "Waiting on support" : "Nothing outstanding",
+            icon: LifeBuoy,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Checked</CardTitle>
+          <div>
+            <CardTitle>Checked</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Services something actually probed when this page was loaded.
+            </p>
+          </div>
           {data && (
             <Badge tone={data.all_monitored_up ? "emerald" : "rose"}>
               {data.all_monitored_up ? "All up" : "Something is down"}
@@ -126,11 +146,20 @@ export default function HealthPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${monitored.length} service(s) probed · ${down.length} down`}
+          right={data ? `Checked at ${data.checked_at.slice(11, 16)}` : "Not checked yet"}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Not monitored</CardTitle>
+          <div>
+            <CardTitle>Not monitored</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Listed so nobody assumes something is watching them.
+            </p>
+          </div>
           <span className="text-[12px] font-bold text-ink-muted">
             {unmonitored.length} service(s)
           </span>
@@ -155,6 +184,10 @@ export default function HealthPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${unmonitored.length} service(s) with no probe`}
+          right={`${unmonitored.filter((c) => c.state === "configured").length} have credentials on file`}
+        />
       </Card>
     </div>
   );

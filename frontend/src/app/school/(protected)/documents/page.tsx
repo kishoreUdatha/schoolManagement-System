@@ -5,11 +5,12 @@ import { FormEvent, useEffect, useState } from "react";
 import { PickedStudent, StudentPicker } from "@/components/StudentPicker";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, Table, humanize, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { DOCUMENT_CATEGORIES, fileSize } from "@/lib/documents";
 import { openAuthed } from "@/lib/download";
@@ -36,6 +37,11 @@ type Doc = {
 type Summary = { pending_verification: number; expiring_soon: number; by_owner: Record<string, number> };
 
 const vTone = { pending: "amber", verified: "emerald", rejected: "rose" } as const;
+
+/** A select sized for the filter bar: one row of controls, so no stacked
+ *  label — the first option says what the control narrows. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 export default function DocumentsPage() {
   const [owner, setOwner] = useState("");
@@ -121,34 +127,64 @@ export default function DocumentsPage() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-end gap-3">
-        <Select label="Belongs to" value={owner} onChange={(e) => setOwner(e.target.value)}>
+      <FilterBar>
+        <select
+          aria-label="Belongs to"
+          value={owner}
+          onChange={(e) => setOwner(e.target.value)}
+          className={filterSelect}
+        >
           <option value="">Everyone</option>
           <option value="student">Students</option>
           <option value="staff">Staff</option>
           <option value="school">School</option>
-        </Select>
-        <Select label="Verification" value={verification} onChange={(e) => setVerification(e.target.value)}>
-          <option value="">Any</option>
+        </select>
+        <select
+          aria-label="Verification"
+          value={verification}
+          onChange={(e) => setVerification(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">Any verification</option>
           <option value="pending">Pending</option>
           <option value="verified">Verified</option>
           <option value="rejected">Rejected</option>
-        </Select>
-        <Select label="Category" value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">Any</option>
+        </select>
+        <select
+          aria-label="Category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">Any category</option>
           {DOCUMENT_CATEGORIES.map((c) => (
             <option key={c} value={c}>
               {humanize(c)}
             </option>
           ))}
-        </Select>
-        <label className="flex items-center gap-2 pb-2 text-sm text-ink-muted">
+        </select>
+        <label className="flex items-center gap-2 text-[12px] text-ink-muted">
           <input type="checkbox" checked={expiring} onChange={(e) => setExpiring(e.target.checked)} />
           Expiring soon
         </label>
-      </div>
+      </FilterBar>
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>All documents</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                owner ? humanize(owner) : "Everyone",
+                verification ? humanize(verification) : "Any verification",
+                category ? humanize(category) : "Any category",
+                expiring ? "Expiring within 30 days" : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+        </CardHeader>
         <Table
           head={["Document", "Belongs to", "Category", "Uploaded", "Status", ""]}
           empty={items.length === 0 && "No documents match."}
@@ -198,6 +234,14 @@ export default function DocumentsPage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`Showing ${items.length} document${items.length === 1 ? "" : "s"}`}
+          right={
+            summary
+              ? `${summary.pending_verification} awaiting verification · ${summary.expiring_soon} expiring in 30 days`
+              : undefined
+          }
+        />
       </Card>
 
       {uploading && (

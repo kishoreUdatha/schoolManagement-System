@@ -6,10 +6,17 @@ import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, PersonCell } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Status = "scored" | "absent" | "exempt";
 
@@ -226,54 +233,59 @@ export default function MarksEntryPage() {
       </Link>
 
       {view && (
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
-              {view.exam_name} — {view.subject_name}
-            </h1>
-            {view.is_published ? (
-              <Badge tone="emerald">published</Badge>
-            ) : (
-              <Badge tone="amber">draft</Badge>
-            )}
-          </div>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            {view.class_name} · {view.exam_date} · max {view.max_marks} · pass{" "}
-            {view.pass_marks}
-          </p>
-          {/* Forty scripts and a spreadsheet beats forty trips to a text box. */}
-          <Link
-            href={`/teacher/marks/papers/${params.id}/import${
-              classIdParam ? `?class_id=${classIdParam}` : ""
-            }`}
-            className="mt-2 inline-block text-[13px] font-bold text-brand-600 hover:underline"
-          >
-            Upload marks from a spreadsheet
-          </Link>
-        </div>
+        <PageHeader
+          title={`${view.exam_name} — ${view.subject_name}`}
+          subtitle={[
+            view.class_name,
+            view.exam_date,
+            `max ${view.max_marks}`,
+            `pass ${view.pass_marks}`,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+          actions={
+            <span className="flex flex-wrap items-center gap-2.5">
+              {view.is_published ? (
+                <Badge tone="emerald">published</Badge>
+              ) : (
+                <Badge tone="amber">draft</Badge>
+              )}
+              {/* Forty scripts and a spreadsheet beats forty trips to a text box. */}
+              <Link
+                href={`/teacher/marks/papers/${params.id}/import${
+                  classIdParam ? `?class_id=${classIdParam}` : ""
+                }`}
+                className="text-[13px] font-bold text-brand-600 hover:underline"
+              >
+                Upload marks from a spreadsheet
+              </Link>
+            </span>
+          }
+        />
       )}
 
       {sections.length === 0 ? (
         <Card className="p-6 text-center text-ink-muted">No sections in this class.</Card>
       ) : (
         <>
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-              <span className="text-[12px] font-bold text-ink-muted">Section</span>
-              <select
-                value={sectionId}
-                onChange={(e) =>
-                  setSectionId(e.target.value ? Number(e.target.value) : "")
-                }
-                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-              >
-                {sections.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+          {/* The section picker and the two things you can do to what it
+              shows, read as one row. The edit gate is unchanged: neither
+              button exists while the exam is published. */}
+          <FilterBar>
+            <select
+              aria-label="Section"
+              value={sectionId}
+              onChange={(e) =>
+                setSectionId(e.target.value ? Number(e.target.value) : "")
+              }
+              className={filterSelect}
+            >
+              {sections.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
             {canEdit && (
               <>
                 <Button variant="secondary" size="sm" onClick={markAllAbsent}>
@@ -284,7 +296,7 @@ export default function MarksEntryPage() {
                 </Button>
               </>
             )}
-          </div>
+          </FilterBar>
 
           {!canEdit && view && (
             <div className="rounded-md bg-surface-subtle px-3 py-2 text-sm text-ink-muted">
@@ -312,6 +324,21 @@ export default function MarksEntryPage() {
               </div>
 
               <Card>
+                <CardHeader>
+                  <div>
+                    <CardTitle>Marks sheet</CardTitle>
+                    <p className="mt-[5px] text-[11px] text-ink-muted">
+                      {[
+                        view.section_label ?? view.class_name,
+                        `out of ${view.max_marks}`,
+                        `pass at ${view.pass_marks}`,
+                        canEdit ? "open for entry" : "published — read-only",
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                </CardHeader>
                 <table className="min-w-full divide-y divide-surface-border text-[13px]">
                   <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                     <tr>
@@ -335,8 +362,7 @@ export default function MarksEntryPage() {
                         <tr key={r.student_id} className="hover:bg-surface-subtle">
                           <td className="px-4 py-3 text-[12px] tabular-nums text-ink-muted">{r.roll_no}</td>
                           <td className="px-4 py-3">
-                            <div className="font-medium text-ink">{r.full_name}</div>
-                            <div className="text-xs text-ink-muted">{r.admission_no}</div>
+                            <PersonCell name={r.full_name} sub={r.admission_no} />
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1">
@@ -427,6 +453,14 @@ export default function MarksEntryPage() {
                     })}
                   </tbody>
                 </table>
+                <PanelFooter
+                  left={`${rows.length} student(s) on this sheet`}
+                  right={
+                    view.summary.unmarked > 0
+                      ? `${view.summary.unmarked} still unmarked`
+                      : "Every student has a status"
+                  }
+                />
               </Card>
             </>
           )}

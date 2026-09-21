@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { CalendarDays, CheckCircle2, ChevronLeft, CircleAlert, Power } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime, readableDate } from "@/lib/dates";
 
@@ -202,22 +202,38 @@ export default function ExitClearancePage() {
 
       {c && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Areas signed off" value={`${cleared} / ${c.items.length}`} />
-            <StatCard
-              label="Still outstanding"
-              value={c.outstanding_count}
-              accent={c.outstanding_count ? "amber" : "emerald"}
-            />
-            <StatCard
-              label="Last working day"
-              value={c.last_working_day ? readableDate(c.last_working_day) : "Not set"}
-            />
-            <StatCard
-              label="Account"
-              value={c.is_active ? "Active" : "Switched off"}
-            />
-          </div>
+          {/* Straight off the clearance the API returned — nothing here is
+              counted a second time. */}
+          <StatStrip
+            stats={[
+              {
+                label: "Areas signed off",
+                value: `${cleared} / ${c.items.length}`,
+                note: "Each area signs for itself",
+                icon: CheckCircle2,
+              },
+              {
+                label: "Still outstanding",
+                value: c.outstanding_count,
+                note: c.outstanding_count
+                  ? c.outstanding.map(humanize).join(", ")
+                  : "Nothing left to chase",
+                icon: CircleAlert,
+              },
+              {
+                label: "Last working day",
+                value: c.last_working_day ? readableDate(c.last_working_day) : "Not set",
+                note: humanize(c.status),
+                icon: CalendarDays,
+              },
+              {
+                label: "Account",
+                value: c.is_active ? "Active" : "Switched off",
+                note: "Switched off when the checklist closes",
+                icon: Power,
+              },
+            ]}
+          />
 
           {c.outstanding_count > 0 && open && (
             <WarnBox>
@@ -239,7 +255,12 @@ export default function ExitClearancePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Sign-offs</CardTitle>
+              <div>
+                <CardTitle>Sign-offs</CardTitle>
+                <p className="mt-[5px] text-[11px] text-ink-muted">
+                  Every area gets a row, including ones that may not apply.
+                </p>
+              </div>
               <Badge
                 tone={
                   c.status === "complete"
@@ -252,6 +273,7 @@ export default function ExitClearancePage() {
                 {humanize(c.status)}
               </Badge>
             </CardHeader>
+
             <CardBody className="p-0">
               <Table head={["Area", "Cleared", "By", "When", "Note", ""]}>
                 {c.items.map((i) => (
@@ -284,6 +306,14 @@ export default function ExitClearancePage() {
                 ))}
               </Table>
             </CardBody>
+            <PanelFooter
+              left={`${cleared} of ${c.items.length} area(s) signed off`}
+              right={
+                c.outstanding_count
+                  ? `Waiting on ${c.outstanding.map(humanize).join(", ")}`
+                  : "Nothing outstanding"
+              }
+            />
           </Card>
 
           {c.reason && (

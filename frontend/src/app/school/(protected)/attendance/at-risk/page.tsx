@@ -19,9 +19,20 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  StatStrip,
+} from "@/components/ui/Workspace";
+import { CalendarRange, PhoneOff, TriangleAlert, Hourglass } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Student = {
   student_id: number;
@@ -155,53 +166,64 @@ export default function AtRiskPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <Card>
-        <CardBody className="flex flex-wrap items-end gap-3">
-          <Select
-            label="Below"
-            value={below}
-            onChange={(e) => setBelow(Number(e.target.value))}
-          >
-            {[50, 60, 70, 75, 80, 90, 95].map((n) => (
-              <option key={n} value={n}>
-                {n}%
-              </option>
-            ))}
-          </Select>
-          <Select
-            label="Looking back"
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-          >
-            {[30, 60, 90, 120, 180, 365].map((n) => (
-              <option key={n} value={n}>
-                {n} days
-              </option>
-            ))}
-          </Select>
-          <Button variant="secondary" onClick={load}>
-            Apply
-          </Button>
-        </CardBody>
-      </Card>
+      <StatStrip
+        stats={[
+          {
+            label: "At risk",
+            value: data?.count ?? "—",
+            note: data ? `Below ${data.below}%` : undefined,
+            icon: TriangleAlert,
+          },
+          {
+            label: "Never contacted",
+            value: data?.never_contacted ?? "—",
+            note: "Nobody has rung the family",
+            icon: PhoneOff,
+          },
+          {
+            label: "Follow-ups due",
+            value: data?.follow_ups_due ?? "—",
+            note: "A date that has come round",
+            icon: Hourglass,
+          },
+          {
+            label: "Window",
+            value: data ? `${shortDate(data.from_date)} – ${shortDate(data.to_date)}` : "—",
+            note: `Last ${days} days`,
+            icon: CalendarRange,
+          },
+        ]}
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="At risk" value={data?.count ?? "—"} />
-        <StatCard
-          label="Never contacted"
-          value={data?.never_contacted ?? "—"}
-          accent={data?.never_contacted ? "rose" : "emerald"}
-        />
-        <StatCard
-          label="Follow-ups due"
-          value={data?.follow_ups_due ?? "—"}
-          accent={data?.follow_ups_due ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Window"
-          value={data ? `${shortDate(data.from_date)} – ${shortDate(data.to_date)}` : "—"}
-        />
-      </div>
+      <FilterBar>
+        <select
+          aria-label="Attendance threshold"
+          value={below}
+          onChange={(e) => setBelow(Number(e.target.value))}
+          className={filterSelect}
+        >
+          {[50, 60, 70, 75, 80, 90, 95].map((n) => (
+            <option key={n} value={n}>
+              Below {n}%
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="How far back to look"
+          value={days}
+          onChange={(e) => setDays(Number(e.target.value))}
+          className={filterSelect}
+        >
+          {[30, 60, 90, 120, 180, 365].map((n) => (
+            <option key={n} value={n}>
+              Last {n} days
+            </option>
+          ))}
+        </select>
+        <Button variant="secondary" onClick={load}>
+          Apply
+        </Button>
+      </FilterBar>
 
       {data && data.never_contacted > 0 && (
         <WarnBox>
@@ -213,7 +235,13 @@ export default function AtRiskPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Worst first</CardTitle>
+          <div>
+            <CardTitle>Worst first</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Lowest attendance at the top, with the last conversation beside it so the
+              list reads as a worklist rather than a report.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -226,11 +254,10 @@ export default function AtRiskPage() {
             {rows.map((s) => (
               <tr key={s.student_id}>
                 <td className={tdStrong}>
-                  {s.student_name}
-                  <span className="block text-[11px] font-normal text-ink-subtle">
-                    {s.admission_no}
-                    {s.section_label ? ` · ${s.section_label}` : ""}
-                  </span>
+                  <PersonCell
+                    name={s.student_name}
+                    sub={`${s.admission_no}${s.section_label ? ` · ${s.section_label}` : ""}`}
+                  />
                 </td>
                 <td className={td}>
                   <Badge tone={pctTone(s.percent)}>{s.percent}%</Badge>
@@ -275,6 +302,14 @@ export default function AtRiskPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${rows.length} child(ren) below ${below}% over the last ${days} days`}
+          right={
+            data
+              ? `${data.never_contacted} never contacted · ${data.follow_ups_due} follow-up(s) due`
+              : "Loading…"
+          }
+        />
       </Card>
 
       <Modal

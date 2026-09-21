@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Wrench } from "lucide-react";
+import { IndianRupee, Package, ShieldAlert, Wrench } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { daysLeft, shortDate } from "@/lib/dates";
 
@@ -138,20 +138,31 @@ export default function AssetMaintenancePage() {
       <ErrorBox>{error}</ErrorBox>
       {done && <NoticeBox>{done}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Assets" value={assets.length} />
-        <StatCard
-          label="Under repair"
-          value={inRepair.length}
-          accent={inRepair.length ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Warranty ending soon"
-          value={expiring.length}
-          accent={expiring.length ? "amber" : "emerald"}
-        />
-        <StatCard label="Spent on repairs" value={inr(spent)} />
-      </div>
+      {/* Counted off the register this page already loaded — the strip adds
+          no second request. */}
+      <StatStrip
+        stats={[
+          { label: "Assets", value: assets.length, note: "In the register", icon: Package },
+          {
+            label: "Under repair",
+            value: inRepair.length,
+            note: inRepair.length ? "Away from the school" : "Nothing away",
+            icon: Wrench,
+          },
+          {
+            label: "Warranty ending soon",
+            value: expiring.length,
+            note: `Within ${WARRANTY_SOON} days`,
+            icon: ShieldAlert,
+          },
+          {
+            label: "Spent on repairs",
+            value: inr(spent),
+            note: "Recorded against assets",
+            icon: IndianRupee,
+          },
+        ]}
+      />
 
       {expiring.length > 0 && (
         <WarnBox>
@@ -164,7 +175,12 @@ export default function AssetMaintenancePage() {
       {inRepair.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Away being repaired</CardTitle>
+            <div>
+              <CardTitle>Away being repaired</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                Booked out to a supplier and not yet back in service.
+              </p>
+            </div>
           </CardHeader>
           <CardBody className="p-0">
             <Table head={["Tag", "Asset", "Where it was", "Warranty", ""]}>
@@ -189,12 +205,21 @@ export default function AssetMaintenancePage() {
               ))}
             </Table>
           </CardBody>
+          <PanelFooter
+            left={`${inRepair.length} of ${assets.length} asset(s) away`}
+            right={`${inRepair.filter((a) => a.warranty_active).length} still under warranty`}
+          />
         </Card>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Every asset</CardTitle>
+          <div>
+            <CardTitle>Every asset</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              The whole register — in use, away for repair and disposed.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -256,6 +281,10 @@ export default function AssetMaintenancePage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${assets.length} asset(s) in the register`}
+          right={`${inr(spent)} spent on repairs so far`}
+        />
       </Card>
 
       <p className="text-[12px] text-ink-subtle">

@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, PageHeader, Table, td, tdStrong } from "@/components/ui/Field";
+import { PanelFooter, PersonCell } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 import { LibraryTabs } from "../LibraryTabs";
@@ -53,11 +54,22 @@ export default function ReservationsPage() {
       <LibraryTabs />
       <ErrorBox>{error}</ErrorBox>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Reservations</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              A hold that is ready has a copy set aside until a date; the rest are
+              waiting their turn.
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Book", "For", "Status", "Reserved on", ""]} empty={items.length === 0 && "No active reservations."}>
           {items.map((r) => (
             <tr key={r.id}>
               <td className={tdStrong}>{r.title}</td>
-              <td className={td}>{r.borrower_name}</td>
+              <td className={td}>
+                <PersonCell name={r.borrower_name} />
+              </td>
               <td className="px-4 py-3">
                 {r.status === "ready" ? (
                   <>
@@ -82,6 +94,12 @@ export default function ReservationsPage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${items.length} active reservation(s)`}
+          right={`${items.filter((r) => r.status === "ready").length} ready for pickup · ${
+            items.filter((r) => r.status !== "ready").length
+          } waiting`}
+        />
       </Card>
     </div>
   );

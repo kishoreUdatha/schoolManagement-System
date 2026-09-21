@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, WarnBox } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Policy = {
@@ -90,30 +90,35 @@ export default function SecuritySettingsPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Minimum length" value={policy?.min_password_length ?? "—"} />
-        <StatCard
-          label="Rules in force"
-          value={policy ? policy.rules.length : "—"}
-          accent={policy && policy.rules.length > 1 ? "emerald" : "neutral"}
-        />
-        <StatCard
-          label="Second factor"
-          value={
-            SCOPES.find((s) => s.value === policy?.require_2fa_for)?.label ?? "—"
-          }
-          accent={policy?.require_2fa_for === "nobody" ? "amber" : "emerald"}
-          icon={policy?.require_2fa_for === "nobody" ? undefined : ShieldCheck}
-        />
-        <StatCard
-          label="Session timeout"
-          value={
-            policy?.session_timeout_minutes
+      {/* What is saved, not what is in the draft: the strip has to describe
+          the school as it is currently protected. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Minimum length",
+            value: policy?.min_password_length ?? "—",
+            note: "Characters",
+          },
+          {
+            label: "Rules in force",
+            value: policy ? policy.rules.length : "—",
+            note: "Checked on every password set",
+          },
+          {
+            label: "Second factor",
+            value: SCOPES.find((s) => s.value === policy?.require_2fa_for)?.label ?? "—",
+            note: policy?.require_2fa_for === "nobody" ? "Password alone" : "Password and a code",
+            icon: policy?.require_2fa_for === "nobody" ? undefined : ShieldCheck,
+          },
+          {
+            label: "Session timeout",
+            value: policy?.session_timeout_minutes
               ? `${policy.session_timeout_minutes} min`
-              : "None"
-          }
-        />
-      </div>
+              : "None",
+            note: "Idle before signing out",
+          },
+        ]}
+      />
 
       {policy && (
         <NoticeBox>

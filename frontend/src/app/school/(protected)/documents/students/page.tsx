@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { FileDown, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { AlertTriangle, CalendarClock, Clock, FileDown, FileText, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -9,18 +9,26 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   PageHeader,
-  Select,
   Table,
   WarnBox,
   humanize,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { daysLeft, readableDate } from "@/lib/dates";
 import { openAuthed } from "@/lib/download";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Doc = {
   id: number;
@@ -138,20 +146,71 @@ export default function StudentDocumentsPage() {
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="On file" value={summary?.by_owner?.student ?? shown.length} />
-        <StatCard
-          label="Waiting to be checked"
-          value={pending.length}
-          accent={pending.length ? "amber" : "emerald"}
+      {/* Every figure here is one the page already holds: the summary the API
+          returned, and counts taken from the rows on screen. */}
+      <StatStrip
+        stats={[
+          {
+            label: "On file",
+            value: summary?.by_owner?.student ?? shown.length,
+            note: "Documents held for children",
+            icon: FileText,
+          },
+          {
+            label: "Waiting to be checked",
+            value: pending.length,
+            note: pending.length ? "Nobody has verified these yet" : "Nothing outstanding",
+            icon: Clock,
+          },
+          {
+            label: "Expired",
+            value: expired.length,
+            note: expired.length ? "Past their expiry date" : "None out of date",
+            icon: AlertTriangle,
+          },
+          {
+            label: "Expiring soon",
+            value: summary?.expiring_soon ?? "—",
+            note: "Across every owner",
+            icon: CalendarClock,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <SearchBox
+          value={search}
+          onChange={setSearch}
+          placeholder="Child or title…"
+          label="Search documents"
         />
-        <StatCard
-          label="Expired"
-          value={expired.length}
-          accent={expired.length ? "rose" : "emerald"}
-        />
-        <StatCard label="Expiring soon" value={summary?.expiring_soon ?? "—"} />
-      </div>
+        <select
+          aria-label="Category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">Every category</option>
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {humanize(c)}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Verification"
+          value={state}
+          onChange={(e) => setState(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">Any state</option>
+          {STATES.map((s) => (
+            <option key={s} value={s}>
+              {humanize(s)}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
 
       {expired.length > 0 && (
         <WarnBox>
@@ -163,42 +222,16 @@ export default function StudentDocumentsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Documents</CardTitle>
-          <form
-            className="flex flex-wrap items-end gap-2"
-            onSubmit={(e: FormEvent) => e.preventDefault()}
-          >
-            <Input
-              placeholder="Child or title"
-              aria-label="Search documents"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <Select
-              aria-label="Category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">Every category</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {humanize(c)}
-                </option>
-              ))}
-            </Select>
-            <Select
-              aria-label="Verification"
-              value={state}
-              onChange={(e) => setState(e.target.value)}
-            >
-              <option value="">Any state</option>
-              {STATES.map((s) => (
-                <option key={s} value={s}>
-                  {humanize(s)}
-                </option>
-              ))}
-            </Select>
-          </form>
+          <div>
+            <CardTitle>Documents</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                category ? humanize(category) : "Every category",
+                state ? humanize(state) : "Any state",
+                search.trim() ? `Matching “${search.trim()}”` : "All children",
+              ].join(" · ")}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -209,7 +242,9 @@ export default function StudentDocumentsPage() {
               const left = daysLeft(d.expires_on);
               return (
                 <tr key={d.id}>
-                  <td className={tdStrong}>{d.owner_name ?? "Unknown"}</td>
+                  <td className="px-4 py-3">
+                    <PersonCell name={d.owner_name ?? "Unknown"} />
+                  </td>
                   <td className={td}>
                     {d.title}
                     <span className="block text-[11px] text-ink-subtle">{d.original_name}</span>
@@ -287,6 +322,14 @@ export default function StudentDocumentsPage() {
             })}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${shown.length} of ${docs.length} document(s)`}
+          right={
+            pending.length
+              ? `${pending.length} still waiting to be checked`
+              : "Everything shown has been checked"
+          }
+        />
       </Card>
     </div>
   );

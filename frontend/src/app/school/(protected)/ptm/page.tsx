@@ -8,8 +8,9 @@ import { hhmm } from "@/components/events/CalendarFeed";
 import { PtmForm, type PtmSession } from "@/components/events/Ptm";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, PageHeader, Table, td, tdStrong } from "@/components/ui/Field";
+import { PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 export default function PtmListPage() {
@@ -34,6 +35,14 @@ export default function PtmListPage() {
       />
       <ErrorBox>{error}</ErrorBox>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Meetings</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              A draft is invisible to families; publishing is what opens booking.
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Date", "Meeting", "For", "Teachers", "Booked", "Status"]} empty={items.length === 0 && "No meetings yet."}>
           {items.map((s) => (
             <tr key={s.id}>
@@ -60,6 +69,10 @@ export default function PtmListPage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${items.length} meeting(s)`}
+          right={`${items.filter((s) => s.is_published).length} open for booking`}
+        />
       </Card>
       <PtmForm open={open} session={null} onClose={() => setOpen(false)} onSaved={(s) => router.push(`/school/ptm/${s.id}`)} />
     </div>

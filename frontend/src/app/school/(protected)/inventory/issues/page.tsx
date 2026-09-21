@@ -18,9 +18,14 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Item = { id: number; name: string; sku: string; unit: string; on_hand: string };
 type Move = {
@@ -128,17 +133,7 @@ export default function StockIssuesPage() {
         title="Issues and returns"
         subtitle="What has gone out of the store, who took it, and what has come back."
         actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Select
-              label="Period"
-              value={days}
-              onChange={(e) => setDays(Number(e.target.value))}
-            >
-              <option value={30}>Last 30 days</option>
-              <option value={90}>Last 90 days</option>
-              <option value={180}>Last 180 days</option>
-              <option value={365}>Last year</option>
-            </Select>
+          <>
             <Button onClick={() => setOpen("issue")}>
               <ArrowUpRight className="mr-1.5 h-4 w-4" />
               Issue
@@ -147,25 +142,49 @@ export default function StockIssuesPage() {
               <ArrowDownLeft className="mr-1.5 h-4 w-4" />
               Return
             </Button>
-          </div>
+          </>
         }
       />
       <ErrorBox>{error}</ErrorBox>
       {done && <NoticeBox>{done}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Issued" value={issued.length} />
-        <StatCard label="Returned" value={returned.length} />
-        <StatCard label="People who took something" value={borrowers.length} />
-        <StatCard
-          label="Units out"
-          value={issued.reduce((n, m) => n + Number(m.qty), 0)}
-        />
-      </div>
+      {/* The one control that narrows this page belongs above the register,
+          not among the buttons that add to it. */}
+      <FilterBar>
+        <select
+          aria-label="Period"
+          value={days}
+          onChange={(e) => setDays(Number(e.target.value))}
+          className={filterSelect}
+        >
+          <option value={30}>Last 30 days</option>
+          <option value={90}>Last 90 days</option>
+          <option value={180}>Last 180 days</option>
+          <option value={365}>Last year</option>
+        </select>
+      </FilterBar>
+
+      {/* Counted off the moves already loaded for this period. */}
+      <StatStrip
+        stats={[
+          { label: "Issued", value: issued.length, note: `Last ${days} days` },
+          { label: "Returned", value: returned.length, note: `Last ${days} days` },
+          { label: "People who took something", value: borrowers.length },
+          {
+            label: "Units out",
+            value: issued.reduce((n, m) => n + Number(m.qty), 0),
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>The register</CardTitle>
+          <div>
+            <CardTitle>The register</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Every issue and return recorded in the last {days} days.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -189,11 +208,20 @@ export default function StockIssuesPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${moves.length} movement(s) in this period`}
+          right={`${issued.length} out · ${returned.length} back`}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Who takes things out</CardTitle>
+          <div>
+            <CardTitle>Who takes things out</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Grouped by the name typed on the issue, most frequent first.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -202,13 +230,21 @@ export default function StockIssuesPage() {
           >
             {borrowers.map((b) => (
               <tr key={b.name}>
-                <td className={tdStrong}>{b.name}</td>
+                <td className="px-4 py-2">
+                  {/* No sub-line: the count and the date are columns of their
+                      own, and repeating one under the name says nothing new. */}
+                  <PersonCell name={b.name} />
+                </td>
                 <td className={td}>{b.times}</td>
                 <td className={td}>{shortDate(b.last)}</td>
               </tr>
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${borrowers.length} name(s) recorded`}
+          right="Typed by hand, not linked to staff records"
+        />
       </Card>
       <p className="text-[12px] text-ink-subtle">
         Names here are typed by hand and are not linked to staff records, so the same

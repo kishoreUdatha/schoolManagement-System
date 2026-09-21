@@ -18,7 +18,8 @@ import {
   tdStrong,
 } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { Hourglass, FileWarning, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
 import { openAuthed } from "@/lib/download";
@@ -156,14 +157,28 @@ export default function DocumentVerificationPage() {
       <ErrorBox>{error}</ErrorBox>
       {done && <NoticeBox>{done}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Documents waiting" value={loading ? "…" : queue.length} accent={queue.length ? "amber" : "emerald"} />
-        <StatCard label="Applications affected" value={loading ? "…" : applications.length} />
-        <StatCard
-          label="Rejected, awaiting a replacement"
-          value={loading ? "…" : queue.filter((q) => q.doc.remark).length}
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Documents waiting",
+            value: loading ? "…" : queue.length,
+            note: "Unchecked on a live application",
+            icon: Hourglass,
+          },
+          {
+            label: "Applications affected",
+            value: loading ? "…" : applications.length,
+            note: "Each one is a family waiting",
+            icon: Users,
+          },
+          {
+            label: "Rejected, awaiting a replacement",
+            value: loading ? "…" : queue.filter((q) => q.doc.remark).length,
+            note: "Sent back with a note",
+            icon: FileWarning,
+          },
+        ]}
+      />
 
       {!loading && queue.length === 0 && (
         <NoticeBox>Every document on a live application has been checked.</NoticeBox>
@@ -174,11 +189,17 @@ export default function DocumentVerificationPage() {
         return (
           <Card key={app.id}>
             <CardHeader>
-              <CardTitle>
-                <Link href="/school/admissions/applications" className="hover:underline">
-                  {app.student_name}
-                </Link>
-              </CardTitle>
+              <div>
+                <CardTitle>
+                  <Link href="/school/admissions/applications" className="hover:underline">
+                    {app.student_name}
+                  </Link>
+                </CardTitle>
+                <p className="mt-[5px] text-[11px] text-ink-muted">
+                  {app.guardian_name} · {app.documents_verified} of{" "}
+                  {app.documents_total} document(s) already checked.
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <span className="text-[12px] text-ink-muted">{app.application_no}</span>
                 <Badge tone="amber">{humanize(app.status)}</Badge>
@@ -235,6 +256,10 @@ export default function DocumentVerificationPage() {
                 ))}
               </Table>
             </CardBody>
+            <PanelFooter
+              left={`${items.length} document(s) still to check`}
+              right={`${items.filter((i) => i.doc.remark).length} already sent back once`}
+            />
           </Card>
         );
       })}

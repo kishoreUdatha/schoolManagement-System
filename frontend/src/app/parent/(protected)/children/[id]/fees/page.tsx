@@ -7,7 +7,9 @@ import { useEffect, useMemo, useState } from "react";
 import { PaidOrder, PayOnlineButton } from "@/components/PayOnline";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
+import { PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { openAuthed } from "@/lib/download";
 
@@ -116,7 +118,10 @@ export default function ChildFeesPage() {
         ← Back to child profile
       </Link>
 
-      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Fees</h1>
+      <PageHeader
+        title="Fees"
+        subtitle="What the school has billed, what you have paid, and what is left."
+      />
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
@@ -171,6 +176,14 @@ export default function ChildFeesPage() {
       )}
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Every fee raised</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Each line is one fee head for one period, with what is still to pay on it.
+            </p>
+          </div>
+        </CardHeader>
         <table className="min-w-full divide-y divide-surface-border text-[13px]">
           <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
@@ -227,14 +240,27 @@ export default function ChildFeesPage() {
             )}
           </tbody>
         </table>
+        <PanelFooter
+          left={`${fees.length} fee${fees.length === 1 ? "" : "s"} on record`}
+          right={
+            totals.out > 0
+              ? `₹${totals.out.toLocaleString("en-IN")} still to pay`
+              : "Nothing outstanding"
+          }
+        />
       </Card>
 
       {payments.length > 0 && (
         <Card>
-          <div className="border-b border-surface-border px-4 py-3 text-sm font-semibold text-ink">
-            Online payments
-          </div>
-          <ul className="divide-y divide-surface-border text-sm">
+          <CardHeader>
+            <div>
+              <CardTitle>Online payments</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                What you have paid through this portal, and the receipt for each.
+              </p>
+            </div>
+          </CardHeader>
+          <ul className="divide-y divide-surface-border border-t border-surface-border text-sm">
             {payments.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
                 <div>

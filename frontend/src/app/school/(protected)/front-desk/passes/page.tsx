@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { Printer } from "lucide-react";
+import { DoorOpen, Printer, ShieldCheck, Ticket, Timer } from "lucide-react";
 
 import { useBranding } from "@/components/BrandingProvider";
 import { Badge } from "@/components/ui/Badge";
@@ -15,13 +15,22 @@ import {
   Textarea,
   humanize,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime, readableDate } from "@/lib/dates";
+
+/** A control sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type GatePass = {
   id: number;
@@ -150,33 +159,51 @@ export default function GatePassesPage() {
       <PageHeader
         title="Gate passes"
         subtitle="Who may collect a child today, and the slip the gate keeps."
-        actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Input
-              type="date"
-              label="On"
-              value={on}
-              onChange={(e) => setOn(e.target.value)}
-            />
-            <label className="flex items-center gap-2 pb-2 text-[13px] text-ink-muted">
-              <input
-                type="checkbox"
-                checked={pendingOnly}
-                onChange={(e) => setPendingOnly(e.target.checked)}
-              />
-              Waiting only
-            </label>
-          </div>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Passes" value={passes.length} />
-        <StatCard label="Waiting" value={waiting} accent={waiting ? "amber" : "emerald"} />
-        <StatCard label="Approved, not gone" value={approved} />
-        <StatCard label="Left" value={gone} />
-      </div>
+      {/* Counted from the passes already on screen — no second request. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Passes",
+            value: passes.length,
+            note: on ? readableDate(on) : "Today",
+            icon: Ticket,
+          },
+          {
+            label: "Waiting",
+            value: waiting,
+            note: waiting ? "Somebody has to decide" : "Nothing to decide",
+            icon: Timer,
+          },
+          {
+            label: "Approved, not gone",
+            value: approved,
+            note: "Still on the premises",
+            icon: ShieldCheck,
+          },
+          { label: "Left", value: gone, note: "Recorded at the gate", icon: DoorOpen },
+        ]}
+      />
+
+      <FilterBar>
+        <input
+          type="date"
+          aria-label="Passes on this date"
+          value={on}
+          onChange={(e) => setOn(e.target.value)}
+          className={filterSelect}
+        />
+        <label className="flex h-[41px] items-center gap-2 rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink-muted">
+          <input
+            type="checkbox"
+            checked={pendingOnly}
+            onChange={(e) => setPendingOnly(e.target.checked)}
+          />
+          Waiting only
+        </label>
+      </FilterBar>
 
       <Card>
         <CardHeader>
@@ -210,7 +237,13 @@ export default function GatePassesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Today&rsquo;s passes</CardTitle>
+          <div>
+            <CardTitle>Today&rsquo;s passes</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {on ? readableDate(on) : "Today"} ·{" "}
+              {pendingOnly ? "Waiting on a decision only" : "Every state"}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -219,13 +252,8 @@ export default function GatePassesPage() {
           >
             {passes.map((p) => (
               <tr key={p.id}>
-                <td className={tdStrong}>
-                  {p.student_name}
-                  {p.section_label && (
-                    <span className="block text-[11px] font-normal text-ink-subtle">
-                      {p.section_label}
-                    </span>
-                  )}
+                <td className="px-4 py-3">
+                  <PersonCell name={p.student_name} sub={p.section_label} />
                 </td>
                 <td className={td}>
                   {p.pickup_name}
@@ -283,6 +311,14 @@ export default function GatePassesPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${passes.length} pass(es) on this day`}
+          right={
+            waiting
+              ? `${waiting} waiting on a decision`
+              : "Nothing waiting on a decision"
+          }
+        />
       </Card>
 
       <Modal

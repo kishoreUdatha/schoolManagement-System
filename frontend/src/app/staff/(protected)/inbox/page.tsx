@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MailOpen } from "lucide-react";
+import { Inbox, Mail, MailOpen } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
 
@@ -96,10 +96,24 @@ export default function StaffInboxPage() {
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <StatCard label="Unread" value={unread} accent={unread ? "amber" : "emerald"} />
-        <StatCard label="Showing" value={items.length} />
-      </div>
+      {/* Both figures are already on this page: the count the API returns and
+          the length of the list below it. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Unread",
+            value: unread,
+            note: unread ? "Waiting to be read" : "You are up to date",
+            icon: Mail,
+          },
+          {
+            label: "Showing",
+            value: items.length,
+            note: unreadOnly ? "Unread only" : "Everything sent to you",
+            icon: Inbox,
+          },
+        ]}
+      />
 
       {items.length === 0 && (
         <NoticeBox>

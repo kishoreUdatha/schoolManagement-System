@@ -4,15 +4,19 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 
 import { HealthRecordView } from "@/components/health/HealthRecordView";
+import { PageHeader } from "@/components/ui/Field";
 
 export default function StudentHealthPage() {
   const { id } = useParams<{ id: string }>();
   return (
-    <div className="space-y-4">
+    <div className="space-y-[18px]">
       <Link href="/school/health" className="text-sm text-ink-muted hover:underline">
         ← Health
       </Link>
-      <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Health record</h1>
+      <PageHeader
+        title="Health record"
+        subtitle="Everything the school holds about this child's health."
+      />
       <HealthRecordView
         mode="school"
         recordUrl={`/api/v1/school/health/students/${id}`}

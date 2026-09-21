@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Pill, Stethoscope } from "lucide-react";
+import { DoorOpen, Pill, Stethoscope, Undo2 } from "lucide-react";
 
 import { StudentPicker, type PickedStudent } from "@/components/StudentPicker";
 import { Badge } from "@/components/ui/Badge";
@@ -21,9 +21,14 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { hhmm, readableDate, toIso } from "@/lib/dates";
+
+/** A control sized for the filter bar: one row of equal-height controls,
+ *  with the label carried by aria-label rather than stacked above. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Dose = {
   id: number;
@@ -223,14 +228,12 @@ export default function MedicationPage() {
   const unreported = aid.filter((a) => a.student_id && !a.parent_informed).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Medication and first aid"
         subtitle="Every dose given and every injury treated. Both are records the school has to be able to produce, so neither can be edited away."
         actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Input label="From" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-            <Input label="To" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          <>
             <Button onClick={() => setGiving(true)}>
               <Pill className="mr-1.5 h-4 w-4" />
               Record a dose
@@ -239,26 +242,57 @@ export default function MedicationPage() {
               <Stethoscope className="mr-1.5 h-4 w-4" />
               Log first aid
             </Button>
-          </div>
+          </>
         }
       />
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Doses given" value={live.length} />
-        <StatCard
-          label="Corrected"
-          value={doses.length - live.length}
-          accent={doses.length > live.length ? "amber" : "emerald"}
+      {/* Counted off the two registers already loaded for this window, not a
+          second query: what was given, what was corrected, what was treated. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Doses given",
+            value: live.length,
+            note: `${readableDate(from)} to ${readableDate(to)}`,
+            icon: Pill,
+          },
+          {
+            label: "Corrected",
+            value: doses.length - live.length,
+            note:
+              doses.length > live.length
+                ? "Originals still on the register"
+                : "Nothing corrected",
+            icon: Undo2,
+          },
+          { label: "First aid", value: aid.length, note: "Entries in this window", icon: Stethoscope },
+          {
+            label: "Sent home",
+            value: sentHome,
+            note: sentHome ? "After being treated" : "Nobody sent home",
+            icon: DoorOpen,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <input
+          type="date"
+          aria-label="From"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          className={filterSelect}
         />
-        <StatCard label="First aid" value={aid.length} />
-        <StatCard
-          label="Sent home"
-          value={sentHome}
-          accent={sentHome ? "amber" : "emerald"}
+        <input
+          type="date"
+          aria-label="To"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          className={filterSelect}
         />
-      </div>
+      </FilterBar>
 
       {unreported > 0 && (
         <WarnBox>
@@ -288,7 +322,13 @@ export default function MedicationPage() {
       {tab === "medication" ? (
         <Card>
           <CardHeader>
-            <CardTitle>Dose register</CardTitle>
+            <div>
+              <CardTitle>Dose register</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                Every dose recorded between {readableDate(from)} and {readableDate(to)},
+                corrections included.
+              </p>
+            </div>
           </CardHeader>
           <CardBody className="p-0">
             <Table
@@ -303,12 +343,11 @@ export default function MedicationPage() {
                       {hhmm(d.given_at)}
                     </span>
                   </td>
-                  <td className={tdStrong}>
-                    {d.student_name}
-                    <span className="block text-[11px] font-normal text-ink-subtle">
-                      {d.admission_no}
-                      {d.section_label ? ` · ${d.section_label}` : ""}
-                    </span>
+                  <td className="px-4 py-3">
+                    <PersonCell
+                      name={d.student_name ?? "—"}
+                      sub={`${d.admission_no ?? ""}${d.section_label ? ` · ${d.section_label}` : ""}`}
+                    />
                   </td>
                   <td className={td}>
                     {d.medicine}
@@ -343,11 +382,25 @@ export default function MedicationPage() {
               ))}
             </Table>
           </CardBody>
+          <PanelFooter
+            left={`${doses.length} record${doses.length === 1 ? "" : "s"} · ${live.length} standing`}
+            right={
+              doses.length > live.length
+                ? `${doses.length - live.length} superseded by a correction`
+                : "Nothing has been corrected"
+            }
+          />
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>First aid</CardTitle>
+            <div>
+              <CardTitle>First aid</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                Children and staff treated between {readableDate(from)} and{" "}
+                {readableDate(to)}.
+              </p>
+            </div>
           </CardHeader>
           <CardBody className="p-0">
             <Table
@@ -363,11 +416,11 @@ export default function MedicationPage() {
                       {a.place ? ` · ${a.place}` : ""}
                     </span>
                   </td>
-                  <td className={tdStrong}>
-                    {a.student_name ?? a.staff_name ?? "—"}
-                    <span className="block text-[11px] font-normal text-ink-subtle">
-                      {a.student_name ? a.section_label ?? a.admission_no : "Staff"}
-                    </span>
+                  <td className="px-4 py-3">
+                    <PersonCell
+                      name={a.student_name ?? a.staff_name ?? "—"}
+                      sub={a.student_name ? a.section_label ?? a.admission_no : "Staff"}
+                    />
                   </td>
                   <td className={td}>{a.what_happened}</td>
                   <td className={td}>
@@ -396,6 +449,10 @@ export default function MedicationPage() {
               ))}
             </Table>
           </CardBody>
+          <PanelFooter
+            left={`${aid.length} entr${aid.length === 1 ? "y" : "ies"} in this window`}
+            right={sentHome ? `${sentHome} sent home` : "Nobody sent home"}
+          />
         </Card>
       )}
 

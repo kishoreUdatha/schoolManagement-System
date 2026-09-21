@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { api, apiError } from "@/lib/api";
@@ -141,34 +142,38 @@ export default function EnquiryDetailPage() {
         ← Admissions
       </Link>
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{e.student_name}</h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-muted">
+      <PageHeader
+        title={e.student_name}
+        subtitle={[
+          e.applying_for_class ? `Applying for ${e.applying_for_class}` : null,
+          `Received ${e.created_at.slice(0, 10)}`,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+        actions={
+          <>
+            {/* The stage is the first thing anyone needs off this page, so it
+                stays beside the buttons that change it rather than below. */}
             <Badge tone={stageTone(e.stage)}>{label(e.stage)}</Badge>
-            {e.applying_for_class && <span>for {e.applying_for_class}</span>}
-            <span>· received {e.created_at.slice(0, 10)}</span>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {e.stage !== "enrolled" && (
-            <>
-              <Button variant="secondary" onClick={() => setEditing(true)}>
-                Edit
-              </Button>
-              <Button variant="danger" onClick={remove}>
-                Delete
-              </Button>
-            </>
-          )}
-          {e.stage === "enrolled" && e.student_id && (
-            <Link href={`/school/students/${e.student_id}`}>
-              <Button>View student</Button>
-            </Link>
-          )}
-          {!closed && <Button onClick={() => setConverting(true)}>Enrol student</Button>}
-        </div>
-      </div>
+            {e.stage !== "enrolled" && (
+              <>
+                <Button variant="secondary" onClick={() => setEditing(true)}>
+                  Edit
+                </Button>
+                <Button variant="danger" onClick={remove}>
+                  Delete
+                </Button>
+              </>
+            )}
+            {e.stage === "enrolled" && e.student_id && (
+              <Link href={`/school/students/${e.student_id}`}>
+                <Button>View student</Button>
+              </Link>
+            )}
+            {!closed && <Button onClick={() => setConverting(true)}>Enrol student</Button>}
+          </>
+        }
+      />
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>

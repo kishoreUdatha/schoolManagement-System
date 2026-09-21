@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Phone, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ListChecks, Phone, PhoneOff, Trash2, UserX } from "lucide-react";
 
 import { StudentPicker, type PickedStudent } from "@/components/StudentPicker";
 import { Badge } from "@/components/ui/Badge";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Link = {
@@ -165,19 +165,28 @@ export default function EmergencyPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Children with a thin chain"
-          value={thin?.count ?? 0}
-          accent={thin?.count ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Nobody at all"
-          value={thin?.none_at_all ?? 0}
-          accent={thin?.none_at_all ? "rose" : "emerald"}
-        />
-        <StatCard label="In this chain" value={chain?.chain.length ?? 0} />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Children with a thin chain",
+            value: thin?.count ?? 0,
+            note: "One person, or none",
+            icon: PhoneOff,
+          },
+          {
+            label: "Nobody at all",
+            value: thin?.none_at_all ?? 0,
+            note: "No contact on file",
+            icon: UserX,
+          },
+          {
+            label: "In this chain",
+            value: chain?.chain.length ?? 0,
+            note: chain ? chain.student_name : "No child looked up yet",
+            icon: ListChecks,
+          },
+        ]}
+      />
 
       {(thin?.none_at_all ?? 0) > 0 && (
         <WarnBox>
@@ -189,7 +198,13 @@ export default function EmergencyPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Look up a child</CardTitle>
+          <div>
+            <CardTitle>Look up a child</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              The chain in the order it is rung, with whatever the medical profile
+              holds shown above it.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="space-y-4">
           <StudentPicker value={child} onChange={setChild} />
@@ -268,7 +283,13 @@ export default function EmergencyPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Children with nobody, or only one person, to ring</CardTitle>
+          <div>
+            <CardTitle>Children with nobody, or only one person, to ring</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              A chain of one is a chain that fails the first time that person does not
+              answer.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -278,11 +299,10 @@ export default function EmergencyPage() {
             {(thin?.students ?? []).map((s) => (
               <tr key={s.student_id}>
                 <td className={tdStrong}>
-                  {s.student_name}
-                  <span className="block text-[11px] font-normal text-ink-subtle">
-                    {s.admission_no}
-                    {s.section_label ? ` · ${s.section_label}` : ""}
-                  </span>
+                  <PersonCell
+                    name={s.student_name}
+                    sub={`${s.admission_no}${s.section_label ? ` · ${s.section_label}` : ""}`}
+                  />
                 </td>
                 <td className={td}>{s.contacts}</td>
                 <td className={td}>
@@ -294,6 +314,14 @@ export default function EmergencyPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${thin?.students.length ?? 0} child(ren) listed`}
+          right={
+            (thin?.none_at_all ?? 0) > 0
+              ? `${thin?.none_at_all} with nobody at all`
+              : "Everybody has at least one number"
+          }
+        />
       </Card>
 
       <Modal open={adding} onClose={() => setAdding(false)} title="Add to the chain">

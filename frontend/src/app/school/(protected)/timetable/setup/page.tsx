@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { dateTime, hhmm } from "@/lib/dates";
 
@@ -216,45 +222,45 @@ function TimetableSetup() {
         }
       />
 
-      <Card>
-        <CardBody className="flex flex-wrap items-end gap-3">
-          <Select
-            label="Class"
-            value={classId}
-            onChange={(e) => {
-              setClassId(e.target.value ? Number(e.target.value) : "");
-              setSectionId("");
-            }}
-          >
-            <option value="">Select…</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </Select>
-          <Select
-            label="Section"
-            value={sectionId}
-            disabled={!selectedClass}
-            onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-          >
-            <option value="">Select…</option>
-            {selectedClass?.sections.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </Select>
-          <p className="ml-auto text-[12px] text-ink-subtle">
-            Slots come from{" "}
-            <Link className="font-bold text-brand-600 hover:underline" href="/school/periods">
-              Periods
-            </Link>
-            .
-          </p>
-        </CardBody>
-      </Card>
+      <FilterBar>
+        <select
+          aria-label="Class"
+          value={classId}
+          onChange={(e) => {
+            setClassId(e.target.value ? Number(e.target.value) : "");
+            setSectionId("");
+          }}
+          className={filterSelect}
+        >
+          <option value="">Select a class…</option>
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select
+          aria-label="Section"
+          value={sectionId}
+          disabled={!selectedClass}
+          onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
+          className={filterSelect}
+        >
+          <option value="">Select a section…</option>
+          {selectedClass?.sections.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <p className="ml-auto text-[11px] text-ink-subtle">
+          Slots come from{" "}
+          <Link className="font-bold text-brand-600 hover:underline" href="/school/periods">
+            Periods
+          </Link>
+          .
+        </p>
+      </FilterBar>
 
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
@@ -262,7 +268,12 @@ function TimetableSetup() {
       {tt && (
         <Card>
           <CardHeader>
-            <CardTitle>{tt.section_label}</CardTitle>
+            <div>
+              <CardTitle>{tt.section_label}</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                {tt.entries.length} lesson(s) placed across {periodNumbers.length} period(s)
+              </p>
+            </div>
             {tt.timetable_published_at ? (
               <Badge tone="emerald">
                 Published {dateTime(tt.timetable_published_at)}
@@ -372,6 +383,14 @@ function TimetableSetup() {
               </table>
             </div>
           </CardBody>
+          <PanelFooter
+            left={`${tt.entries.length} lesson(s) placed`}
+            right={
+              tt.timetable_published_at
+                ? "Parents and teachers can see this"
+                : "Draft — not visible outside the office"
+            }
+          />
         </Card>
       )}
 

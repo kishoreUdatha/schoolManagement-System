@@ -13,12 +13,16 @@ import {
   Table,
   humanize,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { hhmm, localDate, longDate, toIso } from "@/lib/dates";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type AcademicYear = { id: number; name: string; is_current: boolean };
 type Section = { id: number; name: string };
@@ -224,45 +228,48 @@ export default function PeriodAttendancePage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <Card>
-        <CardBody className="flex flex-wrap items-end gap-3">
-          <Select
-            label="Section"
-            value={sectionId}
-            onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-          >
-            {classes.length === 0 && <option value="">No classes</option>}
-            {classes.map((k) =>
-              k.sections.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {k.name} {s.name}
-                </option>
-              ))
-            )}
-          </Select>
-          <Input
-            label="Date"
-            type="date"
-            value={day}
-            onChange={(e) => setDay(e.target.value)}
-          />
-          <Select
-            label="Period"
-            value={periodId}
-            onChange={(e) => setPeriodId(e.target.value ? Number(e.target.value) : "")}
-          >
-            {lessons.length === 0 && <option value="">No lessons that day</option>}
-            {lessons.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label ?? `Period ${p.period_number}`} · {hhmm(p.start_time)}
+      {/* Which lesson: one row of controls rather than three stacked labels.
+          No search box, because nothing on this page searches. */}
+      <FilterBar>
+        <select
+          aria-label="Section"
+          value={sectionId}
+          onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
+          className={filterSelect}
+        >
+          {classes.length === 0 && <option value="">No classes</option>}
+          {classes.map((k) =>
+            k.sections.map((s) => (
+              <option key={s.id} value={s.id}>
+                {k.name} {s.name}
               </option>
-            ))}
-          </Select>
-          <Button variant="secondary" onClick={load} disabled={sectionId === "" || periodId === ""}>
-            Reload
-          </Button>
-        </CardBody>
-      </Card>
+            ))
+          )}
+        </select>
+        <input
+          aria-label="Date"
+          type="date"
+          value={day}
+          onChange={(e) => setDay(e.target.value)}
+          className={filterSelect}
+        />
+        <select
+          aria-label="Period"
+          value={periodId}
+          onChange={(e) => setPeriodId(e.target.value ? Number(e.target.value) : "")}
+          className={filterSelect}
+        >
+          {lessons.length === 0 && <option value="">No lessons that day</option>}
+          {lessons.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label ?? `Period ${p.period_number}`} · {hhmm(p.start_time)}
+            </option>
+          ))}
+        </select>
+        <Button variant="secondary" onClick={load} disabled={sectionId === "" || periodId === ""}>
+          Reload
+        </Button>
+      </FilterBar>
 
       {lessons.length === 0 && (
         <NoticeBox>
@@ -273,27 +280,44 @@ export default function PeriodAttendancePage() {
 
       {grid && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Children" value={rows.length} />
-            <StatCard
-              label="Marked for this lesson"
-              value={`${grid.marked} of ${rows.length}`}
-              accent={grid.marked >= rows.length && rows.length > 0 ? "emerald" : "amber"}
-            />
-            <StatCard label="Subject" value={grid.subject_name ?? "Not timetabled"} />
-            <StatCard
-              label="Differs from the day"
-              value={rows.filter(differs).length}
-              accent={rows.some(differs) ? "amber" : "emerald"}
-            />
-          </div>
+          {/* Every figure here is already on the grid this page loaded —
+              nothing is fetched to fill the strip. */}
+          <StatStrip
+            stats={[
+              { label: "Children", value: rows.length },
+              {
+                label: "Marked for this lesson",
+                value: `${grid.marked} of ${rows.length}`,
+              },
+              {
+                label: "Subject",
+                value: (
+                  <span className="text-[19px]">
+                    {grid.subject_name ?? "Not timetabled"}
+                  </span>
+                ),
+              },
+              {
+                label: "Differs from the day",
+                value: rows.filter(differs).length,
+                note: rows.some(differs)
+                  ? "The register says something else"
+                  : "The register agrees",
+              },
+            ]}
+          />
 
           <Card>
             <CardHeader>
-              <CardTitle>
-                {grid.period_label ?? `Period ${grid.period_number}`} ·{" "}
-                {hhmm(grid.start_time)}–{hhmm(grid.end_time)}
-              </CardTitle>
+              <div>
+                <CardTitle>
+                  {grid.period_label ?? `Period ${grid.period_number}`} ·{" "}
+                  {hhmm(grid.start_time)}–{hhmm(grid.end_time)}
+                </CardTitle>
+                <p className="mt-[5px] text-[11px] text-ink-muted">
+                  {[grid.subject_name, longDate(grid.date)].filter(Boolean).join(" · ")}
+                </p>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {STATUSES.map((s) => (
                   <Button key={s} variant="secondary" onClick={() => markAll(s)}>
@@ -310,12 +334,11 @@ export default function PeriodAttendancePage() {
                 {rows.map((r) => (
                   <tr key={r.student_id}>
                     <td className={td}>{r.roll_no ?? "—"}</td>
-                    <td className={tdStrong}>
-                      {r.student_name}
-                      <span className="block text-[11px] font-normal text-ink-subtle">
-                        {r.admission_no}
-                        {r.already_marked ? " · already marked" : ""}
-                      </span>
+                    <td className="px-4 py-2">
+                      <PersonCell
+                        name={r.student_name}
+                        sub={`${r.admission_no}${r.already_marked ? " · already marked" : ""}`}
+                      />
                     </td>
                     <td className="px-4 py-2">
                       <Select
@@ -351,6 +374,14 @@ export default function PeriodAttendancePage() {
                 ))}
               </Table>
             </CardBody>
+            <PanelFooter
+              left={`${rows.length} child(ren) in this section`}
+              right={
+                changed.length
+                  ? `${changed.length} change(s) not yet saved`
+                  : "Nothing waiting to be saved"
+              }
+            />
           </Card>
 
           <p className="text-[12px] text-ink-subtle">

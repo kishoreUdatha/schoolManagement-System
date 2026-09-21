@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { daysLeft, readableDate, toIso } from "@/lib/dates";
 
@@ -181,20 +181,32 @@ export default function OnboardingPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Starters with work left" value={starters.length} />
-        <StatCard
-          label="With something overdue"
-          value={withOverdue.length}
-          accent={withOverdue.length ? "rose" : "neutral"}
-        />
-        <StatCard
-          label="Tasks outstanding"
-          value={starters.reduce((n, s) => n + s.outstanding, 0)}
-          accent={starters.length ? "amber" : "neutral"}
-        />
-        <StatCard label="On the list" value={staff.length} accent="neutral" />
-      </div>
+      {/* The same four figures the page already counted, read as one summary
+          of the screen rather than four separate cards. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Starters with work left",
+            value: starters.length,
+            note: "Checklists not yet finished",
+          },
+          {
+            label: "With something overdue",
+            value: withOverdue.length,
+            note: withOverdue.length ? "Past a due date" : "Nothing past due",
+          },
+          {
+            label: "Tasks outstanding",
+            value: starters.reduce((n, s) => n + s.outstanding, 0),
+            note: "Across every open checklist",
+          },
+          {
+            label: "On the list",
+            value: staff.length,
+            note: "Staff on file",
+          },
+        ]}
+      />
 
       {withOverdue.length > 0 && (
         <WarnBox>
@@ -205,7 +217,12 @@ export default function OnboardingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Starters still being set up</CardTitle>
+          <div>
+            <CardTitle>Starters still being set up</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Everyone with an unfinished checklist, and how far through it they are.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -245,6 +262,14 @@ export default function OnboardingPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${starters.length} starter${starters.length === 1 ? "" : "s"} still being set up`}
+          right={
+            withOverdue.length
+              ? `${withOverdue.length} with something overdue`
+              : "Nothing overdue"
+          }
+        />
       </Card>
 
       {open && (

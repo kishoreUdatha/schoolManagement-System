@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { MailCheck, Send, SkipForward, TriangleAlert } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -8,17 +9,26 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   PageHeader,
-  Select,
   Table,
   WarnBox,
   humanize,
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime, toIso } from "@/lib/dates";
+
+/** A control sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Row = {
   recipient_id: number;
@@ -91,48 +101,76 @@ export default function CommunicationHistoryPage() {
       <PageHeader
         title="Communication history"
         subtitle="Every message that reached a person, so you can answer whether a family was told."
-        actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Input
-              label="From"
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-            <Input label="To" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-            <Select
-              label="Channel"
-              value={channel}
-              onChange={(e) => setChannel(e.target.value)}
-            >
-              {CHANNELS.map((c) => (
-                <option key={c || "all"} value={c}>
-                  {c ? humanize(c) : "Every channel"}
-                </option>
-              ))}
-            </Select>
-            <Button variant="secondary" onClick={load}>
-              Apply
-            </Button>
-          </div>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Messages" value={data?.count ?? "—"} />
-        <StatCard label="Failed" value={failed} accent={failed ? "rose" : "emerald"} />
-        <StatCard
-          label="Skipped"
-          value={skipped}
-          accent={skipped ? "neutral" : "emerald"}
-          hint={skipped ? "No address or number on file" : undefined}
+      {/* The window the API just returned, read four ways. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Messages",
+            value: data?.count ?? "—",
+            note: data ? `${data.from_date} to ${data.to_date}` : "In this window",
+            icon: Send,
+          },
+          {
+            label: "Failed",
+            value: failed,
+            note: failed ? "Sending went wrong" : "Nothing failed",
+            icon: TriangleAlert,
+          },
+          {
+            label: "Skipped",
+            value: skipped,
+            note: skipped ? "No address or number on file" : "Nothing skipped",
+            icon: SkipForward,
+          },
+          {
+            label: "Read",
+            value: data ? data.rows.filter((r) => r.read_at).length : "—",
+            note: "Opened by the person it went to",
+            icon: MailCheck,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <SearchBox
+          value={who}
+          onChange={setWho}
+          placeholder="Filter by name…"
+          label="Filter by name"
         />
-        <StatCard
-          label="Read"
-          value={data ? data.rows.filter((r) => r.read_at).length : "—"}
+        <input
+          type="date"
+          aria-label="From"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          className={filterSelect}
         />
-      </div>
+        <input
+          type="date"
+          aria-label="To"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          className={filterSelect}
+        />
+        <select
+          aria-label="Channel"
+          value={channel}
+          onChange={(e) => setChannel(e.target.value)}
+          className={filterSelect}
+        >
+          {CHANNELS.map((c) => (
+            <option key={c || "all"} value={c}>
+              {c ? humanize(c) : "Every channel"}
+            </option>
+          ))}
+        </select>
+        <Button variant="secondary" onClick={load}>
+          Apply
+        </Button>
+      </FilterBar>
 
       {data?.truncated && (
         <WarnBox>
@@ -143,13 +181,16 @@ export default function CommunicationHistoryPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Messages</CardTitle>
-          <Input
-            placeholder="Filter by name"
-            aria-label="Filter by name"
-            value={who}
-            onChange={(e) => setWho(e.target.value)}
-          />
+          <div>
+            <CardTitle>Messages</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                data ? `${data.from_date} to ${data.to_date}` : "Loading the window",
+                channel ? humanize(channel) : "Every channel",
+                who.trim() ? `Matching “${who.trim()}”` : "Everybody",
+              ].join(" · ")}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -160,12 +201,14 @@ export default function CommunicationHistoryPage() {
               <tr key={r.recipient_id}>
                 <td className={td}>{dateTime(r.sent_on)}</td>
                 <td className={tdStrong}>{r.title}</td>
-                <td className={td}>
-                  {r.to_name ?? "—"}
-                  {r.to_role && (
-                    <span className="block text-[11px] text-ink-subtle">
-                      {humanize(r.to_role)}
-                    </span>
+                <td className="px-4 py-3">
+                  {r.to_name ? (
+                    <PersonCell
+                      name={r.to_name}
+                      sub={r.to_role ? humanize(r.to_role) : null}
+                    />
+                  ) : (
+                    <span className="text-[13px] text-ink-subtle">—</span>
                   )}
                 </td>
                 <td className={td}>{humanize(r.channel)}</td>
@@ -182,6 +225,10 @@ export default function CommunicationHistoryPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} of ${data?.count ?? 0} message(s)`}
+          right={data?.truncated ? "Window truncated — narrow the dates" : "All of this window"}
+        />
       </Card>
 
       <p className="text-[12px] text-ink-subtle">

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, Play, Trash2 } from "lucide-react";
+import { ChevronLeft, LayoutList, Database, Filter, Play, Repeat, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -20,7 +20,7 @@ import {
   tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Report = {
@@ -355,16 +355,34 @@ export default function ReportDefinitionPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Source" value={report?.source_label ?? "—"} />
-        <StatCard label="Columns" value={report?.columns.length ?? 0} />
-        <StatCard label="Filters" value={draft.length} />
-        <StatCard
-          label="Times run"
-          value={report?.run_count ?? 0}
-          hint={report?.last_run_at ? `last ${report.last_run_at.slice(0, 10)}` : undefined}
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Source",
+            value: report?.source_label ?? "—",
+            note: report?.code,
+            icon: Database,
+          },
+          {
+            label: "Columns",
+            value: report?.columns.length ?? 0,
+            note: "Returned by every run",
+            icon: LayoutList,
+          },
+          {
+            label: "Filters",
+            value: draft.length,
+            note: `of ${(spec?.filters ?? []).length} this source offers`,
+            icon: Filter,
+          },
+          {
+            label: "Times run",
+            value: report?.run_count ?? 0,
+            note: report?.last_run_at ? `last ${report.last_run_at.slice(0, 10)}` : "Never run",
+            icon: Repeat,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
@@ -437,7 +455,14 @@ export default function ReportDefinitionPage() {
       {result && (
         <Card>
           <CardHeader>
-            <CardTitle>{result.row_count} row(s)</CardTitle>
+            <div>
+              <CardTitle>{result.row_count} row(s)</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                {result.name} · {result.columns.length} column
+                {result.columns.length === 1 ? "" : "s"}, as the filters above stood when
+                it ran.
+              </p>
+            </div>
             {result.truncated && <Badge tone="amber">Truncated</Badge>}
           </CardHeader>
           <CardBody className="p-0">
@@ -456,6 +481,14 @@ export default function ReportDefinitionPage() {
               ))}
             </Table>
           </CardBody>
+          <PanelFooter
+            left={`Showing ${result.rows.length} of ${result.row_count} row(s)`}
+            right={
+              result.truncated
+                ? "Cut short — export for the whole set"
+                : "The whole result"
+            }
+          />
         </Card>
       )}
     </div>

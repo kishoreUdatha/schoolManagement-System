@@ -18,7 +18,7 @@ import {
   tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
 
@@ -203,22 +203,34 @@ export default function ParentPaymentsPage() {
       <ParentTabs id={id} />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Outstanding"
-          value={inr(outstanding)}
-          accent={outstanding ? "amber" : "emerald"}
-          icon={outstanding ? AlertTriangle : CircleCheck}
-        />
-        <StatCard
-          label="Of that, overdue"
-          value={inr(overdue)}
-          accent={overdue ? "rose" : "emerald"}
-          icon={overdue ? AlertTriangle : CircleCheck}
-        />
-        <StatCard label="Paid in this window" value={inr(paidInWindow)} />
-        <StatCard label="Children" value={children.length} />
-      </div>
+      {/* The figures already added up above, read as one summary of the
+          family rather than four separate cards. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Outstanding",
+            value: inr(outstanding),
+            note: "Across every child",
+            icon: outstanding ? AlertTriangle : CircleCheck,
+          },
+          {
+            label: "Of that, overdue",
+            value: inr(overdue),
+            note: overdue ? "Past its due date" : "Nothing past due",
+            icon: overdue ? AlertTriangle : CircleCheck,
+          },
+          {
+            label: "Paid in this window",
+            value: inr(paidInWindow),
+            note: `${from} to ${to}`,
+          },
+          {
+            label: "Children",
+            value: children.length,
+            note: "Linked to this parent",
+          },
+        ]}
+      />
 
       {children.length === 0 && !loading && (
         <Card>
@@ -245,7 +257,7 @@ export default function ParentPaymentsPage() {
                     {c.full_name}
                   </Link>
                 </CardTitle>
-                <p className="mt-1 text-[13px] text-ink-muted">
+                <p className="mt-[5px] text-[11px] text-ink-muted">
                   {c.admission_no}
                   {c.section_label ? ` · ${c.section_label}` : ""}
                 </p>
@@ -281,13 +293,22 @@ export default function ParentPaymentsPage() {
                 ))}
               </Table>
             </CardBody>
+            <PanelFooter
+              left={`${mine.length} fee line${mine.length === 1 ? "" : "s"}`}
+              right={owed ? `${inr(owed)} still outstanding` : "Nothing outstanding"}
+            />
           </Card>
         );
       })}
 
       <Card>
         <CardHeader>
-          <CardTitle>Receipts</CardTitle>
+          <div className="min-w-0">
+            <CardTitle>Receipts</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Every payment this family has made between {from} and {to}.
+            </p>
+          </div>
           <span className="text-[12px] font-bold text-ink-muted">
             {receipts.length} in this window
           </span>
@@ -323,6 +344,10 @@ export default function ParentPaymentsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${receipts.length} receipt${receipts.length === 1 ? "" : "s"} in this window`}
+          right={`${inr(paidInWindow)} taken`}
+        />
       </Card>
     </div>
   );
