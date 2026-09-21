@@ -74,3 +74,6 @@ Parent_Mobile_58_Screens*
 # An empty file someone saved a URL into. Not ignored because it is big —
 # ignored because there is nothing in it.
 httpswww.myclassboard reference.txt
+
+# Agent worktrees
+.claude/worktrees/

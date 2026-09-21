@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Badge, Person } from "./primitives";
 
 /** A cell is text, or a person with an optional second line (admission no.). */
@@ -44,6 +45,7 @@ export function DataTable({
   selectable = true,
   rowAction = true,
   onView,
+  actions,
   total,
   page = 1,
   pages = 1,
@@ -56,6 +58,8 @@ export function DataTable({
   rowAction?: boolean;
   /** Live tables: open a row. Without it, "View" shows the preview dialog. */
   onView?: (index: number) => void;
+  /** Live tables: the row's own buttons (Edit, Approve, Remove…) in place of "View". */
+  actions?: (index: number) => ReactNode;
   /** Live tables: the server's count and paging. */
   total?: number;
   page?: number;
@@ -96,7 +100,11 @@ export function DataTable({
                 ))}
                 {rowAction ? (
                   <td className="right">
-                    {onView ? (
+                    {actions ? (
+                      <div className="row" style={{ justifyContent: "flex-end", gap: 6 }}>
+                        {actions(i)}
+                      </div>
+                    ) : onView ? (
                       <button type="button" className="btn " onClick={() => onView(i)}>
                         View
                       </button>

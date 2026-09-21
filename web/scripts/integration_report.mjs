@@ -23,6 +23,9 @@ const spec = await (await fetch(`${BACKEND}/openapi.json`)).json();
 
 const screensTs = fs.readFileSync(path.join(SRC, "lib/screens.ts"), "utf8");
 const SCREENS = [...screensTs.matchAll(/^\s*(\{"id".*\}),?$/gm)].map((m) => JSON.parse(m[1]));
+// screens beyond the mocks: [n, "name", "module", "role", "layout", "/route"]
+for (const m of fs.readFileSync(path.join(SRC, "lib/extraScreens.ts"), "utf8").matchAll(/^\s*\[(\d+), "([^"]+)", "(\w+)", "[^"]*", "[^"]*", "([^"]+)"\],$/gm))
+  SCREENS.push({ id: `NEW-${m[1].slice(1)}`, name: m[2], moduleShort: m[3], route: m[4] });
 
 const read = (f) => fs.readFileSync(f, "utf8");
 function resolveImport(from, spec) {
@@ -51,7 +54,12 @@ const LIVE = /\bapi\.(get|post|put|patch|delete)\b|\buseApi\b|fetch\(\s*[`"']\/a
 
 const rows = [];
 for (const s of SCREENS) {
-  const page = s.route === "/" ? path.join(SRC, "app/page.tsx") : path.join(SRC, "app/(screens)", s.route.slice(1), "page.tsx");
+  const page0 = s.route === "/" ? path.join(SRC, "app/page.tsx") : path.join(SRC, "app/(screens)", s.route.slice(1), "page.tsx");
+  if (!fs.existsSync(page0)) {
+    rows.push({ id: s.id, name: s.name, module: s.moduleShort, marked: false, live: false, hooks: 0, sample: [], gaps: ["page not built yet"] });
+    continue;
+  }
+  const page = page0;
   const files = [...closure(page)];
   const text = files.map(read).join("\n");
   const pageText = read(page);

@@ -68,7 +68,13 @@ export default function Page() {
   `@/lib/format`.
 - `notify(msg)` from `@/lib/notify` shows a toast after a save.
 - `ErrorNote`, `Loading`, `PickFirst` from `@/components/ui/states`.
-- `DataTable` (with `onView`, `total/page/pages/onPage`, `empty`),
+- `api.upload(path, formData)` for multipart uploads, `api.download(path, filename)`,
+  `api.open(path)` (PDF in a new tab) and `api.blob(path)`, all with token refresh.
+  Do not write your own fetch helpers.
+- `Dialog` from `@/components/ui/Dialog`: the mock's modal, as a component, with an
+  optional form (`onSubmit`) and `actions`.
+- `DataTable` (with `onView` or `actions={(i) => …}` for per-row buttons,
+  `total/page/pages/onPage`, `empty`),
   `StatStrip`, `Panel`, `Badge`, `Person`, `Avatar`, `Chart`, `Icon`.
 - `routeOf(n)` from `@/lib/screens` gives screen number to route. Pass
   records between screens with `?id=`.
@@ -132,3 +138,20 @@ Dev logins (from the repo README):
 | `principal@dev.local` | `PrincipalPass123!` | principal |
 | `accountant@dev.local` | `AccountantPass123!` | accountant |
 | `admin@sms.local` | `ChangeMe123!` | super-admin |
+
+## New screens (no mock)
+
+Some screens exist because the backend supports a feature the 296 mocks
+never drew. They are listed in `src/lib/extraScreens.ts` (ids `NEW-…`), so the
+shell, sidebar and search already know them. Only the page is missing.
+
+- The page goes at the screen's `route` under `src/app/(screens)/`, with the same
+  header as a wired page and the line `// New screen (no mock)`.
+- Design it from the mock's vocabulary so it looks like it was always there. Use
+  the page head's actions for the main button, `StatStrip` for headline
+  figures, a `filterbar` above a `Panel` + `DataTable` for lists, `two-col`
+  with a `form` panel and an `aside-panel` for forms, and `Dialog` for a quick add
+  or edit. Find the closest existing screen in the same module and follow it.
+- Public pages (no sign-in, for example the online admission form) do not use
+  `AppShell`. Use the `auth-page` layout of the sign-in screen
+  (`src/app/(screens)/welcome/sign-in/page.tsx`).
