@@ -1,7 +1,7 @@
 // SCR-283 · Custom Report Builder
 // Module: Reports & Analytics · Role: School Admin · Release: Phase 3 · Stories: US-0565 / US-0566
 // Mock: screens/SCR-283_Custom_Report_Builder.html
-// Wired: GET /api/v1/school/report-sources, /report-definitions, /classes, /exams; POST /report-definitions, POST /report-definitions/{id}/run. Hand-maintained.
+// Wired: GET /api/v1/school/report-sources, /report-definitions, /report-definitions/{id}, /classes, /exams; POST /report-definitions, POST /report-definitions/{id}/run, POST /report-definitions/{id}/export; PATCH/DELETE /report-definitions/{id}. Hand-maintained.
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";

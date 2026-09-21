@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
+import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
-import { Panel } from "@/components/ui/primitives";
+import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { dateTime, label } from "@/lib/format";
@@ -47,7 +49,8 @@ function parseCsv(text: string, max = 6): string[][] {
  * which checks every row without writing any; the job then waits until
  * "Import" (POST /import-jobs/{id}/commit, skipping bad rows) or "Cancel"
  * (PATCH). The template comes from GET /import-jobs/template.csv.
- * Exports download the /exports/*.csv files.
+ * Exports download the /exports/*.csv files. A past upload opens with
+ * GET /import-jobs/{id}; its bad rows download from /import-jobs/{id}/errors.csv.
  */
 export function DataDesk() {
   const years = useApi<AcademicYear[]>("/api/v1/school/academic-years");
@@ -59,6 +62,7 @@ export function DataDesk() {
   const [job, setJob] = useState<ImportJob | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<number | null>(null);
 
   useEffect(() => {
     if (yearId === null && years.data?.length) setYearId((years.data.find((y) => y.is_current) ?? years.data[0]).id);
@@ -138,7 +142,8 @@ export function DataDesk() {
   const header = local[0] ?? columns;
   const missing = local.length ? columns.filter((c) => !local[0].includes(c)) : [];
   const previewRows: Row[] = local.slice(1).map((r) => header.map((_, i) => r[i] ?? ""));
-  const history: Row[] = (jobs.data ?? []).slice(0, 8).map((j) => [
+  const recent = (jobs.data ?? []).slice(0, 8);
+  const history: Row[] = recent.map((j) => [
     j.file_name,
     label(j.import_type),
     `${j.success_rows} good · ${j.error_rows} to fix of ${j.total_rows}`,
@@ -239,7 +244,25 @@ export function DataDesk() {
           <DataTable columns={header.length ? header : ["No file chosen"]} rows={previewRows} selectable={false} rowAction={false} empty="No rows to show yet." />
         </Panel>
         <Panel title="Recent imports" sub={`${jobs.data?.length ?? 0} uploads`} flush>
-          <DataTable columns={["File", "Import", "Rows", "Status", "By", "Uploaded"]} rows={history} selectable={false} rowAction={false} empty={jobs.loading ? "Loading…" : "Nothing uploaded yet."} />
+          <DataTable
+            columns={["File", "Import", "Rows", "Status", "By", "Uploaded"]}
+            rows={history}
+            selectable={false}
+            actions={(i) => (
+              <>
+                <button type="button" className="btn" onClick={() => setViewing(recent[i].id)}>
+                  View
+                </button>
+                {recent[i].error_rows > 0 ? (
+                  <button type="button" className="btn" onClick={() => save(`${JOBS}/${recent[i].id}/errors.csv`, `import-${recent[i].id}-errors.csv`)}>
+                    <Icon name="download" className="sm" />
+                    Errors
+                  </button>
+                ) : null}
+              </>
+            )}
+            empty={jobs.loading ? "Loading…" : "Nothing uploaded yet."}
+          />
         </Panel>
       </div>
       <aside className="stack">
@@ -276,8 +299,77 @@ export function DataDesk() {
             </button>
           </div>
           {/* Not wired: Backup and restore — the API has no backup endpoint */}
+          <div className="gap" />
+          <Link className="btn text" href="/settings/data-exports">
+            All exports and reports
+          </Link>
         </Panel>
       </aside>
+      {viewing !== null ? (
+        <ImportDetail
+          id={viewing}
+          onClose={() => setViewing(null)}
+          onErrors={(j) => save(`${JOBS}/${j.id}/errors.csv`, `import-${j.id}-errors.csv`)}
+          onResume={(j) => {
+            setKind(j.import_type as "students" | "staff");
+            setJob(j);
+            setViewing(null);
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+/** GET /import-jobs/{id}: one upload with every row that needs fixing. */
+function ImportDetail({ id, onClose, onErrors, onResume }: { id: number; onClose: () => void; onErrors: (j: ImportJob) => void; onResume: (j: ImportJob) => void }) {
+  const job = useApi<ImportJob>(`${JOBS}/${id}`);
+  const j = job.data;
+  return (
+    <Dialog
+      open
+      wide
+      title={j ? j.file_name : "Import"}
+      onClose={onClose}
+      actions={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Close
+          </button>
+          {j && j.error_rows > 0 ? (
+            <button type="button" className="btn" onClick={() => onErrors(j)}>
+              <Icon name="download" className="sm" />
+              Download errors CSV
+            </button>
+          ) : null}
+          {j?.status === "checked" && j.import_type !== "marks" ? (
+            <button type="button" className="btn primary" onClick={() => onResume(j)}>
+              Import or cancel…
+            </button>
+          ) : null}
+        </>
+      }
+    >
+      <ErrorNote>{job.error}</ErrorNote>
+      {j ? (
+        <>
+          <div className="row" style={{ gap: 8, marginBottom: 10 }}>
+            <Badge>{label(j.status)}</Badge>
+            <span className="muted small">{`${label(j.import_type)} · ${j.created_by_name ?? "—"} · ${dateTime(j.created_at)}`}</span>
+          </div>
+          <p>{`${j.total_rows} rows: ${j.success_rows} good, ${j.error_rows} to fix.${j.message ? ` ${j.message}` : ""}`}</p>
+          <div className="gap" />
+          <DataTable
+            columns={["Row", "Value", "Problem"]}
+            rows={j.errors.map((x) => [x.row === null ? "—" : String(x.row), x.value ?? "—", x.error ?? "not valid"])}
+            selectable={false}
+            rowAction={false}
+            empty="Every row passed the check."
+          />
+        </>
+      ) : (
+        <p className="muted">{job.loading ? "Loading…" : "Not found."}</p>
+      )}
+    </Dialog>
   );
 }

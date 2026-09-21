@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText, type Paginated } from "@/lib/api";
-import { label, money } from "@/lib/format";
+import { dateTime, label, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import type { Plan } from "./types";
@@ -134,13 +135,80 @@ function PlanForm({ plan, onDone, onCancel }: { plan: Plan | null; onDone: () =>
   );
 }
 
+/** GET /super-admin/plans/{id}: every limit, quota and module of one plan. */
+function PlanDetail({ id, onClose, onEdit }: { id: number; onClose: () => void; onEdit: (p: Plan) => void }) {
+  const plan = useApi<Plan>(`/api/v1/super-admin/plans/${id}`);
+  const p = plan.data;
+  const on = new Set(p?.modules.filter((m) => m.enabled).map((m) => m.module_key) ?? []);
+  return (
+    <Dialog
+      open
+      wide
+      title={p ? `${p.name} plan` : "Plan"}
+      onClose={onClose}
+      actions={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Close
+          </button>
+          {p ? (
+            <button type="button" className="btn primary" onClick={() => onEdit(p)}>
+              Edit plan
+            </button>
+          ) : null}
+        </>
+      }
+    >
+      <ErrorNote>{plan.error}</ErrorNote>
+      {p ? (
+        <>
+          <dl className="kv">
+            {(
+              [
+                ["Tier", label(p.tier)],
+                ["Status", p.is_active ? "Active" : "Retired"],
+                ["Monthly price", money(p.price_monthly)],
+                ["Yearly price", money(p.price_yearly)],
+                ...LIMITS.map(([k, t]) => [t, Number(p[k] ?? 0) ? num(Number(p[k])) : "No limit"]),
+                ["Created", dateTime(p.created_at)],
+                ["Description", p.description || "—"],
+              ] as [string, string][]
+            ).map(([k, v]) => (
+              <div key={k}>
+                <dt>{k}</dt>
+                <dd>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="gap" />
+          <div className="form-section-title">
+            <h3>Modules</h3>
+          </div>
+          <div className="plan-features">
+            {MODULE_KEYS.map((k) => (
+              <span key={k} className={on.has(k) ? "" : "muted"}>
+                <Icon name={on.has(k) ? "check" : "bell"} className="sm" />
+                {` ${label(k)}${on.has(k) ? "" : " (off)"}`}
+              </span>
+            ))}
+          </div>
+        </>
+      ) : (
+        <p className="muted">{plan.loading ? "Loading…" : "Not found."}</p>
+      )}
+    </Dialog>
+  );
+}
+
 /**
- * SCR-013, live: GET /super-admin/plans; create (POST /plans), edit
- * (PATCH /plans/{id}) and retire (DELETE /plans/{id}, which deactivates).
+ * SCR-013, live: GET /super-admin/plans; details (GET /plans/{id}), create
+ * (POST /plans), edit (PATCH /plans/{id}) and retire (DELETE /plans/{id},
+ * which deactivates).
  */
 export function SubscriptionPlans() {
   const plans = useApi<Paginated<Plan>>("/api/v1/super-admin/plans");
   const [editing, setEditing] = useState<Plan | "new" | null>(null);
+  const [viewing, setViewing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // The page-head button lives outside this component.
@@ -213,6 +281,9 @@ export function SubscriptionPlans() {
               <div className="plan-price">
                 {money(p.price_monthly)}
                 <small>{`per month · ${money(p.price_yearly)} a year`}</small>
+                <button type="button" className="btn" onClick={() => setViewing(p.id)}>
+                  Details
+                </button>
                 <button type="button" className="btn" onClick={() => setEditing(p)}>
                   Edit plan
                 </button>
@@ -228,6 +299,17 @@ export function SubscriptionPlans() {
           <div className="panel-pad muted">{plans.loading ? "Loading plans…" : "No plans yet. Create the first one."}</div>
         )}
       </section>
+      {viewing !== null ? (
+        <PlanDetail
+          id={viewing}
+          onClose={() => setViewing(null)}
+          onEdit={(p) => {
+            setViewing(null);
+            setEditing(p);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        />
+      ) : null}
     </>
   );
 }

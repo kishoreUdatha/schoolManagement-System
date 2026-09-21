@@ -208,9 +208,11 @@ export function BranchForm() {
  * SCR-027, live. There is no GET for one branch, so it is read from the
  * list. Sections and staff are each saved as a complete set (PUT replaces
  * them). Sections can be read back; staff cannot, so that picker starts
- * empty and says so.
+ * empty and says so. DELETE /branches/{id} removes a branch once no section
+ * or staff member is placed there (the API refuses otherwise).
  */
 export function BranchDetails() {
+  const router = useRouter();
   const id = useSearchParams().get("id");
   const list = useApi<Branch[]>(id ? BRANCHES : null);
   const school = useApi<SchoolProfile>("/api/v1/school/profile");
@@ -222,6 +224,7 @@ export function BranchDetails() {
   const [editing, setEditing] = useState<"sections" | "staff" | null>(null);
   const [picked, setPicked] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const branch = list.data?.find((b) => String(b.id) === id);
@@ -254,6 +257,21 @@ export function BranchDetails() {
       setError(errorText(err));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function remove() {
+    if (!branch) return;
+    if (!window.confirm(`Delete the branch ${branch.name}? Role assignments limited to it become school-wide. This cannot be undone.`)) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await api.delete(`${BRANCHES}/${branch.id}`);
+      notify(`${branch.name} deleted.`);
+      router.push(routeOf(25));
+    } catch (err) {
+      setError(errorText(err));
+      setDeleting(false);
     }
   }
 
@@ -406,6 +424,16 @@ export function BranchDetails() {
             ) : (
               <p className="muted">{history.loading ? "Loading…" : history.error ? "The audit log is not available to you." : "No changes recorded yet."}</p>
             )}
+          </Panel>
+          <Panel title="Delete branch">
+            <p className="muted" style={{ marginBottom: 12 }}>
+              {branch.sections || branch.staff
+                ? `Move its ${count(branch.sections)} section(s) and ${count(branch.staff)} staff member(s) to another branch first; a branch with people placed at it cannot be deleted.`
+                : "Nothing is placed at this branch, so it can be deleted."}
+            </p>
+            <button type="button" className="btn" disabled={deleting || Boolean(branch.sections || branch.staff)} onClick={remove}>
+              {deleting ? "Deleting…" : "Delete branch"}
+            </button>
           </Panel>
         </aside>
       </div>

@@ -2,7 +2,7 @@
 // Module: Super Admin / SaaS Administration · Role: Super Admin · Release: Phase 2 · Stories: US-0029 / US-0030
 // Mock: screens/SCR-015_Tenant_Usage_Limits.html
 // Backend: the old frontend served this at /super-admin/usage — Usage against quota, per tenant
-// Wired: GET /api/v1/super-admin/usage-overview, billing (?id= picks the organization). Hand-maintained.
+// Wired: GET /api/v1/super-admin/usage-overview, billing, usage/export.csv (?from&to) (?id= picks the organization). Hand-maintained.
 
 import Link from "next/link";
 import { Suspense } from "react";

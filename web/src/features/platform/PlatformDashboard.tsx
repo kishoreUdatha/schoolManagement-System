@@ -6,7 +6,9 @@ import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { StatStrip } from "@/components/ui/StatStrip";
-import type { Paginated } from "@/lib/api";
+import { useState } from "react";
+import { api, errorText, type Paginated } from "@/lib/api";
+import { notify } from "@/lib/notify";
 import { date, dateTime, money } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -24,6 +26,7 @@ function greeting() {
 /**
  * SCR-009, live: usage/summary, usage/renewals, health, tickets and the
  * newest tenants. Figures are platform-wide, as the super-admin sees them.
+ * "Send reminders" posts /usage/renewals/send for the same 30-day window.
  */
 export function PlatformDashboard() {
   const sess = useSession();
@@ -32,6 +35,24 @@ export function PlatformDashboard() {
   const health = useApi<Health>("/api/v1/super-admin/health");
   const tickets = useApi<TicketList>("/api/v1/super-admin/tickets");
   const recent = useApi<Paginated<Tenant>>("/api/v1/super-admin/tenants", { page_size: 3 });
+
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  async function sendReminders() {
+    const count = renewals.data?.length ?? 0;
+    if (!window.confirm(`Send a renewal reminder to the school admins of ${count} organization(s) whose subscription ends in the next 30 days? It goes out in-app and by email.`)) return;
+    setSending(true);
+    setSendError(null);
+    try {
+      const r = await api.post<{ tenants_notified?: number; notices_created?: number }>("/api/v1/super-admin/usage/renewals/send", undefined, { within_days: 30 });
+      notify(`Reminders sent to ${r.tenants_notified ?? 0} organization(s).`);
+    } catch (err) {
+      setSendError(errorText(err));
+    } finally {
+      setSending(false);
+    }
+  }
 
   const s = summary.data;
   const h = health.data;
@@ -188,7 +209,19 @@ export function PlatformDashboard() {
           </Panel>
         </div>
         <aside>
-          <Panel title="Renewals coming up" sub="Next 30 days">
+          <Panel
+            title="Renewals coming up"
+            sub="Next 30 days"
+            action={
+              upcoming.length ? (
+                <button type="button" className="btn" disabled={sending} onClick={sendReminders}>
+                  <Icon name="bell" className="sm" />
+                  {sending ? "Sending…" : "Send reminders"}
+                </button>
+              ) : undefined
+            }
+          >
+            <ErrorNote>{sendError}</ErrorNote>
             {upcoming.length ? (
               upcoming.slice(0, 4).map((r) => {
                 const d = r.expires_at ? new Date(r.expires_at) : null;

@@ -38,6 +38,7 @@ export type Subscription = {
   status: "pending" | "active" | "expired" | "cancelled";
   started_at: string | null;
   expires_at: string | null;
+  razorpay_subscription_id?: string | null;
   notes: string | null;
   created_at: string;
 };
