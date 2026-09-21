@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
+import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { FormGrid, FormSection } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type SchoolInfo = { school_name: string; address: string | null; phone: string | null; email: string | null };
@@ -69,25 +70,51 @@ export default function PublicApplicationPage() {
   if (notFound) return <div className="p-10 text-center text-ink-muted">This admission form isn&apos;t available.</div>;
   if (done)
     return (
-      <div className="mx-auto max-w-lg p-10 text-center">
-        <h1 className="text-xl font-bold text-ink">Thank you</h1>
-        <p className="mt-2 text-ink-muted">{done}</p>
-        <p className="mt-4 text-sm text-ink-subtle">Please keep your application number for any follow-up.</p>
-      </div>
+      <AuthShell
+        title="Thank you"
+        subtitle={done}
+        headline={"Your application\nis with the school."}
+        blurb="Somebody in the office will look at it and come back to you."
+        topRight={info?.school_name}
+      >
+        <p className="text-[13px] text-ink-subtle">
+          Please keep your application number for any follow-up.
+        </p>
+      </AuthShell>
     );
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-6">
-      <div className="text-center">
-        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{info?.school_name ?? "Admission application"}</h1>
-        <p className="text-sm text-ink-muted">Admission application</p>
-        {info?.phone && <p className="text-xs text-ink-subtle">{info.phone}</p>}
-      </div>
-      {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
-      <Card>
-        <CardBody>
-          <form onSubmit={submit} className="space-y-3">
-            <div className="grid gap-3 sm:grid-cols-2">
+    <AuthShell
+      title="Admission application"
+      subtitle={
+        info?.school_name
+          ? `Applying to ${info.school_name}.`
+          : "Tell the school about the student and how to reach you."
+      }
+      headline={"A place at school\nstarts with a form."}
+      blurb="Fill this in once. The office picks it up from there and comes back to you."
+      topRight={
+        <>
+          {info?.school_name}
+          {info?.phone ? ` · ${info.phone}` : ""}
+        </>
+      }
+      footer={
+        <>
+          Just want to enquire first?{" "}
+          <Link href={`/apply/${params.tenant}/${params.school}`} className="text-brand-500 hover:underline">
+            Send an enquiry instead
+          </Link>
+          .
+        </>
+      }
+    >
+      <div className="space-y-6">
+        {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
+
+        <form onSubmit={submit} className="space-y-7">
+          <FormSection step={1} title="The student">
+            <FormGrid columns={1}>
               <Input label="Student's name *" value={f.student_name} onChange={set("student_name")} required minLength={2} />
               <Input label="Date of birth" type="date" max={new Date().toISOString().slice(0, 10)} value={f.dob} onChange={set("dob")} />
               <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
@@ -101,32 +128,41 @@ export default function PublicApplicationPage() {
               </label>
               <Input label="Applying for class" value={f.applying_for_class} onChange={set("applying_for_class")} placeholder="Class 1" />
               <Input label="Present / previous school" value={f.previous_school} onChange={set("previous_school")} />
+            </FormGrid>
+          </FormSection>
+
+          <FormSection step={2} title="Parents and guardians">
+            <FormGrid columns={1}>
               <Input label="Parent or guardian *" value={f.guardian_name} onChange={set("guardian_name")} required minLength={2} />
               <Input label="Father's name" value={f.father_name} onChange={set("father_name")} />
               <Input label="Mother's name" value={f.mother_name} onChange={set("mother_name")} />
+            </FormGrid>
+          </FormSection>
+
+          <FormSection step={3} title="How to reach you">
+            <FormGrid columns={1}>
               <Input label="Phone *" value={f.phone} onChange={set("phone")} required minLength={6} />
               <Input label="Email" type="email" value={f.email} onChange={set("email")} />
-            </div>
-            <Input label="Address" value={f.address} onChange={set("address")} />
-            <Input label="Anything the school should know" value={f.notes} onChange={set("notes")} />
-            <label className="flex items-center gap-2 text-sm text-ink">
-              <input type="checkbox" checked={f.sibling_in_school} onChange={(e) => setF({ ...f, sibling_in_school: e.target.checked })} />
-              A brother or sister already studies here
-            </label>
-            <input className="hidden" tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} aria-hidden />
-            <Button type="submit" disabled={busy}>
-              {busy ? "Sending…" : "Send application"}
-            </Button>
-            <p className="text-xs text-ink-subtle">
-              Just want to enquire first?{" "}
-              <Link href={`/apply/${params.tenant}/${params.school}`} className="text-brand-500 hover:underline">
-                Send an enquiry instead
-              </Link>
-              .
-            </p>
-          </form>
-        </CardBody>
-      </Card>
-    </div>
+              <Input label="Address" value={f.address} onChange={set("address")} />
+            </FormGrid>
+          </FormSection>
+
+          <FormSection step={4} title="Anything else">
+            <FormGrid columns={1}>
+              <Input label="Anything the school should know" value={f.notes} onChange={set("notes")} />
+              <label className="flex items-center gap-2 text-sm text-ink">
+                <input type="checkbox" checked={f.sibling_in_school} onChange={(e) => setF({ ...f, sibling_in_school: e.target.checked })} />
+                A brother or sister already studies here
+              </label>
+            </FormGrid>
+          </FormSection>
+
+          <input className="hidden" tabIndex={-1} autoComplete="off" value={f.website} onChange={set("website")} aria-hidden />
+          <Button type="submit" disabled={busy} className="w-full">
+            {busy ? "Sending…" : "Send application"}
+          </Button>
+        </form>
+      </div>
+    </AuthShell>
   );
 }

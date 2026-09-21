@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { AuthShell } from "@/components/AuthShell";
 import { Card, CardBody } from "@/components/ui/Card";
 
 /** Every portal that has a sign-in page of its own.
@@ -72,42 +73,13 @@ const PORTALS = [
 
 export default function WorkspacePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
-      <div className="w-full max-w-3xl space-y-6">
-        <div className="text-center">
-          <h1 className="text-[28px] font-extrabold leading-tight tracking-[-1px] text-ink">
-            Where are you signing in?
-          </h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Pick the one that matches your account — signing in to the wrong one
-            will not work.
-          </p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          {PORTALS.map((p) => (
-            <Link key={p.href} href={p.href}>
-              <Card className="h-full transition-colors hover:border-brand-300 hover:bg-surface-hover">
-                <CardBody className="flex items-start gap-3 p-4">
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-brand-50 text-brand-600"
-                    aria-hidden="true"
-                  >
-                    <p.icon className="h-[18px] w-[18px]" strokeWidth={2} />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-[15px] font-extrabold text-ink">{p.label}</div>
-                    <p className="mt-0.5 text-[12px] leading-snug text-ink-muted">
-                      {p.blurb}
-                    </p>
-                  </div>
-                </CardBody>
-              </Card>
-            </Link>
-          ))}
-        </div>
-
-        <p className="text-center text-[12px] text-ink-subtle">
+    <AuthShell
+      title="Where are you signing in?"
+      subtitle="Pick the one that matches your account — signing in to the wrong one will not work."
+      headline={"One school.\nEight front doors."}
+      blurb="Each account belongs to one portal. Choose yours and we will take you to its sign-in."
+      footer={
+        <>
           Forgotten your password?{" "}
           <Link
             href="/account/forgot-password"
@@ -117,8 +89,31 @@ export default function WorkspacePage() {
           </Link>
           . Students sign in with an admission number, so the school office
           resets those.
-        </p>
+        </>
+      }
+    >
+      <div className="grid gap-3">
+        {PORTALS.map((p) => (
+          <Link key={p.href} href={p.href}>
+            <Card className="h-full transition-colors hover:border-brand-300 hover:bg-surface-hover">
+              <CardBody className="flex items-start gap-3 p-4">
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-brand-50 text-brand-600"
+                  aria-hidden="true"
+                >
+                  <p.icon className="h-[18px] w-[18px]" strokeWidth={2} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[15px] font-extrabold text-ink">{p.label}</div>
+                  <p className="mt-0.5 text-[12px] leading-snug text-ink-muted">
+                    {p.blurb}
+                  </p>
+                </div>
+              </CardBody>
+            </Card>
+          </Link>
+        ))}
       </div>
-    </div>
+    </AuthShell>
   );
 }

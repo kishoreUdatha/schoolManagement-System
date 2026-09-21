@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody } from "@/components/ui/Card";
 
 /** What to say, depending on why somebody landed here.
  *
@@ -44,22 +44,27 @@ function Denied() {
   const reason = search.get("reason") ?? "";
   const { title, body } = REASONS[reason] ?? FALLBACK;
 
+  // The panel's default copy is cheerful, which reads badly next to a page
+  // somebody could not open, so this screen brings its own quieter words.
   return (
-    <div className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
-      <Card className="w-full max-w-sm">
-        <CardBody className="space-y-5">
-          <div>
-            <h1 className="text-[28px] font-extrabold leading-tight tracking-[-1px] text-ink">
-              {title}
-            </h1>
-            <p className="mt-2 text-[13px] text-ink-muted">{body}</p>
-          </div>
-
-          <Link href="/workspace">
-            <Button className="w-full">Sign in</Button>
+    <AuthShell
+      title={title}
+      subtitle={body}
+      headline={"Nothing is lost.\nJust sign in again."}
+      blurb="Your work is where you left it. Signing in again picks it back up."
+      topRight={
+        <>
+          Wrong account?{" "}
+          <Link href="/workspace" className="font-bold text-brand-600 hover:underline">
+            Change workspace
           </Link>
-        </CardBody>
-      </Card>
-    </div>
+        </>
+      }
+      footer="Need help? Contact your school administrator."
+    >
+      <Link href="/workspace">
+        <Button className="w-full">Sign in</Button>
+      </Link>
+    </AuthShell>
   );
 }
