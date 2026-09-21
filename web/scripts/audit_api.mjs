@@ -114,7 +114,8 @@ for (const file of files(ROOT)) {
       n.arguments[0] = n.arguments[0].whenTrue.kind === ts.SyntaxKind.NullKeyword ? n.arguments[0].whenFalse : n.arguments[0].whenTrue;
     }
     if (viaHook || (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.expression.getText(sf) === "api")) {
-      const method = viaHook ? "get" : n.expression.name.text;
+      const FILE = { upload: "post", blob: "get", download: "get", open: "get" };
+      const method = viaHook ? "get" : (FILE[n.expression.name.text] ?? n.expression.name.text);
       if (["get", "post", "put", "patch", "delete"].includes(method) && n.arguments.length) {
         calls++;
         const where = `${rel}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1}`;
