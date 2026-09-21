@@ -55,7 +55,8 @@
     --sidebar-ink: 23 37 84;           /* #172554 menu text */
     --sidebar-icon: 98 113 139;        /* #62718B icons */
     --sidebar-ink-muted: 23 37 84;     /* the same: 100% opacity throughout */
-    --sidebar-active: 37 99 235;       /* #2563EB selected */
+    --sidebar-active: 37 99 235;       /* #2563EB selected text and icon */
+    --sidebar-active-bg: 234 242 255;  /* #EAF2FF the tint behind it */
     --sidebar-hover: 234 242 255;      /* #EAF2FF */
     --sidebar-border: 227 234 245;     /* #E3EAF5 internal rules */
     --sidebar-edge: 227 234 245;       /* #E3EAF5 — the tint does the rest */
@@ -109,7 +110,8 @@
     --sidebar-ink: 243 244 246;
     --sidebar-icon: 156 163 175;
     --sidebar-ink-muted: 243 244 246;
-    --sidebar-active: 37 99 235;
+    --sidebar-active: 147 197 253;
+    --sidebar-active-bg: 30 41 66;
     --sidebar-hover: 31 37 49;
     --sidebar-border: 39 45 58;
     --sidebar-edge: 39 45 58;

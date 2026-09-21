@@ -208,19 +208,30 @@ export function Topbar({ showYear = false, noticesHref, messagesHref }: TopbarPr
       <div className="flex shrink-0 items-center gap-2">
         {showYear && ay && ay.years.length > 0 && ay.yearId !== null && (
           <>
-            <select
-              aria-label="Academic year"
-              value={ay.yearId}
-              onChange={(e) => ay.setYearId(Number(e.target.value))}
-              className="hidden rounded-input border border-surface-control bg-surface-raised px-2.5 py-1.5 text-[12px] font-bold text-ink-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 lg:block"
-            >
-              {ay.years.map((y) => (
-                <option key={y.id} value={y.id}>
-                  {y.name}
-                  {y.is_current ? " (current)" : ""}
-                </option>
-              ))}
-            </select>
+            {/* Borderless, the way the mock draws it: it belongs with the
+                bell and the avatar as a piece of context, not a form field.
+                appearance-none takes the native arrow with it, so the
+                chevron below replaces it and the select is laid over the
+                whole thing to stay the hit target. */}
+            <div className="relative hidden items-center lg:flex">
+              <select
+                aria-label="Academic year"
+                value={ay.yearId}
+                onChange={(e) => ay.setYearId(Number(e.target.value))}
+                className="cursor-pointer appearance-none rounded-control bg-transparent py-1.5 pl-2 pr-6 text-[13px] font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+              >
+                {ay.years.map((y) => (
+                  <option key={y.id} value={y.id}>
+                    Academic year {y.name}
+                    {y.is_current ? " (current)" : ""}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                aria-hidden="true"
+                className="pointer-events-none absolute right-1 h-4 w-4 text-ink-muted"
+              />
+            </div>
             <span className="hidden h-6 w-px bg-surface-border lg:block" />
           </>
         )}
@@ -247,7 +258,7 @@ export function Topbar({ showYear = false, noticesHref, messagesHref }: TopbarPr
           </Link>
         )}
 
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-50 text-[11px] font-extrabold text-brand-600">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success-bg text-[11px] font-extrabold text-success">
           {initials}
         </span>
         <ChevronDown className="hidden h-4 w-4 text-ink-subtle sm:block" />

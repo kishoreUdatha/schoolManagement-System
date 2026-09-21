@@ -139,20 +139,24 @@ export function Sidebar({
         key={item.href}
         href={item.href}
         onClick={() => setMobileOpen(false)}
+        // The tint that marks the selection is 1.13:1 against the sidebar,
+        // so what actually carries it is the blue, and blue alone is not a
+        // state anyone can hear. aria-current says it outright.
+        aria-current={active ? "page" : undefined}
         className={cn(
-          "group relative flex items-center gap-2.5 rounded-lg px-3 py-2 text-[15px] font-semibold leading-tight transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
+          "group relative flex items-center gap-2.5 rounded-control px-3 py-2 text-[15px] leading-tight transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300",
           active
-            ? "bg-sidebar-active text-white"
-            : "text-sidebar-ink hover:bg-sidebar-hover"
+            ? "bg-sidebar-active-bg font-extrabold text-sidebar-active"
+            : "font-semibold text-sidebar-ink hover:bg-sidebar-hover"
         )}
       >
         {Icon && (
           <Icon
             className={cn(
               "h-3.5 w-3.5 shrink-0",
-              active ? "text-white" : "text-sidebar-icon"
+              active ? "text-sidebar-active" : "text-sidebar-icon"
             )}
-            strokeWidth={1.75}
+            strokeWidth={active ? 2.25 : 1.75}
           />
         )}
         <span className="flex-1 truncate">{item.label}</span>

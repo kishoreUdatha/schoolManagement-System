@@ -46,6 +46,7 @@ const config: Config = {
           muted: "rgb(var(--sidebar-ink-muted) / <alpha-value>)",
           icon: "rgb(var(--sidebar-icon) / <alpha-value>)",
           active: "rgb(var(--sidebar-active) / <alpha-value>)",
+          "active-bg": "rgb(var(--sidebar-active-bg) / <alpha-value>)",
           hover: "rgb(var(--sidebar-hover) / <alpha-value>)",
           border: "rgb(var(--sidebar-border) / <alpha-value>)",
           edge: "rgb(var(--sidebar-edge) / <alpha-value>)",
