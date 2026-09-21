@@ -1,0 +1,379 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { DataTable, type Row } from "@/components/ui/DataTable";
+import { Icon } from "@/components/ui/Icon";
+import { Panel } from "@/components/ui/primitives";
+import { ErrorNote } from "@/components/ui/states";
+import { api, errorText } from "@/lib/api";
+import { dateTime, label } from "@/lib/format";
+import { notify } from "@/lib/notify";
+import { useApi } from "@/lib/useApi";
+import { downloadCsv, Kv, useYear } from "./kit";
+
+type Source = { source: string; label: string; columns: string[]; filters: string[] };
+type Definition = {
+  id: number;
+  name: string;
+  code: string;
+  source: string;
+  source_label: string;
+  filters: Record<string, unknown>;
+  columns: string[];
+  sort_by: string | null;
+  is_active: boolean;
+  last_run_at: string | null;
+  run_count: number;
+};
+type Result = { report_id: number; name: string; columns: string[]; row_count: number; rows: Record<string, unknown>[]; truncated: boolean };
+type SchoolClass = { id: number; name: string; sections: { id: number; name: string }[] };
+type Exam = { id: number; name: string };
+
+/** Filter keys that are dates; they make up the mock's "Date range". */
+const DATE_KEYS = ["from", "to", "due_from", "due_to"];
+/** `status` means different things per source, as the old data desk had it. */
+const CHOICES: Record<string, Record<string, string[]>> = {
+  status: { students: ["active", "inactive"], staff: ["active", "inactive"], fees: ["pending", "paid", "waived"] },
+  gender: { students: ["male", "female", "other"] },
+  role: { staff: ["teacher", "staff", "principal", "accountant", "school_admin"] },
+};
+const ID_KEYS = ["academic_year_id", "class_id", "section_id", "exam_id"];
+
+function codeFor(name: string) {
+  const slug = name.toUpperCase().replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) || "REPORT";
+  return `${slug}-${Date.now().toString(36).toUpperCase()}`;
+}
+
+const show = (v: unknown) => (v === null || v === undefined || v === "" ? "—" : typeof v === "boolean" ? (v ? "Yes" : "No") : String(v));
+
+/**
+ * SCR-283, live: GET /report-sources and /report-definitions to choose from;
+ * Run report saves a new definition (POST /report-definitions) or reuses the
+ * chosen saved one, then runs it (POST /report-definitions/{id}/run) with the
+ * filters. The API has no grouping and no operators: filters are the fixed
+ * keys each source declares.
+ */
+export function ReportBuilder() {
+  const router = useRouter();
+  const sources = useApi<Source[]>("/api/v1/school/report-sources");
+  const saved = useApi<Definition[]>("/api/v1/school/report-definitions");
+  const y = useYear();
+  const classes = useApi<SchoolClass[]>(y.yearId ? "/api/v1/school/classes" : null, { academic_year_id: y.yearId });
+  const exams = useApi<Exam[]>("/api/v1/school/exams");
+
+  const [savedId, setSavedId] = useState<number | null>(null);
+  const [name, setName] = useState("");
+  const [source, setSource] = useState("");
+  const [columns, setColumns] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState("");
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<Result | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!source && sources.data?.length) setSource(sources.data[0].source);
+  }, [sources.data, source]);
+
+  const spec = sources.data?.find((s) => s.source === source);
+  const chosenSaved = saved.data?.find((d) => d.id === savedId);
+  const sections = useMemo(() => classes.data?.find((c) => String(c.id) === filters.class_id)?.sections ?? [], [classes.data, filters.class_id]);
+
+  function pickSource(s: string) {
+    setSource(s);
+    setColumns([]);
+    setSortBy("");
+    setFilters({});
+    setSavedId(null);
+    setResult(null);
+  }
+
+  function pickSaved(id: string) {
+    setResult(null);
+    if (!id) {
+      setSavedId(null);
+      return;
+    }
+    const d = saved.data?.find((x) => String(x.id) === id);
+    if (!d) return;
+    setSavedId(d.id);
+    setName(d.name);
+    setSource(d.source);
+    setColumns(d.columns);
+    setSortBy(d.sort_by ?? "");
+    setFilters(Object.fromEntries(Object.entries(d.filters ?? {}).map(([k, v]) => [k, String(v ?? "")])));
+  }
+
+  // After loading a saved report, a changed filter applies to that run only.
+  const setFilter = (k: string, v: string) => setFilters((f) => ({ ...f, [k]: v }));
+
+  /** The flat filter map the API takes, typed as the old data desk sent it. */
+  function asFilters() {
+    const out: Record<string, unknown> = {};
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v === "" || !spec?.filters.includes(k)) return;
+      if (k === "only_failed") out[k] = v === "true";
+      else if (ID_KEYS.includes(k) || k === "below_percent") out[k] = Number(v);
+      else out[k] = v;
+    });
+    return out;
+  }
+
+  async function run(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!spec) return;
+    setBusy(true);
+    setError(null);
+    try {
+      let id = savedId;
+      if (!id) {
+        const created = await api.post<Definition>("/api/v1/school/report-definitions", {
+          name: name.trim(),
+          code: codeFor(name.trim()),
+          source,
+          filters: asFilters(),
+          columns,
+          sort_by: sortBy || null,
+        });
+        id = created.id;
+        setSavedId(id);
+        saved.reload();
+        notify("Report saved.");
+      }
+      const r = await api.post<Result>(`/api/v1/school/report-definitions/${id}/run`, asFilters());
+      setResult(r);
+      saved.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const field = (text: string, control: JSX.Element, required = false, full = false) => (
+    <label className={`field ${full ? "full" : ""}`} key={text}>
+      <span>
+        {text}
+        {required ? <span className="req">*</span> : null}
+      </span>
+      {control}
+    </label>
+  );
+
+  function filterControl(k: string) {
+    const v = filters[k] ?? "";
+    const on = (e: { target: { value: string } }) => setFilter(k, e.target.value);
+    if (k === "academic_year_id") {
+      return (
+        <select value={v} onChange={on}>
+          <option value="">Any year</option>
+          {y.years.map((yr) => (
+            <option key={yr.id} value={yr.id}>
+              {yr.name}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (k === "class_id") {
+      return (
+        <select value={v} onChange={(e) => setFilters((f) => ({ ...f, class_id: e.target.value, section_id: "" }))}>
+          <option value="">All classes</option>
+          {classes.data?.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (k === "section_id") {
+      return (
+        <select value={v} onChange={on} disabled={!filters.class_id}>
+          <option value="">{filters.class_id ? "All sections" : "Choose a class first"}</option>
+          {sections.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (k === "exam_id") {
+      return (
+        <select value={v} onChange={on}>
+          <option value="">All exams</option>
+          {exams.data?.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    if (k === "only_failed") {
+      return (
+        <select value={v} onChange={on}>
+          <option value="">Everyone</option>
+          <option value="true">Only failed</option>
+        </select>
+      );
+    }
+    if (k === "below_percent") return <input type="number" min={0} max={100} step="0.1" value={v} onChange={on} placeholder="e.g. 75" />;
+    const choices = CHOICES[k]?.[source];
+    if (choices) {
+      return (
+        <select value={v} onChange={on}>
+          <option value="">Any</option>
+          {choices.map((c) => (
+            <option key={c} value={c}>
+              {label(c)}
+            </option>
+          ))}
+        </select>
+      );
+    }
+    return <input value={v} onChange={on} />;
+  }
+
+  const dateKeys = (spec?.filters ?? []).filter((k) => DATE_KEYS.includes(k));
+  const otherKeys = (spec?.filters ?? []).filter((k) => !DATE_KEYS.includes(k));
+  const filterText = Object.entries(asFilters()).map(([k, v]) => `${label(k)} = ${show(v)}`).join(", ");
+
+  const configRows: Row[] = [
+    ["Data source", spec?.label ?? "—"],
+    ["Columns", columns.length ? columns.map(label).join(", ") : "All columns"],
+    ["Sort by", sortBy ? label(sortBy) : "Source order"],
+    ["Filters", filterText || "None — every row the source holds"],
+    ["Output", savedId ? "Runs the saved report" : "Saved, then run"],
+  ];
+  const resultRows: Row[] = (result?.rows ?? []).map((r) => result!.columns.map((c) => show(r[c])));
+  const resultCols = (result?.columns ?? []).map(label);
+
+  return (
+    <>
+      <div className="two-col">
+        <form id="report-builder" className="panel" onSubmit={run}>
+          <div className="panel-pad">
+            <ErrorNote>{error ?? sources.error}</ErrorNote>
+            <div className="form-sections">
+              <section>
+                <div className="form-section-title">
+                  <span className="number">01</span>
+                  <h3>Details</h3>
+                </div>
+                <div className="form-grid">
+                  {field(
+                    "Report name",
+                    <input type="text" placeholder="Enter report name" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={160} disabled={Boolean(savedId)} />,
+                    true,
+                  )}
+                  {field(
+                    "Data source",
+                    <select value={source} onChange={(e) => pickSource(e.target.value)} required disabled={Boolean(savedId)}>
+                      {sources.data?.map((s) => (
+                        <option key={s.source} value={s.source}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>,
+                    true,
+                  )}
+                  {dateKeys.map((k) => field(label(k), <input type="date" value={filters[k] ?? ""} onChange={(e) => setFilter(k, e.target.value)} />))}
+                  {/* Not wired: "Group by" — the API sorts but does not group; sorting takes its place. */}
+                  {field(
+                    "Sort by",
+                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} disabled={Boolean(savedId)}>
+                      <option value="">Source order</option>
+                      {spec?.columns.map((c) => (
+                        <option key={c} value={c}>
+                          {label(c)}
+                        </option>
+                      ))}
+                    </select>,
+                  )}
+                  {otherKeys.map((k) => field(label(k.replace(/_id$/, "")), filterControl(k)))}
+                  <div className="field full">
+                    <span>Columns</span>
+                    <div className="row" style={{ flexWrap: "wrap", gap: "8px 18px" }}>
+                      {spec?.columns.map((c) => (
+                        <label key={c} className="row" style={{ gap: 6, fontSize: 13 }}>
+                          <input
+                            type="checkbox"
+                            checked={columns.includes(c)}
+                            disabled={Boolean(savedId)}
+                            onChange={(e) => setColumns((cs) => (e.target.checked ? [...cs, c] : cs.filter((x) => x !== c)))}
+                          />
+                          {label(c)}
+                        </label>
+                      ))}
+                    </div>
+                    <small className="muted">Leave all unticked for every column.</small>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+          <div className="form-footer">
+            <span>Fields marked * are required</span>
+            <div className="actions">
+              <button type="button" className="btn" onClick={() => router.back()}>
+                Cancel
+              </button>
+              <button type="submit" className="btn primary" disabled={busy || !spec}>
+                <Icon name="check" className="sm" />
+                {busy ? "Running…" : "Run report"}
+              </button>
+            </div>
+          </div>
+        </form>
+        <aside className="stack">
+          <div className="aside-panel">
+            <h3>{"Reports & analytics"}</h3>
+            <label className="field">
+              <span>Saved reports</span>
+              <select value={savedId ?? ""} onChange={(e) => pickSaved(e.target.value)}>
+                <option value="">New report</option>
+                {saved.data?.map((d) => (
+                  <option key={d.id} value={d.id}>{`${d.name} · ${d.source_label}`}</option>
+                ))}
+              </select>
+            </label>
+            <div className="gap" />
+            <Kv
+              rows={[
+                ["Academic year", y.year?.name ?? "—"],
+                ["Saved reports", saved.data ? String(saved.data.length) : "…"],
+                ["Status", chosenSaved ? (chosenSaved.is_active ? "Active" : "Inactive") : "New"],
+                ["Last run", chosenSaved?.last_run_at ? `${dateTime(chosenSaved.last_run_at)} · ${chosenSaved.run_count} runs` : "Never"],
+              ]}
+            />
+            <div className="gap" />
+            <p>Filters are the fixed fields each source offers; there are no operators. A saved report can be run again with different filters.</p>
+          </div>
+        </aside>
+      </div>
+      <div className="gap" />
+      {result ? (
+        <Panel
+          title={`Results · ${result.name}`}
+          sub={`${result.row_count} row${result.row_count === 1 ? "" : "s"}${result.truncated ? " · showing the first rows only" : ""}`}
+          action={
+            <button type="button" className="btn" onClick={() => downloadCsv(`report-${result.report_id}`, resultCols, resultRows)}>
+              <Icon name="download" className="sm" />
+              CSV
+            </button>
+          }
+          flush
+        >
+          <DataTable columns={resultCols} rows={resultRows} selectable={false} rowAction={false} empty="Nothing matched those filters." />
+        </Panel>
+      ) : (
+        <Panel title="Preview configuration" flush>
+          <DataTable columns={["Parameter", "Selected value"]} rows={configRows} selectable={false} rowAction={false} />
+        </Panel>
+      )}
+    </>
+  );
+}
