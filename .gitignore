@@ -60,3 +60,23 @@ desktop.ini
 
 # Uploaded files (local storage backend)
 backend/storage/
+
+# Design handoffs. 223MB between them, mostly PNG and the same screens
+# again as a zip and as the folder it was unzipped into. The mocks are the
+# reference for the UI, not an input to the build.
+Mock Screen/
+Parent_Mobile_58_Screens*
+
+# Backups of the two trackers that are tracked, written beside them by the
+# scripts that edit them. The originals stay in git; these are the undo.
+*.backup.xlsx
+
+# Working documents that live with whoever is editing them. Small enough to
+# track if they should be shared — nothing here is generated, so ignoring
+# them means this machine is the only copy.
+School_ERP_Functional_Test_Plan_and_Cases.xlsx
+School_ERP_Functional_Testing_Extended_Coverage.xlsx
+School_Management_ERP_295_Screen_Blueprint.xlsx
+School_Management_ERP_Complete_PRD_Agile_Backlog.xlsx
+school_erp_postgresql_schema_v1.sql
+httpswww.myclassboard reference.txt
