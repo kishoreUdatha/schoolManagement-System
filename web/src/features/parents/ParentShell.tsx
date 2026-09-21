@@ -1,0 +1,146 @@
+"use client";
+
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import type { ReactNode } from "react";
+import { Icon } from "@/components/ui/Icon";
+import { Badge } from "@/components/ui/primitives";
+import { dateTime, initials, label } from "@/lib/format";
+import { routeOf } from "@/lib/screens";
+import { useApi } from "@/lib/useApi";
+import type { AuditEntry, Parent } from "./types";
+
+/** Load the parent named by ?id= (their user id). */
+export function useParent() {
+  const id = useSearchParams().get("id");
+  const res = useApi<Parent>(id ? `/api/v1/school/parents/${id}` : null);
+  return { id, ...res };
+}
+
+/** "Aarav", "Aarav and Diya", "Aarav, Diya and Kabir". */
+export function childNames(p: Parent): string {
+  const first = p.children.map((c) => c.full_name.split(/\s+/)[0]);
+  if (!first.length) return "";
+  return first.length === 1 ? first[0] : `${first.slice(0, -1).join(", ")} and ${first.at(-1)}`;
+}
+
+/** The distinct relations a parent holds to their children, e.g. "Father". */
+export function relationsOf(p: Parent): string {
+  const r = [...new Set(p.children.map((c) => label(c.relation)))];
+  return r.length ? r.join(" / ") : "—";
+}
+
+/** Tabs across the parent record screens, each carrying ?id= on. */
+export function ParentTabs({ id, active }: { id: string; active: number }) {
+  const tabs: [number, string][] = [
+    [73, "Overview"],
+    [74, "Children"],
+    [76, "Login access"],
+    [77, "Interactions"],
+    [78, "Payments"],
+    [79, "Activity"],
+  ];
+  return (
+    <nav className="module-tabs profile-tabs">
+      {tabs.map(([n, t]) => (
+        <Link key={n} href={`${routeOf(n)}?id=${id}`} className={n === active ? "active" : ""}>
+          {t}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/** Name, children and account status across the top of a parent record. */
+export function ParentBanner({ p, active, badge }: { p: Parent; active?: number; badge?: ReactNode }) {
+  const kids = childNames(p);
+  return (
+    <section className="panel profile-banner">
+      <div className="profile-hero">
+        <div className="row">
+          <span className="avatar mint large">{initials(p.full_name)}</span>
+          <div>
+            <h2>{p.full_name}</h2>
+            <p>{kids ? `Parent of ${kids}` : "No children linked yet"}</p>
+            <div className="profile-meta">
+              {p.email ? (
+                <span>
+                  <Icon name="message" className="sm" />
+                  {` ${p.email}`}
+                </span>
+              ) : null}
+              <span>
+                <Icon name="calendar" className="sm" />
+                {` Last sign-in ${p.last_login_at ? dateTime(p.last_login_at) : "never"}`}
+              </span>
+              <Badge>{p.is_active ? "Active" : "Inactive"}</Badge>
+            </div>
+          </div>
+        </div>
+        {badge ?? (
+          <div className="profile-badge">
+            <strong>{p.children.length}</strong>
+            <small>{p.children.length === 1 ? "Child linked" : "Children linked"}</small>
+          </div>
+        )}
+      </div>
+      {active ? <ParentTabs id={String(p.user_id)} active={active} /> : null}
+    </section>
+  );
+}
+
+/** A page-head button that keeps the current ?id= (e.g. "Edit guardian"). */
+export function WithParentLink({ screen, icon, children, primary = true }: { screen: number; icon: "arrow" | "check" | "plus"; children: string; primary?: boolean }) {
+  const id = useSearchParams().get("id");
+  return (
+    <Link href={id ? `${routeOf(screen)}?id=${id}` : routeOf(71)} className={`btn ${primary ? "primary" : ""}`}>
+      <Icon name={icon} className="sm" />
+      {children}
+    </Link>
+  );
+}
+
+const FIELD = (k: string) => k.replace(/_/g, " ");
+
+/** Say what an audit row did without dumping JSON at somebody. */
+export function describe(e: AuditEntry): { title: string; sub: string; icon: "file" | "check" | "message" | "calendar" | "money" | "shield" } {
+  const who = e.user_name ?? "System";
+  const thing = e.entity_type.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+  const before = e.old_values ?? {};
+  const after = e.new_values ?? {};
+  const keys = Object.keys(after).filter((k) => JSON.stringify(before[k]) !== JSON.stringify(after[k]));
+  if (e.entity_type === "User" && e.action === "update" && keys.length === 1 && keys[0] === "last_login_at") {
+    return { title: "Signed in", sub: "Parent portal", icon: "shield" };
+  }
+  if (e.entity_type === "User" && keys.includes("is_active")) {
+    return { title: after.is_active ? "Portal access enabled" : "Portal access disabled", sub: who, icon: "shield" };
+  }
+  if (e.entity_type === "User" && keys.includes("password_hash")) {
+    return { title: "Password changed", sub: who, icon: "shield" };
+  }
+  const icon = /fee|payment|refund/i.test(e.entity_type) ? "money" : /preference|notice/i.test(e.entity_type) ? "message" : e.action === "create" ? "check" : "file";
+  if (e.action === "create") return { title: `${label(thing)} created`, sub: who, icon };
+  if (e.action === "delete") return { title: `${label(thing)} removed`, sub: who, icon };
+  const moved = keys.slice(0, 3).map(FIELD).join(", ");
+  return { title: `${label(thing)} updated`, sub: moved ? `${who} · ${moved}${keys.length > 3 ? ` and ${keys.length - 3} more` : ""}` : who, icon };
+}
+
+/** An audit row as the mock's timeline item. */
+export function AuditItem({ e }: { e: AuditEntry }) {
+  const d = describe(e);
+  return (
+    <div className="timeline-item">
+      <span className="timeline-dot">
+        <Icon name={d.icon} />
+      </span>
+      <div>
+        <h4>{d.title}</h4>
+        <p>{d.sub}</p>
+      </div>
+      <time>{dateTime(e.created_at)}</time>
+    </div>
+  );
+}
+
+/** Parent record screens opened without ?id=. */
+export const PICK_PARENT = { what: "parent or guardian", href: routeOf(71), cta: "Open the parent directory" };

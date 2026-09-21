@@ -1,0 +1,229 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
+import { Badge, Panel, Person } from "@/components/ui/primitives";
+import { ErrorNote } from "@/components/ui/states";
+import { api, errorText, type Paginated } from "@/lib/api";
+import { notify } from "@/lib/notify";
+import { routeOf } from "@/lib/screens";
+import { useApi } from "@/lib/useApi";
+import type { AcademicYear, SchoolClass, Student } from "./types";
+
+/**
+ * SCR-069, live: pick a section in one year and a section in the next, review
+ * the active roster, then POST /students/promote {source_section_id,
+ * target_section_id, student_ids}. A section change inside a year is an edit
+ * of the student (SCR-058).
+ */
+export function StudentPromotion() {
+  const years = useApi<AcademicYear[]>("/api/v1/school/academic-years");
+  const [fromYear, setFromYear] = useState<number | null>(null);
+  const [toYear, setToYear] = useState<number | null>(null);
+  const [fromClass, setFromClass] = useState<number | null>(null);
+  const [fromSection, setFromSection] = useState<number | null>(null);
+  const [toClass, setToClass] = useState<number | null>(null);
+  const [toSection, setToSection] = useState<number | null>(null);
+  const [held, setHeld] = useState<Set<number>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Current year to the year after it, when there is one.
+  useEffect(() => {
+    const ys = years.data;
+    if (fromYear !== null || !ys?.length) return;
+    const cur = ys.find((y) => y.is_current) ?? ys[0];
+    setFromYear(cur.id);
+    const later = ys.filter((y) => y.start_date > cur.start_date).sort((a, b) => a.start_date.localeCompare(b.start_date))[0];
+    setToYear((later ?? ys.find((y) => y.id !== cur.id))?.id ?? null);
+  }, [years.data, fromYear]);
+
+  const srcClasses = useApi<SchoolClass[]>(fromYear ? "/api/v1/school/classes" : null, { academic_year_id: fromYear });
+  const tgtClasses = useApi<SchoolClass[]>(toYear ? "/api/v1/school/classes" : null, { academic_year_id: toYear });
+  const roster = useApi<Paginated<Student>>(fromSection && fromYear ? "/api/v1/school/students" : null, {
+    academic_year_id: fromYear,
+    section_id: fromSection,
+    status: "active",
+    page_size: 200,
+  });
+  useEffect(() => setHeld(new Set()), [fromSection]);
+
+  const srcClass = srcClasses.data?.find((c) => c.id === fromClass);
+  const tgtClass = tgtClasses.data?.find((c) => c.id === toClass);
+  const srcSection = srcClass?.sections.find((x) => x.id === fromSection);
+  const tgtSection = tgtClass?.sections.find((x) => x.id === toSection);
+
+  // Suggest the next class by display order once a source class is chosen.
+  useEffect(() => {
+    if (!srcClass || !tgtClasses.data || toClass) return;
+    const next = [...tgtClasses.data].sort((a, b) => a.display_order - b.display_order).find((c) => c.display_order > srcClass.display_order);
+    if (next) setToClass(next.id);
+  }, [srcClass, tgtClasses.data, toClass]);
+
+  const students = useMemo(() => roster.data?.items ?? [], [roster.data]);
+  const moving = students.filter((s) => !held.has(s.id));
+  const yearName = (id: number | null) => years.data?.find((y) => y.id === id)?.name ?? "—";
+
+  function toggle(id: number) {
+    setHeld((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function promote() {
+    if (!fromSection || !toSection) return setError("Choose the section students leave and the section they join.");
+    if (fromYear === toYear) return setError("Promote into a different academic year.");
+    if (!moving.length) return setError("Choose at least one student to promote.");
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.post<{ promoted: unknown[] }>("/api/v1/school/students/promote", {
+        source_section_id: fromSection,
+        target_section_id: toSection,
+        student_ids: held.size ? moving.map((s) => s.id) : null,
+      });
+      notify(`${res.promoted?.length ?? moving.length} students promoted.`);
+      roster.reload();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const pickYear = (value: number | null, set: (v: number) => void, reset: () => void, aria: string, exclude?: number | null) => (
+    <select
+      aria-label={aria}
+      value={value ?? ""}
+      onChange={(e) => {
+        set(Number(e.target.value));
+        reset();
+      }}
+    >
+      {years.data
+        ?.filter((y) => y.id !== exclude)
+        .map((y) => (
+          <option key={y.id} value={y.id}>
+            {y.name}
+          </option>
+        ))}
+    </select>
+  );
+
+  return (
+    <>
+      <div className="filterbar">
+        {pickYear(fromYear, setFromYear, () => (setFromClass(null), setFromSection(null)), "From academic year")}
+        <select aria-label="From class" value={fromClass ?? ""} onChange={(e) => (setFromClass(Number(e.target.value) || null), setFromSection(null), setToClass(null), setToSection(null))}>
+          <option value="">From class…</option>
+          {srcClasses.data?.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select aria-label="From section" value={fromSection ?? ""} disabled={!srcClass} onChange={(e) => setFromSection(Number(e.target.value) || null)}>
+          <option value="">Section…</option>
+          {srcClass?.sections.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name}
+            </option>
+          ))}
+        </select>
+        <span className="muted">to</span>
+        {pickYear(toYear, setToYear, () => (setToClass(null), setToSection(null)), "To academic year", fromYear)}
+        <select aria-label="To class" value={toClass ?? ""} onChange={(e) => (setToClass(Number(e.target.value) || null), setToSection(null))}>
+          <option value="">Next class…</option>
+          {tgtClasses.data?.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select aria-label="To section" value={toSection ?? ""} disabled={!tgtClass} onChange={(e) => setToSection(Number(e.target.value) || null)}>
+          <option value="">Section…</option>
+          {tgtClass?.sections.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="tip">
+        <Icon name="shield" className="sm" />
+        <span>
+          Review student results and attendance before confirming the next academic year placement. Untick a student to hold them back. To move a student
+          between sections within a year, <Link href={routeOf(55)}>edit the student</Link>.
+        </span>
+      </div>
+      <ErrorNote>{error ?? years.error ?? roster.error}</ErrorNote>
+      <Panel
+        title="Promotion review"
+        sub={`${yearName(fromYear)} to ${yearName(toYear)}`}
+        action={
+          <div className="row">
+            <Badge>{fromSection && toSection ? `${moving.length} to promote` : "Review pending"}</Badge>
+            <button type="button" className="btn primary" disabled={busy || !fromSection || !toSection || !moving.length} onClick={promote}>
+              <Icon name="check" className="sm" />
+              {busy ? "Promoting…" : "Confirm promotion"}
+            </button>
+          </div>
+        }
+        flush
+      >
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="checkcell">
+                  <input
+                    type="checkbox"
+                    aria-label="Promote everyone"
+                    checked={students.length > 0 && held.size === 0}
+                    onChange={(e) => setHeld(e.target.checked ? new Set() : new Set(students.map((s) => s.id)))}
+                  />
+                </th>
+                <th>Student</th>
+                <th>Current class</th>
+                <th>Section</th>
+                <th>Roll no.</th>
+                <th>Next class</th>
+                <th>Decision</th>
+              </tr>
+            </thead>
+            <tbody>
+              {students.map((s, i) => (
+                <tr key={s.id}>
+                  <td className="checkcell">
+                    <input type="checkbox" aria-label={`Promote ${s.full_name}`} checked={!held.has(s.id)} onChange={() => toggle(s.id)} />
+                  </td>
+                  <td>
+                    <Person name={s.full_name} index={i} sub={s.admission_no} />
+                  </td>
+                  <td>{srcClass?.name ?? "—"}</td>
+                  <td>{srcSection?.name ?? "—"}</td>
+                  <td>{s.roll_no ?? "—"}</td>
+                  <td>{tgtClass ? `${tgtClass.name}${tgtSection ? ` ${tgtSection.name}` : ""}` : "—"}</td>
+                  <td>
+                    <Badge>{held.has(s.id) ? "Hold back" : "Promote"}</Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Not wired: Result — exam outcomes are per exam (promotion preview needs an exam), not per student here. */}
+        <div className="table-empty" hidden={students.length > 0}>
+          {!fromSection ? "Choose a class and section to review." : roster.loading ? "Loading students…" : "No active students in this section."}
+        </div>
+        <div className="table-footer">
+          <span>{`${students.length} students · ${moving.length} selected`}</span>
+        </div>
+      </Panel>
+    </>
+  );
+}
