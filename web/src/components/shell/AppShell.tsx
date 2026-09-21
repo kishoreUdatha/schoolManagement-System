@@ -104,7 +104,7 @@ function Sidebar({ s, viewer }: { s: Screen; viewer: Viewer }) {
               <div key={title}>
                 <div className="nav-label">{title.toUpperCase()}</div>
                 {links.map(([n, label, icon, mods], i) => (
-                  <ModuleGroup key={n} label={label} icon={icon} mods={mods} currentId={s.id} currentModule={s.module} tone={i} count={label === "Admissions" ? 12 : undefined} />
+                  <ModuleGroup key={n} label={label} icon={icon} mods={mods} currentId={s.id} currentModule={s.module} tone={i} />
                 ))}
               </div>
             ))}
