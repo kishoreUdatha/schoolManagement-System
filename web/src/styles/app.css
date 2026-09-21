@@ -97,31 +97,3 @@ h1,h2,h3{letter-spacing:-.02em}
    the native option list they open. */
 select,option,.filterbar select,.select-plain,.field select,.field input:not([type=checkbox]),.field textarea{color:var(--ink)}
 option{background:#fff}
-
-/* ------------------------------------------------------------------
-   Colourful sidebar: a deep blue-to-violet panel, white text, bright
-   icons, and the current page as a white pill.
-   ------------------------------------------------------------------ */
-.sidebar{background:linear-gradient(170deg,#1e3a8a 0%,#1d4ed8 45%,#5b21b6 100%);border-right:0;color:#fff}
-.sidebar .brand{color:#fff}
-.sidebar .brand small{color:#bfd3ff}
-.sidebar .brand-mark{background:#fff;color:#2563eb;box-shadow:0 6px 16px -6px rgba(0,0,0,.35)}
-.sidebar .nav-label{color:#c7d6ff;opacity:.9}
-.sidebar .nav{color:#eef3ff}
-.sidebar .nav .ico{color:#93c5fd}
-.sidebar .nav:nth-of-type(6n+2) .ico{color:#c4b5fd}
-.sidebar .nav:nth-of-type(6n+3) .ico{color:#5eead4}
-.sidebar .nav:nth-of-type(6n+4) .ico{color:#fcd34d}
-.sidebar .nav:nth-of-type(6n+5) .ico{color:#f9a8d4}
-.sidebar .nav:nth-of-type(6n) .ico{color:#86efac}
-.sidebar .nav:hover{background:rgba(255,255,255,.12);color:#fff}
-.sidebar .nav.active{background:#fff;color:#1d4ed8;box-shadow:0 10px 22px -12px rgba(0,0,0,.45)}
-.sidebar .nav.active .ico{color:#2563eb}
-.sidebar .nav .count{background:#f472b6;color:#fff}
-.sidebar .nav.active .count{background:#fce7f3;color:#be185d}
-.sidebar .select-plain{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.28);color:#fff}
-.sidebar .select-plain option{color:var(--ink);background:#fff}
-.sidebar .nav-scroll{scrollbar-color:rgba(255,255,255,.35) transparent}
-.sidebar-footer{background:rgba(0,0,0,.14);border-top:1px solid rgba(255,255,255,.14)}
-.sidebar-footer .person{color:#fff}
-.sidebar-footer .person small{color:#c7d6ff}
