@@ -71,9 +71,19 @@ services:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
-    # Production bundle (built with `next build`) served by `next start`.
-    # Switch back to `npm run dev` for live-reload during active development.
-    command: npm start
+    # Production bundle served by `next start`, and built here rather than in
+    # the image: the Dockerfile has no build step, and /app/.next above is an
+    # anonymous volume, so a container created from that image starts with no
+    # build at all and `npm start` alone would exit saying it cannot find one.
+    #
+    # Building in the Dockerfile would not help either, since ./frontend is
+    # bind-mounted over it — the sources would be the host's and the build
+    # would be the image's. So the restart is the rebuild: it costs a couple
+    # of minutes, and it is what makes `docker restart sms-frontend` pick up
+    # changed code.
+    #
+    # Switch to `npm run dev` for live-reload during active development.
+    command: sh -c "npm run build && npm start"
 
 volumes:
   postgres-data:
