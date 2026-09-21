@@ -12,7 +12,10 @@ const ROLES = ["School Admin", "Teacher", "Student", "Parent", "Principal", "Acc
 export function Gallery() {
   const params = useSearchParams();
   const [query, setQuery] = useState("");
-  const [mod, setMod] = useState(() => MODULES[Number(params.get("module"))] ?? "");
+  const [mod, setMod] = useState(() => {
+    const m = params.get("module");
+    return m === null ? "" : (MODULES[Number(m)] ?? "");
+  });
   const [role, setRole] = useState("");
 
   const found = useMemo(() => {
