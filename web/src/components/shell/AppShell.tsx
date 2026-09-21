@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Avatar, Person } from "@/components/ui/primitives";
+import { ModuleGroup } from "./ModuleGroup";
 import { MODULES, SCREENS, screen, routeOf, type Screen } from "@/lib/screens";
 
 /*
@@ -83,13 +84,13 @@ function Sidebar({ s }: { s: Screen }) {
               <div key={title}>
                 <div className="nav-label">{title.toUpperCase()}</div>
                 {links.map(([n, label, icon, mods], i) => (
-                  <ModuleGroup key={n} label={label} icon={icon} mods={mods} current={s} tone={i} count={label === "Admissions" ? 12 : undefined} />
+                  <ModuleGroup key={n} label={label} icon={icon} mods={mods} currentId={s.id} currentModule={s.module} tone={i} count={label === "Admissions" ? 12 : undefined} />
                 ))}
               </div>
             ))}
             <div className="nav-label">MORE MODULES</div>
             {SIDE_MODULES.map(([i, icon], k) => (
-              <ModuleGroup key={i} label={MOD_LABEL(i)} icon={icon} mods={[i]} current={s} tone={k} />
+              <ModuleGroup key={i} label={MOD_LABEL(i)} icon={icon} mods={[i]} currentId={s.id} currentModule={s.module} tone={k} />
             ))}
           </>
         )}
@@ -98,32 +99,6 @@ function Sidebar({ s }: { s: Screen }) {
         <Person name={who} sub={role} />
       </div>
     </aside>
-  );
-}
-
-/**
- * One module in the menu: a heading that opens to list the module's screens.
- * The module you are in starts open; the rest start closed.
- */
-function ModuleGroup({ label, icon, mods, current, tone, count }: { label: string; icon: IconName; mods: number[]; current: Screen; tone: number; count?: number }) {
-  const screens = SCREENS.filter((x) => mods.includes(MODULES.indexOf(x.module)));
-  const here = mods.includes(MODULES.indexOf(current.module));
-  return (
-    <details className={`nav-group tone-${tone % 6}`} open={here}>
-      <summary className={`nav ${here ? "active" : ""}`}>
-        <Icon name={icon} />
-        <span>{label}</span>
-        {count ? <span className="count">{count}</span> : null}
-        <Icon name="down" className="sm caret" />
-      </summary>
-      <div className="subnav-list">
-        {screens.map((x) => (
-          <Link key={x.id} href={x.route} className={`subnav ${x.id === current.id ? "active" : ""}`}>
-            {x.name}
-          </Link>
-        ))}
-      </div>
-    </details>
   );
 }
 
