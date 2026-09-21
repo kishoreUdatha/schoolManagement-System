@@ -4,18 +4,50 @@ from __future__ import annotations
 from datetime import date, time
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.deps import CurrentUser, SchoolAdminOrPrincipal, TeacherUser
-from app.core.enums import AttendanceStatus, ContactMethod, CorrectionStatus
+from app.core.enums import AttendanceStatus, ContactMethod, CorrectionStatus, UserRole
+from app.core.scoping import require_linked_child
 from app.database import get_db
+from app.models.user import User
 from app.services import attendance_ops_service as svc
 
 
 router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
+
+# Who may say a register is wrong. Anyone who works here, for any child in
+# the school; a parent, only for a child they are actually linked to.
+_SCHOOL_SIDE = {
+    UserRole.school_admin,
+    UserRole.principal,
+    UserRole.teacher,
+    UserRole.staff,
+    UserRole.accountant,
+}
+
+
+def _may_dispute(db: Session, user: User, student_id: int) -> None:
+    """Guard the one route on this file that is not staff-only.
+
+    It has to stay open to parents — the whole design is that a parent asks
+    and the office decides, rather than a parent editing the register. But
+    "open to parents" was implemented as open to anyone signed in, with no
+    check that the child was theirs, so any account could dispute any
+    student in the school.
+    """
+    if user.role in _SCHOOL_SIDE:
+        return
+    if user.role == UserRole.parent:
+        require_linked_child(db, user.id, student_id)
+        return
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Only school staff or the child's parent can dispute a register",
+    )
 
 
 class PeriodEntry(BaseModel):
@@ -115,6 +147,7 @@ def list_corrections(user: SchoolAdminOrPrincipal, db: Db,
 @router.post("/corrections", status_code=status.HTTP_201_CREATED,
              summary="Say the register is wrong, and why")
 def request_correction(payload: CorrectionIn, current_user: CurrentUser, db: Db):
+    _may_dispute(db, current_user, payload.student_id)
     return svc.request_correction(
         db, current_user.school_id, current_user.tenant_id, current_user.id,
         payload.student_id, payload.date, payload.to_status, payload.reason,

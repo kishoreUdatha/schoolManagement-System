@@ -234,6 +234,26 @@ def main():
         assert code == 400 and "Somebody else" in own["detail"], own
         print(f"  refused: {own['detail']}")
 
+        section("Only staff, or the child's own parent, may dispute a register")
+        # This route has to stay open to parents — a parent asks and the
+        # office decides — but "open to parents" was once open to anyone
+        # signed in, with no check that the child was theirs.
+        par = login("parent", devdata.PARENT_EMAIL, "ParentPass123!")
+        mine = devdata.child_id()
+        theirs = devdata.other_child_id()
+
+        code, refused = request("POST", "/school/attendance-ops/corrections", token=par, body={
+            "student_id": theirs, "date": str(day - timedelta(days=3)),
+            "to_status": "present", "reason": f"{TAG} not my child"})
+        assert code in (403, 404), f"a parent disputed a child who is not theirs: {code} {refused}"
+        print(f"  a parent asking about somebody else's child: {code}")
+
+        code, allowed = request("POST", "/school/attendance-ops/corrections", token=par, body={
+            "student_id": mine, "date": str(day - timedelta(days=4)),
+            "to_status": "present", "reason": f"{TAG} he was here"})
+        assert code == 201, f"a parent could not dispute their own child's register: {allowed}"
+        print(f"  the same parent about their own child: 201")
+
         ptok = login("principal", "principal@dev.local", "PrincipalPass123!")
         code, decided = request(
             "POST", f"/school/attendance-ops/corrections/{req1['id']}/decide",
