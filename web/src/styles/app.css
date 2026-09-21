@@ -1,0 +1,10 @@
+/* Additions on top of the mocks' styles.css (kept verbatim). */
+
+/* The school you are in sits in the top bar, left of search. */
+.topbar-left{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
+.tenant-switch{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border:1px solid var(--line);border-radius:11px;background:#f7faff;font:inherit;color:inherit;cursor:pointer;text-align:left;flex-shrink:0}
+.tenant-switch:hover{border-color:#bcd2f3}
+.tenant-switch .avatar{width:32px;height:32px}
+.tenant-name{font-size:12px;font-weight:800;line-height:1.3;white-space:nowrap}
+.tenant-name small{display:block;color:var(--muted);font-size:10px;font-weight:500}
+@media(max-width:700px){.tenant-name{display:none}.tenant-switch{padding:4px 8px 4px 4px}}

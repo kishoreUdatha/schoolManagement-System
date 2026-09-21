@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { PreviewInteractions } from "@/components/preview/PreviewInteractions";
 import "@/styles/styles.css";
+import "@/styles/app.css";
 
 export const metadata: Metadata = { title: "BrightCampus · School ERP" };
 

@@ -57,7 +57,6 @@ function Sidebar({ s }: { s: Screen }) {
   const { who, role } = viewerFor(s.n);
   const mi = MODULES.indexOf(s.module);
   const roleNav = ROLE_NAV[role];
-  const superAdmin = role === "Super Admin";
 
   return (
     <aside className="sidebar">
@@ -69,14 +68,6 @@ function Sidebar({ s }: { s: Screen }) {
           BrightCampus<small>SCHOOL ERP</small>
         </span>
       </Link>
-      <div className="school-switch">
-        <span className="avatar">BI</span>
-        <div>
-          {superAdmin ? "BrightCampus Platform" : "Bright International"}
-          <small>{superAdmin ? "All organizations" : "Main Campus, Hyderabad"}</small>
-        </div>
-        <Icon name="down" className="sm" />
-      </div>
       <div className="nav-scroll">
         {roleNav ? (
           <>
@@ -139,17 +130,35 @@ function NavGroup({ title, links, mi }: { title: string; links: [number, string,
   );
 }
 
-function Topbar({ who }: { who: string }) {
+/** The school (tenant) you are working in. The platform console has none. */
+function TenantSwitch({ role }: { role: string }) {
+  const platform = role === "Super Admin";
+  return (
+    <button type="button" className="tenant-switch" aria-label="Switch school">
+      <span className="avatar">{platform ? "BC" : "BI"}</span>
+      <span className="tenant-name">
+        {platform ? "BrightCampus Platform" : "Bright International"}
+        <small>{platform ? "All organizations" : "Main Campus, Hyderabad"}</small>
+      </span>
+      <Icon name="down" className="sm" />
+    </button>
+  );
+}
+
+function Topbar({ who, role }: { who: string; role: string }) {
   return (
     <header className="topbar">
-      <button type="button" className="btn mobile-menu " aria-label="Open navigation" data-toggle-nav="">
-        <Icon name="menu" className="sm" />
-      </button>
-      <div className="topsearch">
-        <Icon name="search" className="sm" />
-        <input aria-label="Find screen" placeholder="Search people, classes, pages…" id="global-search" autoComplete="off" />
-        <kbd>⌘ K</kbd>
-        <div className="search-results" id="global-results" />
+      <div className="topbar-left">
+        <button type="button" className="btn mobile-menu " aria-label="Open navigation" data-toggle-nav="">
+          <Icon name="menu" className="sm" />
+        </button>
+        <TenantSwitch role={role} />
+        <div className="topsearch">
+          <Icon name="search" className="sm" />
+          <input aria-label="Find screen" placeholder="Search people, classes, pages…" id="global-search" autoComplete="off" />
+          <kbd>⌘ K</kbd>
+          <div className="search-results" id="global-results" />
+        </div>
       </div>
       <div className="row">
         <select className="academic-select" aria-label="Academic year">
@@ -174,13 +183,13 @@ function Topbar({ who }: { who: string }) {
 export function AppShell({ screen: id, actions, children }: { screen: string; actions?: ReactNode; children: ReactNode }) {
   const s = screen(id);
   const mi = MODULES.indexOf(s.module);
-  const { who } = viewerFor(s.n);
+  const { who, role } = viewerFor(s.n);
   return (
     <div className="app">
       <Sidebar s={s} />
       <button className="offcanvas-backdrop" aria-label="Close navigation" data-toggle-nav="" />
       <div className="workspace">
-        <Topbar who={who} />
+        <Topbar who={who} role={role} />
         <main className="main">
           <div className="crumb">
             <Link href={routeOf(33)}>Bright International</Link>
