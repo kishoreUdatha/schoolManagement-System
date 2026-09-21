@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
@@ -12,7 +13,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { AcademicYear, SchoolClass } from "@/features/students/types";
 import { clock } from "./common";
-import { EXAM_KINDS, type ClassSubject, type Exam, type ExamType, type Term } from "./types";
+import { EXAM_KINDS, type ClassSubject, type Exam, type ExamType, type Paper, type Term } from "./types";
 
 const field = (labelText: string, control: JSX.Element, required = false, full = false) => (
   <label className={`field ${full ? "full" : ""}`}>
@@ -88,7 +89,24 @@ export function ExamSetup() {
     }
   }
 
+  async function removeExam() {
+    if (!ex) return;
+    if (!window.confirm(`Delete the exam ${ex.name} and its ${ex.papers_count} paper${ex.papers_count === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api.delete(`/api/v1/school/exams/${ex.id}`);
+      notify("Exam deleted.");
+      router.push(routeOf(138));
+    } catch (err) {
+      setError(errorText(err));
+      setSaving(false);
+    }
+  }
+
   const year = years.data?.find((y) => y.id === yearId);
+  // The server refuses to delete a published exam or one with marks entered.
+  const deletable = ex && !ex.is_published && !ex.total_marks_entered;
 
   return (
     <>
@@ -160,6 +178,17 @@ export function ExamSetup() {
           <div className="form-footer">
             <span>Fields marked * are required</span>
             <div className="actions">
+              {ex ? (
+                <button
+                  type="button"
+                  className="btn danger"
+                  onClick={removeExam}
+                  disabled={saving || !deletable}
+                  title={deletable ? undefined : ex.is_published ? "Unpublish the exam before deleting it" : "Marks have been entered; delete them first"}
+                >
+                  Delete exam
+                </button>
+              ) : null}
               <button type="button" className="btn" onClick={() => router.back()}>
                 Cancel
               </button>
@@ -204,6 +233,8 @@ function Papers({ exam, reload }: { exam: Exam; reload: () => void }) {
   const used = useMemo(() => new Set(exam.papers.map((p) => p.class_subject_id)), [exam.papers]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Paper | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   async function add(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -247,6 +278,36 @@ function Papers({ exam, reload }: { exam: Exam; reload: () => void }) {
       reload();
     } catch (err) {
       setError(errorText(err));
+    }
+  }
+
+  async function saveEdit(e: FormEvent<HTMLFormElement>) {
+    if (!editing) return;
+    const f = new FormData(e.currentTarget);
+    const num = (k: string) => (String(f.get(k) ?? "").trim() === "" ? null : Number(f.get(k)));
+    const max = num("max_marks");
+    const pass = num("pass_marks");
+    if (max !== null && pass !== null && pass > max) {
+      setEditError("Pass marks cannot be more than the maximum.");
+      return;
+    }
+    setSaving(true);
+    setEditError(null);
+    try {
+      await api.patch(`/api/v1/school/exams/papers/${editing.id}`, {
+        max_marks: max,
+        pass_marks: pass,
+        exam_date: String(f.get("exam_date")),
+        start_time: String(f.get("start_time") ?? "") || null,
+        duration_minutes: num("duration_minutes"),
+      });
+      notify("Paper saved.");
+      setEditing(null);
+      reload();
+    } catch (err) {
+      setEditError(errorText(err));
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -330,9 +391,21 @@ function Papers({ exam, reload }: { exam: Exam; reload: () => void }) {
                     <td key={j}>{String(cell)}</td>
                   ))}
                   <td className="right">
-                    <button type="button" className="btn" onClick={() => remove(i)}>
-                      Remove
-                    </button>
+                    <div className="row" style={{ justifyContent: "flex-end", gap: 6 }}>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => {
+                          setEditError(null);
+                          setEditing(exam.papers[i]);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button type="button" className="btn" onClick={() => remove(i)}>
+                        Remove
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -343,6 +416,38 @@ function Papers({ exam, reload }: { exam: Exam; reload: () => void }) {
           No papers yet. Add the first one above.
         </div>
       </Panel>
+      {editing ? (
+        <Dialog
+          open
+          title={`Edit ${editing.subject_name ?? "paper"}${editing.class_name ? ` · ${editing.class_name}` : ""}`}
+          onClose={() => setEditing(null)}
+          onSubmit={saveEdit}
+          actions={
+            <>
+              <button type="button" className="btn" onClick={() => setEditing(null)}>
+                Cancel
+              </button>
+              <button type="submit" className="btn primary" disabled={saving}>
+                {saving ? "Saving…" : "Save paper"}
+              </button>
+            </>
+          }
+        >
+          <ErrorNote>{editError}</ErrorNote>
+          {editing.marks_entered_count ? (
+            <div className="tip warn">
+              <span>{`Marks are already entered for ${editing.marks_entered_count} student${editing.marks_entered_count === 1 ? "" : "s"}. Changing the maximum or pass marks changes their grades.`}</span>
+            </div>
+          ) : null}
+          <div className="form-grid">
+            {field("Maximum marks", <input name="max_marks" type="number" min={1} max={999} required defaultValue={editing.max_marks} />, true)}
+            {field("Pass marks", <input name="pass_marks" type="number" min={0} max={999} required defaultValue={editing.pass_marks} />, true)}
+            {field("Exam date", <input name="exam_date" type="date" required min={exam.start_date} max={exam.end_date} defaultValue={editing.exam_date} />, true)}
+            {field("Start time", <input name="start_time" type="time" defaultValue={editing.start_time?.slice(0, 5) ?? ""} />)}
+            {field("Duration (minutes)", <input name="duration_minutes" type="number" min={1} max={600} defaultValue={editing.duration_minutes ?? ""} />)}
+          </div>
+        </Dialog>
+      ) : null}
     </div>
   );
 }

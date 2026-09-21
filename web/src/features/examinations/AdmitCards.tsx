@@ -1,27 +1,32 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { ErrorNote } from "@/components/ui/states";
-import { errorText } from "@/lib/api";
+import { api, errorText } from "@/lib/api";
 import { date } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import type { SchoolClass } from "@/features/students/types";
-import { clock, downloadFile, ExamSelects, useExamChoice } from "./common";
+import { clock, downloadFile, ExamSelects, useExamChoice, useSetParam } from "./common";
 import type { AdmitCard } from "./types";
 
 /**
- * SCR-144, live: GET /school/exam-ops/{id}/admit-cards?class_id= and the
- * per-student PDF at …/admit-cards/{student_id}/pdf.
+ * SCR-144, live: GET /school/exam-ops/{id}/admit-cards?class_id=, one
+ * student's card from GET …/admit-cards/{student_id} (?student=, so another
+ * screen can link straight to it), and the per-student PDF at
+ * …/admit-cards/{student_id}/pdf, opened or downloaded.
  */
 export function AdmitCards() {
   const c = useExamChoice();
+  const setParam = useSetParam();
+  const studentParam = useSearchParams().get("student");
+  const studentId = studentParam ? Number(studentParam) : null;
   const classes = useApi<SchoolClass[]>(c.exam ? "/api/v1/school/classes" : null, { academic_year_id: c.exam?.academic_year_id });
   const [classId, setClassId] = useState<number | null>(null);
-  const [studentId, setStudentId] = useState<number | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<"open" | "download" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,18 +35,25 @@ export function AdmitCards() {
 
   const cards = useApi<AdmitCard[]>(c.examId && classId ? `/api/v1/school/exam-ops/${c.examId}/admit-cards` : null, { class_id: classId });
   const list = cards.data ?? [];
-  const card = list.find((x) => x.student_id === studentId) ?? list[0] ?? null;
+  // A student named in the URL may sit in another class than the one shown.
+  const inList = list.find((x) => x.student_id === studentId);
+  const one = useApi<AdmitCard>(c.examId && studentId && cards.data && !inList ? `/api/v1/school/exam-ops/${c.examId}/admit-cards/${studentId}` : null);
+  const single = one.data && one.data.student_id === studentId && one.data.exam_id === c.examId ? one.data : null;
+  const card = inList ?? single ?? list[0] ?? null;
+  const options = single && !inList ? [single, ...list] : list;
 
-  async function pdf() {
+  async function pdf(kind: "open" | "download") {
     if (!card) return;
-    setBusy(true);
+    const path = `/api/v1/school/exam-ops/${card.exam_id}/admit-cards/${card.student_id}/pdf`;
+    setBusy(kind);
     setError(null);
     try {
-      await downloadFile(`/api/v1/school/exam-ops/${card.exam_id}/admit-cards/${card.student_id}/pdf`, `admit-card-${card.admission_no}.pdf`);
+      if (kind === "open") await api.open(path);
+      else await downloadFile(path, `admit-card-${card.admission_no}.pdf`);
     } catch (err) {
       setError(errorText(err));
     } finally {
-      setBusy(false);
+      setBusy(null);
     }
   }
 
@@ -56,18 +68,25 @@ export function AdmitCards() {
     <>
       <div className="filterbar">
         <ExamSelects c={c} />
-        <select aria-label="Class" value={classId ?? ""} onChange={(e) => setClassId(Number(e.target.value))}>
+        <select
+          aria-label="Class"
+          value={classId ?? ""}
+          onChange={(e) => {
+            setClassId(Number(e.target.value));
+            setParam({ student: null });
+          }}
+        >
           {classes.data?.map((x) => (
             <option key={x.id} value={x.id}>
               {x.name}
             </option>
           ))}
         </select>
-        <select aria-label="Student" value={card?.student_id ?? ""} onChange={(e) => setStudentId(Number(e.target.value))} disabled={!list.length}>
-          {!list.length ? <option value="">{cards.loading ? "Loading…" : "No candidates"}</option> : null}
-          {list.map((x) => (
+        <select aria-label="Student" value={card?.student_id ?? ""} onChange={(e) => setParam({ student: e.target.value })} disabled={!options.length}>
+          {!options.length ? <option value="">{cards.loading ? "Loading…" : "No candidates"}</option> : null}
+          {options.map((x) => (
             <option key={x.student_id} value={x.student_id}>
-              {`${x.student_name} · ${x.admission_no}`}
+              {`${x.student_name} · ${x.admission_no}${x === single ? ` · ${x.class_name ?? ""}` : ""}`}
             </option>
           ))}
         </select>
@@ -75,12 +94,16 @@ export function AdmitCards() {
           <Icon name="download" className="sm" />
           Print
         </button>
-        <button type="button" className="btn primary" onClick={pdf} disabled={!card || busy}>
+        <button type="button" className="btn" onClick={() => pdf("open")} disabled={!card || busy !== null}>
+          <Icon name="file" className="sm" />
+          {busy === "open" ? "Preparing…" : "Open PDF"}
+        </button>
+        <button type="button" className="btn primary" onClick={() => pdf("download")} disabled={!card || busy !== null}>
           <Icon name="download" className="sm" />
-          {busy ? "Preparing…" : "Download PDF"}
+          {busy === "download" ? "Preparing…" : "Download PDF"}
         </button>
       </div>
-      <ErrorNote>{error ?? c.error ?? classes.error ?? cards.error}</ErrorNote>
+      <ErrorNote>{error ?? c.error ?? classes.error ?? cards.error ?? one.error}</ErrorNote>
       {card && card.rooms_allocated < card.sittings.length ? (
         <div className="tip warn" style={{ marginBottom: 16 }}>
           <Icon name="bell" className="sm" />
