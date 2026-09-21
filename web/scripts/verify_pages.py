@@ -64,6 +64,11 @@ def tokens(html, strip_chrome):
         el.decompose()
     for el in body.find_all(["script", "next-route-announcer"]):
         el.decompose()
+    # Deliberate departure: the school card moved from the sidebar to the top bar.
+    for el in body.select(".school-switch, .tenant-switch"):
+        el.decompose()
+    for el in body.select(".topbar-left"):
+        el.unwrap()
     out = []
     for c in body.children:
         canon(c, out)
