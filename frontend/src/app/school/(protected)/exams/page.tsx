@@ -553,6 +553,7 @@ function BulkReportCardModal({
         <FormGrid>
           <Select
             label="Class *"
+            required
             value={classId}
             onChange={(e) => {
               setClassId(e.target.value ? Number(e.target.value) : "");
@@ -568,6 +569,7 @@ function BulkReportCardModal({
           </Select>
           <Select
             label="Section *"
+            required
             value={sectionId}
             onChange={(e) =>
               setSectionId(e.target.value ? Number(e.target.value) : "")
@@ -661,7 +663,7 @@ function ExamFormModal({
               child. */}
           <div className="sm:col-span-2">
             <Select
-              label="Kind *"
+              label="Kind"
               value={form.kind}
               onChange={(e) => setForm({ ...form, kind: e.target.value as ExamKind })}
             >

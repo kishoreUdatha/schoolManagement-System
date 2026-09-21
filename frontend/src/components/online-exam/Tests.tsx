@@ -100,7 +100,11 @@ export function TestForm({ open, test, onClose, onSaved }: { open: boolean; test
       <form onSubmit={submit} className="space-y-3">
         <ErrorBox>{error}</ErrorBox>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Select label="Class & subject *" value={f.class_subject_id} onChange={(e) => setF({ ...f, class_subject_id: e.target.value, section_id: "" })}>
+          {/* Seeded from the first writable subject when there is one, but
+              empty when there is none — and with no option matching "" the
+              box would look filled while posting nothing. */}
+          <Select label="Class & subject *" required value={f.class_subject_id} onChange={(e) => setF({ ...f, class_subject_id: e.target.value, section_id: "" })}>
+            <option value="">Choose a class and subject…</option>
             {writable.map((c) => (
               <option key={c.class_subject_id} value={c.class_subject_id}>
                 {c.class_name} · {c.subject_name}

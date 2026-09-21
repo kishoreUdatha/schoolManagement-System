@@ -125,7 +125,11 @@ export function QuestionForm({
           <p className="text-xs text-warning">Used in {question.used_in_tests} test(s). If a test is published, the answer can&apos;t change.</p>
         )}
         <div className="grid gap-3 sm:grid-cols-3">
-          <Select label="Subject *" value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+          {/* Starts empty, so it needs an option that says so — without one
+              the browser shows the first subject while the value is still ""
+              and the save posts subject 0. */}
+          <Select label="Subject *" required value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
+            <option value="">Choose a subject…</option>
             {subjects.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -141,7 +145,7 @@ export function QuestionForm({
             ))}
           </Select>
           <Input label="Topic" value={topic} onChange={(e) => setTopic(e.target.value)} />
-          <Select label="Type *" value={kind} onChange={(e) => {
+          <Select label="Type" value={kind} onChange={(e) => {
             setKind(e.target.value as Kind);
             setCorrect(new Set());
           }}>
@@ -151,7 +155,7 @@ export function QuestionForm({
               </option>
             ))}
           </Select>
-          <Select label="Bloom's level *" value={bloom} onChange={(e) => setBloom(e.target.value as Bloom)}>
+          <Select label="Bloom's level" value={bloom} onChange={(e) => setBloom(e.target.value as Bloom)}>
             {BLOOMS.map((b) => (
               <option key={b} value={b}>
                 {cap(b)}

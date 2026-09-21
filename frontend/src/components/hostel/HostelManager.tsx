@@ -247,7 +247,7 @@ function Rooms({ hostel, manager, onChange, onError }: Handlers & { hostel: Host
               <Input label="Room no. *" value={newRoom.room_no} onChange={(e) => setNewRoom({ ...newRoom, room_no: e.target.value })} required />
               <Input label="Floor" value={newRoom.floor} onChange={(e) => setNewRoom({ ...newRoom, floor: e.target.value })} />
               <Input label="Type" placeholder="AC / non-AC" value={newRoom.room_type} onChange={(e) => setNewRoom({ ...newRoom, room_type: e.target.value })} />
-              <Input label="Beds *" type="number" min="1" max="40" value={newRoom.beds} onChange={(e) => setNewRoom({ ...newRoom, beds: e.target.value })} />
+              <Input label="Beds *" type="number" min="1" max="40" required value={newRoom.beds} onChange={(e) => setNewRoom({ ...newRoom, beds: e.target.value })} />
               <Input label="Fee ₹/month" placeholder={`Hostel: ${hostel.monthly_fee}`} type="number" min="0" value={newRoom.monthly_fee} onChange={(e) => setNewRoom({ ...newRoom, monthly_fee: e.target.value })} />
               <Button type="submit">Add room</Button>
             </form>

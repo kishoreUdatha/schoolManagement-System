@@ -326,7 +326,7 @@ export function Discipline() {
 
       <Modal open={!!actionFor} onClose={() => setActionFor(null)} title={`Action for ${actionFor?.student_name ?? ""}`}>
         <form onSubmit={saveAction} className="space-y-3">
-          <Select label="Action *" value={af.kind} onChange={(e) => setAf({ ...af, kind: e.target.value })}>
+          <Select label="Action" value={af.kind} onChange={(e) => setAf({ ...af, kind: e.target.value })}>
             {ACTIONS.map((a) => (
               <option key={a} value={a}>
                 {humanize(a)}

@@ -178,6 +178,7 @@ function PlanForm({
         <div className="grid gap-3 sm:grid-cols-2">
           <Select
             label="Subject *"
+            required
             value={f.class_subject_id}
             onChange={(e) => {
               const next = subjects.find((s) => String(s.class_subject_id) === e.target.value);
@@ -185,13 +186,17 @@ function PlanForm({
               setTopicIds(new Set());
             }}
           >
+            {/* Empty until chosen, and nothing below matches "", so the
+                placeholder is what keeps the box honest about that. */}
+            <option value="">Choose a subject…</option>
             {subjects.map((s) => (
               <option key={s.class_subject_id} value={s.class_subject_id}>
                 {s.class_name} · {s.subject_name}
               </option>
             ))}
           </Select>
-          <Select label="Section *" value={f.section_id} onChange={(e) => setF({ ...f, section_id: e.target.value })}>
+          <Select label="Section *" required value={f.section_id} onChange={(e) => setF({ ...f, section_id: e.target.value })}>
+            <option value="">Choose a section…</option>
             {(cs?.sections ?? []).map((s) => (
               <option key={s.section_id} value={s.section_id}>
                 {s.section_label}

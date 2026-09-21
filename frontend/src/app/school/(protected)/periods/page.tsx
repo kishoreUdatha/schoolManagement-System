@@ -247,7 +247,7 @@ function CreatePeriodModal({
                   always carried a plain asterisk — left as it was rather than
                   changing what the form claims about itself. */}
               <Select
-                label="Day *"
+                label="Day"
                 value={form.day_of_week}
                 onChange={(e) =>
                   setForm({ ...form, day_of_week: Number(e.target.value) })
