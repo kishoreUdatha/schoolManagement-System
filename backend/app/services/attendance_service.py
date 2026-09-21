@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.core.enums import AttendanceStatus
+from app.core.scoping import school_today
 from app.models.academic import SchoolClass, Section
 from app.models.attendance import StudentAttendance
 from app.models.holiday import Holiday
@@ -26,9 +27,14 @@ def _section_label(db: Session, section_id: int) -> Optional[str]:
     return f"{cls.name} {sec.name}" if cls else sec.name
 
 
-def _check_date(target: date) -> tuple[bool, int]:
-    """Return (is_editable, window_days_remaining_or_zero)."""
-    today = date.today()
+def _check_date(target: date, today: date) -> tuple[bool, int]:
+    """Return (is_editable, window_days_remaining_or_zero).
+
+    `today` is the school's date, passed in rather than read here. On a UTC
+    server an Asia/Kolkata school is already on tomorrow from 18:30, so a
+    teacher marking a register in the first hours of the morning was told
+    the day they were standing in was in the future.
+    """
     if target > today:
         return False, 0
     if target == today:
@@ -74,7 +80,7 @@ def get_view(
     db: Session, teacher_user_id: int, school_id: int, section_id: int, on_date: date
 ) -> dict:
     sec = _check_class_teacher_access(db, teacher_user_id, section_id, school_id)
-    is_editable, _ = _check_date(on_date)
+    is_editable, _ = _check_date(on_date, school_today(db, school_id))
     holiday = _holiday_for(db, school_id, on_date)
 
     students = db.execute(
@@ -155,9 +161,10 @@ def save(
 ) -> dict:
     sec = _check_class_teacher_access(db, teacher_user_id, section_id, school_id)
 
-    is_editable, _ = _check_date(on_date)
+    today = school_today(db, school_id)
+    is_editable, _ = _check_date(on_date, today)
     if not is_editable:
-        if on_date > date.today():
+        if on_date > today:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot mark attendance for a future date",
