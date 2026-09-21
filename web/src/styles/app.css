@@ -37,7 +37,7 @@ body{background:#fff}
 
 /* sidebar: coloured icons, a vivid active item */
 .nav{color:#2f426b}
-.nav-label{color:#5d71a0}
+.nav-label{color:#475a85}
 .nav .ico{color:var(--c-blue)}
 .nav:nth-of-type(6n+2) .ico{color:var(--c-violet)}
 .nav:nth-of-type(6n+3) .ico{color:var(--c-teal)}
@@ -92,3 +92,8 @@ body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-r
 svg text{font-family:var(--font-sans)}
 .mono,.stat-value,.data-table td{font-variant-numeric:tabular-nums}
 h1,h2,h3{letter-spacing:-.02em}
+
+/* Dropdowns show chosen values, so they read as body text, and so does
+   the native option list they open. */
+select,option,.filterbar select,.select-plain,.field select,.field input:not([type=checkbox]),.field textarea{color:var(--ink)}
+option{background:#fff}
