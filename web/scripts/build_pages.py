@@ -108,7 +108,9 @@ def write_registry() -> None:
         "export function screen(id: string): Screen {\n  const s = BY_ID.get(id);\n"
         "  if (!s) throw new Error(`Unknown screen ${id}`);\n  return s;\n}\n\n"
         "export function screenAt(route: string): Screen | undefined {\n  return BY_ROUTE.get(route);\n}\n\n"
-        "export function routeOf(n: number): string {\n  return screen(`SCR-${String(n).padStart(3, \"0\")}`).route;\n}\n",
+        "/** Route of a screen by number: 1–296 are the mocks (SCR-), 1000+ are extras (NEW-). */\n"
+        "export function routeOf(n: number): string {\n"
+        "  return screen(n >= 1000 ? `NEW-${String(n).slice(1)}` : `SCR-${String(n).padStart(3, \"0\")}`).route;\n}\n",
         encoding="utf-8",
     )
 

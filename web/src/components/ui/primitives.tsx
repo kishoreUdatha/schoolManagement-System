@@ -13,8 +13,11 @@ export function badgeTone(text: string): string {
   return "";
 }
 
-export function Badge({ children }: { children: string }) {
-  return <span className={`badge ${badgeTone(children)}`}>{children}</span>;
+export type Tone = "" | "warn" | "bad" | "neutral" | "blue";
+
+/** `tone` overrides the colour guessed from the words, e.g. tone="warn" for "Not marked". */
+export function Badge({ children, tone }: { children: string; tone?: Tone }) {
+  return <span className={`badge ${tone ?? badgeTone(children)}`}>{children}</span>;
 }
 
 const AVATAR_TONES = ["mint", "", "peach", "lilac"];

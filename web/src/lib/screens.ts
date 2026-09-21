@@ -357,6 +357,7 @@ export function screenAt(route: string): Screen | undefined {
   return BY_ROUTE.get(route);
 }
 
+/** Route of a screen by number: 1–296 are the mocks (SCR-), 1000+ are extras (NEW-). */
 export function routeOf(n: number): string {
-  return screen(`SCR-${String(n).padStart(3, "0")}`).route;
+  return screen(n >= 1000 ? `NEW-${String(n).slice(1)}` : `SCR-${String(n).padStart(3, "0")}`).route;
 }
