@@ -6,7 +6,10 @@ import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { StatStrip } from "@/components/ui/StatStrip";
+import { api, errorText } from "@/lib/api";
+import { Icon } from "@/components/ui/Icon";
 import { date, label, money } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { Billing, Meter, UsageOverview, UsageRow } from "./types";
@@ -44,6 +47,7 @@ function Usage({ title, m, unit = "", remaining }: { title: string; m: Meter; un
  * SCR-015, live: GET /super-admin/usage-overview (every organization against
  * its plan's limits) and /super-admin/billing for the subscription panel.
  * Limits belong to the plan, so "Edit limits" opens Subscription Plans.
+ * "Export daily usage" downloads GET /super-admin/usage/export.csv (?from&to).
  */
 export function TenantUsage() {
   const router = useRouter();
@@ -52,6 +56,23 @@ export function TenantUsage() {
   const billing = useApi<Billing>("/api/v1/super-admin/billing");
   const [tenantId, setTenantId] = useState<number | null>(wanted ? Number(wanted) : null);
   const [filter, setFilter] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  async function exportUsage() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await api.download("/api/v1/super-admin/usage/export.csv", `tenant-usage${from || to ? `-${from || "start"}-to-${to || "today"}` : ""}.csv`, { from, to });
+      notify("Daily usage exported.");
+    } catch (err) {
+      setExportError(errorText(err));
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const tenants = useMemo(() => overview.data?.tenants ?? [], [overview.data]);
   useEffect(() => {
@@ -92,7 +113,7 @@ export function TenantUsage() {
           <option value="none">No limits set</option>
         </select>
       </div>
-      <ErrorNote>{overview.error ?? billing.error}</ErrorNote>
+      <ErrorNote>{exportError ?? overview.error ?? billing.error}</ErrorNote>
       <StatStrip items={stats} compact />
       <div className="two-col" style={{ marginBottom: 20 }}>
         <div>
@@ -142,7 +163,21 @@ export function TenantUsage() {
           </Panel>
         </aside>
       </div>
-      <Panel title="All organizations" sub="Students and staff against the plan's limits" flush>
+      <Panel
+        title="All organizations"
+        sub="Students and staff against the plan's limits"
+        action={
+          <div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
+            <input type="date" aria-label="Usage from" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <input type="date" aria-label="Usage to" value={to} onChange={(e) => setTo(e.target.value)} />
+            <button type="button" className="btn" disabled={exporting} onClick={exportUsage}>
+              <Icon name="download" className="sm" />
+              {exporting ? "Exporting…" : "Export daily usage"}
+            </button>
+          </div>
+        }
+        flush
+      >
         <DataTable
           columns={["Organization", "Students", "Staff", "Active users", "Status"]}
           rows={rows}

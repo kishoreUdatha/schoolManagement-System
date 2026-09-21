@@ -12,7 +12,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
-import { Lesson, Modal, Notice, WeekGrid, span, toneOf, useSectionPick, useYearClasses, weekLabel } from "./shared";
+import { DAY_NAME, Lesson, Modal, Notice, WeekGrid, span, toneOf, useSectionPick, useYearClasses, weekLabel } from "./shared";
 import type { Child, ClassSubject, Entry, ExamRoom, Period, SectionTimetable } from "./types";
 
 /**
@@ -20,7 +20,8 @@ import type { Child, ClassSubject, Entry, ExamRoom, Period, SectionTimetable } f
  * "view"): one section's week.
  *
  * Edit: GET /school/sections/{id}/timetable, PUT/DELETE a slot, copy from
- * another section, publish / unpublish. View: the same GET for the office,
+ * another section, publish / unpublish, and the school-wide teacher clash
+ * report (GET /school/sections/clashes). View: the same GET for the office,
  * GET /parent/me/children/{id}/timetable for a parent. ?section= preselects.
  */
 export function SectionWeek({ mode }: { mode: "edit" | "view" }) {
@@ -55,6 +56,7 @@ function OfficeWeek({ mode }: { mode: "edit" | "view" }) {
   const { year, classes } = useYearClasses();
   const pick = useSectionPick(classes.data, preset);
   const tt = useApi<SectionTimetable>(pick.sectionId ? `/api/v1/school/sections/${pick.sectionId}/timetable` : null);
+  const clashes = useApi<Clash[]>(mode === "edit" ? "/api/v1/school/sections/clashes" : null);
   const subjects = useApi<ClassSubject[]>(mode === "edit" && pick.classId ? `/api/v1/school/classes/${pick.classId}/subjects` : null);
   const [editing, setEditing] = useState<{ period: Period; entry?: Entry } | null>(null);
   const [copying, setCopying] = useState(false);
@@ -79,6 +81,7 @@ function OfficeWeek({ mode }: { mode: "edit" | "view" }) {
       await api.delete(`/api/v1/school/sections/${pick.sectionId}/timetable/${p.id}`);
       setNotice(`${p.label ?? `Period ${p.period_number}`} cleared.`);
       tt.reload();
+      clashes.reload();
     } catch (e) {
       setError(errorText(e));
     }
@@ -177,6 +180,18 @@ function OfficeWeek({ mode }: { mode: "edit" | "view" }) {
           </div>
         ) : null}
       </Panel>
+      {mode === "edit" ? <ClashPanel
+          clashes={clashes.data}
+          loading={clashes.loading}
+          error={clashes.error}
+          onOpen={(sid) => {
+            const owner = classes.data?.find((c) => c.sections.some((x) => x.id === sid));
+            if (!owner) return;
+            pick.pickClass(owner.id);
+            pick.setSectionId(sid);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+        /> : null}
       {editing && pick.sectionId ? (
         <AssignModal
           sectionId={pick.sectionId}
@@ -188,6 +203,7 @@ function OfficeWeek({ mode }: { mode: "edit" | "view" }) {
             setEditing(null);
             notify("Lesson saved.");
             tt.reload();
+            clashes.reload();
           }}
         />
       ) : null}
@@ -200,9 +216,56 @@ function OfficeWeek({ mode }: { mode: "edit" | "view" }) {
             setCopying(false);
             notify("Timetable copied.");
             tt.reload();
+            clashes.reload();
           }}
         />
       ) : null}
+    </>
+  );
+}
+
+/** GET /school/sections/clashes: one teacher timetabled in two sections at the same day and period. */
+type Clash = {
+  teacher_user_id: number;
+  teacher_name: string | null;
+  day_of_week: number;
+  period_number: number;
+  sections: { section_id: number; section_label: string; subject_name: string; teacher_name: string | null }[];
+};
+
+function ClashPanel({ clashes, loading, error, onOpen }: { clashes: Clash[] | null; loading: boolean; error: string | null; onOpen: (sectionId: number) => void }) {
+  return (
+    <>
+      <div className="gap" />
+      <Panel title="Teacher clashes" sub={clashes ? `${clashes.length} across the whole school` : "A teacher placed in two sections at the same time"}>
+        {error ? (
+          <p className="muted">{error}</p>
+        ) : clashes?.length ? (
+          clashes.map((c, i) => (
+            <div className="timeline-item" key={`${c.teacher_user_id}-${c.day_of_week}-${c.period_number}-${i}`}>
+              <span className="timeline-dot">
+                <Icon name="bell" />
+              </span>
+              <div>
+                <h4>{`${c.teacher_name ?? "A teacher"} · ${DAY_NAME[c.day_of_week] ?? `Day ${c.day_of_week}`}, period ${c.period_number}`}</h4>
+                <p>
+                  {c.sections.map((s, j) => (
+                    <span key={s.section_id}>
+                      {j ? ", " : ""}
+                      <button type="button" className="btn text" style={{ padding: 0 }} onClick={() => onOpen(s.section_id)}>
+                        {s.section_label}
+                      </button>
+                      {` (${s.subject_name})`}
+                    </span>
+                  ))}
+                </p>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="muted">{loading ? "Checking for clashes…" : "No clashes. Every teacher is in one section at a time."}</p>
+        )}
+      </Panel>
     </>
   );
 }

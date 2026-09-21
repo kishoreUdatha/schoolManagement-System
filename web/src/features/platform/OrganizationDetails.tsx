@@ -11,7 +11,7 @@ import { date, dateTime, initials, label, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import type { Meter, Payment, Plan, TenantDetail, TenantStatus, TenantUsage } from "./types";
+import type { Meter, Payment, Plan, Subscription, TenantDetail, TenantStatus, TenantUsage } from "./types";
 
 const num = (v: number | null | undefined) => (v === null || v === undefined ? "—" : v.toLocaleString("en-IN"));
 const meter = (m: Meter | undefined) => (m ? `${num(m.used)}${m.limit ? ` of ${num(m.limit)}` : ""}` : "—");
@@ -44,7 +44,8 @@ export function EditOrganizationLink() {
  * SCR-012, live: GET /super-admin/tenants/{id}, its usage, payments and the
  * plan list. Edit (PATCH /tenants/{id}), suspend or reactivate
  * (PATCH /tenants/{id}/status), assign a plan (POST /tenants/{id}/subscription)
- * and record a payment (POST /tenants/{id}/payments).
+ * and record a payment (POST /tenants/{id}/payments). The subscription panel
+ * reads GET /tenants/{id}/subscription (404 means none assigned).
  */
 export function OrganizationDetails() {
   const router = useRouter();
@@ -55,6 +56,7 @@ export function OrganizationDetails() {
   const usage = useApi<TenantUsage>(id ? `/api/v1/super-admin/tenants/${id}/usage` : null);
   const payments = useApi<Paginated<Payment>>(id ? `/api/v1/super-admin/tenants/${id}/payments` : null);
   const plans = useApi<Paginated<Plan>>("/api/v1/super-admin/plans");
+  const subscription = useApi<Subscription>(id ? `/api/v1/super-admin/tenants/${id}/subscription` : null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,6 +73,7 @@ export function OrganizationDetails() {
     t.reload();
     usage.reload();
     payments.reload();
+    subscription.reload();
   };
 
   async function run(key: string, fn: () => Promise<unknown>, done: string) {
@@ -319,6 +322,23 @@ export function OrganizationDetails() {
               <button type="button" className="btn primary" disabled={busy === "status"} onClick={() => setStatus("active")}>
                 {busy === "status" ? "Saving…" : "Reactivate organization"}
               </button>
+            )}
+          </Panel>
+          <Panel title="Subscription" sub={subscription.data ? `#${subscription.data.id} · assigned ${date(subscription.data.created_at)}` : undefined}>
+            {subscription.data ? (
+              <Kv
+                rows={[
+                  ["Plan", plans.data?.items.find((p) => p.id === subscription.data!.plan_id)?.name ?? `Plan #${subscription.data.plan_id}`],
+                  ["Status", <Badge key="s">{label(subscription.data.status)}</Badge>],
+                  ["Billing cycle", label(subscription.data.billing_cycle)],
+                  ["Started", date(subscription.data.started_at)],
+                  ["Expires", date(subscription.data.expires_at)],
+                  ["Razorpay subscription", subscription.data.razorpay_subscription_id ?? "—"],
+                  ["Notes", subscription.data.notes ?? "—"],
+                ]}
+              />
+            ) : (
+              <p className="muted">{subscription.loading ? "Loading…" : subscription.error && !/no subscription/i.test(subscription.error) ? subscription.error : "No subscription assigned yet."}</p>
             )}
           </Panel>
           <Panel title={sub ? "Change plan" : "Assign plan"}>

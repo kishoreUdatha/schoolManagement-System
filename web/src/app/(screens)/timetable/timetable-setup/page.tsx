@@ -1,7 +1,7 @@
 // SCR-121 · Timetable Setup
 // Module: Timetable & Substitution · Role: Academic Coordinator · Release: MVP · Stories: US-0241 / US-0242
 // Mock: screens/SCR-121_Timetable_Setup.html
-// Wired: GET /api/v1/school/sections/{id}/timetable, PUT/DELETE …/timetable/{period_id}, POST …/timetable/copy|publish|unpublish, GET /classes/{id}/subjects, /exam-ops/rooms (?section=). Hand-maintained.
+// Wired: GET /api/v1/school/sections/{id}/timetable, GET /school/sections/clashes, PUT/DELETE …/timetable/{period_id}, POST …/timetable/copy|publish|unpublish, GET /classes/{id}/subjects, /exam-ops/rooms (?section=). Hand-maintained.
 
 import Link from "next/link";
 import { Suspense } from "react";

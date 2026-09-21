@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -23,6 +24,7 @@ type Definition = {
   columns: string[];
   sort_by: string | null;
   is_active: boolean;
+  created_by_name?: string | null;
   last_run_at: string | null;
   run_count: number;
 };
@@ -45,6 +47,9 @@ function codeFor(name: string) {
   return `${slug}-${Date.now().toString(36).toUpperCase()}`;
 }
 
+/** NEW-081 Data Exports, where exported files are kept (routeOf only knows SCR- screens). */
+const EXPORTS_ROUTE = "/settings/data-exports";
+
 const show = (v: unknown) => (v === null || v === undefined || v === "" ? "—" : typeof v === "boolean" ? (v ? "Yes" : "No") : String(v));
 
 /**
@@ -52,12 +57,14 @@ const show = (v: unknown) => (v === null || v === undefined || v === "" ? "—" 
  * Run report saves a new definition (POST /report-definitions) or reuses the
  * chosen saved one, then runs it (POST /report-definitions/{id}/run) with the
  * filters. The API has no grouping and no operators: filters are the fixed
- * keys each source declares.
+ * keys each source declares. A saved report opens with
+ * GET /report-definitions/{id}; it can be edited (PATCH), deleted (DELETE)
+ * or run to a kept CSV file (POST /report-definitions/{id}/export).
  */
 export function ReportBuilder() {
   const router = useRouter();
   const sources = useApi<Source[]>("/api/v1/school/report-sources");
-  const saved = useApi<Definition[]>("/api/v1/school/report-definitions");
+  const saved = useApi<Definition[]>("/api/v1/school/report-definitions", { include_inactive: true });
   const y = useYear();
   const classes = useApi<SchoolClass[]>(y.yearId ? "/api/v1/school/classes" : null, { academic_year_id: y.yearId });
   const exams = useApi<Exam[]>("/api/v1/school/exams");
@@ -71,13 +78,18 @@ export function ReportBuilder() {
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [opened, setOpened] = useState<Definition | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [active, setActive] = useState(true);
 
   useEffect(() => {
     if (!source && sources.data?.length) setSource(sources.data[0].source);
   }, [sources.data, source]);
 
   const spec = sources.data?.find((s) => s.source === source);
-  const chosenSaved = saved.data?.find((d) => d.id === savedId);
+  // The list refreshes after each run (run count); the opened copy covers the moment before it does.
+  const chosenSaved = saved.data?.find((d) => d.id === savedId) ?? (opened && opened.id === savedId ? opened : undefined);
+  const locked = Boolean(savedId) && !editing;
   const sections = useMemo(() => classes.data?.find((c) => String(c.id) === filters.class_id)?.sections ?? [], [classes.data, filters.class_id]);
 
   function pickSource(s: string) {
@@ -86,23 +98,102 @@ export function ReportBuilder() {
     setSortBy("");
     setFilters({});
     setSavedId(null);
+    setOpened(null);
+    setEditing(false);
     setResult(null);
   }
 
-  function pickSaved(id: string) {
-    setResult(null);
-    if (!id) {
-      setSavedId(null);
-      return;
-    }
-    const d = saved.data?.find((x) => String(x.id) === id);
-    if (!d) return;
+  function load(d: Definition) {
+    setOpened(d);
     setSavedId(d.id);
     setName(d.name);
     setSource(d.source);
     setColumns(d.columns);
     setSortBy(d.sort_by ?? "");
+    setActive(d.is_active);
     setFilters(Object.fromEntries(Object.entries(d.filters ?? {}).map(([k, v]) => [k, String(v ?? "")])));
+  }
+
+  /** Open a saved report fresh from GET /report-definitions/{id}. */
+  async function pickSaved(id: string) {
+    setResult(null);
+    setEditing(false);
+    setError(null);
+    if (!id) {
+      setSavedId(null);
+      setOpened(null);
+      setName("");
+      setColumns([]);
+      setSortBy("");
+      setFilters({});
+      return;
+    }
+    try {
+      load(await api.get<Definition>(`/api/v1/school/report-definitions/${id}`));
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }
+
+  /** PATCH /report-definitions/{id}: name, columns, sort, saved filters and whether it is active. */
+  async function saveEdit() {
+    if (!savedId) return;
+    if (name.trim().length < 2) {
+      setError("Give the report a name of at least two characters.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const d = await api.patch<Definition>(`/api/v1/school/report-definitions/${savedId}`, {
+        name: name.trim(),
+        filters: asFilters(),
+        columns,
+        sort_by: sortBy || null,
+        is_active: active,
+      });
+      load(d);
+      setEditing(false);
+      notify("Report updated.");
+      saved.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    if (!chosenSaved) return;
+    if (!window.confirm(`Delete the saved report "${chosenSaved.name}"? Files already exported from it are kept.`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.delete(`/api/v1/school/report-definitions/${chosenSaved.id}`);
+      notify("Report deleted.");
+      await pickSaved("");
+      saved.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** POST /report-definitions/{id}/export with this run's filters; the file is kept under Data Exports. */
+  async function exportFile() {
+    if (!savedId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const j = await api.post<{ id: number; status: string; row_count: number; message: string | null }>(`/api/v1/school/report-definitions/${savedId}/export`, asFilters());
+      notify(j.status === "ready" ? `Exported ${j.row_count} rows. Download it from Data Exports.` : (j.message ?? "The export did not finish."));
+      saved.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
   }
 
   // After loading a saved report, a changed filter applies to that run only.
@@ -266,7 +357,7 @@ export function ReportBuilder() {
                 <div className="form-grid">
                   {field(
                     "Report name",
-                    <input type="text" placeholder="Enter report name" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={160} disabled={Boolean(savedId)} />,
+                    <input type="text" placeholder="Enter report name" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={160} disabled={locked} />,
                     true,
                   )}
                   {field(
@@ -284,7 +375,7 @@ export function ReportBuilder() {
                   {/* Not wired: "Group by" — the API sorts but does not group; sorting takes its place. */}
                   {field(
                     "Sort by",
-                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} disabled={Boolean(savedId)}>
+                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} disabled={locked}>
                       <option value="">Source order</option>
                       {spec?.columns.map((c) => (
                         <option key={c} value={c}>
@@ -302,7 +393,7 @@ export function ReportBuilder() {
                           <input
                             type="checkbox"
                             checked={columns.includes(c)}
-                            disabled={Boolean(savedId)}
+                            disabled={locked}
                             onChange={(e) => setColumns((cs) => (e.target.checked ? [...cs, c] : cs.filter((x) => x !== c)))}
                           />
                           {label(c)}
@@ -318,10 +409,22 @@ export function ReportBuilder() {
           <div className="form-footer">
             <span>Fields marked * are required</span>
             <div className="actions">
-              <button type="button" className="btn" onClick={() => router.back()}>
-                Cancel
-              </button>
-              <button type="submit" className="btn primary" disabled={busy || !spec}>
+              {editing ? (
+                <>
+                  <button type="button" className="btn" onClick={() => chosenSaved && (load(chosenSaved), setEditing(false))}>
+                    Discard changes
+                  </button>
+                  <button type="button" className="btn primary" disabled={busy} onClick={saveEdit}>
+                    <Icon name="check" className="sm" />
+                    {busy ? "Saving…" : "Save changes"}
+                  </button>
+                </>
+              ) : (
+                <button type="button" className="btn" onClick={() => router.back()}>
+                  Cancel
+                </button>
+              )}
+              <button type="submit" className="btn primary" disabled={busy || !spec || editing}>
                 <Icon name="check" className="sm" />
                 {busy ? "Running…" : "Run report"}
               </button>
@@ -336,7 +439,7 @@ export function ReportBuilder() {
               <select value={savedId ?? ""} onChange={(e) => pickSaved(e.target.value)}>
                 <option value="">New report</option>
                 {saved.data?.map((d) => (
-                  <option key={d.id} value={d.id}>{`${d.name} · ${d.source_label}`}</option>
+                  <option key={d.id} value={d.id}>{`${d.name} · ${d.source_label}${d.is_active ? "" : " (inactive)"}`}</option>
                 ))}
               </select>
             </label>
@@ -347,8 +450,39 @@ export function ReportBuilder() {
                 ["Saved reports", saved.data ? String(saved.data.length) : "…"],
                 ["Status", chosenSaved ? (chosenSaved.is_active ? "Active" : "Inactive") : "New"],
                 ["Last run", chosenSaved?.last_run_at ? `${dateTime(chosenSaved.last_run_at)} · ${chosenSaved.run_count} runs` : "Never"],
+                ...(chosenSaved ? ([["Code", chosenSaved.code], ["Created by", chosenSaved.created_by_name ?? "—"]] as [string, string][]) : []),
               ]}
             />
+            {chosenSaved ? (
+              <>
+                <div className="gap" />
+                {editing ? (
+                  <label className="row" style={{ gap: 6, fontSize: 13 }}>
+                    <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
+                    Active (inactive reports stay listed here but are marked)
+                  </label>
+                ) : null}
+                <div className="row" style={{ flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+                  {!editing ? (
+                    <button type="button" className="btn" disabled={busy} onClick={() => setEditing(true)}>
+                      Edit report
+                    </button>
+                  ) : null}
+                  <button type="button" className="btn" disabled={busy || editing} onClick={exportFile}>
+                    <Icon name="download" className="sm" />
+                    Export to file
+                  </button>
+                  <button type="button" className="btn text" disabled={busy} onClick={remove}>
+                    Delete
+                  </button>
+                </div>
+                <p className="small muted" style={{ marginTop: 8 }}>
+                  {editing ? "The filters on the form become this report's saved filters; the data source cannot change." : "Exported files are kept under "}
+                  {editing ? null : <Link href={EXPORTS_ROUTE}>Data exports</Link>}
+                  {editing ? null : "."}
+                </p>
+              </>
+            ) : null}
             <div className="gap" />
             <p>Filters are the fixed fields each source offers; there are no operators. A saved report can be run again with different filters.</p>
           </div>
