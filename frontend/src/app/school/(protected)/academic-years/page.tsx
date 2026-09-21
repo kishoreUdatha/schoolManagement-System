@@ -82,12 +82,12 @@ export default function AcademicYearsPage() {
         <Button onClick={() => setOpenCreate(true)}>+ New academic year</Button>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-600">
+      <label className="flex items-center gap-2 text-sm text-ink-muted">
         <input
           type="checkbox"
           checked={includeArchived}
           onChange={(e) => setIncludeArchived(e.target.checked)}
-          className="rounded border-slate-300"
+          className="rounded border-surface-border"
         />
         Show archived years
       </label>
@@ -113,15 +113,15 @@ export default function AcademicYearsPage() {
               <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {years.map((y) => {
               const busy = busyId === y.id;
               return (
-                <tr key={y.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium text-slate-900">
+                <tr key={y.id} className="hover:bg-surface-subtle">
+                  <td className="px-4 py-3 font-medium text-ink">
                     {y.name}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-ink-muted">
                     {y.start_date} → {y.end_date}
                   </td>
                   <td className="px-4 py-3 space-x-1">
@@ -191,7 +191,7 @@ export default function AcademicYearsPage() {
             })}
             {years.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={4} className="px-4 py-8 text-center text-ink-muted">
                   No academic years yet — click <strong>New academic year</strong>{" "}
                   to add the first.
                 </td>
@@ -291,12 +291,12 @@ function CreateYearModal({
             required
           />
         </div>
-        <label className="flex items-center gap-2 text-sm text-slate-700">
+        <label className="flex items-center gap-2 text-sm text-ink-muted">
           <input
             type="checkbox"
             checked={isCurrent}
             onChange={(e) => setIsCurrent(e.target.checked)}
-            className="rounded border-slate-300"
+            className="rounded border-surface-border"
           />
           Mark as current academic year
         </label>

@@ -152,9 +152,9 @@ export default function FeeStructuresPage() {
           const items = byClass.get(c.id) ?? [];
           return (
             <Card key={c.id} className="p-4">
-              <h3 className="font-semibold text-slate-900">{c.name}</h3>
+              <h3 className="font-semibold text-ink">{c.name}</h3>
               {items.length === 0 ? (
-                <p className="mt-2 text-sm text-slate-500">
+                <p className="mt-2 text-sm text-ink-muted">
                   No fee structures defined for this class yet.
                 </p>
               ) : (
@@ -168,12 +168,12 @@ export default function FeeStructuresPage() {
                       <th className="py-1 text-right"></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-surface-border">
                     {items.map((s) => (
                       <tr key={s.id}>
-                        <td className="py-2 font-medium text-slate-900">
+                        <td className="py-2 font-medium text-ink">
                           {s.fee_head_name}{" "}
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-ink-muted">
                             ({s.fee_head_code})
                           </span>
                         </td>
@@ -187,7 +187,7 @@ export default function FeeStructuresPage() {
                         <td className="py-2 font-medium">
                           ₹{Number(s.amount).toLocaleString("en-IN")}
                         </td>
-                        <td className="py-2 text-slate-600">{s.due_day_of_month}</td>
+                        <td className="py-2 text-ink-muted">{s.due_day_of_month}</td>
                         <td className="py-2 text-right space-x-2">
                           <Button
                             size="sm"
@@ -209,7 +209,7 @@ export default function FeeStructuresPage() {
           );
         })}
         {classes.length === 0 && (
-          <Card className="p-8 text-center text-slate-500">
+          <Card className="p-8 text-center text-ink-muted">
             No classes for this year yet. Create some first in{" "}
             <Link href="/school/classes" className="text-brand-700 hover:underline">
               Classes

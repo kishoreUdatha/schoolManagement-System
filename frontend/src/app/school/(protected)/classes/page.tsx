@@ -139,7 +139,7 @@ export default function ClassesPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Classes</h1>
-        <Card className="p-8 text-center text-slate-500">
+        <Card className="p-8 text-center text-ink-muted">
           You don&apos;t have any academic years yet.{" "}
           <Link
             href="/school/academic-years"
@@ -213,7 +213,7 @@ export default function ClassesPage() {
                   <button
                     onClick={() => move(c.id, -1)}
                     disabled={busy || i === 0 || selectedYear?.is_archived}
-                    className="text-xs text-slate-400 hover:text-brand-700 disabled:opacity-30"
+                    className="text-xs text-ink-subtle hover:text-brand-700 disabled:opacity-30"
                     title="Move up"
                   >
                     ▲
@@ -225,7 +225,7 @@ export default function ClassesPage() {
                       i === classes.length - 1 ||
                       selectedYear?.is_archived
                     }
-                    className="text-xs text-slate-400 hover:text-brand-700 disabled:opacity-30"
+                    className="text-xs text-ink-subtle hover:text-brand-700 disabled:opacity-30"
                     title="Move down"
                   >
                     ▼
@@ -273,7 +273,7 @@ export default function ClassesPage() {
             </CardHeader>
             <CardBody>
               {c.sections.length === 0 ? (
-                <div className="text-sm text-slate-500">
+                <div className="text-sm text-ink-muted">
                   No sections yet. Click <strong>+ Section</strong> to add one.
                 </div>
               ) : (
@@ -281,12 +281,12 @@ export default function ClassesPage() {
                   {c.sections.map((s) => (
                     <div
                       key={s.id}
-                      className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                      className="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-subtle px-3 py-2 text-sm"
                     >
-                      <span className="font-semibold text-slate-900">
+                      <span className="font-semibold text-ink">
                         {c.name} {s.name}
                       </span>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-ink-muted">
                         capacity {s.capacity || "—"}
                       </span>
                       <button
@@ -311,7 +311,7 @@ export default function ClassesPage() {
           </Card>
         ))}
         {classes.length === 0 && (
-          <Card className="p-8 text-center text-slate-500">
+          <Card className="p-8 text-center text-ink-muted">
             No classes for this year yet. Click <strong>+ New class</strong>.
           </Card>
         )}
@@ -692,16 +692,16 @@ function ManageSubjectsModal({
             return (
               <div
                 key={s.id}
-                className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2"
+                className="flex items-center justify-between rounded-lg border border-surface-border px-3 py-2"
               >
                 <div>
-                  <div className="font-medium text-slate-900">
+                  <div className="font-medium text-ink">
                     {s.name}{" "}
-                    <span className="text-xs font-normal text-slate-500">
+                    <span className="text-xs font-normal text-ink-muted">
                       ({s.code})
                     </span>
                   </div>
-                  <div className="text-xs text-slate-500">{s.kind}</div>
+                  <div className="text-xs text-ink-muted">{s.kind}</div>
                 </div>
                 <div className="flex items-center gap-3">
                   {isAssigned && cs && (
@@ -712,7 +712,7 @@ function ManageSubjectsModal({
                           setTeacher(cs, e.target.value ? Number(e.target.value) : null)
                         }
                         disabled={loading}
-                        className="rounded border border-slate-300 px-2 py-1 text-xs"
+                        className="rounded border border-surface-border px-2 py-1 text-xs"
                       >
                         <option value="">No teacher</option>
                         {teachers.map((t) => (
@@ -721,13 +721,13 @@ function ManageSubjectsModal({
                           </option>
                         ))}
                       </select>
-                      <label className="flex items-center gap-1 text-xs text-slate-600">
+                      <label className="flex items-center gap-1 text-xs text-ink-muted">
                         <input
                           type="checkbox"
                           checked={cs.is_optional}
                           onChange={() => toggleOptional(cs)}
                           disabled={loading}
-                          className="rounded border-slate-300"
+                          className="rounded border-surface-border"
                         />
                         optional
                       </label>
@@ -834,7 +834,7 @@ function EditSectionModal({
             ))}
           </select>
           {teachers.length === 0 && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-ink-muted">
               No active teachers yet. Add one in <strong>Staff</strong>.
             </span>
           )}

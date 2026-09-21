@@ -52,7 +52,7 @@ export default function MyMarksPapersPage() {
       )}
 
       {papers.length === 0 && !error && (
-        <Card className="p-8 text-center text-slate-500">
+        <Card className="p-8 text-center text-ink-muted">
           You don&apos;t have any exam papers assigned. The school admin
           schedules these in <em>Exams</em>.
         </Card>
@@ -67,7 +67,7 @@ export default function MyMarksPapersPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-slate-900">
+                    <h3 className="font-semibold text-ink">
                       {p.exam_name} — {p.subject_name}
                     </h3>
                     <Badge tone="brand">{p.subject_code}</Badge>
@@ -81,16 +81,16 @@ export default function MyMarksPapersPage() {
                       <Badge tone="neutral">pending</Badge>
                     )}
                   </div>
-                  <div className="mt-0.5 text-xs text-slate-500">
+                  <div className="mt-0.5 text-xs text-ink-muted">
                     {p.class_name} · {p.exam_date} · max {p.max_marks} · pass{" "}
                     {p.pass_marks}
                     {p.duration_minutes && <> · {p.duration_minutes} min</>}
                   </div>
-                  <div className="mt-2 text-xs text-slate-600">
+                  <div className="mt-2 text-xs text-ink-muted">
                     {p.marks_entered}/{total} students marked
-                    <span className="ml-2 text-slate-400">({p.section_count} section{p.section_count === 1 ? "" : "s"})</span>
+                    <span className="ml-2 text-ink-subtle">({p.section_count} section{p.section_count === 1 ? "" : "s"})</span>
                   </div>
-                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-hover">
                     <div
                       className="h-full bg-brand-500"
                       style={{ width: `${pct}%` }}

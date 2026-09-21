@@ -79,8 +79,8 @@ export function HolidayCalendar({
   const workingSet = new Set(workingDays ?? []);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase text-slate-500">
+    <div className="overflow-hidden rounded-xl border border-surface-border bg-white">
+      <div className="grid grid-cols-7 border-b border-surface-border bg-surface-subtle text-xs font-medium uppercase text-ink-muted">
         {WEEKDAYS.map((d) => (
           <div key={d} className="px-2 py-2 text-center">
             {d}
@@ -93,7 +93,7 @@ export function HolidayCalendar({
             return (
               <div
                 key={i}
-                className="aspect-square border-b border-r border-slate-100 bg-slate-50"
+                className="aspect-square border-b border-r border-surface-border bg-surface-subtle"
               />
             );
           const dayCol = ((i % 7) + 1) as number; // 1-7 Mon-Sun
@@ -111,15 +111,15 @@ export function HolidayCalendar({
                   : onClickDate?.(c.iso)
               }
               className={cn(
-                "relative flex flex-col items-start gap-1 border-b border-r border-slate-100 px-2 py-1.5 text-left hover:bg-slate-50",
-                !isWorking && "bg-slate-50",
+                "relative flex flex-col items-start gap-1 border-b border-r border-surface-border px-2 py-1.5 text-left hover:bg-surface-subtle",
+                !isWorking && "bg-surface-subtle",
                 today && "ring-2 ring-brand-400 ring-inset"
               )}
             >
               <span
                 className={cn(
                   "text-xs font-medium",
-                  today ? "text-brand-700" : "text-slate-600"
+                  today ? "text-brand-700" : "text-ink-muted"
                 )}
               >
                 {c.day}
@@ -136,7 +136,7 @@ export function HolidayCalendar({
                 </span>
               )}
               {!main && !isWorking && (
-                <span className="text-[10px] text-slate-400">weekend</span>
+                <span className="text-[10px] text-ink-subtle">weekend</span>
               )}
             </button>
           );

@@ -148,7 +148,7 @@ export default function StudentsPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Students</h1>
-        <Card className="p-8 text-center text-slate-500">
+        <Card className="p-8 text-center text-ink-muted">
           You need an academic year first.{" "}
           <Link href="/school/academic-years" className="font-medium text-brand-700 hover:underline">
             Create one →
@@ -278,16 +278,16 @@ export default function StudentsPage() {
               <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {data?.items.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-mono text-slate-700">{s.admission_no}</td>
-                <td className="px-4 py-3 text-slate-600">{s.roll_no}</td>
-                <td className="px-4 py-3 font-medium text-slate-900">{s.full_name}</td>
-                <td className="px-4 py-3 text-slate-600">{sectionName(s.section_id)}</td>
-                <td className="px-4 py-3 text-slate-600">
+              <tr key={s.id} className="hover:bg-surface-subtle">
+                <td className="px-4 py-3 font-mono text-ink-muted">{s.admission_no}</td>
+                <td className="px-4 py-3 text-ink-muted">{s.roll_no}</td>
+                <td className="px-4 py-3 font-medium text-ink">{s.full_name}</td>
+                <td className="px-4 py-3 text-ink-muted">{sectionName(s.section_id)}</td>
+                <td className="px-4 py-3 text-ink-muted">
                   <div>{s.gender ?? "—"}</div>
-                  <div className="text-xs text-slate-500">{s.dob ?? ""}</div>
+                  <div className="text-xs text-ink-muted">{s.dob ?? ""}</div>
                 </td>
                 <td className="px-4 py-3">
                   {s.is_active ? (
@@ -299,7 +299,7 @@ export default function StudentsPage() {
                 <td className="px-4 py-3 text-right space-x-2">
                   <Link
                     href={`/school/students/${s.id}`}
-                    className="inline-flex items-center rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    className="inline-flex items-center rounded-md border border-surface-border px-2 py-1 text-xs font-medium text-ink-muted hover:bg-surface-subtle"
                   >
                     Profile
                   </Link>
@@ -314,7 +314,7 @@ export default function StudentsPage() {
             ))}
             {data && data.items.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-ink-muted">
                   No students match these filters.
                 </td>
               </tr>
@@ -324,7 +324,7 @@ export default function StudentsPage() {
       </Card>
 
       {data && data.pages > 1 && (
-        <div className="flex items-center justify-between text-sm text-slate-600">
+        <div className="flex items-center justify-between text-sm text-ink-muted">
           <div>
             Page {data.page} of {data.pages} ({data.total} total)
           </div>
@@ -677,7 +677,7 @@ function EditStudentModal({
   return (
     <Modal open onClose={onClose} title={`Edit ${student.full_name}`} size="lg">
       <form onSubmit={submit} className="space-y-4">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-muted">
           Admission # ({student.admission_no}) cannot be changed.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -812,14 +812,14 @@ function ViewStudentModal({
           {detail.address && (
             <div>
               <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">Address</div>
-              <div className="mt-1 text-slate-900">{detail.address}</div>
+              <div className="mt-1 text-ink">{detail.address}</div>
             </div>
           )}
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <div className="text-xs font-semibold uppercase text-slate-500">
+          <div className="rounded-lg border border-surface-border bg-surface-subtle p-3">
+            <div className="text-xs font-semibold uppercase text-ink-muted">
               Analytics (placeholder)
             </div>
-            <div className="mt-2 grid gap-2 sm:grid-cols-3 text-slate-600">
+            <div className="mt-2 grid gap-2 sm:grid-cols-3 text-ink-muted">
               <Row
                 label="Attendance"
                 value={
@@ -854,7 +854,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col">
       <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">{label}</span>
-      <span className="font-medium text-slate-900">{value}</span>
+      <span className="font-medium text-ink">{value}</span>
     </div>
   );
 }
@@ -1037,7 +1037,7 @@ function BulkImportModal({
           </label>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-surface-border bg-surface-subtle px-3 py-2 text-xs text-ink-muted">
           <Button
             type="button"
             size="sm"
@@ -1046,7 +1046,7 @@ function BulkImportModal({
           >
             Download CSV template
           </Button>
-          <label className="inline-flex cursor-pointer items-center rounded-md border border-slate-300 bg-white px-2.5 py-1 font-medium text-slate-700 hover:bg-slate-50">
+          <label className="inline-flex cursor-pointer items-center rounded-md border border-surface-border bg-white px-2.5 py-1 font-medium text-ink-muted hover:bg-surface-subtle">
             Upload .csv file
             <input
               type="file"
@@ -1055,16 +1055,16 @@ function BulkImportModal({
               className="hidden"
             />
           </label>
-          <span className="text-slate-500">
+          <span className="text-ink-muted">
             or paste below. Columns: <code>full_name,gender,dob,blood_group,address</code>.
             Admission # &amp; roll # auto-assigned.
           </span>
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-700">CSV content</label>
+          <label className="text-sm font-medium text-ink-muted">CSV content</label>
           <textarea
-            className="mt-1 h-44 w-full rounded-lg border border-slate-300 px-3 py-2 text-[12px] tabular-nums shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            className="mt-1 h-44 w-full rounded-lg border border-surface-border px-3 py-2 text-[12px] tabular-nums shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
             value={csv}
             onChange={(e) => setCsv(e.target.value)}
           />
@@ -1252,7 +1252,7 @@ function PromoteStudentsModal({
       <div className="space-y-5">
         {/* Source */}
         <div>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-muted">
             From
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -1317,7 +1317,7 @@ function PromoteStudentsModal({
 
         {/* Target */}
         <div>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-muted">
             To
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -1392,7 +1392,7 @@ function PromoteStudentsModal({
         {roster.length > 0 && (
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <div className="text-xs font-semibold uppercase tracking-wider text-ink-muted">
                 Students ({roster.length})
               </div>
               <label className="flex items-center gap-2 text-sm">
@@ -1400,15 +1400,15 @@ function PromoteStudentsModal({
                   type="checkbox"
                   checked={promoteAll}
                   onChange={(e) => setPromoteAll(e.target.checked)}
-                  className="rounded border-slate-300"
+                  className="rounded border-surface-border"
                 />
                 Promote all
               </label>
             </div>
             {!promoteAll && (
-              <div className="max-h-56 overflow-y-auto rounded-md border border-slate-200">
+              <div className="max-h-56 overflow-y-auto rounded-md border border-surface-border">
                 <table className="min-w-full text-[13px]">
-                  <thead className="sticky top-0 bg-slate-50 text-left text-xs uppercase text-slate-500">
+                  <thead className="sticky top-0 bg-surface-subtle text-left text-xs uppercase text-ink-muted">
                     <tr>
                       <th className="px-4 py-3 w-8" />
                       <th className="px-4 py-3 font-bold">Roll</th>
@@ -1420,7 +1420,7 @@ function PromoteStudentsModal({
                     {roster.map((s) => (
                       <tr
                         key={s.id}
-                        className="hover:bg-slate-50 cursor-pointer"
+                        className="hover:bg-surface-subtle cursor-pointer"
                         onClick={() => toggleStudent(s.id)}
                       >
                         <td className="px-4 py-3">
@@ -1429,14 +1429,14 @@ function PromoteStudentsModal({
                             checked={selected.has(s.id)}
                             onChange={() => toggleStudent(s.id)}
                             onClick={(e) => e.stopPropagation()}
-                            className="rounded border-slate-300"
+                            className="rounded border-surface-border"
                           />
                         </td>
-                        <td className="px-4 py-3 text-slate-700">{s.roll_no}</td>
-                        <td className="px-4 py-3 font-mono text-slate-700">
+                        <td className="px-4 py-3 text-ink-muted">{s.roll_no}</td>
+                        <td className="px-4 py-3 font-mono text-ink-muted">
                           {s.admission_no}
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-900">
+                        <td className="px-4 py-3 font-medium text-ink">
                           {s.full_name}
                         </td>
                       </tr>
@@ -1445,7 +1445,7 @@ function PromoteStudentsModal({
                 </table>
               </div>
             )}
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-ink-muted">
               {promoteAll
                 ? `All ${roster.length} active students will be promoted.`
                 : `${selected.size} of ${roster.length} selected.`}

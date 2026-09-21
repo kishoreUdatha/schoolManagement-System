@@ -94,7 +94,7 @@ function ParentLoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-surface-hover px-4">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
           <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-brand-600">
@@ -166,7 +166,7 @@ function ParentLoginForm() {
           </CardBody>
         </Card>
 
-        <p className="mt-4 text-center text-xs text-slate-500">
+        <p className="mt-4 text-center text-xs text-ink-muted">
           Forgotten your password?{" "}
           <Link
             href="/account/forgot-password?role=parent"

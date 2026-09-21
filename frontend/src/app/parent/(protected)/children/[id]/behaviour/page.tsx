@@ -49,7 +49,7 @@ export default function ChildBehaviourPage() {
       )}
 
       {items.length === 0 && !error && (
-        <Card className="p-8 text-center text-slate-500">
+        <Card className="p-8 text-center text-ink-muted">
           No ratings posted yet.
         </Card>
       )}
@@ -61,7 +61,7 @@ export default function ChildBehaviourPage() {
               <CardTitle>
                 {r.period_kind === "weekly" ? "Week" : "Month"}: {r.period_key}
               </CardTitle>
-              <span className="text-xs text-slate-500">avg {r.average}</span>
+              <span className="text-xs text-ink-muted">avg {r.average}</span>
             </CardHeader>
             <CardBody className="space-y-3">
               <div className="grid gap-2 sm:grid-cols-2">
@@ -71,11 +71,11 @@ export default function ChildBehaviourPage() {
                 <DimensionRow label="Respect" value={r.respect} />
               </div>
               {r.teacher_note && (
-                <blockquote className="border-l-2 border-brand-300 bg-brand-50/40 px-3 py-2 text-sm italic text-slate-700">
+                <blockquote className="border-l-2 border-brand-300 bg-brand-50/40 px-3 py-2 text-sm italic text-ink-muted">
                   “{r.teacher_note}”
                 </blockquote>
               )}
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-ink-muted">
                 Rated by {r.rated_by_name ?? "teacher"} ·{" "}
                 {new Date(r.created_at).toLocaleDateString()}
               </div>
@@ -89,8 +89,8 @@ export default function ChildBehaviourPage() {
 
 function DimensionRow({ label, value }: { label: string; value: number }) {
   return (
-    <div className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2 text-sm">
-      <span className="text-slate-700">{label}</span>
+    <div className="flex items-center justify-between rounded-md bg-surface-subtle px-3 py-2 text-sm">
+      <span className="text-ink-muted">{label}</span>
       <StarRating value={value} size="sm" readOnly />
     </div>
   );

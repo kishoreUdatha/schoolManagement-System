@@ -79,7 +79,7 @@ export default function ChildVideosPage() {
         </div>
       </div>
     );
-  if (!items) return <div className="text-sm text-slate-500">Loading…</div>;
+  if (!items) return <div className="text-sm text-ink-muted">Loading…</div>;
 
   const subjects = Array.from(
     new Set(items.map((v) => v.subject_code).filter(Boolean) as string[]),
@@ -99,7 +99,7 @@ export default function ChildVideosPage() {
 
       <header>
         <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Learning videos</h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-muted">
           Videos shared by your child&apos;s teachers. Tap any thumbnail to watch
           inline.
         </p>
@@ -112,7 +112,7 @@ export default function ChildVideosPage() {
             className={`rounded-full px-3 py-1 text-xs font-medium ${
               !subjectFilter
                 ? "bg-brand-600 text-white"
-                : "bg-slate-100 text-slate-700"
+                : "bg-surface-hover text-ink-muted"
             }`}
           >
             All
@@ -124,7 +124,7 @@ export default function ChildVideosPage() {
               className={`rounded-full px-3 py-1 text-xs font-medium ${
                 subjectFilter === s
                   ? "bg-brand-600 text-white"
-                  : "bg-slate-100 text-slate-700"
+                  : "bg-surface-hover text-ink-muted"
               }`}
             >
               {s}
@@ -135,7 +135,7 @@ export default function ChildVideosPage() {
 
       {visible.length === 0 ? (
         <Card>
-          <CardBody className="text-sm text-slate-500">
+          <CardBody className="text-sm text-ink-muted">
             No videos posted yet.
           </CardBody>
         </Card>
@@ -145,7 +145,7 @@ export default function ChildVideosPage() {
             <Card key={v.id} className="overflow-hidden">
               <button
                 onClick={() => setActive(v)}
-                className="block w-full bg-slate-100 text-left"
+                className="block w-full bg-surface-hover text-left"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -160,15 +160,15 @@ export default function ChildVideosPage() {
                   {v.is_completed && (
                     <Badge tone="emerald">watched ✓</Badge>
                   )}
-                  <span className="ml-auto text-xs text-slate-500">
+                  <span className="ml-auto text-xs text-ink-muted">
                     by {v.teacher_name ?? "teacher"}
                   </span>
                 </div>
-                <h3 className="mt-2 font-semibold text-slate-900 line-clamp-2">
+                <h3 className="mt-2 font-semibold text-ink line-clamp-2">
                   {v.title}
                 </h3>
                 {v.description && (
-                  <p className="mt-1 text-xs text-slate-600 line-clamp-2">
+                  <p className="mt-1 text-xs text-ink-muted line-clamp-2">
                     {v.description}
                   </p>
                 )}
@@ -183,7 +183,7 @@ export default function ChildVideosPage() {
                     "mt-3 w-full rounded-md border px-2 py-1.5 text-xs font-medium transition " +
                     (v.is_completed
                       ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
-                      : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50")
+                      : "border-surface-border bg-white text-ink-muted hover:bg-surface-subtle")
                   }
                 >
                   {toggling === v.id
@@ -208,10 +208,10 @@ export default function ChildVideosPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold text-slate-900">{active.title}</h3>
+              <h3 className="font-semibold text-ink">{active.title}</h3>
               <button
                 onClick={() => setActive(null)}
-                className="rounded p-1 text-slate-500 hover:bg-slate-100"
+                className="rounded p-1 text-ink-muted hover:bg-surface-hover"
                 aria-label="Close"
               >
                 ✕
@@ -227,11 +227,11 @@ export default function ChildVideosPage() {
               />
             </div>
             {active.description && (
-              <p className="mt-3 text-sm text-slate-700 whitespace-pre-line">
+              <p className="mt-3 text-sm text-ink-muted whitespace-pre-line">
                 {active.description}
               </p>
             )}
-            <div className="mt-2 text-xs text-slate-500">
+            <div className="mt-2 text-xs text-ink-muted">
               {active.subject_name} · {active.class_name} · by{" "}
               {active.teacher_name ?? "teacher"}
             </div>

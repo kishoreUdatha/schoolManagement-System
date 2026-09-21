@@ -46,7 +46,7 @@ export default function ChildDetailPage() {
       </div>
     );
   }
-  if (!profile) return <div className="text-sm text-slate-500">Loading…</div>;
+  if (!profile) return <div className="text-sm text-ink-muted">Loading…</div>;
 
   return (
     <div className="space-y-6">

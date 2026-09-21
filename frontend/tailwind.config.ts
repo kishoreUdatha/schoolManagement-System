@@ -27,6 +27,7 @@ const config: Config = {
           DEFAULT: "rgb(var(--surface) / <alpha-value>)",
           raised: "rgb(var(--surface-raised) / <alpha-value>)",
           subtle: "rgb(var(--surface-subtle) / <alpha-value>)",
+          soft: "rgb(var(--surface-soft) / <alpha-value>)",
           border: "rgb(var(--surface-border) / <alpha-value>)",
           hover: "rgb(var(--surface-hover) / <alpha-value>)",
         },
@@ -66,12 +67,21 @@ const config: Config = {
           bg: "rgb(var(--info-bg) / <alpha-value>)",
         },
       },
+      // The mock's four radii, named so a panel cannot drift to a button's
+      // corner. BrightCampus: panels 14, buttons 9, controls 8, chips 6.
+      borderRadius: {
+        panel: "14px",
+        control: "9px",
+        input: "8px",
+        chip: "6px",
+      },
       boxShadow: {
         glow: "0 0 0 1px rgb(var(--brand-600) / 0.15), 0 8px 24px -8px rgb(var(--brand-600) / 0.22)",
         "glow-sm":
           "0 0 0 1px rgb(var(--brand-600) / 0.2), 0 2px 8px -2px rgb(var(--brand-600) / 0.28)",
-        // A white card on a white page needs an edge, not a shadow.
-        card: "0 1px 2px 0 rgb(17 24 39 / 0.05)",
+        // Panels sit on a tinted page, so the tint separates them; the
+        // shadow is only there to lift them off it very slightly.
+        card: "0 1px 2px 0 rgb(23 37 84 / 0.04)",
       },
     },
   },

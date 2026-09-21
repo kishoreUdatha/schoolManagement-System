@@ -20,40 +20,50 @@
     --brand-800: 30 64 175;
     --brand-900: 30 58 138;
 
-    /* Pure white throughout; the border and a hairline shadow do the
-       separating that a background tint used to. */
-    --surface: 255 255 255;            /* #FFFFFF page */
-    --surface-raised: 255 255 255;     /* #FFFFFF cards, inputs */
-    --surface-subtle: 249 250 251;     /* #F9FAFB table heads and wells */
-    --surface-border: 229 231 235;     /* #E5E7EB */
-    --surface-hover: 243 244 246;      /* #F3F4F6 */
+    /* A tinted workspace with white panels floating on it, which is what
+       BrightCampus/DESIGN_SYSTEM.md specifies. The tint is what separates a
+       card from the page, so panels need only a hairline border. */
+    --surface: 241 246 255;            /* #F1F6FF workspace background */
+    --surface-raised: 255 255 255;     /* #FFFFFF panels, sidebar, topbar */
+    --surface-subtle: 246 249 254;     /* #F6F9FE table heads and wells */
+    --surface-soft: 234 242 255;       /* #EAF2FF soft buttons, tints, hover */
+    --surface-border: 227 234 245;     /* #E3EAF5 */
+    --surface-hover: 234 242 255;      /* #EAF2FF */
 
-    /* Charcoal, not navy — a blue-tinted grey beside #111827 reads as a
-       mistake rather than a second tone. */
-    --ink: 17 24 39;                   /* #111827 headings and menus */
-    --ink-muted: 75 85 99;             /* #4B5563 secondary, 7.6:1 */
-    --ink-subtle: 107 114 128;         /* #6B7280 hints, 4.8:1 */
+    /* Navy, not charcoal: the mock's text is a deep blue of the same family
+       as the accent, which is what keeps the whole surface reading as blue. */
+    /* Three tones, all of them colours the mock already uses, but assigned
+       so that every one carries text at 4.5:1 or better. Its two lightest,
+       #7384A0 and #8C9AB0, measure 3.79 and 2.85 on white — fine for a rule
+       or an icon, not for the hints and labels they were being asked to
+       carry. Those two are still available as borders. */
+    --ink: 23 37 84;                   /* #172554 headings and menus, 14.7:1 */
+    --ink-muted: 82 100 129;           /* #526481 secondary, 6.0:1 */
+    --ink-subtle: 98 113 139;          /* #62718B hints, 4.9:1 */
 
-    /* The sidebar is white like the page. Its text is the same charcoal as
-       a heading, and the accent marks where you are. */
+    /* The sidebar is white; the page tint around it is what makes it a
+       panel, so its edge is the same hairline as every other border. */
     --sidebar: 255 255 255;            /* #FFFFFF */
-    --sidebar-ink: 17 24 39;           /* #111827 menu text */
-    --sidebar-icon: 107 114 128;       /* #6B7280 icons */
-    --sidebar-ink-muted: 17 24 39;     /* the same: 100% opacity throughout */
+    --sidebar-ink: 23 37 84;           /* #172554 menu text */
+    --sidebar-icon: 98 113 139;        /* #62718B icons */
+    --sidebar-ink-muted: 23 37 84;     /* the same: 100% opacity throughout */
     --sidebar-active: 37 99 235;       /* #2563EB selected */
-    --sidebar-hover: 243 244 246;      /* #F3F4F6 */
-    --sidebar-border: 229 231 235;     /* #E5E7EB internal rules, quiet */
-    --sidebar-edge: 139 147 161;       /* #8B93A1 panel against page, 3.1:1 */
+    --sidebar-hover: 234 242 255;      /* #EAF2FF */
+    --sidebar-border: 227 234 245;     /* #E3EAF5 internal rules */
+    --sidebar-edge: 227 234 245;       /* #E3EAF5 — the tint does the rest */
 
     /* Status, named once so a colour means the same thing everywhere. */
-    --success: 7 121 85;
-    --success-bg: 236 253 245;
-    --warning: 142 92 5;
-    --warning-bg: 255 251 235;
-    --danger: 184 46 69;
-    --danger-bg: 254 242 242;
-    --info: 37 99 235;
-    --info-bg: 239 246 255;
+    /* #07845E as specified measures 4.26 on its own #E9F7F0 surface, and a
+       badge is 11px bold — small text, so it wants 4.5. Two shades darker
+       clears it at 4.72 and is not tellable apart side by side. */
+    --success: 7 124 88;               /* #077C58 */
+    --success-bg: 233 247 240;         /* #E9F7F0 */
+    --warning: 142 92 5;               /* #8E5C05 */
+    --warning-bg: 255 243 216;         /* #FFF3D8 */
+    --danger: 184 46 69;               /* #B82E45 */
+    --danger-bg: 255 235 238;          /* #FFEBEE */
+    --info: 37 99 235;                 /* #2563EB */
+    --info-bg: 234 242 255;            /* #EAF2FF */
 
     --scrollbar-thumb: 209 213 219;
     --scrollbar-thumb-hover: 156 163 175;
@@ -78,6 +88,7 @@
     --surface: 9 11 17;
     --surface-raised: 17 21 30;
     --surface-subtle: 24 29 41;
+    --surface-soft: 30 41 66;
     --surface-border: 39 45 58;
     --surface-hover: 33 39 52;
 

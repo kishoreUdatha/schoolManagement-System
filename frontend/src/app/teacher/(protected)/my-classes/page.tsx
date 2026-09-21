@@ -84,7 +84,7 @@ export default function MyClassesPage() {
     return (
       <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
     );
-  if (!data) return <div className="text-sm text-slate-500">Loading…</div>;
+  if (!data) return <div className="text-sm text-ink-muted">Loading…</div>;
 
   const empty =
     data.class_teacher_of.length === 0 && data.subject_teacher_of.length === 0;
@@ -107,7 +107,7 @@ export default function MyClassesPage() {
       />
 
       {empty && (
-        <Card className="p-8 text-center text-slate-500">
+        <Card className="p-8 text-center text-ink-muted">
           You haven&apos;t been assigned as a class teacher or subject teacher
           anywhere yet. Your school admin assigns these in <em>Classes</em> and{" "}
           <em>Subjects</em>.
@@ -116,7 +116,7 @@ export default function MyClassesPage() {
 
       {filteredClassTeacher.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
             Class teacher of
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -124,10 +124,10 @@ export default function MyClassesPage() {
               <Card key={c.section_id} className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900">
+                    <h3 className="text-lg font-semibold text-ink">
                       {c.section_label}
                     </h3>
-                    <div className="mt-0.5 text-xs text-slate-500">
+                    <div className="mt-0.5 text-xs text-ink-muted">
                       {c.academic_year_name}
                       {c.is_current_year && (
                         <Badge tone="emerald" className="ml-1">
@@ -138,7 +138,7 @@ export default function MyClassesPage() {
                   </div>
                   <Badge tone="brand">{c.student_count} students</Badge>
                 </div>
-                <div className="mt-3 text-xs text-slate-500">
+                <div className="mt-3 text-xs text-ink-muted">
                   Capacity: {c.capacity || "—"}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -166,7 +166,7 @@ export default function MyClassesPage() {
 
       {filteredSubjectTeacher.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
             Subject teacher of
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -174,10 +174,10 @@ export default function MyClassesPage() {
               <Card key={c.class_subject_id} className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900">
+                    <h3 className="text-lg font-semibold text-ink">
                       {c.subject_name}
                     </h3>
-                    <div className="mt-0.5 text-xs text-slate-500">
+                    <div className="mt-0.5 text-xs text-ink-muted">
                       <span className="font-mono">{c.subject_code}</span> ·{" "}
                       {c.class_name} · {c.academic_year_name}
                       {c.is_optional && (
@@ -190,9 +190,9 @@ export default function MyClassesPage() {
                   <Badge tone="brand">{c.total_students} students</Badge>
                 </div>
                 <div className="mt-3 space-y-1 text-xs">
-                  <div className="font-medium text-slate-500">Sections:</div>
+                  <div className="font-medium text-ink-muted">Sections:</div>
                   {c.sections.length === 0 ? (
-                    <p className="text-slate-400">No sections yet.</p>
+                    <p className="text-ink-subtle">No sections yet.</p>
                   ) : (
                     <ul className="space-y-1">
                       {c.sections.map((s) => (
@@ -206,7 +206,7 @@ export default function MyClassesPage() {
                           >
                             {c.class_name} {s.section_name}
                           </Link>
-                          <span className="text-slate-500">
+                          <span className="text-ink-muted">
                             {s.student_count} students
                           </span>
                         </li>
@@ -232,7 +232,7 @@ function ComingSoonChip({ label, hint }: { label: string; hint: string }) {
   return (
     <span
       title={`Coming in ${hint}`}
-      className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-2.5 py-1 text-xs text-slate-500"
+      className="rounded-md border border-dashed border-surface-border bg-surface-subtle px-2.5 py-1 text-xs text-ink-muted"
     >
       {label}
     </span>

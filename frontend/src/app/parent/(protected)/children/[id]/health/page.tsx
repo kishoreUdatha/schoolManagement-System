@@ -13,7 +13,7 @@ export default function ChildHealthPage() {
         ← Back
       </Link>
       <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Health</h1>
-      <p className="text-sm text-slate-500">Keep allergies, medication and emergency contacts up to date so the school nurse has them.</p>
+      <p className="text-sm text-ink-muted">Keep allergies, medication and emergency contacts up to date so the school nurse has them.</p>
       <HealthRecordView
         mode="parent"
         recordUrl={`/api/v1/parent/me/children/${id}/health`}

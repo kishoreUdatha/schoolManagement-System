@@ -266,12 +266,12 @@ export default function FeesPage() {
               <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {data?.items.map((f) => (
-              <tr key={f.id} className="hover:bg-slate-50">
+              <tr key={f.id} className="hover:bg-surface-subtle">
                 <td className="px-4 py-3">
-                  <div className="font-medium text-slate-900">{f.student_name}</div>
-                  <div className="text-xs text-slate-500">{f.section_label}</div>
+                  <div className="font-medium text-ink">{f.student_name}</div>
+                  <div className="text-xs text-ink-muted">{f.section_label}</div>
                 </td>
                 <td className="px-4 py-3 text-[12px] font-mono">{f.fee_head_code}</td>
                 <td className="px-4 py-3">{f.period}</td>
@@ -282,7 +282,7 @@ export default function FeesPage() {
                 <td className="px-4 py-3 font-medium">
                   ₹{Number(f.amount_outstanding).toLocaleString("en-IN")}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{f.due_date}</td>
+                <td className="px-4 py-3 text-ink-muted">{f.due_date}</td>
                 <td className="px-4 py-3">
                   {f.status === "paid" ? (
                     <Badge tone="emerald">paid</Badge>
@@ -310,7 +310,7 @@ export default function FeesPage() {
             ))}
             {data && data.items.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={8} className="px-3 py-8 text-center text-ink-muted">
                   No fee records match these filters.
                 </td>
               </tr>
@@ -320,7 +320,7 @@ export default function FeesPage() {
       </Card>
 
       {data && data.pages > 1 && (
-        <div className="flex justify-between text-sm text-slate-600">
+        <div className="flex justify-between text-sm text-ink-muted">
           <div>
             Page {data.page} of {data.pages} · {data.total} total
           </div>
@@ -416,11 +416,11 @@ function RecordPaymentModal({
   return (
     <Modal open onClose={onClose} title={`Record payment — ${fee.student_name}`}>
       <form onSubmit={submit} className="space-y-4">
-        <div className="rounded-md bg-slate-50 p-3 text-sm">
+        <div className="rounded-md bg-surface-subtle p-3 text-sm">
           <div>
             <strong>{fee.fee_head_name}</strong> — {fee.period}
           </div>
-          <div className="text-slate-600">
+          <div className="text-ink-muted">
             Outstanding: <strong>₹{outstanding.toLocaleString("en-IN")}</strong>
           </div>
         </div>
@@ -511,7 +511,7 @@ function GenerateModal({
   return (
     <Modal open onClose={onClose} title="Generate monthly fees">
       <form onSubmit={submit} className="space-y-4">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-muted">
           Creates fee records for every active student in classes that have
           recurring fee structures for this year. Idempotent — existing records
           are skipped.

@@ -99,7 +99,7 @@ export default function ChildExamDetailPage() {
         </div>
       </div>
     );
-  if (!result) return <div className="text-sm text-slate-500">Loading…</div>;
+  if (!result) return <div className="text-sm text-ink-muted">Loading…</div>;
 
   return (
     <div className="space-y-6">
@@ -152,7 +152,7 @@ export default function ChildExamDetailPage() {
               </Badge>
             </div>
           </div>
-          <div className="mt-3 text-xs text-slate-500">
+          <div className="mt-3 text-xs text-ink-muted">
             {result.summary.subjects_passed} passed ·{" "}
             {result.summary.subjects_failed} failed ·{" "}
             {result.summary.subjects_absent} absent ·{" "}
@@ -179,7 +179,7 @@ export default function ChildExamDetailPage() {
                 <th className="px-4 py-3 font-bold">Remark</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-surface-border">
               {result.subjects.map((s) => {
                 let obtained = "—";
                 if (s.status === "absent") obtained = "Absent";
@@ -187,14 +187,14 @@ export default function ChildExamDetailPage() {
                 else if (s.marks_obtained != null) obtained = String(s.marks_obtained);
                 return (
                   <tr key={s.exam_paper_id}>
-                    <td className="px-4 py-3 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-medium text-ink">
                       {s.subject_name}{" "}
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-ink-muted">
                         ({s.subject_code})
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{s.exam_date}</td>
-                    <td className="px-4 py-3 text-right text-slate-600">
+                    <td className="px-4 py-3 text-ink-muted">{s.exam_date}</td>
+                    <td className="px-4 py-3 text-right text-ink-muted">
                       {s.max_marks}
                     </td>
                     <td className="px-4 py-3 text-right font-medium">
@@ -206,17 +206,17 @@ export default function ChildExamDetailPage() {
                           {s.grade}
                         </span>
                       ) : (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-ink-subtle">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {s.is_pass === true && <Badge tone="emerald">Pass</Badge>}
                       {s.is_pass === false && <Badge tone="rose">Fail</Badge>}
                       {s.is_pass === null && (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-ink-subtle">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-slate-600">{s.remark || "—"}</td>
+                    <td className="px-4 py-3 text-ink-muted">{s.remark || "—"}</td>
                   </tr>
                 );
               })}
@@ -243,8 +243,8 @@ function Stat({
       <div
         className={
           big
-            ? "text-3xl font-bold text-slate-900"
-            : "text-lg font-semibold text-slate-900"
+            ? "text-3xl font-bold text-ink"
+            : "text-lg font-semibold text-ink"
         }
       >
         {value}

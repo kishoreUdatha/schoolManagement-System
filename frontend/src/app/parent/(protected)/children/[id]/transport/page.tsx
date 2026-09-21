@@ -58,7 +58,7 @@ export default function ChildTransportPage() {
       <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">School transport</h1>
       {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
       {data === null && (
-        <Card className="p-6 text-sm text-slate-500">Your child isn’t using school transport.</Card>
+        <Card className="p-6 text-sm text-ink-muted">Your child isn’t using school transport.</Card>
       )}
       {data && (
         <>
@@ -69,11 +69,11 @@ export default function ChildTransportPage() {
             <CardBody>
               <dl className="grid gap-3 text-sm sm:grid-cols-2">
                 <div>
-                  <dt className="text-slate-500">Stop</dt>
+                  <dt className="text-ink-muted">Stop</dt>
                   <dd className="font-medium">{data.stop_name}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">Timings</dt>
+                  <dt className="text-ink-muted">Timings</dt>
                   <dd className="font-medium">
                     {data.direction !== "drop" && `Pickup ${data.pickup_time?.slice(0, 5) ?? "—"}`}
                     {data.direction === "both" && " · "}
@@ -81,13 +81,13 @@ export default function ChildTransportPage() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">Vehicle</dt>
+                  <dt className="text-ink-muted">Vehicle</dt>
                   <dd className="font-medium">
                     {data.vehicle_label ?? "—"} {data.registration_no && `(${data.registration_no})`}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">Driver</dt>
+                  <dt className="text-ink-muted">Driver</dt>
                   <dd className="font-medium">
                     {data.driver_name ?? "—"}{" "}
                     {data.driver_phone && (
@@ -106,7 +106,7 @@ export default function ChildTransportPage() {
               <CardTitle>Today</CardTitle>
             </CardHeader>
             <CardBody className="space-y-2 text-sm">
-              {data.today.length === 0 && <div className="text-slate-500">No trips recorded yet today.</div>}
+              {data.today.length === 0 && <div className="text-ink-muted">No trips recorded yet today.</div>}
               {data.today.map((t) => (
                 <div key={t.direction} className="flex items-center justify-between">
                   <span className="capitalize">{t.direction === "pickup" ? "Morning pickup" : "Afternoon drop"}</span>
@@ -131,7 +131,7 @@ export default function ChildTransportPage() {
                 <CardTitle>Bus location</CardTitle>
               </CardHeader>
               <CardBody className="space-y-2 text-sm">
-                <div className="text-slate-500">
+                <div className="text-ink-muted">
                   Last updated {minutesAgo !== null && minutesAgo < 1 ? "just now" : `${minutesAgo} min ago`}
                 </div>
                 <iframe

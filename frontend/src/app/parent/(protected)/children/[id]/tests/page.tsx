@@ -65,30 +65,30 @@ export default function ChildTestsPage() {
         ← Back
       </Link>
       <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Online tests</h1>
-      <p className="text-sm text-slate-500">Let your child take each test on this device while it&apos;s open. Answers save automatically.</p>
+      <p className="text-sm text-ink-muted">Let your child take each test on this device while it&apos;s open. Answers save automatically.</p>
       {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
-      {items.length === 0 && !error && <p className="text-sm text-slate-500">No tests yet.</p>}
+      {items.length === 0 && !error && <p className="text-sm text-ink-muted">No tests yet.</p>}
       {items.map((t) => (
         <Card key={t.id}>
           <CardBody className="flex flex-wrap items-center gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-semibold text-slate-900">{t.title}</span>
+                <span className="font-semibold text-ink">{t.title}</span>
                 {stateBadge[t.state]}
               </div>
-              <div className="text-sm text-slate-500">
+              <div className="text-sm text-ink-muted">
                 {t.subject_name} · {t.question_count} questions · {Number(t.total_marks)} marks · {t.duration_minutes} min
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-ink-muted">
                 {fmt(t.starts_at)} to {fmt(t.ends_at)}
               </div>
             </div>
             {t.state === "done" && t.result_visible && (
               <div className="text-right">
-                <div className="text-lg font-bold text-slate-900">
+                <div className="text-lg font-bold text-ink">
                   {Number(t.score)} / {Number(t.total_marks)}
                 </div>
-                <div className="text-xs text-slate-500">{t.percent}%</div>
+                <div className="text-xs text-ink-muted">{t.percent}%</div>
               </div>
             )}
             {(t.state === "open" || t.state === "in_progress") && <Button onClick={() => start(t)}>{t.state === "open" ? "Start test" : "Continue"}</Button>}

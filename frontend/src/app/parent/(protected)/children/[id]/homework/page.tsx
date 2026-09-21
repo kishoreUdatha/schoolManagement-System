@@ -103,11 +103,11 @@ function Section({
 }) {
   return (
     <div className="space-y-2">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
         {title}
       </h2>
       {items.length === 0 ? (
-        <Card className="p-4 text-sm text-slate-500">{empty}</Card>
+        <Card className="p-4 text-sm text-ink-muted">{empty}</Card>
       ) : (
         <div className="space-y-2">
           {items.map((h) => (
@@ -163,7 +163,7 @@ function HomeworkCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold text-slate-900">{hw.title}</h3>
+            <h3 className="font-semibold text-ink">{hw.title}</h3>
             <Badge tone={hw.is_past_due ? "neutral" : "brand"}>
               {hw.subject_code}
             </Badge>
@@ -173,11 +173,11 @@ function HomeworkCard({
               </Badge>
             )}
           </div>
-          <div className="mt-0.5 text-xs text-slate-500">
+          <div className="mt-0.5 text-xs text-ink-muted">
             {hw.subject_name} · Due <strong>{hw.due_date}</strong>
             {hw.created_by_name && <> · posted by {hw.created_by_name}</>}
           </div>
-          <p className="mt-2 whitespace-pre-line text-sm text-slate-700">
+          <p className="mt-2 whitespace-pre-line text-sm text-ink-muted">
             {hw.description}
           </p>
           {hw.attachment_url && (
@@ -192,8 +192,8 @@ function HomeworkCard({
           )}
 
           {submission && (
-            <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
-              <div className="font-medium text-slate-700">Your submission</div>
+            <div className="mt-3 rounded-md border border-surface-border bg-surface-subtle px-3 py-2 text-xs">
+              <div className="font-medium text-ink-muted">Your submission</div>
               {submission.attachment_url && (
                 <a
                   href={submission.attachment_url}
@@ -205,19 +205,19 @@ function HomeworkCard({
                 </a>
               )}
               {submission.comment && (
-                <p className="mt-1 whitespace-pre-line text-slate-600">
+                <p className="mt-1 whitespace-pre-line text-ink-muted">
                   {submission.comment}
                 </p>
               )}
-              <div className="mt-1 text-slate-400">
+              <div className="mt-1 text-ink-subtle">
                 Submitted {new Date(submission.submitted_at).toLocaleString()}
               </div>
               {submission.teacher_remark && (
-                <div className="mt-2 border-t border-slate-200 pt-2">
-                  <div className="font-medium text-slate-700">
+                <div className="mt-2 border-t border-surface-border pt-2">
+                  <div className="font-medium text-ink-muted">
                     Teacher remark
                   </div>
-                  <p className="whitespace-pre-line text-slate-600">
+                  <p className="whitespace-pre-line text-ink-muted">
                     {submission.teacher_remark}
                   </p>
                 </div>

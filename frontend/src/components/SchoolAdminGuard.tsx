@@ -31,7 +31,7 @@ export function SchoolAdminGuard({ children }: { children: ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-slate-500">
+      <div className="flex min-h-screen items-center justify-center text-ink-muted">
         Loading…
       </div>
     );

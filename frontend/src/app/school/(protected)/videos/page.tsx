@@ -80,7 +80,7 @@ export default function SchoolVideosModeration() {
           type="checkbox"
           checked={includeRemoved}
           onChange={(e) => setIncludeRemoved(e.target.checked)}
-          className="rounded border-slate-300"
+          className="rounded border-surface-border"
         />
         Show already-removed videos
       </label>
@@ -109,7 +109,7 @@ export default function SchoolVideosModeration() {
               <th className="px-4 py-3 text-right font-medium"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {items.map((v) => (
               <tr key={v.id}>
                 <td className="px-4 py-3">
@@ -123,18 +123,18 @@ export default function SchoolVideosModeration() {
                   </a>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="font-medium text-slate-900">{v.title}</div>
+                  <div className="font-medium text-ink">{v.title}</div>
                   {v.description && (
-                    <div className="text-xs text-slate-500 line-clamp-1">
+                    <div className="text-xs text-ink-muted line-clamp-1">
                       {v.description}
                     </div>
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-700">
+                <td className="px-4 py-3 text-ink-muted">
                   {v.class_name} · {v.subject_name}
                 </td>
-                <td className="px-4 py-3 text-slate-700">{v.teacher_name}</td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-ink-muted">{v.teacher_name}</td>
+                <td className="px-4 py-3 text-ink-muted">
                   {v.created_at.slice(0, 10)}
                 </td>
                 <td className="px-4 py-3">
@@ -155,7 +155,7 @@ export default function SchoolVideosModeration() {
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-ink-muted">
                   No videos to show.
                 </td>
               </tr>

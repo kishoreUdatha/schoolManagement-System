@@ -129,20 +129,20 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
         <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{result.title}</h1>
         <Card>
           <CardBody className="text-center">
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-ink-muted">
               {result.student_name} · submitted{result.auto_submitted ? " automatically when time ran out" : ""}
             </div>
             {result.visible ? (
               <>
-                <div className="mt-1 text-4xl font-bold text-slate-900">
+                <div className="mt-1 text-4xl font-bold text-ink">
                   {Number(result.score)} / {Number(result.max_score)}
                 </div>
-                <div className="text-sm text-slate-500">
+                <div className="text-sm text-ink-muted">
                   {result.percent}%{result.pending_grading ? ` · ${result.pending_grading} answer(s) still to be marked by the teacher` : ""}
                 </div>
               </>
             ) : (
-              <div className="mt-2 text-sm text-slate-600">Answers saved. The school will share results later.</div>
+              <div className="mt-2 text-sm text-ink-muted">Answers saved. The school will share results later.</div>
             )}
           </CardBody>
         </Card>
@@ -161,27 +161,27 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="sticky top-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white/95 px-4 py-2 backdrop-blur">
+      <div className="sticky top-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-b border-surface-border bg-white/95 px-4 py-2 backdrop-blur">
         <div className="min-w-0 flex-1">
-          <div className="truncate font-semibold text-slate-900">{paper.title}</div>
-          <div className="text-xs text-slate-500">
+          <div className="truncate font-semibold text-ink">{paper.title}</div>
+          <div className="text-xs text-ink-muted">
             {paper.student_name} · {paper.questions.filter(answered).length}/{paper.questions.length} answered ·{" "}
             {saving === "saving" ? "saving…" : saving === "saved" ? "saved" : saving === "error" ? "not saved, retrying" : ""}
           </div>
         </div>
-        <div className={cn("rounded-md px-3 py-1 font-mono text-lg font-bold", left < 60 ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-900")}>{mmss(left)}</div>
+        <div className={cn("rounded-md px-3 py-1 font-mono text-lg font-bold", left < 60 ? "bg-rose-100 text-rose-700" : "bg-surface-hover text-ink")}>{mmss(left)}</div>
         <Button onClick={() => submit(false)}>Submit</Button>
       </div>
       {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
-      {paper.instructions && current === 0 && <p className="whitespace-pre-line text-sm text-slate-600">{paper.instructions}</p>}
+      {paper.instructions && current === 0 && <p className="whitespace-pre-line text-sm text-ink-muted">{paper.instructions}</p>}
 
       <Card>
         <CardBody className="space-y-3">
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-ink-muted">
             Question {q.number} of {paper.questions.length} · {Number(q.marks)} mark{Number(q.marks) === 1 ? "" : "s"}
             {q.kind === "multiple" && " · choose all that apply"}
           </div>
-          <div className="whitespace-pre-line text-lg text-slate-900">{q.text}</div>
+          <div className="whitespace-pre-line text-lg text-ink">{q.text}</div>
           {(q.kind === "single" || q.kind === "true_false" || q.kind === "multiple") && (
             <div className="space-y-2">
               {q.options.map((o) => {
@@ -195,8 +195,8 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
                       setAnswer(q.question_id, { keys });
                     }}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-slate-800",
-                      on ? "border-brand-500 bg-brand-50" : "border-slate-200 hover:border-slate-400"
+                      "flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left text-ink",
+                      on ? "border-brand-500 bg-brand-50" : "border-surface-border hover:border-brand-300"
                     )}
                   >
                     <span className={cn("flex h-5 w-5 shrink-0 items-center justify-center border text-xs", q.kind === "multiple" ? "rounded" : "rounded-full", on && "border-brand-600 bg-brand-600 text-white")}>
@@ -212,7 +212,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
             <input
               type="number"
               step="any"
-              className="w-48 rounded-md border border-slate-300 px-3 py-2 text-slate-900"
+              className="w-48 rounded-md border border-surface-border px-3 py-2 text-ink"
               value={r.value ?? ""}
               onChange={(e) => setAnswer(q.question_id, e.target.value === "" ? {} : { value: Number(e.target.value) })}
             />
@@ -226,7 +226,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
             />
           )}
           {(r.keys?.length || r.value !== undefined) && q.kind !== "short" ? (
-            <button type="button" className="text-xs text-slate-500 hover:underline" onClick={() => setAnswer(q.question_id, {})}>
+            <button type="button" className="text-xs text-ink-muted hover:underline" onClick={() => setAnswer(q.question_id, {})}>
               Clear answer
             </button>
           ) : null}
@@ -249,8 +249,8 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
             onClick={() => setCurrent(i)}
             className={cn(
               "h-8 w-8 rounded-md border text-sm",
-              i === current ? "border-brand-600 ring-2 ring-brand-300" : "border-slate-200",
-              answered(x) ? "bg-emerald-100 text-emerald-800" : "bg-white text-slate-600"
+              i === current ? "border-brand-600 ring-2 ring-brand-300" : "border-surface-border",
+              answered(x) ? "bg-emerald-100 text-emerald-800" : "bg-white text-ink-muted"
             )}
           >
             {x.number}

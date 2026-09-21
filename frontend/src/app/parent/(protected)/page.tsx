@@ -85,7 +85,7 @@ export default function ParentDashboard() {
         <Card>
           <CardBody>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-700">
+              <h3 className="text-sm font-semibold text-ink-muted">
                 Latest notices
               </h3>
               <Link
@@ -103,11 +103,11 @@ export default function ParentDashboard() {
                       {!n.read_at && (
                         <span className="inline-block h-2 w-2 rounded-full bg-brand-500" />
                       )}
-                      <span className="truncate font-medium text-slate-900">{n.title}</span>
+                      <span className="truncate font-medium text-ink">{n.title}</span>
                     </div>
-                    <p className="line-clamp-1 text-xs text-slate-600">{n.body}</p>
+                    <p className="line-clamp-1 text-xs text-ink-muted">{n.body}</p>
                   </div>
-                  <span className="shrink-0 text-xs text-slate-500">
+                  <span className="shrink-0 text-xs text-ink-muted">
                     {n.sent_at && new Date(n.sent_at).toLocaleDateString()}
                   </span>
                 </li>
@@ -121,7 +121,7 @@ export default function ParentDashboard() {
         <Card>
           <CardBody>
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-700">
+              <h3 className="text-sm font-semibold text-ink-muted">
                 Upcoming holidays
               </h3>
               <Link
@@ -134,8 +134,8 @@ export default function ParentDashboard() {
             <ul className="mt-2 space-y-1 text-sm">
               {holidays.map((h) => (
                 <li key={h.id} className="flex justify-between gap-3">
-                  <span className="font-medium text-slate-900">{h.name}</span>
-                  <span className="text-xs text-slate-500">
+                  <span className="font-medium text-ink">{h.name}</span>
+                  <span className="text-xs text-ink-muted">
                     {h.start_date === h.end_date
                       ? h.start_date
                       : `${h.start_date} → ${h.end_date}`}
@@ -171,25 +171,25 @@ export default function ParentDashboard() {
                     </div>
                   )}
                   <div className="flex-1">
-                    <div className="font-semibold text-slate-900">{c.full_name}</div>
-                    <div className="text-xs text-slate-500">
+                    <div className="font-semibold text-ink">{c.full_name}</div>
+                    <div className="text-xs text-ink-muted">
                       {c.admission_no} · {c.section_label} · roll {c.roll_no}
                     </div>
                   </div>
                   <Badge tone="brand">{c.relation}</Badge>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                  <div className="rounded-md bg-slate-50 px-2 py-1.5">
-                    <div className="text-xs text-slate-500">Attendance</div>
-                    <div className="font-medium text-slate-700">
+                  <div className="rounded-md bg-surface-subtle px-2 py-1.5">
+                    <div className="text-xs text-ink-muted">Attendance</div>
+                    <div className="font-medium text-ink-muted">
                       {c.attendance_percent != null
                         ? `${c.attendance_percent}%`
                         : "coming soon"}
                     </div>
                   </div>
-                  <div className="rounded-md bg-slate-50 px-2 py-1.5">
-                    <div className="text-xs text-slate-500">Pending fees</div>
-                    <div className="font-medium text-slate-700">
+                  <div className="rounded-md bg-surface-subtle px-2 py-1.5">
+                    <div className="text-xs text-ink-muted">Pending fees</div>
+                    <div className="font-medium text-ink-muted">
                       {c.fees_pending_amount != null
                         ? `₹${c.fees_pending_amount}`
                         : "coming soon"}

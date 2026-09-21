@@ -108,7 +108,7 @@ export function CheckInCard() {
           </div>
         )}
         {today.manually_overridden && (
-          <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
+          <div className="rounded-md bg-surface-subtle px-3 py-2 text-sm text-ink-muted">
             Marked <strong>{today.status}</strong> by school admin.{" "}
             {today.override_remark && <em>“{today.override_remark}”</em>}
           </div>
@@ -166,9 +166,9 @@ export function CheckInCard() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 py-1.5 last:border-0">
+    <div className="flex items-center justify-between border-b border-surface-border py-1.5 last:border-0">
       <span className="text-[12px] font-bold text-ink-muted">{label}</span>
-      <span className="font-medium text-slate-900">{value}</span>
+      <span className="font-medium text-ink">{value}</span>
     </div>
   );
 }

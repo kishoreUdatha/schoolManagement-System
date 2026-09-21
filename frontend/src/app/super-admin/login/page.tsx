@@ -49,7 +49,7 @@ function SuperAdminLoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+    <main className="flex min-h-screen items-center justify-center bg-surface-hover px-4">
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
           <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-brand-600">SMS · Super Admin</h1>
@@ -89,7 +89,7 @@ function SuperAdminLoginForm() {
             </form>
           </CardBody>
         </Card>
-        <p className="mt-4 text-center text-xs text-slate-500">
+        <p className="mt-4 text-center text-xs text-ink-muted">
           Dev default: <code>admin@sms.local</code> / <code>ChangeMe123!</code>
         </p>
       </div>

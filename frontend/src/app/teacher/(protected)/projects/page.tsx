@@ -328,7 +328,7 @@ function ProjectCreateModal({
             type="checkbox"
             checked={notify}
             onChange={(e) => setNotify(e.target.checked)}
-            className="rounded border-slate-300"
+            className="rounded border-surface-border"
           />
           Notify parents of this class
         </label>

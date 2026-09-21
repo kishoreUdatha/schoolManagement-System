@@ -145,8 +145,8 @@ export default function ChildFeesPage() {
       </div>
 
       {payable.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-          <div className="text-sm text-slate-600">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-surface-border bg-white px-4 py-3">
+          <div className="text-sm text-ink-muted">
             {selected.size
               ? `${selected.size} selected`
               : "Select the fees you want to pay online."}{" "}
@@ -184,7 +184,7 @@ export default function ChildFeesPage() {
               <th className="px-4 py-3 font-bold">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {fees.map((f) => (
               <tr key={f.id}>
                 <td className="px-4 py-3">
@@ -197,14 +197,14 @@ export default function ChildFeesPage() {
                     />
                   )}
                 </td>
-                <td className="px-4 py-3 font-medium text-slate-900">{f.fee_head_name}</td>
+                <td className="px-4 py-3 font-medium text-ink">{f.fee_head_name}</td>
                 <td className="px-4 py-3">{f.period}</td>
                 <td className="px-4 py-3">₹{Number(f.amount_due).toLocaleString("en-IN")}</td>
                 <td className="px-4 py-3">₹{Number(f.amount_paid).toLocaleString("en-IN")}</td>
                 <td className="px-4 py-3 font-medium">
                   ₹{Number(f.amount_outstanding).toLocaleString("en-IN")}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{f.due_date}</td>
+                <td className="px-4 py-3 text-ink-muted">{f.due_date}</td>
                 <td className="px-4 py-3">
                   {f.status === "paid" ? (
                     <Badge tone="emerald">paid</Badge>
@@ -220,7 +220,7 @@ export default function ChildFeesPage() {
             ))}
             {fees.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={8} className="px-3 py-8 text-center text-ink-muted">
                   No fee records yet.
                 </td>
               </tr>
@@ -231,18 +231,18 @@ export default function ChildFeesPage() {
 
       {payments.length > 0 && (
         <Card>
-          <div className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">
+          <div className="border-b border-surface-border px-4 py-3 text-sm font-semibold text-ink">
             Online payments
           </div>
-          <ul className="divide-y divide-slate-100 text-sm">
+          <ul className="divide-y divide-surface-border text-sm">
             {payments.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
                 <div>
-                  <div className="font-medium text-slate-900">
+                  <div className="font-medium text-ink">
                     ₹{Number(p.amount).toLocaleString("en-IN")} ·{" "}
                     {p.items.map((i) => `${i.fee_head_name} ${i.period}`).join(", ")}
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-ink-muted">
                     {new Date(p.paid_at ?? p.created_at).toLocaleString()}
                     {p.failure_reason && ` · ${p.failure_reason}`}
                     {Number(p.excess_amount) > 0 &&

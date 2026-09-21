@@ -119,14 +119,14 @@ export default function HolidaysPage() {
           <Button size="sm" variant="secondary" onClick={() => shiftMonth(-1)}>
             ← Prev
           </Button>
-          <span className="text-base font-semibold text-slate-900">
+          <span className="text-base font-semibold text-ink">
             {MONTHS[month - 1]} {year}
           </span>
           <Button size="sm" variant="secondary" onClick={() => shiftMonth(1)}>
             Next →
           </Button>
         </div>
-        <div className="flex gap-3 text-xs text-slate-500">
+        <div className="flex gap-3 text-xs text-ink-muted">
           <span className="flex items-center gap-1">
             <span className="inline-block h-2 w-3 rounded-sm bg-rose-300" />
             national
@@ -172,19 +172,19 @@ export default function HolidaysPage() {
               <th className="px-4 py-3 text-right"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {holidays.map((h) => (
-              <tr key={h.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">{h.name}</td>
+              <tr key={h.id} className="hover:bg-surface-subtle">
+                <td className="px-4 py-3 font-medium text-ink">{h.name}</td>
                 <td className="px-4 py-3">
                   <Badge tone={typeTone[h.type]}>{h.type}</Badge>
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-ink-muted">
                   {h.start_date === h.end_date
                     ? h.start_date
                     : `${h.start_date} → ${h.end_date}`}
                 </td>
-                <td className="px-4 py-3 text-slate-500">{h.days}</td>
+                <td className="px-4 py-3 text-ink-muted">{h.days}</td>
                 <td className="px-4 py-3 text-right space-x-2">
                   <Button size="sm" variant="secondary" onClick={() => setEditing(h)}>
                     Edit
@@ -197,7 +197,7 @@ export default function HolidaysPage() {
             ))}
             {holidays.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={5} className="px-3 py-8 text-center text-ink-muted">
                   No holidays in {MONTHS[month - 1]} {year}.
                 </td>
               </tr>

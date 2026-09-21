@@ -178,7 +178,7 @@ export default function ParentsPage() {
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/school/parents/${p.user_id}`}
-                    className="font-semibold text-slate-900 hover:text-brand-600 hover:underline"
+                    className="font-semibold text-ink hover:text-brand-600 hover:underline"
                   >
                     {p.full_name}
                   </Link>
@@ -188,17 +188,17 @@ export default function ParentsPage() {
                     <Badge tone="rose">inactive</Badge>
                   )}
                 </div>
-                <div className="mt-0.5 text-xs text-slate-500">
+                <div className="mt-0.5 text-xs text-ink-muted">
                   {p.email} · {p.phone ?? "no phone"}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {p.children.map((c) => (
                     <span
                       key={c.student_id}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs"
+                      className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-subtle px-3 py-1 text-xs"
                     >
-                      <span className="font-medium text-slate-900">{c.full_name}</span>
-                      <span className="text-slate-500">
+                      <span className="font-medium text-ink">{c.full_name}</span>
+                      <span className="text-ink-muted">
                         {c.admission_no} · {c.section_label} · {c.relation}
                       </span>
                       <button
@@ -210,7 +210,7 @@ export default function ParentsPage() {
                     </span>
                   ))}
                   {p.children.length === 0 && (
-                    <span className="text-xs text-slate-500">No children linked</span>
+                    <span className="text-xs text-ink-muted">No children linked</span>
                   )}
                 </div>
               </div>
@@ -232,7 +232,7 @@ export default function ParentsPage() {
           </Card>
         ))}
         {parents.length === 0 && (
-          <Card className="p-8 text-center text-slate-500">
+          <Card className="p-8 text-center text-ink-muted">
             No parents yet — click <strong>+ New parent</strong>.
           </Card>
         )}
@@ -392,7 +392,7 @@ function CreateParentModal({
                 </option>
               ))}
             </select>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-ink-muted">
               For siblings: create the parent here first, then use <strong>+ Link child</strong>{" "}
               to add the others.
             </span>
@@ -470,7 +470,7 @@ function LinkChildModal({
             ))}
           </select>
           {available.length === 0 && (
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-ink-muted">
               All students are already linked to this parent.
             </span>
           )}
@@ -549,7 +549,7 @@ function EditParentModal({
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
         />
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-muted">
           Email cannot be changed (it&apos;s the login identifier).
         </p>
         {error && (

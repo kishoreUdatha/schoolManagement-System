@@ -254,7 +254,7 @@ export default function MarksEntryPage() {
       )}
 
       {sections.length === 0 ? (
-        <Card className="p-6 text-center text-slate-500">No sections in this class.</Card>
+        <Card className="p-6 text-center text-ink-muted">No sections in this class.</Card>
       ) : (
         <>
           <div className="flex flex-wrap items-end gap-2">
@@ -287,7 +287,7 @@ export default function MarksEntryPage() {
           </div>
 
           {!canEdit && view && (
-            <div className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600">
+            <div className="rounded-md bg-surface-subtle px-3 py-2 text-sm text-ink-muted">
               Exam is published — marks are read-only. Ask school admin to
               unpublish if you need to edit.
             </div>
@@ -324,7 +324,7 @@ export default function MarksEntryPage() {
                       <th className="px-4 py-3 font-bold">Remark</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-surface-border">
                     {rows.map((r) => {
                       const liveGrade = r.status === "scored" ? previewGrade(r.marks_obtained) : r.grade ?? "—";
                       const livePass =
@@ -332,11 +332,11 @@ export default function MarksEntryPage() {
                           ? r.marks_obtained >= view.pass_marks
                           : r.is_pass;
                       return (
-                        <tr key={r.student_id} className="hover:bg-slate-50">
+                        <tr key={r.student_id} className="hover:bg-surface-subtle">
                           <td className="px-4 py-3 text-[12px] tabular-nums text-ink-muted">{r.roll_no}</td>
                           <td className="px-4 py-3">
-                            <div className="font-medium text-slate-900">{r.full_name}</div>
-                            <div className="text-xs text-slate-500">{r.admission_no}</div>
+                            <div className="font-medium text-ink">{r.full_name}</div>
+                            <div className="text-xs text-ink-muted">{r.admission_no}</div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-1">
@@ -352,8 +352,8 @@ export default function MarksEntryPage() {
                                       "w-8 h-8 rounded-md border text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed",
                                       active && s.tone === "emerald" && "border-emerald-600 bg-emerald-600 text-white",
                                       active && s.tone === "rose" && "border-rose-600 bg-rose-600 text-white",
-                                      active && s.tone === "neutral" && "border-slate-600 bg-slate-600 text-white",
-                                      !active && "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+                                      active && s.tone === "neutral" && "border-ink bg-ink text-surface-raised",
+                                      !active && "border-surface-border bg-white text-ink-muted hover:bg-surface-subtle"
                                     )}
                                     title={s.value}
                                   >
@@ -382,10 +382,10 @@ export default function MarksEntryPage() {
                                   )
                                 }
                                 disabled={!canEdit}
-                                className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm disabled:bg-slate-50"
+                                className="w-20 rounded-md border border-surface-border px-2 py-1 text-sm disabled:bg-surface-subtle"
                               />
                             ) : (
-                              <span className="text-xs text-slate-400">—</span>
+                              <span className="text-xs text-ink-subtle">—</span>
                             )}
                           </td>
                           <td className="px-4 py-3">
@@ -419,7 +419,7 @@ export default function MarksEntryPage() {
                               onChange={(e) => setRemark(r.student_id, e.target.value)}
                               disabled={!canEdit}
                               placeholder={canEdit ? "optional" : ""}
-                              className="w-full rounded-md border border-slate-200 px-2 py-1 text-xs disabled:bg-slate-50"
+                              className="w-full rounded-md border border-surface-border px-2 py-1 text-xs disabled:bg-surface-subtle"
                             />
                           </td>
                         </tr>

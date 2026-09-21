@@ -108,19 +108,19 @@ export default function TenantsPage() {
               <th className="px-4 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {data?.items.map((t) => (
-              <tr key={t.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">{t.name}</td>
-                <td className="px-4 py-3 text-slate-600">{t.code}</td>
-                <td className="px-4 py-3 text-slate-600">
+              <tr key={t.id} className="hover:bg-surface-subtle">
+                <td className="px-4 py-3 font-medium text-ink">{t.name}</td>
+                <td className="px-4 py-3 text-ink-muted">{t.code}</td>
+                <td className="px-4 py-3 text-ink-muted">
                   <div>{t.contact_email}</div>
-                  <div className="text-xs text-slate-500">{t.contact_mobile}</div>
+                  <div className="text-xs text-ink-muted">{t.contact_mobile}</div>
                 </td>
                 <td className="px-4 py-3">
                   <Badge tone={statusTone[t.status]}>{t.status}</Badge>
                 </td>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-ink-muted">
                   {new Date(t.created_at).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-3 text-right">
@@ -135,7 +135,7 @@ export default function TenantsPage() {
             ))}
             {data && data.items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-ink-muted">
                   No tenants yet — click <strong>New tenant</strong> to add the first school.
                 </td>
               </tr>
@@ -145,7 +145,7 @@ export default function TenantsPage() {
       </Card>
 
       {data && data.pages > 1 && (
-        <div className="flex items-center justify-between text-sm text-slate-600">
+        <div className="flex items-center justify-between text-sm text-ink-muted">
           <div>
             Page {data.page} of {data.pages} ({data.total} total)
           </div>
@@ -279,9 +279,9 @@ function CreateTenantModal({
             />
           </div>
 
-          <div className="border-t border-slate-200 pt-4">
-            <h4 className="text-sm font-semibold text-slate-700">First school admin</h4>
-            <p className="text-xs text-slate-500">
+          <div className="border-t border-surface-border pt-4">
+            <h4 className="text-sm font-semibold text-ink-muted">First school admin</h4>
+            <p className="text-xs text-ink-muted">
               This user will be created with role <code>school_admin</code>. Password is
               auto-generated and shown once.
             </p>

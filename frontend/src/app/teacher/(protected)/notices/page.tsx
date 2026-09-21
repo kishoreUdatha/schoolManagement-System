@@ -269,9 +269,9 @@ function Composer({
 
   return (
     <Card className="p-5">
-      <h2 className="text-base font-semibold text-slate-900">New notice</h2>
+      <h2 className="text-base font-semibold text-ink">New notice</h2>
       {noClasses ? (
-        <p className="mt-3 text-sm text-slate-500">
+        <p className="mt-3 text-sm text-ink-muted">
           You aren&apos;t assigned to any class yet, so there&apos;s no audience
           to message. Ask your school admin to assign you in Classes or
           Subjects.
@@ -408,7 +408,7 @@ function Composer({
           />
 
           <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-ink-muted">
               Delivered in-app to the parent inbox. No SMS / email from the
               teacher portal.
             </p>
@@ -435,13 +435,13 @@ function audienceLabel(n: Notice): string {
 function SentList({ items, loaded }: { items: Notice[]; loaded: boolean }) {
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
         Notices you&apos;ve sent
       </h2>
       {!loaded ? (
-        <div className="text-sm text-slate-500">Loading…</div>
+        <div className="text-sm text-ink-muted">Loading…</div>
       ) : items.length === 0 ? (
-        <Card className="p-8 text-center text-slate-500">
+        <Card className="p-8 text-center text-ink-muted">
           You haven&apos;t sent any notices yet.
         </Card>
       ) : (
@@ -451,7 +451,7 @@ function SentList({ items, loaded }: { items: Notice[]; loaded: boolean }) {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-semibold text-slate-900">{n.title}</h3>
+                    <h3 className="font-semibold text-ink">{n.title}</h3>
                     <Badge tone="brand">{audienceLabel(n)}</Badge>
                     {n.status === "sent" ? (
                       <Badge tone="emerald">
@@ -462,12 +462,12 @@ function SentList({ items, loaded }: { items: Notice[]; loaded: boolean }) {
                       <Badge tone="amber">{n.status}</Badge>
                     )}
                   </div>
-                  <div className="mt-0.5 text-xs text-slate-500">
+                  <div className="mt-0.5 text-xs text-ink-muted">
                     {n.sent_at
                       ? `Sent ${new Date(n.sent_at).toLocaleString()}`
                       : `Created ${new Date(n.created_at).toLocaleString()}`}
                   </div>
-                  <p className="mt-2 whitespace-pre-line text-sm text-slate-700">
+                  <p className="mt-2 whitespace-pre-line text-sm text-ink-muted">
                     {n.body}
                   </p>
                   {n.attachment_url && (

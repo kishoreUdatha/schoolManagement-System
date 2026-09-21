@@ -30,27 +30,27 @@ export default function ChildDisciplinePage() {
         ← Back
       </Link>
       <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">School incidents</h1>
-      <p className="text-sm text-slate-500">Incidents the school has shared with you, and what was done about them.</p>
+      <p className="text-sm text-ink-muted">Incidents the school has shared with you, and what was done about them.</p>
       {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
-      {items.length === 0 && !error && <p className="text-sm text-slate-500">Nothing to show — that&apos;s good news.</p>}
+      {items.length === 0 && !error && <p className="text-sm text-ink-muted">Nothing to show — that&apos;s good news.</p>}
       {items.map((i) => (
         <Card key={i.id}>
           <CardBody className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium text-slate-900">{i.occurred_on}</span>
+              <span className="font-medium text-ink">{i.occurred_on}</span>
               <Badge tone={sevTone[i.severity]}>{i.severity}</Badge>
               <Badge>{humanize(i.category)}</Badge>
               {(i.status === "closed" || i.status === "dismissed") && <Badge tone="emerald">{humanize(i.status)}</Badge>}
             </div>
-            <p className="whitespace-pre-line text-sm text-slate-700">{i.description}</p>
+            <p className="whitespace-pre-line text-sm text-ink-muted">{i.description}</p>
             {i.actions.length > 0 && (
               <ul className="space-y-1 text-sm">
                 {i.actions.map((a) => (
                   <li key={a.id} className="flex flex-wrap items-center gap-2">
                     <Badge tone="brand">{humanize(a.kind)}</Badge>
-                    <span className="text-slate-700">{a.details}</span>
+                    <span className="text-ink-muted">{a.details}</span>
                     {a.start_date && (
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-ink-muted">
                         {a.start_date}
                         {a.end_date && ` → ${a.end_date}`}
                       </span>
@@ -59,7 +59,7 @@ export default function ChildDisciplinePage() {
                 ))}
               </ul>
             )}
-            {i.resolution && <div className="rounded bg-slate-50 p-2 text-sm text-slate-700">Outcome: {i.resolution}</div>}
+            {i.resolution && <div className="rounded bg-surface-subtle p-2 text-sm text-ink-muted">Outcome: {i.resolution}</div>}
           </CardBody>
         </Card>
       ))}

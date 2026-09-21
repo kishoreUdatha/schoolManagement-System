@@ -125,7 +125,7 @@ export default function AttendanceReportsPage() {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1 text-sm">
+      <div className="flex flex-wrap gap-1 rounded-md bg-surface-hover p-1 text-sm">
         {(
           [
             ["daily", "Daily absent"],
@@ -141,7 +141,7 @@ export default function AttendanceReportsPage() {
               "rounded-md px-3 py-1.5 font-medium transition " +
               (tab === k
                 ? "bg-white text-brand-700 shadow-sm"
-                : "text-slate-600 hover:bg-slate-200")
+                : "text-ink-muted hover:bg-surface-hover")
             }
           >
             {label}
@@ -282,7 +282,7 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
 
       {rows !== null && (
         <div className="mt-4 overflow-x-auto">
-          <div className="mb-2 text-sm text-slate-500">
+          <div className="mb-2 text-sm text-ink-muted">
             <Badge tone="rose">{rows.length} absent</Badge>
           </div>
           <table className="min-w-full divide-y divide-surface-border text-[13px]">
@@ -296,20 +296,20 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
                 <th className="px-4 py-3 font-bold">Remark</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-surface-border">
               {rows.map((r) => (
-                <tr key={r.student_id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-700">{r.class_name}</td>
-                  <td className="px-4 py-3 text-slate-700">{r.section_name}</td>
-                  <td className="px-4 py-3 text-slate-700">{r.roll_no}</td>
-                  <td className="px-4 py-3 font-mono text-slate-700">{r.admission_no}</td>
-                  <td className="px-4 py-3 font-medium text-slate-900">{r.full_name}</td>
-                  <td className="px-4 py-3 text-slate-500">{r.remark || "—"}</td>
+                <tr key={r.student_id} className="hover:bg-surface-subtle">
+                  <td className="px-4 py-3 text-ink-muted">{r.class_name}</td>
+                  <td className="px-4 py-3 text-ink-muted">{r.section_name}</td>
+                  <td className="px-4 py-3 text-ink-muted">{r.roll_no}</td>
+                  <td className="px-4 py-3 font-mono text-ink-muted">{r.admission_no}</td>
+                  <td className="px-4 py-3 font-medium text-ink">{r.full_name}</td>
+                  <td className="px-4 py-3 text-ink-muted">{r.remark || "—"}</td>
                 </tr>
               ))}
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-slate-500">
+                  <td colSpan={6} className="px-3 py-6 text-center text-ink-muted">
                     No absences on this date.
                   </td>
                 </tr>
@@ -440,22 +440,22 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
                 <th className="px-4 py-3 text-right font-medium">Att. %</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-surface-border">
               {rows.map((r) => (
-                <tr key={r.section_id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 text-slate-700">{r.class_name}</td>
-                  <td className="px-4 py-3 text-slate-700">{r.section_name}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">
+                <tr key={r.section_id} className="hover:bg-surface-subtle">
+                  <td className="px-4 py-3 text-ink-muted">{r.class_name}</td>
+                  <td className="px-4 py-3 text-ink-muted">{r.section_name}</td>
+                  <td className="px-4 py-3 text-right text-ink-muted">
                     {r.distinct_students}
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-700">
+                  <td className="px-4 py-3 text-right text-ink-muted">
                     {r.distinct_days}
                   </td>
                   <td className="px-4 py-3 text-right text-emerald-700">{r.present}</td>
                   <td className="px-4 py-3 text-right text-rose-700">{r.absent}</td>
                   <td className="px-4 py-3 text-right text-amber-700">{r.late}</td>
-                  <td className="px-4 py-3 text-right text-slate-700">{r.half_day}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                  <td className="px-4 py-3 text-right text-ink-muted">{r.half_day}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-ink">
                     {r.attendance_pct}%
                   </td>
                 </tr>
@@ -464,7 +464,7 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
                 <tr>
                   <td
                     colSpan={9}
-                    className="px-3 py-6 text-center text-slate-500"
+                    className="px-3 py-6 text-center text-ink-muted"
                   >
                     No attendance recorded in this range.
                   </td>
@@ -586,7 +586,7 @@ function StudentMonthlyTab({
             max={2100}
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="w-24 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+            className="w-24 rounded-lg border border-surface-border px-3 py-1.5 text-sm"
             required
           />
         </label>
@@ -631,13 +631,13 @@ function StudentMonthlyTab({
 
       {report && (
         <div className="mt-4">
-          <div className="mb-3 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+          <div className="mb-3 flex flex-wrap items-center gap-3 text-sm text-ink-muted">
             <Badge tone="brand">{report.section_label}</Badge>
             <span>
               {report.from_date} → {report.to_date}
             </span>
             <Badge tone="emerald">overall {report.overall_pct}%</Badge>
-            <span className="text-slate-500">
+            <span className="text-ink-muted">
               P {report.totals.present} · A {report.totals.absent} · L{" "}
               {report.totals.late} · H {report.totals.half_day}
             </span>
@@ -657,14 +657,14 @@ function StudentMonthlyTab({
                   <th className="px-4 py-3 text-right font-medium">Att. %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-surface-border">
                 {report.rows.map((r) => (
-                  <tr key={r.student_id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-slate-700">{r.roll_no}</td>
-                    <td className="px-4 py-3 font-mono text-slate-700">
+                  <tr key={r.student_id} className="hover:bg-surface-subtle">
+                    <td className="px-4 py-3 text-ink-muted">{r.roll_no}</td>
+                    <td className="px-4 py-3 font-mono text-ink-muted">
                       {r.admission_no}
                     </td>
-                    <td className="px-4 py-3 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-medium text-ink">
                       {r.full_name}
                     </td>
                     <td className="px-4 py-3 text-right text-emerald-700">
@@ -672,13 +672,13 @@ function StudentMonthlyTab({
                     </td>
                     <td className="px-4 py-3 text-right text-rose-700">{r.absent}</td>
                     <td className="px-4 py-3 text-right text-amber-700">{r.late}</td>
-                    <td className="px-4 py-3 text-right text-slate-700">
+                    <td className="px-4 py-3 text-right text-ink-muted">
                       {r.half_day}
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-700">
+                    <td className="px-4 py-3 text-right text-ink-muted">
                       {r.marked_days}
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                    <td className="px-4 py-3 text-right font-semibold text-ink">
                       {r.attendance_pct}%
                     </td>
                   </tr>
@@ -687,7 +687,7 @@ function StudentMonthlyTab({
                   <tr>
                     <td
                       colSpan={9}
-                      className="px-3 py-6 text-center text-slate-500"
+                      className="px-3 py-6 text-center text-ink-muted"
                     >
                       No active students in this section.
                     </td>

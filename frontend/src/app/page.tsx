@@ -15,7 +15,7 @@ export default function LandingPage() {
         <h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
           One platform for parents, teachers, and admin.
         </h2>
-        <p className="mt-4 max-w-2xl text-lg text-slate-600">
+        <p className="mt-4 max-w-2xl text-lg text-ink-muted">
           Attendance, homework, exams, fees, behaviour ratings, and digital
           learning — with AI-generated weekly reports for every parent.
         </p>
@@ -55,7 +55,7 @@ export default function LandingPage() {
             href="http://127.0.0.1:8000/docs"
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-slate-300 px-5 py-3 font-medium text-slate-700 hover:bg-white"
+            className="rounded-lg border border-surface-border px-5 py-3 font-medium text-ink-muted hover:bg-white"
           >
             API docs
           </a>
@@ -74,7 +74,7 @@ export default function LandingPage() {
         ))}
       </section>
 
-      <footer className="mt-24 border-t border-slate-200 pt-6 text-sm text-slate-500">
+      <footer className="mt-24 border-t border-surface-border pt-6 text-sm text-ink-muted">
         Phase 1 MVP scaffold — Week 1 of 10
       </footer>
     </main>

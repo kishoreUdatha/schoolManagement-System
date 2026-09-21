@@ -90,7 +90,7 @@ export default function MyAttendancePage() {
         <Button size="sm" variant="secondary" onClick={() => shiftMonth(-1)}>
           ← Prev
         </Button>
-        <span className="text-base font-semibold text-slate-900">
+        <span className="text-base font-semibold text-ink">
           {MONTHS[month - 1]} {year}
         </span>
         <Button size="sm" variant="secondary" onClick={() => shiftMonth(1)}>
@@ -124,26 +124,26 @@ export default function MyAttendancePage() {
                   <th className="px-4 py-3 font-bold">Notes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-surface-border">
                 {history.records.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50">
+                  <tr key={r.id} className="hover:bg-surface-subtle">
                     <td className="px-4 py-3 text-[12px] tabular-nums">{r.date}</td>
                     <td className="px-4 py-3">
                       <Badge tone={statusTone[r.status]}>{r.status}</Badge>
                       {r.manually_overridden && (
-                        <span className="ml-2 text-xs text-slate-500">(overridden)</span>
+                        <span className="ml-2 text-xs text-ink-muted">(overridden)</span>
                       )}
                     </td>
                     <td className="px-4 py-3">{fmtTime(r.check_in_at)}</td>
                     <td className="px-4 py-3">{fmtTime(r.check_out_at)}</td>
-                    <td className="px-4 py-3 text-xs text-slate-600">
+                    <td className="px-4 py-3 text-xs text-ink-muted">
                       {r.override_remark || ""}
                     </td>
                   </tr>
                 ))}
                 {history.records.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                    <td colSpan={5} className="px-4 py-8 text-center text-ink-muted">
                       No records for this month.
                     </td>
                   </tr>

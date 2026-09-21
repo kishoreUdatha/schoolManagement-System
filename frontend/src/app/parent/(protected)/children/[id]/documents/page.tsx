@@ -150,14 +150,14 @@ export default function ChildDocumentsPage() {
               <Button type="submit">Request</Button>
             </form>
           )}
-          <ul className="divide-y divide-slate-100 text-sm">
-            {certs.length === 0 && <li className="py-2 text-slate-500">No certificates yet.</li>}
+          <ul className="divide-y divide-surface-border text-sm">
+            {certs.length === 0 && <li className="py-2 text-ink-muted">No certificates yet.</li>}
             {certs.map((c) => (
               <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div>
-                  <span className="font-medium text-slate-900">{c.template_name}</span>{" "}
+                  <span className="font-medium text-ink">{c.template_name}</span>{" "}
                   <Badge tone={cTone[c.status]}>{c.status}</Badge>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-ink-muted">
                     {c.purpose}
                     {c.serial_no && ` · ${c.serial_no} · ${c.issued_on}`}
                     {c.remarks && ` · ${c.remarks}`}
@@ -188,23 +188,23 @@ export default function ChildDocumentsPage() {
               ))}
             </Select>
             <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-xs font-medium text-slate-600">File (PDF or photo, max 10 MB)</span>
+              <span className="text-xs font-medium text-ink-muted">File (PDF or photo, max 10 MB)</span>
               <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" required />
             </label>
             <Button type="submit" loading={uploading} disabled={!file}>
               Upload
             </Button>
           </form>
-          <ul className="divide-y divide-slate-100 text-sm">
-            {docs.length === 0 && <li className="py-2 text-slate-500">No documents yet.</li>}
+          <ul className="divide-y divide-surface-border text-sm">
+            {docs.length === 0 && <li className="py-2 text-ink-muted">No documents yet.</li>}
             {docs.map((d) => (
               <li key={d.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <div>
-                  <button className="font-medium text-slate-900 hover:underline" onClick={() => openAuthed(`${base}/documents/${d.id}/file`).catch((e) => setError(apiError(e)))}>
+                  <button className="font-medium text-ink hover:underline" onClick={() => openAuthed(`${base}/documents/${d.id}/file`).catch((e) => setError(apiError(e)))}>
                     {d.title}
                   </button>{" "}
                   <Badge tone={vTone[d.verification_status]}>{d.verification_status}</Badge>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-ink-muted">
                     {d.created_at.slice(0, 10)} · {fileSize(d.size_bytes)}
                     {d.uploaded_by_parent ? " · uploaded by you" : " · from school"}
                     {d.remarks && ` · ${d.remarks}`}

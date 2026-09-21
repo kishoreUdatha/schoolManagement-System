@@ -60,7 +60,7 @@ export default function SectionRosterPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
         />
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-ink-muted">
           {filtered.length} of {students.length} student(s)
         </span>
       </div>
@@ -76,23 +76,23 @@ export default function SectionRosterPage() {
               <th className="px-4 py-3 font-bold">DOB</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {filtered.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50">
+              <tr key={s.id} className="hover:bg-surface-subtle">
                 <td className="px-4 py-3 text-[12px] tabular-nums text-ink-muted">
                   {s.roll_no}
                 </td>
                 <td className="px-4 py-3 text-[12px] font-mono">{s.admission_no}</td>
-                <td className="px-4 py-3 font-medium text-slate-900">
+                <td className="px-4 py-3 font-medium text-ink">
                   {s.full_name}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{s.gender ?? "—"}</td>
-                <td className="px-4 py-3 text-slate-600">{s.dob ?? "—"}</td>
+                <td className="px-4 py-3 text-ink-muted">{s.gender ?? "—"}</td>
+                <td className="px-4 py-3 text-ink-muted">{s.dob ?? "—"}</td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-ink-muted">
                   No students match.
                 </td>
               </tr>

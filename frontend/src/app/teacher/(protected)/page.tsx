@@ -55,7 +55,7 @@ export default function TeacherDashboard() {
     return (
       <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
     );
-  if (!data) return <div className="text-sm text-slate-500">Loading dashboard…</div>;
+  if (!data) return <div className="text-sm text-ink-muted">Loading dashboard…</div>;
 
   return (
     <div className="space-y-6">
@@ -94,7 +94,7 @@ export default function TeacherDashboard() {
           </CardHeader>
           <CardBody>
             {data.todays_classes.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-ink-muted">
                 No classes today. Either it&apos;s a non-working day or the
                 school timetable isn&apos;t set up yet for {DAYS[data.today_day_of_week]}.
               </p>
@@ -108,16 +108,16 @@ export default function TeacherDashboard() {
                     <th className="py-2 font-medium">Subject</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-surface-border">
                   {data.todays_classes.map((c) => (
-                    <tr key={c.period_id} className="hover:bg-slate-50">
+                    <tr key={c.period_id} className="hover:bg-surface-subtle">
                       <td className="py-2 text-[12px] tabular-nums text-ink-muted">
                         P{c.period_number}
                       </td>
                       <td className="py-2">
                         {c.start_time} – {c.end_time}
                       </td>
-                      <td className="py-2 font-medium text-slate-900">
+                      <td className="py-2 font-medium text-ink">
                         {c.section_label}
                       </td>
                       <td className="py-2">
@@ -126,7 +126,7 @@ export default function TeacherDashboard() {
                         ) : (
                           <>
                             {c.subject_name}{" "}
-                            <span className="text-xs text-slate-500">
+                            <span className="text-xs text-ink-muted">
                               ({c.subject_code})
                             </span>
                           </>
@@ -146,7 +146,7 @@ export default function TeacherDashboard() {
           </CardHeader>
           <CardBody>
             {data.class_teacher_of.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-ink-muted">
                 You haven&apos;t been assigned as class teacher of any section.
                 Your admin can do this from <em>Classes → Edit section</em>.
               </p>
@@ -155,12 +155,12 @@ export default function TeacherDashboard() {
                 {data.class_teacher_of.map((s) => (
                   <li
                     key={s.section_id}
-                    className="flex items-center justify-between rounded-md bg-slate-50 px-3 py-2"
+                    className="flex items-center justify-between rounded-md bg-surface-subtle px-3 py-2"
                   >
-                    <span className="font-medium text-slate-900">
+                    <span className="font-medium text-ink">
                       {s.section_label}
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-ink-muted">
                       capacity {s.capacity}
                     </span>
                   </li>
@@ -172,7 +172,7 @@ export default function TeacherDashboard() {
       </div>
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">
           Coming soon
         </h2>
         <div className="grid gap-4 sm:grid-cols-3">
@@ -198,9 +198,9 @@ function PlaceholderCard({ title, note }: { title: string; note: string }) {
   return (
     <Card className="border-dashed">
       <CardBody>
-        <div className="text-sm font-medium text-slate-500">{title}</div>
+        <div className="text-sm font-medium text-ink-muted">{title}</div>
         <div className="mt-2 text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink-subtle">—</div>
-        <div className="mt-1 text-xs text-slate-400">{note}</div>
+        <div className="mt-1 text-xs text-ink-subtle">{note}</div>
       </CardBody>
     </Card>
   );

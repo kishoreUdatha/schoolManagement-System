@@ -108,7 +108,7 @@ export function StudentProfileView({
             {profile.admission_no} · {profile.class_name} {profile.section_name} ·
             Roll {profile.roll_no} · AY {profile.academic_year_name}
           </div>
-          <div className="mt-1 text-xs text-slate-500">
+          <div className="mt-1 text-xs text-ink-muted">
             {profile.dob && <span>DOB {profile.dob} · </span>}
             {profile.gender && <span>{profile.gender} · </span>}
             {profile.blood_group && <span>{profile.blood_group}</span>}
@@ -159,19 +159,19 @@ export function StudentProfileView({
           </CardHeader>
           <CardBody>
             <dl className="grid grid-cols-2 gap-y-2 text-sm">
-              <dt className="text-slate-500">Present</dt>
+              <dt className="text-ink-muted">Present</dt>
               <dd className="text-right font-medium">
                 {profile.attendance.days_present}
               </dd>
-              <dt className="text-slate-500">Absent</dt>
+              <dt className="text-ink-muted">Absent</dt>
               <dd className="text-right font-medium">
                 {profile.attendance.days_absent}
               </dd>
-              <dt className="text-slate-500">Late</dt>
+              <dt className="text-ink-muted">Late</dt>
               <dd className="text-right font-medium">
                 {profile.attendance.days_late}
               </dd>
-              <dt className="text-slate-500">Half day</dt>
+              <dt className="text-ink-muted">Half day</dt>
               <dd className="text-right font-medium">
                 {profile.attendance.days_half_day}
               </dd>
@@ -185,7 +185,7 @@ export function StudentProfileView({
           </CardHeader>
           <CardBody className="p-0">
             {profile.exams.length === 0 ? (
-              <div className="px-4 py-6 text-sm text-slate-500">
+              <div className="px-4 py-6 text-sm text-ink-muted">
                 No published exams yet.
               </div>
             ) : (
@@ -198,12 +198,12 @@ export function StudentProfileView({
                     <th className="px-4 py-3 text-center font-medium">Result</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-surface-border">
                   {profile.exams.map((e) => (
                     <tr key={e.exam_id}>
                       <td className="px-4 py-3">
                         <div className="font-medium">{e.exam_name}</div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-ink-muted">
                           {e.exam_kind.replace(/_/g, " ")}
                         </div>
                       </td>
@@ -232,23 +232,23 @@ export function StudentProfileView({
           </CardHeader>
           <CardBody>
             {profile.behaviour_recent.length === 0 ? (
-              <div className="text-sm text-slate-500">No ratings recorded yet.</div>
+              <div className="text-sm text-ink-muted">No ratings recorded yet.</div>
             ) : (
               <ul className="space-y-3">
                 {profile.behaviour_recent.map((b) => (
                   <li
                     key={b.id}
-                    className="rounded border border-slate-100 px-3 py-2"
+                    className="rounded border border-surface-border px-3 py-2"
                   >
                     <div className="flex items-center justify-between">
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-ink-muted">
                         {b.period_kind} · {b.period_key}
                       </div>
                       <div className="text-sm font-semibold text-brand-700">
                         ★ {b.average}/5
                       </div>
                     </div>
-                    <div className="mt-1 text-xs text-slate-600">
+                    <div className="mt-1 text-xs text-ink-muted">
                       Punct {b.punctuality} · Part {b.participation} · Disc{" "}
                       {b.discipline} · Resp {b.respect}
                     </div>
@@ -258,7 +258,7 @@ export function StudentProfileView({
                       </p>
                     )}
                     {b.rated_by_name && (
-                      <div className="mt-1 text-xs text-slate-400">
+                      <div className="mt-1 text-xs text-ink-subtle">
                         — {b.rated_by_name}
                       </div>
                     )}
@@ -275,17 +275,17 @@ export function StudentProfileView({
           </CardHeader>
           <CardBody>
             {profile.homework_recent.length === 0 ? (
-              <div className="text-sm text-slate-500">None posted yet.</div>
+              <div className="text-sm text-ink-muted">None posted yet.</div>
             ) : (
               <ul className="space-y-2">
                 {profile.homework_recent.map((h) => (
                   <li
                     key={h.id}
-                    className="flex items-center justify-between rounded border border-slate-100 px-3 py-2 text-sm"
+                    className="flex items-center justify-between rounded border border-surface-border px-3 py-2 text-sm"
                   >
                     <div>
-                      <div className="font-medium text-slate-900">{h.title}</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="font-medium text-ink">{h.title}</div>
+                      <div className="text-xs text-ink-muted">
                         {h.subject_name} · due {h.due_date}
                       </div>
                     </div>
@@ -309,7 +309,7 @@ export function StudentProfileView({
           </CardHeader>
           <CardBody className="p-0">
             {profile.parents.length === 0 ? (
-              <div className="px-4 py-6 text-sm text-slate-500">
+              <div className="px-4 py-6 text-sm text-ink-muted">
                 No parent linked.
               </div>
             ) : (
@@ -322,15 +322,15 @@ export function StudentProfileView({
                     <th className="px-4 py-3 font-bold">Phone</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-surface-border">
                   {profile.parents.map((p) => (
                     <tr key={p.user_id}>
                       <td className="px-4 py-3 font-medium">{p.full_name}</td>
-                      <td className="px-4 py-3 text-slate-600">{p.relation}</td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-ink-muted">{p.relation}</td>
+                      <td className="px-4 py-3 text-ink-muted">
                         {p.email ?? "—"}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">
+                      <td className="px-4 py-3 text-ink-muted">
                         {p.phone ?? "—"}
                       </td>
                     </tr>
@@ -348,7 +348,7 @@ export function StudentProfileView({
             <CardTitle>Address</CardTitle>
           </CardHeader>
           <CardBody>
-            <p className="whitespace-pre-line text-sm text-slate-700">
+            <p className="whitespace-pre-line text-sm text-ink-muted">
               {profile.address}
             </p>
           </CardBody>
@@ -374,13 +374,13 @@ function Stat({
       ? "text-amber-600"
       : tone === "ok"
         ? "text-emerald-600"
-        : "text-slate-900";
+        : "text-ink";
   return (
     <Card>
       <CardBody>
         <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">{title}</div>
         <div className={`text-2xl font-bold ${valueClass}`}>{value}</div>
-        {sub && <div className="mt-1 text-xs text-slate-500">{sub}</div>}
+        {sub && <div className="mt-1 text-xs text-ink-muted">{sub}</div>}
       </CardBody>
     </Card>
   );

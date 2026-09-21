@@ -120,7 +120,10 @@ export function Table({
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-surface-border text-[13px]">
-        <thead className="text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
+        {/* The mock tints the header row rather than relying on a rule, and
+            its ink is the muted tone: the subtle one is a hint colour and
+            falls under 3:1 at this size. */}
+        <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-muted">
           <tr>
             {head.map((h, i) => (
               <th key={i} className="px-4 py-3 font-bold">

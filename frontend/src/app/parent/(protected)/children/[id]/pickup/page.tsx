@@ -96,12 +96,12 @@ export default function EarlyPickupPage() {
         .filter((p) => p.status === "approved")
         .map((p) => (
           <Card key={p.id} className="border-emerald-300 p-5 text-center">
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-ink-muted">
               Pickup code for {p.leave_on}
               {p.leave_time && ` at ${p.leave_time}`} · {p.pickup_name}
             </div>
-            <div className="mt-1 font-mono text-4xl font-bold tracking-widest text-slate-900">{p.code}</div>
-            <div className="mt-1 text-xs text-slate-500">Show this at the school gate.</div>
+            <div className="mt-1 font-mono text-4xl font-bold tracking-widest text-ink">{p.code}</div>
+            <div className="mt-1 text-xs text-ink-muted">Show this at the school gate.</div>
           </Card>
         ))}
 
@@ -128,16 +128,16 @@ export default function EarlyPickupPage() {
         <CardHeader>
           <CardTitle>Recent requests</CardTitle>
         </CardHeader>
-        <ul className="divide-y divide-slate-100 text-sm">
-          {items.length === 0 && <li className="px-4 py-3 text-slate-500">None yet.</li>}
+        <ul className="divide-y divide-surface-border text-sm">
+          {items.length === 0 && <li className="px-4 py-3 text-ink-muted">None yet.</li>}
           {items.map((p) => (
             <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
               <div>
-                <span className="font-medium text-slate-900">
+                <span className="font-medium text-ink">
                   {p.leave_on} {p.leave_time}
                 </span>{" "}
                 <Badge tone={tone[p.status]}>{p.status}</Badge>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-ink-muted">
                   {p.pickup_name} · {p.reason}
                   {p.decision_note && ` · ${p.decision_note}`}
                   {p.departed_at && ` · left at ${new Date(p.departed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}

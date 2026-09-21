@@ -397,7 +397,7 @@ function IssueModal({
           </div>
         )}
         {preview && (
-          <Card className="bg-white p-5 text-slate-900">
+          <Card className="bg-white p-5 text-ink">
             <div className="mb-3 text-center font-bold underline">{preview.title}</div>
             {preview.body.split("\n\n").map((p, i) => (
               <p key={i} className="mb-2 text-sm leading-relaxed">

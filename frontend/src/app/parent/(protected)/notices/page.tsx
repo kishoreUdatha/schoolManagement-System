@@ -64,7 +64,7 @@ export default function ParentNoticesPage() {
       )}
 
       {items.length === 0 ? (
-        <Card className="p-8 text-center text-slate-500">No notices yet.</Card>
+        <Card className="p-8 text-center text-ink-muted">No notices yet.</Card>
       ) : (
         <div className="space-y-3">
           {items.map((n) => (
@@ -80,9 +80,9 @@ export default function ParentNoticesPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     {!n.read_at && <Badge tone="brand">new</Badge>}
-                    <h3 className="font-semibold text-slate-900">{n.title}</h3>
+                    <h3 className="font-semibold text-ink">{n.title}</h3>
                   </div>
-                  <p className="mt-1 whitespace-pre-line text-sm text-slate-700">{n.body}</p>
+                  <p className="mt-1 whitespace-pre-line text-sm text-ink-muted">{n.body}</p>
                   {n.attachment_url && (
                     <a
                       href={n.attachment_url}
@@ -94,7 +94,7 @@ export default function ParentNoticesPage() {
                     </a>
                   )}
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-ink-muted">
                   {n.sent_at && new Date(n.sent_at).toLocaleDateString()}
                 </div>
               </div>

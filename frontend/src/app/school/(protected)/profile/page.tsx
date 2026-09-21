@@ -151,7 +151,7 @@ export default function SchoolProfilePage() {
   }
 
   if (!profile && !error) {
-    return <div className="text-sm text-slate-500">Loading…</div>;
+    return <div className="text-sm text-ink-muted">Loading…</div>;
   }
 
   return (
@@ -266,7 +266,7 @@ export default function SchoolProfilePage() {
                   onChange={(e) =>
                     setForm({ ...form, brand_color: e.target.value })
                   }
-                  className="h-9 w-12 cursor-pointer rounded-md border border-slate-300 bg-white"
+                  className="h-9 w-12 cursor-pointer rounded-md border border-surface-border bg-white"
                 />
                 <input
                   value={form.brand_color}
@@ -274,25 +274,25 @@ export default function SchoolProfilePage() {
                     setForm({ ...form, brand_color: e.target.value })
                   }
                   placeholder="#2563eb"
-                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
+                  className="flex-1 rounded-lg border border-surface-border px-3 py-2 text-sm font-mono"
                 />
                 {form.brand_color && (
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, brand_color: "" })}
-                    className="text-xs text-slate-500 underline hover:text-slate-700"
+                    className="text-xs text-ink-muted underline hover:text-ink-muted"
                   >
                     reset
                   </button>
                 )}
               </div>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-ink-muted">
                 Hex color used for buttons, badges and accents. Save and
                 refresh to see it everywhere.
               </span>
             </label>
             <div className="sm:col-span-2">
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-ink-muted">
                 Logo image is configured in the <strong>Identity</strong>{" "}
                 card above. Use a square PNG/SVG for best results.
               </p>
@@ -306,7 +306,7 @@ export default function SchoolProfilePage() {
           </CardHeader>
           <CardBody className="space-y-5">
             <div>
-              <div className="text-sm font-medium text-slate-700">
+              <div className="text-sm font-medium text-ink-muted">
                 Working days *
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -321,7 +321,7 @@ export default function SchoolProfilePage() {
                         "rounded-full border px-3 py-1 text-xs font-semibold transition " +
                         (active
                           ? "border-brand-600 bg-brand-600 text-white"
-                          : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50")
+                          : "border-surface-border bg-white text-ink-muted hover:bg-surface-subtle")
                       }
                     >
                       {d}

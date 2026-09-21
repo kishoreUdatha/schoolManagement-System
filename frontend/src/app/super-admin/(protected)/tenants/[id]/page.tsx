@@ -119,7 +119,7 @@ export default function TenantDetailPage() {
     return <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>;
   }
   if (!tenant) {
-    return <div className="text-sm text-slate-500">Loading…</div>;
+    return <div className="text-sm text-ink-muted">Loading…</div>;
   }
 
   return (
@@ -174,7 +174,7 @@ export default function TenantDetailPage() {
                 />
               </div>
             ) : (
-              <div className="text-sm text-slate-500">
+              <div className="text-sm text-ink-muted">
                 No subscription assigned yet. Click <strong>Assign plan</strong>.
               </div>
             )}
@@ -189,7 +189,7 @@ export default function TenantDetailPage() {
             {tenant.schools.map((s) => (
               <div key={s.id} className="flex items-center justify-between">
                 <span>{s.name}</span>
-                <code className="text-xs text-slate-500">{s.code}</code>
+                <code className="text-xs text-ink-muted">{s.code}</code>
               </div>
             ))}
           </CardBody>
@@ -231,27 +231,27 @@ export default function TenantDetailPage() {
               <th className="px-4 py-3 font-bold">Reference</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {payments.map((p) => (
               <tr key={p.id}>
-                <td className="px-4 py-3 text-slate-500">
+                <td className="px-4 py-3 text-ink-muted">
                   {p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "—"}
                 </td>
                 <td className="px-4 py-3 font-medium">
                   {p.currency} {Number(p.amount).toLocaleString("en-IN")}
                 </td>
-                <td className="px-4 py-3 text-slate-600">{p.mode}</td>
+                <td className="px-4 py-3 text-ink-muted">{p.mode}</td>
                 <td className="px-4 py-3">
                   <Badge tone={p.status === "success" ? "emerald" : "amber"}>
                     {p.status}
                   </Badge>
                 </td>
-                <td className="px-4 py-3 text-slate-600">{p.reference ?? "—"}</td>
+                <td className="px-4 py-3 text-ink-muted">{p.reference ?? "—"}</td>
               </tr>
             ))}
             {payments.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+                <td colSpan={5} className="px-4 py-6 text-center text-ink-muted">
                   No payments recorded.
                 </td>
               </tr>
@@ -287,7 +287,7 @@ function KV({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col">
       <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">{label}</span>
-      <span className="mt-1 text-sm font-medium text-slate-900">{value}</span>
+      <span className="mt-1 text-sm font-medium text-ink">{value}</span>
     </div>
   );
 }
@@ -300,11 +300,11 @@ function QuotaBar({ label, q }: { label: string; q: Quota }) {
     <div>
       <div className="flex items-baseline justify-between text-sm">
         <span className="text-[12px] font-bold text-ink-muted">{label}</span>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-ink-muted">
           {q.used.toLocaleString()} / {q.limit.toLocaleString() || "∞"}
         </span>
       </div>
-      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+      <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-surface-hover">
         <div className={`h-full ${tone}`} style={{ width: `${pct}%` }} />
       </div>
     </div>

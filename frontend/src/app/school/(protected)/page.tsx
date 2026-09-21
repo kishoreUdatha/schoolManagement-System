@@ -101,7 +101,7 @@ export default function SchoolAdminDashboard() {
     );
   }
   if (!data) {
-    return <div className="text-sm text-slate-500">Loading dashboard…</div>;
+    return <div className="text-sm text-ink-muted">Loading dashboard…</div>;
   }
 
   const overduePresent = data.fees.overdue_count > 0;
@@ -224,14 +224,14 @@ export default function SchoolAdminDashboard() {
           </CardHeader>
           <CardBody>
             {data.upcoming_holidays.length === 0 ? (
-              <p className="text-sm text-slate-500">No upcoming holidays.</p>
+              <p className="text-sm text-ink-muted">No upcoming holidays.</p>
             ) : (
               <ul className="space-y-2 text-sm">
                 {data.upcoming_holidays.map((h) => (
                   <li key={h.id} className="flex items-center justify-between gap-3">
-                    <span className="font-medium text-slate-900">{h.name}</span>
+                    <span className="font-medium text-ink">{h.name}</span>
                     <span className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-ink-muted">
                         {h.start_date === h.end_date
                           ? h.start_date
                           : `${h.start_date} → ${h.end_date}`}
@@ -258,21 +258,21 @@ export default function SchoolAdminDashboard() {
         </CardHeader>
         <CardBody>
           {data.latest_notices.length === 0 ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-ink-muted">
               No notices sent yet. Click <strong>Send notice</strong> above.
             </p>
           ) : (
-            <ul className="divide-y divide-slate-100 text-sm">
+            <ul className="divide-y divide-surface-border text-sm">
               {data.latest_notices.map((n) => (
                 <li key={n.id} className="flex items-center justify-between py-2">
                   <div>
-                    <div className="font-medium text-slate-900">{n.title}</div>
-                    <div className="text-xs text-slate-500">
+                    <div className="font-medium text-ink">{n.title}</div>
+                    <div className="text-xs text-ink-muted">
                       {n.audience.replace("_", " ")} · {n.recipient_count}{" "}
                       recipient(s)
                     </div>
                   </div>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-ink-muted">
                     {n.sent_at && new Date(n.sent_at).toLocaleString()}
                   </span>
                 </li>
@@ -294,16 +294,16 @@ export default function SchoolAdminDashboard() {
         </CardHeader>
         <CardBody>
           {data.upcoming_exams.length === 0 ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-ink-muted">
               No exams scheduled in the next 7 days.
             </p>
           ) : (
-            <ul className="divide-y divide-slate-100 text-sm">
+            <ul className="divide-y divide-surface-border text-sm">
               {data.upcoming_exams.map((e) => (
                 <li key={e.id} className="flex items-center justify-between py-2">
                   <div>
-                    <div className="font-medium text-slate-900">{e.name}</div>
-                    <div className="text-xs text-slate-500">
+                    <div className="font-medium text-ink">{e.name}</div>
+                    <div className="text-xs text-ink-muted">
                       {e.kind.replace("_", " ")} · {e.papers_count} paper(s) ·{" "}
                       {e.start_date} → {e.end_date}
                     </div>
@@ -321,7 +321,7 @@ export default function SchoolAdminDashboard() {
       </Card>
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">
           Coming soon
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -346,9 +346,9 @@ function QuickAction({ href, label }: { href: string; label: string }) {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 py-1.5 last:border-0">
+    <div className="flex items-center justify-between border-b border-surface-border py-1.5 last:border-0">
       <span className="text-[12px] font-bold text-ink-muted">{label}</span>
-      <span className="font-medium text-slate-900">{value}</span>
+      <span className="font-medium text-ink">{value}</span>
     </div>
   );
 }
@@ -357,9 +357,9 @@ function PlaceholderCard({ title, note }: { title: string; note: string }) {
   return (
     <Card className="border-dashed">
       <CardBody>
-        <div className="text-sm font-medium text-slate-500">{title}</div>
-        <div className="mt-2 text-3xl font-bold text-slate-300">—</div>
-        <div className="mt-1 text-xs text-slate-400">{note}</div>
+        <div className="text-sm font-medium text-ink-muted">{title}</div>
+        <div className="mt-2 text-3xl font-bold text-ink-subtle">—</div>
+        <div className="mt-1 text-xs text-ink-subtle">{note}</div>
       </CardBody>
     </Card>
   );

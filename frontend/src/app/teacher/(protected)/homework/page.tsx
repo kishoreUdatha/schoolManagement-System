@@ -176,7 +176,7 @@ export default function HomeworkPage() {
             type="checkbox"
             checked={includePast}
             onChange={(e) => setIncludePast(e.target.checked)}
-            className="rounded border-slate-300"
+            className="rounded border-surface-border"
           />
           Include past due
         </label>
@@ -195,7 +195,7 @@ export default function HomeworkPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-slate-900">{h.title}</h3>
+                  <h3 className="font-semibold text-ink">{h.title}</h3>
                   {h.is_closed ? (
                     <Badge tone="rose">closed</Badge>
                   ) : h.is_past_due ? (
@@ -205,12 +205,12 @@ export default function HomeworkPage() {
                   )}
                   {h.rubric_name && <Badge tone="brand">{h.rubric_name}</Badge>}
                 </div>
-                <div className="mt-0.5 text-xs text-slate-500">
+                <div className="mt-0.5 text-xs text-ink-muted">
                   {h.class_name} · {h.subject_name} · due{" "}
                   <strong>{h.due_date}</strong>
                   {h.is_closed && h.closed_by_name && ` · closed by ${h.closed_by_name}`}
                 </div>
-                <p className="mt-2 whitespace-pre-line text-sm text-slate-700">
+                <p className="mt-2 whitespace-pre-line text-sm text-ink-muted">
                   {h.description}
                 </p>
                 {h.attachment_url && (
@@ -256,7 +256,7 @@ export default function HomeworkPage() {
           </Card>
         ))}
         {items.length === 0 && (
-          <Card className="p-8 text-center text-slate-500">
+          <Card className="p-8 text-center text-ink-muted">
             {subjects.length === 0
               ? "You aren't assigned as a subject teacher anywhere yet."
               : "No homework posted yet."}
@@ -426,7 +426,7 @@ function HomeworkFormModal({
               onChange={(e) =>
                 setForm({ ...form, notify_parents: e.target.checked })
               }
-              className="rounded border-slate-300"
+              className="rounded border-surface-border"
             />
             Send notice to parents of this class
           </label>
@@ -527,7 +527,7 @@ function SubmissionsModal({
   return (
     <Modal open onClose={onClose} title={`Submissions — ${hw.title}`} size="lg">
       <div className="space-y-3">
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-ink-muted">
           {hw.class_name} · {hw.subject_name} · due {hw.due_date}
         </div>
 
@@ -538,11 +538,11 @@ function SubmissionsModal({
         )}
 
         {subs === null && (
-          <div className="text-sm text-slate-500">Loading…</div>
+          <div className="text-sm text-ink-muted">Loading…</div>
         )}
 
         {subs && subs.length === 0 && (
-          <Card className="p-6 text-center text-sm text-slate-500">
+          <Card className="p-6 text-center text-sm text-ink-muted">
             No submissions yet.
           </Card>
         )}
@@ -554,7 +554,7 @@ function SubmissionsModal({
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-slate-900">
+                      <span className="font-medium text-ink">
                         {s.student_name}
                       </span>
                       <span className="text-[12px] tabular-nums text-ink-muted">
@@ -562,7 +562,7 @@ function SubmissionsModal({
                       </span>
                       <Badge tone={statusTone(s.status)}>{s.status}</Badge>
                     </div>
-                    <div className="mt-0.5 text-xs text-slate-500">
+                    <div className="mt-0.5 text-xs text-ink-muted">
                       Submitted {new Date(s.submitted_at).toLocaleString()}
                     </div>
                     {s.attachment_url && (
@@ -576,13 +576,13 @@ function SubmissionsModal({
                       </a>
                     )}
                     {s.comment && (
-                      <p className="mt-1 whitespace-pre-line text-sm text-slate-700">
+                      <p className="mt-1 whitespace-pre-line text-sm text-ink-muted">
                         {s.comment}
                       </p>
                     )}
                     {s.teacher_remark && (
-                      <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs text-slate-600">
-                        <span className="font-medium text-slate-700">
+                      <div className="mt-2 rounded-md border border-surface-border bg-surface-subtle px-2 py-1.5 text-xs text-ink-muted">
+                        <span className="font-medium text-ink-muted">
                           Your remark:
                         </span>{" "}
                         {s.teacher_remark}
@@ -591,16 +591,16 @@ function SubmissionsModal({
                   </div>
                 </div>
                 {s.marking && (
-                  <div className="mt-3 space-y-2 border-t border-slate-100 pt-2">
-                    <div className="flex items-center justify-between text-xs text-slate-500">
+                  <div className="mt-3 space-y-2 border-t border-surface-border pt-2">
+                    <div className="flex items-center justify-between text-xs text-ink-muted">
                       <span>{s.marking.rubric_name}</span>
-                      <span className="font-medium text-slate-700">
+                      <span className="font-medium text-ink-muted">
                         {s.marking.total === null ? "Not marked" : `${s.marking.total} / ${s.marking.max_total}`}
                       </span>
                     </div>
                     {s.marking.criteria.map((c) => (
                       <div key={c.criterion_id} className="flex items-center gap-2 text-xs">
-                        <span className="flex-1 text-slate-700">{c.criterion_title}</span>
+                        <span className="flex-1 text-ink-muted">{c.criterion_title}</span>
                         <input
                           type="number"
                           min={0}
@@ -608,9 +608,9 @@ function SubmissionsModal({
                           step="0.5"
                           value={marks[`${s.id}:${c.criterion_id}`] ?? (c.points ?? "")}
                           onChange={(e) => setMarks({ ...marks, [`${s.id}:${c.criterion_id}`]: e.target.value })}
-                          className="w-20 rounded-md border border-slate-300 px-2 py-1 text-right text-xs shadow-sm"
+                          className="w-20 rounded-md border border-surface-border px-2 py-1 text-right text-xs shadow-sm"
                         />
-                        <span className="w-12 text-slate-500">/ {c.max_points}</span>
+                        <span className="w-12 text-ink-muted">/ {c.max_points}</span>
                       </div>
                     ))}
                     <Button size="sm" variant="secondary" loading={marking === s.id} onClick={() => saveMarks(s)}>
@@ -618,7 +618,7 @@ function SubmissionsModal({
                     </Button>
                   </div>
                 )}
-                <div className="mt-3 space-y-2 border-t border-slate-100 pt-2">
+                <div className="mt-3 space-y-2 border-t border-surface-border pt-2">
                   <textarea
                     rows={2}
                     placeholder="Remark (optional)"
@@ -629,7 +629,7 @@ function SubmissionsModal({
                         [s.id]: e.target.value,
                       })
                     }
-                    className="w-full rounded-md border border-slate-300 px-2 py-1 text-xs shadow-sm"
+                    className="w-full rounded-md border border-surface-border px-2 py-1 text-xs shadow-sm"
                   />
                   <div className="flex gap-2">
                     <Button

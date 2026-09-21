@@ -104,7 +104,7 @@ export default function SuperAdminDashboard() {
     );
   }
   if (!summary) {
-    return <div className="text-sm text-slate-500">Loading dashboard…</div>;
+    return <div className="text-sm text-ink-muted">Loading dashboard…</div>;
   }
 
   return (
@@ -192,7 +192,7 @@ export default function SuperAdminDashboard() {
           </CardHeader>
           <CardBody className="space-y-2 text-sm">
             <Row label="Used" value={`${summary.storage_used_mb.toLocaleString()} MB`} />
-            <p className="pt-1 text-xs text-slate-400">
+            <p className="pt-1 text-xs text-ink-subtle">
               Populated when S3 upload module is wired (currently stays at 0).
             </p>
           </CardBody>
@@ -214,16 +214,16 @@ export default function SuperAdminDashboard() {
                 <th className="px-4 py-3 font-bold">Contact</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-surface-border">
               {renewals.map((r) => (
                 <tr key={r.tenant_id}>
-                  <td className="px-4 py-3 font-medium text-slate-900">{r.tenant_name}</td>
+                  <td className="px-4 py-3 font-medium text-ink">{r.tenant_name}</td>
                   <td className="px-4 py-3 text-[12px] font-mono">{r.tenant_code}</td>
-                  <td className="px-4 py-3 text-slate-600">{r.days_remaining ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-ink-muted">{r.days_remaining ?? "—"}</td>
+                  <td className="px-4 py-3 text-ink-muted">
                     {r.expires_at ? new Date(r.expires_at).toLocaleDateString() : "—"}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{r.contact_email}</td>
+                  <td className="px-4 py-3 text-ink-muted">{r.contact_email}</td>
                 </tr>
               ))}
             </tbody>
@@ -236,9 +236,9 @@ export default function SuperAdminDashboard() {
 
 function Row({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="flex items-center justify-between border-b border-slate-100 py-1.5 last:border-0">
+    <div className="flex items-center justify-between border-b border-surface-border py-1.5 last:border-0">
       <span className="text-[12px] font-bold text-ink-muted">{label}</span>
-      <span className="font-medium text-slate-900">{value}</span>
+      <span className="font-medium text-ink">{value}</span>
     </div>
   );
 }

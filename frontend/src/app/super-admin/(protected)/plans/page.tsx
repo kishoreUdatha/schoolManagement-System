@@ -83,7 +83,7 @@ export default function PlansPage() {
             <div className="flex items-start justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-slate-900">{p.name}</h3>
+                  <h3 className="text-lg font-semibold text-ink">{p.name}</h3>
                   <Badge tone={tierTone[p.tier]}>{p.tier}</Badge>
                 </div>
                 {p.description && (
@@ -93,21 +93,21 @@ export default function PlansPage() {
               <div className="text-right">
                 <div className="text-xl font-bold text-brand-700">
                   ₹{Number(p.price_monthly).toLocaleString("en-IN")}
-                  <span className="text-xs font-normal text-slate-500">/mo</span>
+                  <span className="text-xs font-normal text-ink-muted">/mo</span>
                 </div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-ink-muted">
                   ₹{Number(p.price_yearly).toLocaleString("en-IN")}/yr
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-2 text-sm text-slate-600">
-              <div>Students: <span className="font-medium text-slate-900">{p.student_limit}</span></div>
-              <div>Staff: <span className="font-medium text-slate-900">{p.staff_limit}</span></div>
-              <div>Storage: <span className="font-medium text-slate-900">{p.storage_mb_limit} MB</span></div>
-              <div>SMS: <span className="font-medium text-slate-900">{p.sms_quota}</span></div>
-              <div>WhatsApp: <span className="font-medium text-slate-900">{p.whatsapp_quota}</span></div>
-              <div>Email: <span className="font-medium text-slate-900">{p.email_quota}</span></div>
+            <div className="mt-4 grid grid-cols-2 gap-2 text-sm text-ink-muted">
+              <div>Students: <span className="font-medium text-ink">{p.student_limit}</span></div>
+              <div>Staff: <span className="font-medium text-ink">{p.staff_limit}</span></div>
+              <div>Storage: <span className="font-medium text-ink">{p.storage_mb_limit} MB</span></div>
+              <div>SMS: <span className="font-medium text-ink">{p.sms_quota}</span></div>
+              <div>WhatsApp: <span className="font-medium text-ink">{p.whatsapp_quota}</span></div>
+              <div>Email: <span className="font-medium text-ink">{p.email_quota}</span></div>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-1.5">
@@ -120,7 +120,7 @@ export default function PlansPage() {
           </Card>
         ))}
         {plans.length === 0 && (
-          <Card className="p-8 text-center text-slate-500">
+          <Card className="p-8 text-center text-ink-muted">
             No plans defined yet. Click <strong>New plan</strong>.
           </Card>
         )}
@@ -272,7 +272,7 @@ function CreatePlanModal({
         />
 
         <div>
-          <div className="text-sm font-medium text-slate-700">Enabled modules</div>
+          <div className="text-sm font-medium text-ink-muted">Enabled modules</div>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {MODULE_KEYS.map((k) => (
               <label key={k} className="flex items-center gap-2 text-sm">
@@ -280,7 +280,7 @@ function CreatePlanModal({
                   type="checkbox"
                   checked={modules[k]}
                   onChange={(e) => setModules({ ...modules, [k]: e.target.checked })}
-                  className="rounded border-slate-300"
+                  className="rounded border-surface-border"
                 />
                 <span>{k}</span>
               </label>

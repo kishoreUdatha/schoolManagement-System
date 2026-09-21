@@ -90,7 +90,7 @@ export default function ChildHostelPage() {
       <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Hostel</h1>
       {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
       {notice && <div className="rounded-lg bg-success-bg px-4 py-3 text-[13px] font-medium text-success dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>}
-      {data === null && <Card className="p-6 text-sm text-slate-500">Your child isn&apos;t staying in the school hostel.</Card>}
+      {data === null && <Card className="p-6 text-sm text-ink-muted">Your child isn&apos;t staying in the school hostel.</Card>}
       {data && (
         <>
           <Card>
@@ -101,7 +101,7 @@ export default function ChildHostelPage() {
             </CardHeader>
             <CardBody className="grid gap-3 text-sm sm:grid-cols-3">
               <div>
-                <div className="text-slate-500">Warden</div>
+                <div className="text-ink-muted">Warden</div>
                 <div className="font-medium">
                   {data.warden_name ?? "—"}{" "}
                   {data.warden_phone && (
@@ -112,11 +112,11 @@ export default function ChildHostelPage() {
                 </div>
               </div>
               <div>
-                <div className="text-slate-500">Curfew</div>
+                <div className="text-ink-muted">Curfew</div>
                 <div className="font-medium">{data.curfew ?? "—"}</div>
               </div>
               <div>
-                <div className="text-slate-500">Since</div>
+                <div className="text-ink-muted">Since</div>
                 <div className="font-medium">{data.since}</div>
               </div>
             </CardBody>
@@ -132,7 +132,7 @@ export default function ChildHostelPage() {
                   (m) =>
                     data.menu_today[m] && (
                       <div key={m}>
-                        <div className="capitalize text-slate-500">{m}</div>
+                        <div className="capitalize text-ink-muted">{m}</div>
                         <div>{data.menu_today[m]}</div>
                       </div>
                     )
@@ -146,7 +146,7 @@ export default function ChildHostelPage() {
               <CardTitle>Roll call (last 7 days)</CardTitle>
             </CardHeader>
             <CardBody className="flex flex-wrap gap-2 text-xs">
-              {data.attendance_last_7_days.length === 0 && <span className="text-slate-500">Nothing recorded yet.</span>}
+              {data.attendance_last_7_days.length === 0 && <span className="text-ink-muted">Nothing recorded yet.</span>}
               {data.attendance_last_7_days.map((a) => (
                 <Badge key={`${a.date}-${a.session}`} tone={a.status === "absent" ? "rose" : a.status === "on_leave" ? "amber" : "emerald"}>
                   {a.date.slice(5)} {a.session}: {a.status.replace("_", " ")}
@@ -175,12 +175,12 @@ export default function ChildHostelPage() {
                   <Button type="submit">Send request</Button>
                 </div>
               </form>
-              <ul className="divide-y divide-slate-100 text-sm">
+              <ul className="divide-y divide-surface-border text-sm">
                 {outings.map((o) => (
                   <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                     <div>
                       {dt(o.leave_at)} → {dt(o.return_by)} <Badge>{o.status}</Badge>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-ink-muted">
                         {o.reason}
                         {o.decision_note && ` · ${o.decision_note}`}
                       </div>

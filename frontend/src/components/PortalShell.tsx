@@ -52,7 +52,7 @@ export function PortalShell({
             messagesHref={messagesHref}
           />
           <main className="flex-1 overflow-x-auto bg-surface">
-            <div className={`mx-auto ${width} px-6 py-5`}>{children}</div>
+            <div className={`mx-auto ${width} px-7 py-6`}>{children}</div>
           </main>
         </div>
       </div>

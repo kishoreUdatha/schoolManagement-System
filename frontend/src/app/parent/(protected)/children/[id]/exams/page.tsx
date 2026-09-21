@@ -56,7 +56,7 @@ export default function ChildExamsPage() {
         </div>
       </div>
     );
-  if (!items) return <div className="text-sm text-slate-500">Loading…</div>;
+  if (!items) return <div className="text-sm text-ink-muted">Loading…</div>;
 
   return (
     <div className="space-y-6">
@@ -71,14 +71,14 @@ export default function ChildExamsPage() {
 
       <header>
         <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Exam results</h1>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-muted">
           Only published exams are visible. Tap one for the detailed mark sheet.
         </p>
       </header>
 
       {items.length === 0 ? (
         <Card>
-          <CardBody className="text-sm text-slate-500">
+          <CardBody className="text-sm text-ink-muted">
             No published exam results yet. They will appear here once the school
             publishes them.
           </CardBody>
@@ -99,17 +99,17 @@ export default function ChildExamsPage() {
                       {e.summary.is_pass ? "PASS" : "FAIL"}
                     </Badge>
                   </div>
-                  <div className="mt-1 text-xs text-slate-500">
+                  <div className="mt-1 text-xs text-ink-muted">
                     {e.exam_kind.replace(/_/g, " ")} · {e.start_date} → {e.end_date}
                   </div>
                 </CardHeader>
                 <CardBody>
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-3xl font-bold text-slate-900">
+                      <div className="text-3xl font-bold text-ink">
                         {e.summary.percentage}%
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-ink-muted">
                         {e.summary.total_obtained} / {e.summary.total_max}
                       </div>
                     </div>
@@ -117,7 +117,7 @@ export default function ChildExamsPage() {
                       <div className="text-2xl font-semibold text-brand-700">
                         {e.summary.overall_grade}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-ink-muted">
                         {e.summary.subjects_passed} / {e.summary.subjects_total}{" "}
                         subjects passed
                       </div>

@@ -18,7 +18,7 @@ export function HealthBadge() {
       ? "bg-emerald-100 text-emerald-700"
       : status === "down"
       ? "bg-rose-100 text-rose-700"
-      : "bg-slate-100 text-slate-600";
+      : "bg-surface-hover text-ink-muted";
 
   const label =
     status === "ok" ? "API online" : status === "down" ? "API offline" : "Checking…";

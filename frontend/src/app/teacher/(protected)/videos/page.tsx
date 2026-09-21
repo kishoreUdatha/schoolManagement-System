@@ -165,7 +165,7 @@ export default function TeacherVideosPage() {
               href={v.youtube_url}
               target="_blank"
               rel="noreferrer"
-              className="block bg-slate-100"
+              className="block bg-surface-hover"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -177,7 +177,7 @@ export default function TeacherVideosPage() {
             <div className="p-3">
               <div className="flex items-center gap-2">
                 <Badge tone="brand">{v.subject_code}</Badge>
-                <span className="text-xs text-slate-500">{v.class_name}</span>
+                <span className="text-xs text-ink-muted">{v.class_name}</span>
                 <Badge
                   tone={v.completion_count > 0 ? "emerald" : "neutral"}
                   className="ml-auto"
@@ -185,11 +185,11 @@ export default function TeacherVideosPage() {
                   {v.completion_count} / {v.eligible_student_count} watched
                 </Badge>
               </div>
-              <h3 className="mt-2 font-semibold text-slate-900 line-clamp-2">
+              <h3 className="mt-2 font-semibold text-ink line-clamp-2">
                 {v.title}
               </h3>
               {v.description && (
-                <p className="mt-1 text-xs text-slate-600 line-clamp-2">
+                <p className="mt-1 text-xs text-ink-muted line-clamp-2">
                   {v.description}
                 </p>
               )}
@@ -212,7 +212,7 @@ export default function TeacherVideosPage() {
           </Card>
         ))}
         {items.length === 0 && (
-          <Card className="col-span-full p-8 text-center text-slate-500">
+          <Card className="col-span-full p-8 text-center text-ink-muted">
             {subjects.length === 0
               ? "You aren't assigned as a subject teacher anywhere yet."
               : "No videos posted yet."}
@@ -281,7 +281,7 @@ function CompletionsModal({
           </div>
         )}
         {!roster ? (
-          <div className="text-sm text-slate-500">Loading…</div>
+          <div className="text-sm text-ink-muted">Loading…</div>
         ) : (
           <>
             <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -289,7 +289,7 @@ function CompletionsModal({
                 {roster.completion_count} / {roster.eligible_student_count}{" "}
                 watched
               </Badge>
-              <div className="ml-auto inline-flex rounded-md bg-slate-100 p-0.5 text-xs">
+              <div className="ml-auto inline-flex rounded-md bg-surface-hover p-0.5 text-xs">
                 {(["all", "watched", "missed"] as const).map((t) => (
                   <button
                     key={t}
@@ -297,8 +297,8 @@ function CompletionsModal({
                     className={
                       "rounded-md px-2.5 py-1 font-medium " +
                       (showOnly === t
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600 hover:bg-slate-200")
+                        ? "bg-white text-ink shadow-sm"
+                        : "text-ink-muted hover:bg-surface-hover")
                     }
                   >
                     {t}
@@ -316,17 +316,17 @@ function CompletionsModal({
                   <th className="px-4 py-3 font-bold">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-surface-border">
                 {rows.map((r) => (
                   <tr key={r.student_id}>
-                    <td className="px-4 py-3 text-slate-600">
+                    <td className="px-4 py-3 text-ink-muted">
                       {r.section_label}
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{r.roll_no}</td>
-                    <td className="px-4 py-3 font-mono text-slate-700">
+                    <td className="px-4 py-3 text-ink-muted">{r.roll_no}</td>
+                    <td className="px-4 py-3 font-mono text-ink-muted">
                       {r.admission_no}
                     </td>
-                    <td className="px-4 py-3 font-medium text-slate-900">
+                    <td className="px-4 py-3 font-medium text-ink">
                       {r.full_name}
                     </td>
                     <td className="px-4 py-3">
@@ -334,7 +334,7 @@ function CompletionsModal({
                         <div className="flex flex-col">
                           <Badge tone="emerald">watched ✓</Badge>
                           {r.completed_at && (
-                            <span className="mt-0.5 text-[11px] text-slate-500">
+                            <span className="mt-0.5 text-[11px] text-ink-muted">
                               {new Date(r.completed_at).toLocaleString()}
                             </span>
                           )}
@@ -347,7 +347,7 @@ function CompletionsModal({
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-3 py-6 text-center text-slate-500">
+                    <td colSpan={5} className="px-3 py-6 text-center text-ink-muted">
                       No students match this filter.
                     </td>
                   </tr>
@@ -468,12 +468,12 @@ function VideoFormModal({
         />
         {previewId ? (
           <div className="space-y-1">
-            <div className="text-xs text-slate-500">Preview</div>
+            <div className="text-xs text-ink-muted">Preview</div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={`https://img.youtube.com/vi/${previewId}/mqdefault.jpg`}
               alt="thumbnail"
-              className="aspect-video max-w-xs rounded-lg border border-slate-200 object-cover"
+              className="aspect-video max-w-xs rounded-lg border border-surface-border object-cover"
             />
           </div>
         ) : (

@@ -91,11 +91,11 @@ export default function FeeHeadsPage() {
               <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {items.map((h) => (
-              <tr key={h.id} className="hover:bg-slate-50">
+              <tr key={h.id} className="hover:bg-surface-subtle">
                 <td className="px-4 py-3 text-[12px] font-mono">{h.code}</td>
-                <td className="px-4 py-3 font-medium text-slate-900">{h.name}</td>
+                <td className="px-4 py-3 font-medium text-ink">{h.name}</td>
                 <td className="px-4 py-3">
                   {h.is_recurring ? (
                     <Badge tone="brand">monthly</Badge>
@@ -103,7 +103,7 @@ export default function FeeHeadsPage() {
                     <Badge tone="neutral">one-time</Badge>
                   )}
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-ink-muted">
                   {h.late_fee_type === "none" ? (
                     "—"
                   ) : (
@@ -111,7 +111,7 @@ export default function FeeHeadsPage() {
                       {h.late_fee_type === "percent"
                         ? `${h.late_fee_value}%`
                         : `₹${h.late_fee_value}`}
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-ink-muted">
                         {" "}
                         after {h.late_fee_after_days}d
                       </span>
@@ -137,7 +137,7 @@ export default function FeeHeadsPage() {
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-slate-500">
+                <td colSpan={6} className="px-3 py-8 text-center text-ink-muted">
                   No fee heads yet — click <strong>+ New head</strong>.
                 </td>
               </tr>
@@ -245,11 +245,11 @@ function FormModal({
             type="checkbox"
             checked={form.is_recurring}
             onChange={(e) => setForm({ ...form, is_recurring: e.target.checked })}
-            className="rounded border-slate-300"
+            className="rounded border-surface-border"
           />
           Recurring (charged every month) — uncheck for one-time fees
         </label>
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+        <div className="rounded-lg border border-surface-border bg-surface-subtle p-3 text-xs text-ink-muted">
           Late fee rules below are <strong>stored but not auto-applied</strong> at runtime in this
           MVP. Future scope: compute and add to amount_due when overdue.
         </div>
@@ -296,7 +296,7 @@ function FormModal({
               type="checkbox"
               checked={form.is_active}
               onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-              className="rounded border-slate-300"
+              className="rounded border-surface-border"
             />
             Active
           </label>

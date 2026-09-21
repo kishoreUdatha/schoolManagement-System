@@ -83,7 +83,7 @@ export default function ParentHolidaysPage() {
         <Button size="sm" variant="secondary" onClick={() => shiftMonth(-1)}>
           ← Prev
         </Button>
-        <span className="text-base font-semibold text-slate-900">
+        <span className="text-base font-semibold text-ink">
           {MONTHS[month - 1]} {year}
         </span>
         <Button size="sm" variant="secondary" onClick={() => shiftMonth(1)}>
@@ -99,12 +99,12 @@ export default function ParentHolidaysPage() {
 
       {holidays.length > 0 && (
         <Card>
-          <ul className="divide-y divide-slate-100 text-sm">
+          <ul className="divide-y divide-surface-border text-sm">
             {holidays.map((h) => (
               <li key={h.id} className="flex items-center justify-between px-4 py-3">
                 <div>
-                  <div className="font-medium text-slate-900">{h.name}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="font-medium text-ink">{h.name}</div>
+                  <div className="text-xs text-ink-muted">
                     {h.start_date === h.end_date
                       ? h.start_date
                       : `${h.start_date} → ${h.end_date}`}
@@ -112,7 +112,7 @@ export default function ParentHolidaysPage() {
                     {h.days} day{h.days === 1 ? "" : "s"}
                   </div>
                   {h.description && (
-                    <div className="mt-1 text-xs text-slate-600">{h.description}</div>
+                    <div className="mt-1 text-xs text-ink-muted">{h.description}</div>
                   )}
                 </div>
                 <Badge tone={typeTone[h.type]}>{h.type}</Badge>

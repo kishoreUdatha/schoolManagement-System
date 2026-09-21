@@ -76,7 +76,7 @@ export default function ChildLeavePage() {
         </CardHeader>
         <CardBody>
           <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3">
-            <label className="text-sm text-slate-700">
+            <label className="text-sm text-ink-muted">
               Type
               <select className="mt-1 w-full min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300" value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}>
                 {KINDS.map(([v, l]) => (
@@ -102,18 +102,18 @@ export default function ChildLeavePage() {
           <CardBody className="flex flex-wrap items-center gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium text-slate-900">
+                <span className="font-medium text-ink">
                   {lv.from_date}
                   {lv.to_date !== lv.from_date && ` → ${lv.to_date}`}
                 </span>
                 <Badge tone={leaveTone[lv.status]}>{lv.status}</Badge>
-                <span className="text-sm text-slate-500">
+                <span className="text-sm text-ink-muted">
                   {lv.days} day{lv.days === 1 ? "" : "s"} · {lv.kind}
                 </span>
               </div>
-              <div className="text-sm text-slate-600">{lv.reason}</div>
+              <div className="text-sm text-ink-muted">{lv.reason}</div>
               {lv.decision_note && (
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-ink-muted">
                   {lv.decided_by_name}: {lv.decision_note}
                 </div>
               )}

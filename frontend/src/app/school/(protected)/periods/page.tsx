@@ -99,13 +99,13 @@ export default function PeriodsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         {grouped.map((g) => (
           <Card key={g.day} className="p-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="font-semibold text-slate-900">{g.dayName}</h3>
-              <span className="text-xs text-slate-500">{g.items.length} slot(s)</span>
+            <div className="flex items-center justify-between border-b border-surface-border pb-2">
+              <h3 className="font-semibold text-ink">{g.dayName}</h3>
+              <span className="text-xs text-ink-muted">{g.items.length} slot(s)</span>
             </div>
-            <div className="mt-2 divide-y divide-slate-100 text-sm">
+            <div className="mt-2 divide-y divide-surface-border text-sm">
               {g.items.length === 0 && (
-                <div className="py-3 text-sm text-slate-500">No periods yet.</div>
+                <div className="py-3 text-sm text-ink-muted">No periods yet.</div>
               )}
               {g.items.map((p) => (
                 <div
@@ -120,7 +120,7 @@ export default function PeriodsPage() {
                       {trim(p.start_time)} – {trim(p.end_time)}
                     </span>{" "}
                     {p.label && (
-                      <span className="text-slate-500">· {p.label}</span>
+                      <span className="text-ink-muted">· {p.label}</span>
                     )}
                     {p.is_break && (
                       <Badge tone="amber" className="ml-2">
@@ -247,7 +247,7 @@ function CreatePeriodModal({
               type="checkbox"
               checked={form.is_break}
               onChange={(e) => setForm({ ...form, is_break: e.target.checked })}
-              className="rounded border-slate-300"
+              className="rounded border-surface-border"
             />
             This is a break (lunch, recess)
           </label>

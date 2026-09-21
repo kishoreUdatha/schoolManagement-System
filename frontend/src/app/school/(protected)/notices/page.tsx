@@ -156,11 +156,11 @@ export default function NoticesPage() {
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-slate-900">{n.title}</h3>
+                  <h3 className="font-semibold text-ink">{n.title}</h3>
                   <Badge tone={statusTone[n.status]}>{n.status}</Badge>
                 </div>
-                <p className="mt-1 line-clamp-2 text-sm text-slate-600">{n.body}</p>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <p className="mt-1 line-clamp-2 text-sm text-ink-muted">{n.body}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
                   <span>
                     Audience:{" "}
                     <strong>
@@ -212,7 +212,7 @@ export default function NoticesPage() {
           </Card>
         ))}
         {items.length === 0 && (
-          <Card className="p-8 text-center text-slate-500">
+          <Card className="p-8 text-center text-ink-muted">
             No notices yet — click <strong>+ New notice</strong>.
           </Card>
         )}
@@ -390,7 +390,7 @@ function NoticeFormModal({
           hint="If set, status becomes 'scheduled'. You must still click 'Send now' to dispatch — automated cron not yet built."
         />
         <div>
-          <div className="text-sm font-medium text-slate-700">Channels *</div>
+          <div className="text-sm font-medium text-ink-muted">Channels *</div>
           <div className="mt-2 flex flex-wrap gap-2">
             {(["in_app", "email", "sms", "whatsapp"] as Channel[]).map((c) => {
               const active = channels.has(c);
@@ -404,7 +404,7 @@ function NoticeFormModal({
                     "rounded-full border px-3 py-1 text-xs font-medium transition " +
                     (active
                       ? "border-brand-600 bg-brand-600 text-white"
-                      : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50")
+                      : "border-surface-border bg-white text-ink-muted hover:bg-surface-subtle")
                   }
                   title={live ? "Live" : "Will be skipped until provider configured"}
                 >
@@ -476,7 +476,7 @@ function DeliveryReportModal({
                   <th className="px-2 py-1 font-medium">Skipped</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-surface-border">
                 {notice.delivery.map((d) => (
                   <tr key={d.channel}>
                     <td className="px-2 py-1 font-medium">{channelLabel[d.channel]}</td>
@@ -519,8 +519,8 @@ function Stat({
       ? "text-rose-700"
       : "text-brand-700";
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3">
-      <div className="text-xs text-slate-500">{label}</div>
+    <div className="rounded-lg border border-surface-border bg-white p-3">
+      <div className="text-xs text-ink-muted">{label}</div>
       <div className={`mt-1 text-2xl font-bold ${toneCls}`}>{value}</div>
     </div>
   );

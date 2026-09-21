@@ -105,15 +105,15 @@ export default function SubjectsPage() {
               <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {subjects.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-mono text-slate-700">{s.code}</td>
-                <td className="px-4 py-3 font-medium text-slate-900">{s.name}</td>
+              <tr key={s.id} className="hover:bg-surface-subtle">
+                <td className="px-4 py-3 font-mono text-ink-muted">{s.code}</td>
+                <td className="px-4 py-3 font-medium text-ink">{s.name}</td>
                 <td className="px-4 py-3">
                   <Badge tone={kindTone[s.kind]}>{s.kind}</Badge>
                 </td>
-                <td className="px-4 py-3 text-slate-500">{s.display_order}</td>
+                <td className="px-4 py-3 text-ink-muted">{s.display_order}</td>
                 <td className="px-4 py-3">
                   {s.is_active ? (
                     <Badge tone="emerald">active</Badge>
@@ -137,7 +137,7 @@ export default function SubjectsPage() {
             ))}
             {subjects.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-ink-muted">
                   No subjects yet — add one or paste a CSV.
                 </td>
               </tr>
@@ -297,12 +297,12 @@ function SubjectFormModal({
           <DepartmentSelect value={dept} onChange={setDept} />
         </div>
         {editing && (
-          <label className="flex items-center gap-2 text-sm text-slate-700">
+          <label className="flex items-center gap-2 text-sm text-ink-muted">
             <input
               type="checkbox"
               checked={active}
               onChange={(e) => setActive(e.target.checked)}
-              className="rounded border-slate-300"
+              className="rounded border-surface-border"
             />
             Active
           </label>
@@ -401,15 +401,15 @@ function BulkImportModal({
     <Modal open={open} onClose={onClose} title="Bulk import subjects" size="lg">
       <form onSubmit={submit} className="space-y-4">
         <div>
-          <label className="text-sm font-medium text-slate-700">
+          <label className="text-sm font-medium text-ink-muted">
             Paste CSV (with header)
           </label>
           <textarea
-            className="mt-1 h-48 w-full rounded-lg border border-slate-300 px-3 py-2 text-[12px] tabular-nums shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+            className="mt-1 h-48 w-full rounded-lg border border-surface-border px-3 py-2 text-[12px] tabular-nums shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500/30"
             value={csv}
             onChange={(e) => setCsv(e.target.value)}
           />
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-ink-muted">
             Columns: <code>name,code,kind</code>. Kind is <code>core</code> or{" "}
             <code>elective</code> (defaults to core).
           </p>
@@ -420,7 +420,7 @@ function BulkImportModal({
           </div>
         )}
         {result && (
-          <div className="rounded-md bg-slate-50 px-3 py-2 text-xs">
+          <div className="rounded-md bg-surface-subtle px-3 py-2 text-xs">
             <div>
               Imported <strong>{result.created.length}</strong> · skipped{" "}
               <strong>{result.errors.length}</strong> duplicate(s)

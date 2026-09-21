@@ -184,25 +184,25 @@ export default function StaffPage() {
               <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-surface-border">
             {staff.map((s) => (
-              <tr key={s.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-mono text-slate-700">
+              <tr key={s.id} className="hover:bg-surface-subtle">
+                <td className="px-4 py-3 font-mono text-ink-muted">
                   {s.employee_no}
                 </td>
-                <td className="px-4 py-3 font-medium text-slate-900">
+                <td className="px-4 py-3 font-medium text-ink">
                   {s.full_name}
                 </td>
                 <td className="px-4 py-3">
                   <Badge tone={roleBadgeTone(s.role)}>{roleLabel(s.role)}</Badge>
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-ink-muted">
                   {s.designation ?? "—"}
                   {s.department_name && <div className="text-xs text-ink-subtle">{s.department_name}</div>}
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-ink-muted">
                   <div>{s.email ?? "—"}</div>
-                  <div className="text-xs text-slate-500">{s.phone ?? ""}</div>
+                  <div className="text-xs text-ink-muted">{s.phone ?? ""}</div>
                 </td>
                 <td className="px-4 py-3">
                   {s.is_active ? (
@@ -238,7 +238,7 @@ export default function StaffPage() {
             ))}
             {staff.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-ink-muted">
                   No staff yet — click <strong>New staff member</strong>.
                 </td>
               </tr>
@@ -485,7 +485,7 @@ function EditStaffModal({
             onChange={(e) => setForm({ ...form, joining_date: e.target.value })}
           />
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-muted">
           Email and role can&apos;t be changed after creation. To change either,
           deactivate this account and create a new one.
         </p>

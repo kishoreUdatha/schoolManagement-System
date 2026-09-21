@@ -205,7 +205,7 @@ export default function ExamsPage() {
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/school/exams/${e.id}`}
-                    className="text-lg font-semibold text-slate-900 hover:text-brand-600 hover:underline"
+                    className="text-lg font-semibold text-ink hover:text-brand-600 hover:underline"
                   >
                     {e.name}
                   </Link>
@@ -216,7 +216,7 @@ export default function ExamsPage() {
                     <Badge tone="amber">draft</Badge>
                   )}
                 </div>
-                <div className="mt-0.5 text-xs text-slate-500">
+                <div className="mt-0.5 text-xs text-ink-muted">
                   {e.start_date} → {e.end_date} · {e.papers_count} paper(s)
                   {e.total_marks_entered > 0 && (
                     <> · {e.total_marks_entered} marks entered</>
@@ -256,16 +256,16 @@ export default function ExamsPage() {
                         <th className="py-1 text-right"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-surface-border">
                       {e.papers.map((p) => (
                         <tr key={p.id}>
                           <td className="py-2 font-medium">
                             {p.subject_name}{" "}
-                            <span className="text-xs text-slate-500">
+                            <span className="text-xs text-ink-muted">
                               ({p.subject_code})
                             </span>
                           </td>
-                          <td className="py-2 text-slate-600">
+                          <td className="py-2 text-ink-muted">
                             {p.class_name}
                             <Link
                               href={`/school/exams/papers/${p.id}/components`}
@@ -274,7 +274,7 @@ export default function ExamsPage() {
                               Parts
                             </Link>
                           </td>
-                          <td className="py-2 text-slate-600">{p.exam_date}</td>
+                          <td className="py-2 text-ink-muted">{p.exam_date}</td>
                           <td className="py-2">
                             {p.max_marks}/{p.pass_marks}
                           </td>
@@ -370,7 +370,7 @@ export default function ExamsPage() {
           </Card>
         ))}
         {exams.length === 0 && (
-          <Card className="p-8 text-center text-slate-500">
+          <Card className="p-8 text-center text-ink-muted">
             No exams for this year yet — click <strong>New exam</strong>.
           </Card>
         )}
@@ -492,7 +492,7 @@ function BulkReportCardModal({
   return (
     <Modal open onClose={onClose} title={`Bulk report cards — ${exam.name}`}>
       <div className="space-y-4">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-ink-muted">
           Generates one PDF containing the report card for every active student in
           the chosen section.
         </p>
