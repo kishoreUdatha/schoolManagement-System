@@ -4,13 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
+import { IndianRupee, Users, Wallet } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ErrorBox, NoticeBox, Table, inr, td, tdStrong } from "@/components/ui/Field";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ErrorBox, NoticeBox, PageHeader, Table, inr, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FormGrid, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { openAuthed } from "@/lib/download";
 
@@ -74,64 +76,76 @@ export function PayrollRunView({ runId, basePath }: { runId: string; basePath: s
       <Link href={basePath} className="text-sm text-ink-muted hover:underline">
         ← Payroll
       </Link>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Payroll · {monthLabel(run.period)}</h1>
-          <div className="mt-1.5 text-[13px] text-ink-muted">
+      <PageHeader
+        title={`Payroll · ${monthLabel(run.period)}`}
+        subtitle={
+          run.paid_on
+            ? `Paid on ${run.paid_on}${run.payment_ref ? ` (${run.payment_ref})` : ""}`
+            : undefined
+        }
+        actions={
+          <>
+            {/* The status leads, because which buttons are here depends on it. */}
             <Badge tone={runTone[run.status]}>{run.status}</Badge>
-            {run.paid_on && ` · paid on ${run.paid_on}${run.payment_ref ? ` (${run.payment_ref})` : ""}`}
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {draft && (
-            <>
-              <Button variant="secondary" onClick={() => act("recalculate", "Recalculated from latest attendance and salaries.")}>
-                Recalculate
+            {draft && (
+              <>
+                <Button variant="secondary" onClick={() => act("recalculate", "Recalculated from latest attendance and salaries.")}>
+                  Recalculate
+                </Button>
+                <Button variant="ghost" onClick={remove}>
+                  Delete draft
+                </Button>
+                <Button onClick={() => act("finalize", "Payroll finalized. Staff can now see their payslips.")}>Finalize</Button>
+              </>
+            )}
+            {run.status === "finalized" && (
+              <>
+                <Button variant="ghost" onClick={() => act("reopen", "Reopened for changes.")}>
+                  Reopen
+                </Button>
+                <Button onClick={() => setPaying(true)}>Mark as paid</Button>
+              </>
+            )}
+            {!draft && (
+              <Button
+                variant="secondary"
+                onClick={() => openAuthed(`${url}/bank-file.csv`, `salary-${run.period}.csv`).catch((e) => setError(apiError(e)))}
+              >
+                Bank file (CSV)
               </Button>
-              <Button variant="ghost" onClick={remove}>
-                Delete draft
-              </Button>
-              <Button onClick={() => act("finalize", "Payroll finalized. Staff can now see their payslips.")}>Finalize</Button>
-            </>
-          )}
-          {run.status === "finalized" && (
-            <>
-              <Button variant="ghost" onClick={() => act("reopen", "Reopened for changes.")}>
-                Reopen
-              </Button>
-              <Button onClick={() => setPaying(true)}>Mark as paid</Button>
-            </>
-          )}
-          {!draft && (
-            <Button
-              variant="secondary"
-              onClick={() => openAuthed(`${url}/bank-file.csv`, `salary-${run.period}.csv`).catch((e) => setError(apiError(e)))}
-            >
-              Bank file (CSV)
-            </Button>
-          )}
-        </div>
-      </div>
+            )}
+          </>
+        }
+      />
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
-      <div className="grid gap-4 sm:grid-cols-4">
-        <StatCard label="Staff" value={run.staff_count} />
-        <StatCard label="Gross" value={inr(run.total_gross)} />
-        <StatCard label="Net pay" value={inr(run.total_net)} accent="emerald" />
-        <StatCard label="Employer cost" value={inr(run.total_employer_cost)} hint="Gross + employer PF & ESI" />
-      </div>
+      {/* Every figure is this run's. The month is in each note rather than
+          left to the title, because a payroll total read as a year's would be
+          wrong by a factor of twelve. */}
+      <StatStrip
+        stats={[
+          { label: "Staff on this run", value: run.staff_count, note: monthLabel(run.period), icon: Users },
+          { label: "Gross", value: inr(run.total_gross), note: `Before deductions · ${monthLabel(run.period)}`, icon: IndianRupee },
+          { label: "Net pay", value: inr(run.total_net), note: `What leaves the bank · ${monthLabel(run.period)}`, icon: Wallet },
+          { label: "Employer cost", value: inr(run.total_employer_cost), note: "Gross + employer PF & ESI" },
+        ]}
+      />
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Payslips</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {draft ? "Draft — figures change when you recalculate" : "Finalized — staff can see these"}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Staff", "Paid days", "Gross", "PF", "ESI", "PT", "TDS", "Other", "Net", ""]} empty={run.payslips.length === 0 && "No payslips."}>
           {run.payslips.map((p) => (
             <tr key={p.id} className="hover:bg-surface-hover">
-              <td className={tdStrong}>
-                {p.full_name}
-                <div className="text-xs font-normal text-ink-subtle">
-                  {p.employee_no}
-                  {p.remarks && ` · ${p.remarks}`}
-                </div>
+              <td className={td}>
+                <PersonCell name={p.full_name} sub={[p.employee_no, p.remarks].filter(Boolean).join(" · ")} />
               </td>
               <td className={td}>
                 {Number(p.paid_days)}/{p.days_in_month}
@@ -169,6 +183,10 @@ export function PayrollRunView({ runId, basePath }: { runId: string; basePath: s
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${run.payslips.length} payslip(s)`}
+          right={`${inr(run.total_net)} net · ${run.staff_count} on this run`}
+        />
       </Card>
 
       {adjusting && (
@@ -221,7 +239,7 @@ function AdjustModal({ url, slip, onClose, onSaved }: { url: string; slip: Paysl
   return (
     <Modal open onClose={onClose} title={`Adjust — ${slip.full_name}`}>
       <form onSubmit={submit} className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <FormGrid>
           <Input
             label="Loss-of-pay days"
             type="number"
@@ -235,7 +253,7 @@ function AdjustModal({ url, slip, onClose, onSaved }: { url: string; slip: Paysl
           <Input label="Bonus / arrears ₹" type="number" min="0" value={form.bonus} onChange={set("bonus")} />
           <Input label="TDS ₹" type="number" min="0" value={form.tds} onChange={set("tds")} />
           <Input label="Other deductions ₹" type="number" min="0" value={form.other_deduction} onChange={set("other_deduction")} hint="Advance recovery, fines…" />
-        </div>
+        </FormGrid>
         <Input label="Remarks (shown on payslip)" value={form.remarks} onChange={set("remarks")} />
         <ErrorBox>{error}</ErrorBox>
         <div className="flex justify-end gap-2">
@@ -267,10 +285,10 @@ function PaidModal({ url, onClose, onSaved }: { url: string; onClose: () => void
           }
         }}
       >
-        <div className="grid gap-3 sm:grid-cols-2">
+        <FormGrid>
           <Input label="Paid on *" type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} required />
           <Input label="Bank batch / reference" value={ref} onChange={(e) => setRef(e.target.value)} />
-        </div>
+        </FormGrid>
         <p className="text-xs text-ink-subtle">Paid payroll is locked permanently.</p>
         <ErrorBox>{error}</ErrorBox>
         <div className="flex justify-end gap-2">
