@@ -13,7 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
-const BACKEND = process.argv[2] ?? "http://localhost:8000";
+const BACKEND = process.argv[2]?.startsWith("http") ? process.argv[2] : "http://localhost:8000";
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "src");
 const spec = await (await fetch(`${BACKEND}/openapi.json`)).json();
 
@@ -97,18 +97,24 @@ for (const file of files(ROOT)) {
   });
 }
 
+const USED = new Set();
 const issues = [];
 const unchecked = [];
 let calls = 0;
 
 for (const file of files(ROOT)) {
   const text = fs.readFileSync(file, "utf8");
-  if (!text.includes("api.")) continue;
+  if (!text.includes("api.") && !text.includes("useApi")) continue;
   const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const rel = path.relative(path.dirname(ROOT), file).replace(/\\/g, "/");
   sf.forEachChild(function walk(n) {
-    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.expression.getText(sf) === "api") {
-      const method = n.expression.name.text;
+    const viaHook = ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "useApi";
+    if (viaHook && n.arguments[0] && ts.isConditionalExpression(n.arguments[0])) {
+      // useApi(ready ? "/api/..." : null): check the path branch
+      n.arguments[0] = n.arguments[0].whenTrue.kind === ts.SyntaxKind.NullKeyword ? n.arguments[0].whenFalse : n.arguments[0].whenTrue;
+    }
+    if (viaHook || (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.expression.getText(sf) === "api")) {
+      const method = viaHook ? "get" : n.expression.name.text;
       if (["get", "post", "put", "patch", "delete"].includes(method) && n.arguments.length) {
         calls++;
         const where = `${rel}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1}`;
@@ -125,6 +131,9 @@ for (const file of files(ROOT)) {
           if (!hit.length) issues.push(`${where}  ${method.toUpperCase()} ${shown}  — no such path`);
           else {
             const route = hit.find((r) => r.ops[method]) ;
+            if (route) USED.add(`${method.toUpperCase()} ${route.p}`);
+            // a path with an unresolved middle part may match several spec paths
+            for (const r of hit) if (r.ops[method] && raw.includes("\u0000")) USED.add(`${method.toUpperCase()} ${r.p}`);
             if (!route) issues.push(`${where}  ${method.toUpperCase()} ${shown}  — path exists, method not allowed (${Object.keys(hit[0].ops).join(", ")})`);
             else {
               const op = route.ops[method];
@@ -156,6 +165,9 @@ for (const file of files(ROOT)) {
   });
 }
 
+if (process.argv.includes("--used")) {
+  fs.writeFileSync(process.argv[process.argv.indexOf("--used") + 1], [...USED].sort().join("\n"));
+}
 console.log(`${calls} api calls read.`);
 console.log(`\nPROBLEMS (${issues.length})`);
 for (const i of issues) console.log("  " + i);
