@@ -24,9 +24,9 @@ interface Props {
 }
 
 const typeTone: Record<CalendarHoliday["type"], string> = {
-  national: "bg-rose-100 text-rose-800 ring-rose-300",
-  school: "bg-amber-100 text-amber-800 ring-amber-300",
-  vacation: "bg-emerald-100 text-emerald-800 ring-emerald-300",
+  national: "bg-danger-bg text-danger ring-danger",
+  school: "bg-warning-bg text-warning ring-warning",
+  vacation: "bg-success-bg text-success ring-success",
 };
 
 const dayCodeMap = ["", "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -79,7 +79,7 @@ export function HolidayCalendar({
   const workingSet = new Set(workingDays ?? []);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-surface-border bg-white">
+    <div className="overflow-hidden rounded-xl border border-surface-border bg-surface-raised">
       <div className="grid grid-cols-7 border-b border-surface-border bg-surface-subtle text-xs font-medium uppercase text-ink-muted">
         {WEEKDAYS.map((d) => (
           <div key={d} className="px-2 py-2 text-center">

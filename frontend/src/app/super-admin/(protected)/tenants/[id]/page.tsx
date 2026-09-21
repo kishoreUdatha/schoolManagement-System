@@ -295,7 +295,7 @@ function KV({ label, value }: { label: string; value: React.ReactNode }) {
 function QuotaBar({ label, q }: { label: string; q: Quota }) {
   const pct = Math.min(q.percent, 100);
   const tone =
-    pct >= 90 ? "bg-rose-500" : pct >= 70 ? "bg-amber-500" : "bg-emerald-500";
+    pct >= 90 ? "bg-danger" : pct >= 70 ? "bg-warning" : "bg-success";
   return (
     <div>
       <div className="flex items-baseline justify-between text-sm">
@@ -355,7 +355,7 @@ function AssignPlanModal({
           <select
             value={planId}
             onChange={(e) => setPlanId(e.target.value ? Number(e.target.value) : "")}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             <option value="">Select a plan…</option>
@@ -371,7 +371,7 @@ function AssignPlanModal({
           <select
             value={cycle}
             onChange={(e) => setCycle(e.target.value as BillingCycle)}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
@@ -447,7 +447,7 @@ function RecordPaymentModal({
           <select
             value={mode}
             onChange={(e) => setMode(e.target.value as PaymentMode)}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="manual">Manual (offline)</option>
             <option value="razorpay">Razorpay</option>

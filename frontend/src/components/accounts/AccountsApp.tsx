@@ -139,8 +139,8 @@ function Book({ onError }: { onError: (m: string) => void }) {
                 {Object.entries(b.by_mode).map(([m, v]) => (
                   <tr key={m}>
                     <td className={td}>{humanize(m)}</td>
-                    <td className="px-4 py-3 text-emerald-500">{inr(v.in)}</td>
-                    <td className="px-4 py-3 text-rose-400">{inr(v.out)}</td>
+                    <td className="px-4 py-3 text-success">{inr(v.in)}</td>
+                    <td className="px-4 py-3 text-danger">{inr(v.out)}</td>
                   </tr>
                 ))}
               </Table>
@@ -154,8 +154,8 @@ function Book({ onError }: { onError: (m: string) => void }) {
               {b.daily.map((d) => (
                 <tr key={d.date}>
                   <td className={td}>{d.date}</td>
-                  <td className="px-4 py-3 text-emerald-500">{inr(d.in)}</td>
-                  <td className="px-4 py-3 text-rose-400">{inr(d.out)}</td>
+                  <td className="px-4 py-3 text-success">{inr(d.in)}</td>
+                  <td className="px-4 py-3 text-danger">{inr(d.out)}</td>
                   <td className={tdStrong}>{inr(Number(d.in) - Number(d.out))}</td>
                 </tr>
               ))}
@@ -348,7 +348,7 @@ function Expenses({ onChange, onError }: Handlers) {
               <td className={td}>
                 {x.description}
                 {x.reference && <div className="text-xs text-ink-subtle">{x.reference}</div>}
-                {x.is_void && <div className="text-xs text-rose-400">void: {x.void_reason}</div>}
+                {x.is_void && <div className="text-xs text-danger">void: {x.void_reason}</div>}
               </td>
               <td className={td}>{humanize(x.mode)}</td>
               <td className={tdStrong}>{inr(x.amount)}</td>
@@ -518,13 +518,13 @@ function Cheques({ onChange, onError }: Handlers) {
               </td>
               <td className={td}>{c.fees_label}</td>
               <td className={tdStrong}>{inr(c.amount)}</td>
-              <td className={c.due_for_deposit ? "px-3 py-2 font-medium text-amber-500" : td}>
+              <td className={c.due_for_deposit ? "px-3 py-2 font-medium text-warning" : td}>
                 {c.cheque_date}
                 {c.due_for_deposit && <div className="text-xs">ready to deposit</div>}
               </td>
               <td className="px-4 py-3">
                 <Badge tone={tone[c.status as keyof typeof tone]}>{c.status}</Badge>
-                {c.bounce_reason && <div className="text-xs text-rose-400">{c.bounce_reason}</div>}
+                {c.bounce_reason && <div className="text-xs text-danger">{c.bounce_reason}</div>}
               </td>
               <td className="space-x-1 whitespace-nowrap px-3 py-2 text-right">
                 {c.status === "received" && (

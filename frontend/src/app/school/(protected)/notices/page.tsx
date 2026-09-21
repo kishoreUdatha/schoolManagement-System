@@ -331,7 +331,7 @@ function NoticeFormModal({
             onChange={(e) => setForm({ ...form, body: e.target.value })}
             rows={4}
             required
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -342,7 +342,7 @@ function NoticeFormModal({
               onChange={(e) =>
                 setForm({ ...form, audience: e.target.value as Audience })
               }
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="all_parents">All parents</option>
               <option value="all_teachers">All teachers</option>
@@ -361,7 +361,7 @@ function NoticeFormModal({
                     audience_class_id: e.target.value ? Number(e.target.value) : "",
                   })
                 }
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -404,7 +404,7 @@ function NoticeFormModal({
                     "rounded-full border px-3 py-1 text-xs font-medium transition " +
                     (active
                       ? "border-brand-600 bg-brand-600 text-white"
-                      : "border-surface-border bg-white text-ink-muted hover:bg-surface-subtle")
+                      : "border-surface-border bg-surface-raised text-ink-muted hover:bg-surface-subtle")
                   }
                   title={live ? "Live" : "Will be skipped until provider configured"}
                 >
@@ -481,10 +481,10 @@ function DeliveryReportModal({
                   <tr key={d.channel}>
                     <td className="px-2 py-1 font-medium">{channelLabel[d.channel]}</td>
                     <td className="px-2 py-1">{d.total}</td>
-                    <td className="px-2 py-1 text-emerald-700">{d.sent}</td>
-                    <td className="px-2 py-1 text-emerald-700">{d.delivered}</td>
-                    <td className="px-2 py-1 text-rose-700">{d.failed}</td>
-                    <td className="px-2 py-1 text-amber-700">{d.skipped}</td>
+                    <td className="px-2 py-1 text-success">{d.sent}</td>
+                    <td className="px-2 py-1 text-success">{d.delivered}</td>
+                    <td className="px-2 py-1 text-danger">{d.failed}</td>
+                    <td className="px-2 py-1 text-warning">{d.skipped}</td>
                   </tr>
                 ))}
               </tbody>
@@ -512,14 +512,14 @@ function Stat({
 }) {
   const toneCls =
     tone === "emerald"
-      ? "text-emerald-700"
+      ? "text-success"
       : tone === "amber"
-      ? "text-amber-700"
+      ? "text-warning"
       : tone === "rose"
-      ? "text-rose-700"
+      ? "text-danger"
       : "text-brand-700";
   return (
-    <div className="rounded-lg border border-surface-border bg-white p-3">
+    <div className="rounded-lg border border-surface-border bg-surface-raised p-3">
       <div className="text-xs text-ink-muted">{label}</div>
       <div className={`mt-1 text-2xl font-bold ${toneCls}`}>{value}</div>
     </div>

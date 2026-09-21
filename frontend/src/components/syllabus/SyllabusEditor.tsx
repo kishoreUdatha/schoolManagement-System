@@ -179,7 +179,7 @@ export function SyllabusEditor({ csId, backHref }: { csId: string; backHref: str
                   <div className="text-xs text-ink-subtle">
                     {ch.planned_start || ch.planned_end ? `Planned ${ch.planned_start ?? "…"} to ${ch.planned_end ?? "…"}` : "No dates planned"}
                     {ch.planned_periods ? ` · ${ch.planned_periods} periods` : ""}
-                    {overdue && <span className="text-amber-500"> · should be finished</span>}
+                    {overdue && <span className="text-warning"> · should be finished</span>}
                   </div>
                   {ch.description && <p className="mt-1.5 text-[13px] text-ink-muted">{ch.description}</p>}
                 </div>
@@ -232,9 +232,9 @@ export function SyllabusEditor({ csId, backHref }: { csId: string; backHref: str
                         <input type="checkbox" checked={!!cov} onChange={() => toggle(t)} aria-label={`Taught: ${t.title}`} />
                       ) : null}
                       <span className={cov ? "text-ink" : "text-ink-muted"}>{t.title}</span>
-                      {cov && <span className="text-xs text-emerald-500">taught {cov.covered_on}{cov.lesson_plan_id ? " (lesson plan)" : ""}</span>}
+                      {cov && <span className="text-xs text-success">taught {cov.covered_on}{cov.lesson_plan_id ? " (lesson plan)" : ""}</span>}
                       {!edit && doneIn.length > 0 && (
-                        <span className="text-xs text-emerald-500">taught in {doneIn.map((s) => s.section_label).join(", ")}</span>
+                        <span className="text-xs text-success">taught in {doneIn.map((s) => s.section_label).join(", ")}</span>
                       )}
                       {edit && (
                         <span className="ml-auto flex gap-2 text-xs">
@@ -261,7 +261,7 @@ export function SyllabusEditor({ csId, backHref }: { csId: string; backHref: str
                           </button>
                           <button
                             type="button"
-                            className="text-rose-400 hover:underline"
+                            className="text-danger hover:underline"
                             onClick={() => window.confirm(`Delete "${t.title}"?`) && run(() => api.delete(`${base}/topics/${t.id}`))}
                           >
                             Delete

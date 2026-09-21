@@ -95,7 +95,7 @@ export default function EarlyPickupPage() {
       {items
         .filter((p) => p.status === "approved")
         .map((p) => (
-          <Card key={p.id} className="border-emerald-300 p-5 text-center">
+          <Card key={p.id} className="border-success p-5 text-center">
             <div className="text-sm text-ink-muted">
               Pickup code for {p.leave_on}
               {p.leave_time && ` at ${p.leave_time}`} · {p.pickup_name}

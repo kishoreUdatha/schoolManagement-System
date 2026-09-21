@@ -194,7 +194,7 @@ export function TestEditor({ testId, base }: { testId: string; base: string }) {
                     <button type="button" disabled={i === t.questions.length - 1} className="text-ink-subtle disabled:opacity-30" onClick={() => move(i, 1)}>
                       ↓
                     </button>
-                    <button type="button" className="text-rose-400 hover:underline" onClick={() => run(() => api.delete(`${url}/questions/${q.id}`))}>
+                    <button type="button" className="text-danger hover:underline" onClick={() => run(() => api.delete(`${url}/questions/${q.id}`))}>
                       Remove
                     </button>
                   </span>
@@ -204,13 +204,13 @@ export function TestEditor({ testId, base }: { testId: string; base: string }) {
               {q.options.length > 0 && (
                 <ul className="mt-1 pl-2">
                   {q.options.map((o) => (
-                    <li key={o.key} className={(q.answer.keys ?? []).includes(o.key) ? "text-emerald-500" : "text-ink-muted"}>
+                    <li key={o.key} className={(q.answer.keys ?? []).includes(o.key) ? "text-success" : "text-ink-muted"}>
                       {o.key}. {o.text}
                     </li>
                   ))}
                 </ul>
               )}
-              {(q.kind === "numeric" || q.kind === "short") && <div className="mt-1 text-emerald-500">Answer: {formatAnswer(q, q.answer)}</div>}
+              {(q.kind === "numeric" || q.kind === "short") && <div className="mt-1 text-success">Answer: {formatAnswer(q, q.answer)}</div>}
             </div>
           ))}
         </CardBody>

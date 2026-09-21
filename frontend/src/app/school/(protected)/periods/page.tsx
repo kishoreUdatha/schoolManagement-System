@@ -130,7 +130,7 @@ export default function PeriodsPage() {
                   </div>
                   <button
                     onClick={() => remove(p)}
-                    className="text-xs text-rose-600 hover:underline"
+                    className="text-xs text-danger hover:underline"
                   >
                     delete
                   </button>
@@ -202,7 +202,7 @@ function CreatePeriodModal({
               onChange={(e) =>
                 setForm({ ...form, day_of_week: Number(e.target.value) })
               }
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               {DAYS.slice(1).map((d, i) => (
                 <option key={i + 1} value={i + 1}>

@@ -281,7 +281,7 @@ function SubjectFormModal({
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value as SubjectKind)}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="core">Core</option>
               <option value="elective">Elective</option>
@@ -426,7 +426,7 @@ function BulkImportModal({
               <strong>{result.errors.length}</strong> duplicate(s)
             </div>
             {result.errors.length > 0 && (
-              <ul className="mt-1 list-disc pl-5 text-rose-700">
+              <ul className="mt-1 list-disc pl-5 text-danger">
                 {result.errors.map((e, i) => (
                   <li key={i}>
                     Row {e.row + 1}: {e.name} ({e.code}) — {e.error}

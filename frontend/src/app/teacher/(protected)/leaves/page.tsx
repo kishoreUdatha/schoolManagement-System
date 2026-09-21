@@ -252,7 +252,7 @@ function ApplyModal({
                 const t = types.find((x) => String(x.id) === e.target.value);
                 if (t) setKind(t.kind);
               }}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               {types.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -267,7 +267,7 @@ function ApplyModal({
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as LeaveKind)}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="casual">Casual</option>
             <option value="sick">Sick</option>
@@ -300,7 +300,7 @@ function ApplyModal({
             onChange={(e) => setReason(e.target.value)}
             rows={3}
             placeholder="Brief reason for the request"
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         {error && (

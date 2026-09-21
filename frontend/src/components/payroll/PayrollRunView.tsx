@@ -136,7 +136,7 @@ export function PayrollRunView({ runId, basePath }: { runId: string; basePath: s
               <td className={td}>
                 {Number(p.paid_days)}/{p.days_in_month}
                 {Number(p.lop_days) > 0 && (
-                  <div className="text-xs text-amber-500">
+                  <div className="text-xs text-warning">
                     LOP {Number(p.lop_days)}
                     {p.lop_days !== p.lop_days_auto && ` (auto ${Number(p.lop_days_auto)})`}
                   </div>

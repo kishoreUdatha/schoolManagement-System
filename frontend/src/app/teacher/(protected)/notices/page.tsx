@@ -286,7 +286,7 @@ function Composer({
               <select
                 value={audience}
                 onChange={(e) => setAudience(e.target.value as Audience)}
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               >
                 <option value="class_parents">All parents in a class</option>
                 <option value="section_parents">
@@ -304,7 +304,7 @@ function Composer({
                 <select
                   value={classId}
                   onChange={(e) => setClassId(Number(e.target.value))}
-                  className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                   required
                 >
                   {classes.map((c) => (
@@ -324,7 +324,7 @@ function Composer({
                 <select
                   value={sectionId}
                   onChange={(e) => setSectionId(Number(e.target.value))}
-                  className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                  className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                   required
                 >
                   {sections.map((s) => (
@@ -345,7 +345,7 @@ function Composer({
                   <select
                     value={sectionId}
                     onChange={(e) => setSectionId(Number(e.target.value))}
-                    className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                    className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                     required
                   >
                     {sections.map((s) => (
@@ -362,7 +362,7 @@ function Composer({
                   <select
                     value={studentId}
                     onChange={(e) => setStudentId(Number(e.target.value))}
-                    className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                    className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                     required
                     disabled={rosterLoading || roster.length === 0}
                   >
@@ -396,7 +396,7 @@ function Composer({
               onChange={(e) => setBody(e.target.value)}
               rows={5}
               required
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             />
           </label>
 

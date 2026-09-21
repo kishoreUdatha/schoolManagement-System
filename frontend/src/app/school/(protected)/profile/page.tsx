@@ -266,7 +266,7 @@ export default function SchoolProfilePage() {
                   onChange={(e) =>
                     setForm({ ...form, brand_color: e.target.value })
                   }
-                  className="h-9 w-12 cursor-pointer rounded-md border border-surface-border bg-white"
+                  className="h-9 w-12 cursor-pointer rounded-md border border-surface-border bg-surface-raised"
                 />
                 <input
                   value={form.brand_color}
@@ -321,7 +321,7 @@ export default function SchoolProfilePage() {
                         "rounded-full border px-3 py-1 text-xs font-semibold transition " +
                         (active
                           ? "border-brand-600 bg-brand-600 text-white"
-                          : "border-surface-border bg-white text-ink-muted hover:bg-surface-subtle")
+                          : "border-surface-border bg-surface-raised text-ink-muted hover:bg-surface-subtle")
                       }
                     >
                       {d}

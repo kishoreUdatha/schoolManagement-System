@@ -249,7 +249,7 @@ export function Facilities({ canManage }: { canManage: boolean }) {
                               <span className="block text-ink-subtle">{s.booked_by}</span>
                               <button
                                 type="button"
-                                className="mt-1 text-rose-400 hover:underline"
+                                className="mt-1 text-danger hover:underline"
                                 onClick={() => {
                                   const reason = window.prompt("Why cancel?", "") ?? "";
                                   run(() => api.post(`${base}/lab-bookings/${s.booking_id}/cancel?reason=${encodeURIComponent(reason)}`), "Booking cancelled.");

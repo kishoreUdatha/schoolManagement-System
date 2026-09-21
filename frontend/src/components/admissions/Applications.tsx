@@ -416,7 +416,7 @@ export function Applications({ canDecide }: { canDecide: boolean }) {
                           Verify
                         </button>
                       )}
-                      <button type="button" className="text-rose-400 hover:underline" onClick={() => window.confirm("Delete this document?") && run(() => api.delete(`${base}/documents/${d.id}`), "Deleted.")}>
+                      <button type="button" className="text-danger hover:underline" onClick={() => window.confirm("Delete this document?") && run(() => api.delete(`${base}/documents/${d.id}`), "Deleted.")}>
                         Delete
                       </button>
                     </span>
@@ -452,7 +452,7 @@ export function Applications({ canDecide }: { canDecide: boolean }) {
                         <button type="button" className="text-brand-500 hover:underline" onClick={() => result(t)}>
                           Record result
                         </button>
-                        <button type="button" className="text-rose-400 hover:underline" onClick={() => run(() => api.delete(`${base}/assessments/${t.id}`), "Removed.")}>
+                        <button type="button" className="text-danger hover:underline" onClick={() => run(() => api.delete(`${base}/assessments/${t.id}`), "Removed.")}>
                           Remove
                         </button>
                       </span>

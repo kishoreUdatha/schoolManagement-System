@@ -161,7 +161,7 @@ export default function HomeworkPage() {
             onChange={(e) =>
               setClassSubjectFilter(e.target.value ? Number(e.target.value) : "")
             }
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {subjects.map((s) => (
@@ -360,7 +360,7 @@ function HomeworkFormModal({
               onChange={(e) =>
                 setForm({ ...form, class_subject_id: Number(e.target.value) })
               }
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               {subjects.map((s) => (
@@ -384,7 +384,7 @@ function HomeworkFormModal({
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={5}
             required
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -408,7 +408,7 @@ function HomeworkFormModal({
           <select
             value={form.rubric_id}
             onChange={(e) => setForm({ ...form, rubric_id: e.target.value })}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">No rubric — approve or reject only</option>
             {rubrics.map((r) => (

@@ -277,7 +277,7 @@ export function GradingSetup() {
                     checked={b.is_pass}
                     onChange={(e) => setEditing({ ...editing, bands: editing.bands.map((x, j) => (j === i ? { ...x, is_pass: e.target.checked } : x)) })}
                   />
-                  <button type="button" className="text-rose-400" onClick={() => setEditing({ ...editing, bands: editing.bands.filter((_, j) => j !== i) })}>
+                  <button type="button" className="text-danger" onClick={() => setEditing({ ...editing, bands: editing.bands.filter((_, j) => j !== i) })}>
                     ✕
                   </button>
                 </div>

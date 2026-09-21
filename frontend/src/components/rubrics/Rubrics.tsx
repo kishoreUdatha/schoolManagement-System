@@ -137,7 +137,7 @@ export function Rubrics() {
                 <td className={td}>{r.subject_name ?? "Any"}</td>
                 <td className={td}>
                   {r.criteria.length === 0 ? (
-                    <span className="text-amber-500">None yet</span>
+                    <span className="text-warning">None yet</span>
                   ) : (
                     r.criteria.map((c) => c.title).join(", ")
                   )}

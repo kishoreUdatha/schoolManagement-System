@@ -152,7 +152,7 @@ export default function CirculationPage() {
                   <div className="text-xs text-ink-subtle">{l.borrower_detail}</div>
                 </td>
                 <td className={td}>{l.issued_on}</td>
-                <td className={`px-3 py-2 ${overdue ? "font-medium text-rose-400" : "text-ink-muted"}`}>
+                <td className={`px-3 py-2 ${overdue ? "font-medium text-danger" : "text-ink-muted"}`}>
                   {l.due_on}
                   {overdue && <div className="text-xs">{l.overdue_days} day(s) late</div>}
                   {l.renew_count > 0 && <div className="text-xs text-ink-subtle">renewed {l.renew_count}×</div>}
@@ -164,7 +164,7 @@ export default function CirculationPage() {
                       {l.fine_note && <div className="text-xs text-ink-subtle">{l.fine_note}</div>}
                     </>
                   ) : Number(l.accruing_fine) > 0 ? (
-                    <span className="text-xs text-amber-500">{inr(l.accruing_fine)} if returned today</span>
+                    <span className="text-xs text-warning">{inr(l.accruing_fine)} if returned today</span>
                   ) : (
                     "—"
                   )}

@@ -61,7 +61,7 @@ export default function CrewPage() {
               <td className={td}>{humanize(c.role)}</td>
               <td className={td}>{c.phone}</td>
               <td className={td}>{c.license_no ?? "—"}</td>
-              <td className={`px-3 py-2 ${c.license_expiry && c.license_expiry < today ? "text-rose-400" : "text-ink-muted"}`}>
+              <td className={`px-3 py-2 ${c.license_expiry && c.license_expiry < today ? "text-danger" : "text-ink-muted"}`}>
                 {c.license_expiry ?? "—"}
               </td>
               <td className="space-x-2 whitespace-nowrap px-3 py-2 text-right">

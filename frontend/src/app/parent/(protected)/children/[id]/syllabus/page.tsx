@@ -50,7 +50,7 @@ export default function ChildSyllabusPage() {
               </div>
               {s.teacher_name && <div className="text-xs text-ink-muted">{s.teacher_name}</div>}
               <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-hover">
-                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${s.percent}%` }} />
+                <div className="h-full rounded-full bg-success" style={{ width: `${s.percent}%` }} />
               </div>
             </button>
             {open === s.subject_name && (

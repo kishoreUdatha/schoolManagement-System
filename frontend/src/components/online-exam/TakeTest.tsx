@@ -161,7 +161,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="sticky top-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-b border-surface-border bg-white/95 px-4 py-2 backdrop-blur">
+      <div className="sticky top-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-b border-surface-border bg-surface-raised/95 px-4 py-2 backdrop-blur">
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold text-ink">{paper.title}</div>
           <div className="text-xs text-ink-muted">
@@ -169,7 +169,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
             {saving === "saving" ? "saving…" : saving === "saved" ? "saved" : saving === "error" ? "not saved, retrying" : ""}
           </div>
         </div>
-        <div className={cn("rounded-md px-3 py-1 font-mono text-lg font-bold", left < 60 ? "bg-rose-100 text-rose-700" : "bg-surface-hover text-ink")}>{mmss(left)}</div>
+        <div className={cn("rounded-md px-3 py-1 font-mono text-lg font-bold", left < 60 ? "bg-danger-bg text-danger" : "bg-surface-hover text-ink")}>{mmss(left)}</div>
         <Button onClick={() => submit(false)}>Submit</Button>
       </div>
       {error && <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>}
@@ -220,7 +220,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
           {q.kind === "short" && (
             <textarea
               rows={5}
-              className="w-full min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="w-full min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               value={r.text ?? ""}
               onChange={(e) => setAnswer(q.question_id, { text: e.target.value })}
             />
@@ -250,7 +250,7 @@ export function TakeTest({ attemptId }: { attemptId: string }) {
             className={cn(
               "h-8 w-8 rounded-md border text-sm",
               i === current ? "border-brand-600 ring-2 ring-brand-300" : "border-surface-border",
-              answered(x) ? "bg-emerald-100 text-emerald-800" : "bg-white text-ink-muted"
+              answered(x) ? "bg-success-bg text-success" : "bg-surface-raised text-ink-muted"
             )}
           >
             {x.number}

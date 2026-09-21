@@ -291,10 +291,10 @@ function DiffView({
         return (
           <div key={k} className="grid grid-cols-[140px_1fr_1fr] gap-2">
             <span className="font-mono text-ink-subtle">{k}</span>
-            <span className="font-mono text-rose-300">
+            <span className="font-mono text-danger">
               {o === undefined ? "—" : JSON.stringify(o)}
             </span>
-            <span className="font-mono text-emerald-300">
+            <span className="font-mono text-success">
               {n === undefined ? "—" : JSON.stringify(n)}
             </span>
           </div>

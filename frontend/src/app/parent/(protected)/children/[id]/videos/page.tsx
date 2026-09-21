@@ -182,8 +182,8 @@ export default function ChildVideosPage() {
                   className={
                     "mt-3 w-full rounded-md border px-2 py-1.5 text-xs font-medium transition " +
                     (v.is_completed
-                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
-                      : "border-surface-border bg-white text-ink-muted hover:bg-surface-subtle")
+                      ? "border-success/40 bg-success/10 text-success hover:bg-success/20"
+                      : "border-surface-border bg-surface-raised text-ink-muted hover:bg-surface-subtle")
                   }
                 >
                   {toggling === v.id

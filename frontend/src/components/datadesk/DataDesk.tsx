@@ -222,7 +222,7 @@ function Imports({ onChange, onError }: Handlers) {
                 <td className={td}>{humanize(j.import_type)}</td>
                 <td className={td}>
                   {j.success_rows} good
-                  {j.error_rows > 0 && <span className="text-rose-500"> · {j.error_rows} to fix</span>}
+                  {j.error_rows > 0 && <span className="text-danger"> · {j.error_rows} to fix</span>}
                   <span className="block text-xs text-ink-subtle">of {j.total_rows}</span>
                 </td>
                 <td className={td}>
@@ -595,7 +595,7 @@ function Exports({ onError }: { onError: (m: string) => void }) {
               <td className={td}>{j.row_count}</td>
               <td className={td}>
                 <Badge tone={TONE[j.status] ?? "neutral"}>{humanize(j.status)}</Badge>
-                {j.message && <span className="block text-xs text-rose-500">{j.message}</span>}
+                {j.message && <span className="block text-xs text-danger">{j.message}</span>}
               </td>
               <td className={td}>{j.requested_by_name ?? "—"}</td>
               <td className={td}>

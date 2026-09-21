@@ -122,7 +122,7 @@ export function QuestionForm({
       <form onSubmit={submit} className="space-y-3">
         <ErrorBox>{error}</ErrorBox>
         {question && question.used_in_tests > 0 && (
-          <p className="text-xs text-amber-500">Used in {question.used_in_tests} test(s). If a test is published, the answer can&apos;t change.</p>
+          <p className="text-xs text-warning">Used in {question.used_in_tests} test(s). If a test is published, the answer can&apos;t change.</p>
         )}
         <div className="grid gap-3 sm:grid-cols-3">
           <Select label="Subject *" value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>

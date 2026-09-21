@@ -27,8 +27,16 @@
     --surface-raised: 255 255 255;     /* #FFFFFF panels, sidebar, topbar */
     --surface-subtle: 246 249 254;     /* #F6F9FE table heads and wells */
     --surface-soft: 234 242 255;       /* #EAF2FF soft buttons, tints, hover */
-    --surface-border: 227 234 245;     /* #E3EAF5 */
+    --surface-border: 227 234 245;     /* #E3EAF5 panels, dividers, rules */
     --surface-hover: 234 242 255;      /* #EAF2FF */
+
+    /* The edge of something you can type in or press. Separate from the
+       panel border because WCAG 1.4.11 asks 3:1 of a control boundary and
+       nothing of a decorative one: #E3EAF5 is 1.21 on white, which is a
+       hairline you cannot find if contrast is what you rely on. #7384A0 is
+       the mock's own table-header tone and measures 3.79 on white, 3.50 on
+       the workspace. Panels keep the hairline. */
+    --control-border: 115 132 160;     /* #7384A0 */
 
     /* Navy, not charcoal: the mock's text is a deep blue of the same family
        as the accent, which is what keeps the whole surface reading as blue. */
@@ -91,6 +99,7 @@
     --surface-soft: 30 41 66;
     --surface-border: 39 45 58;
     --surface-hover: 33 39 52;
+    --control-border: 107 117 137;     /* #6B7589, 3.94 on a dark input */
 
     --ink: 243 244 246;
     --ink-muted: 156 163 175;
@@ -167,94 +176,5 @@
   /* Numbers in tables and totals should line up column to column. */
   table {
     font-variant-numeric: tabular-nums;
-  }
-}
-
-@layer components {
-  /* Most pages were written against raw slate utilities before the palette
-     existed. Rather than touch two hundred files, point those utilities at
-     the BrightCampus tokens so every page moves together. */
-  .text-slate-900,
-  .text-slate-800 {
-    color: rgb(var(--ink));
-  }
-  .text-slate-700,
-  .text-slate-600 {
-    color: rgb(var(--ink-muted));
-  }
-  .text-slate-500,
-  .text-slate-400 {
-    color: rgb(var(--ink-subtle));
-  }
-  .border-slate-100,
-  .border-slate-200,
-  .border-slate-300 {
-    border-color: rgb(var(--surface-border));
-  }
-  .divide-slate-100 > * + *,
-  .divide-slate-200 > * + * {
-    border-color: rgb(var(--surface-border));
-  }
-  .bg-slate-50,
-  .bg-slate-100 {
-    background-color: rgb(var(--surface-subtle));
-  }
-  .hover\:bg-slate-50:hover,
-  .hover\:bg-slate-100:hover {
-    background-color: rgb(var(--surface-hover));
-  }
-  .bg-white {
-    background-color: rgb(var(--surface-raised));
-  }
-
-  /* The same legacy utilities at night. They point at the tokens too, so
-     dark mode follows the palette instead of a second hard-coded theme. */
-  .dark .bg-white,
-  .dark .bg-slate-50,
-  .dark .bg-slate-100 {
-    background-color: rgb(var(--surface-raised));
-  }
-  .dark .hover\:bg-slate-50:hover,
-  .dark .hover\:bg-slate-100:hover {
-    background-color: rgb(var(--surface-hover));
-  }
-
-  /* The legacy status utilities, pointed at the semantic tokens so dark
-     mode follows the palette rather than a second hard-coded theme. */
-  .bg-emerald-50,
-  .bg-emerald-100 {
-    background-color: rgb(var(--success-bg));
-  }
-  .text-emerald-600,
-  .text-emerald-700,
-  .text-emerald-800 {
-    color: rgb(var(--success));
-  }
-  .bg-rose-50,
-  .bg-rose-100 {
-    background-color: rgb(var(--danger-bg));
-  }
-  .text-rose-500,
-  .text-rose-600,
-  .text-rose-700 {
-    color: rgb(var(--danger));
-  }
-  .bg-amber-50,
-  .bg-amber-100 {
-    background-color: rgb(var(--warning-bg));
-  }
-  .text-amber-600,
-  .text-amber-700,
-  .text-amber-800 {
-    color: rgb(var(--warning));
-  }
-  .border-rose-200 {
-    border-color: rgb(var(--danger) / 0.3);
-  }
-  .border-emerald-200 {
-    border-color: rgb(var(--success) / 0.3);
-  }
-  .border-amber-200 {
-    border-color: rgb(var(--warning) / 0.3);
   }
 }

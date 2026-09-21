@@ -130,7 +130,7 @@ export default function FeeStructuresPage() {
         <select
           value={yearId ?? ""}
           onChange={(e) => setYearId(Number(e.target.value))}
-          className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+          className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
         >
           {years.map((y) => (
             <option key={y.id} value={y.id}>
@@ -316,7 +316,7 @@ function FormModal({
               <select
                 value={classId}
                 onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : "")}
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -332,7 +332,7 @@ function FormModal({
               <select
                 value={headId}
                 onChange={(e) => setHeadId(e.target.value ? Number(e.target.value) : "")}
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>

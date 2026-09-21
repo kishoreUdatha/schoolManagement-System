@@ -135,7 +135,7 @@ export default function AlbumAdminPage() {
               </button>
               <button
                 type="button"
-                className="text-rose-400 hover:underline"
+                className="text-danger hover:underline"
                 onClick={() =>
                   window.confirm("Delete this photo?") && run(() => api.delete(`/api/v1/school/gallery/photos/${p.id}`))
                 }

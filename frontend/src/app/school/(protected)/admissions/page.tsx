@@ -232,7 +232,7 @@ export default function AdmissionsPage() {
                   <td className="px-4 py-3">
                     <Badge tone={stageTone(e.stage)}>{label(e.stage)}</Badge>
                   </td>
-                  <td className={`px-3 py-2 ${overdue ? "font-medium text-amber-500" : "text-ink-muted"}`}>
+                  <td className={`px-3 py-2 ${overdue ? "font-medium text-warning" : "text-ink-muted"}`}>
                     {e.next_follow_up_date ?? "—"}
                   </td>
                   <td className="px-4 py-3 text-ink-subtle">{e.created_at.slice(0, 10)}</td>

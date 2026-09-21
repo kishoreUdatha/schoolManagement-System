@@ -79,13 +79,13 @@ function Overview({ onError }: { onError: (m: string) => void }) {
       <Card>
         <CardHeader>
           <CardTitle>Low stock · {d.low_stock.length}</CardTitle>
-          {d.warranty_expiring > 0 && <span className="text-sm text-amber-500">{d.warranty_expiring} asset warranties end within 30 days</span>}
+          {d.warranty_expiring > 0 && <span className="text-sm text-warning">{d.warranty_expiring} asset warranties end within 30 days</span>}
         </CardHeader>
         <Table head={["Item", "On hand", "Reorder at"]} empty={d.low_stock.length === 0 && "Nothing below its reorder level."}>
           {d.low_stock.map((i) => (
             <tr key={i.id}>
               <td className={tdStrong}>{i.name}</td>
-              <td className="px-4 py-3 text-rose-400">
+              <td className="px-4 py-3 text-danger">
                 {q(i.on_hand)} {i.unit}
               </td>
               <td className={td}>{q(i.reorder_level)}</td>
@@ -149,7 +149,7 @@ function Stock({ onChange, onError }: Handlers) {
                 </div>
               </td>
               <td className={td}>{i.category ?? "—"}</td>
-              <td className={`px-3 py-2 ${i.low_stock ? "font-medium text-rose-400" : "text-ink-muted"}`}>
+              <td className={`px-3 py-2 ${i.low_stock ? "font-medium text-danger" : "text-ink-muted"}`}>
                 {q(i.on_hand)} {i.unit}
                 {i.low_stock && <div className="text-xs">below {q(i.reorder_level)}</div>}
               </td>
@@ -350,7 +350,7 @@ function LedgerModal({ item, onClose }: { item: Item; onClose: () => void }) {
           <tr key={m.id}>
             <td className={td}>{m.moved_on}</td>
             <td className={td}>{humanize(m.kind)}</td>
-            <td className={`px-3 py-2 ${m.direction > 0 ? "text-emerald-500" : "text-rose-400"}`}>
+            <td className={`px-3 py-2 ${m.direction > 0 ? "text-success" : "text-danger"}`}>
               {m.direction > 0 ? "+" : "−"}
               {q(m.qty)}
             </td>
@@ -714,7 +714,7 @@ function Store({ onChange, onError }: Handlers) {
                   onChange={(e) => setCart(cart.map((x) => (x.item.id === l.item.id ? { ...x, qty: Math.max(1, Number(e.target.value)) } : x)))}
                 />
                 <span className="w-20 text-right text-ink-muted">{inr(l.qty * Number(l.item.sale_price))}</span>
-                <button className="text-ink-subtle hover:text-rose-400" onClick={() => setCart(cart.filter((x) => x.item.id !== l.item.id))} aria-label="Remove">
+                <button className="text-ink-subtle hover:text-danger" onClick={() => setCart(cart.filter((x) => x.item.id !== l.item.id))} aria-label="Remove">
                   ✕
                 </button>
               </li>

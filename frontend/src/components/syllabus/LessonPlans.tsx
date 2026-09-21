@@ -67,7 +67,7 @@ function PlanBody({ p }: { p: LessonPlan }) {
         </div>
       )}
       {p.delivered_on && (
-        <div className="text-emerald-500">
+        <div className="text-success">
           Taught on {p.delivered_on}
           {p.delivery_note && ` · ${p.delivery_note}`}
         </div>

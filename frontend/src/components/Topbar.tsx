@@ -152,14 +152,14 @@ export function Topbar({ showYear = false, noticesHref, messagesHref }: TopbarPr
           type="button"
           onClick={() => shell.setOpen(true)}
           aria-label="Open navigation"
-          className="rounded-lg border border-surface-border p-2 text-ink-muted hover:bg-surface-hover hover:text-ink md:hidden"
+          className="rounded-control border border-surface-control p-2 text-ink-muted hover:bg-surface-hover hover:text-ink md:hidden"
         >
           <Menu className="h-4 w-4" />
         </button>
       )}
 
       <div ref={boxRef} className="relative min-w-0 flex-1 md:max-w-[340px]">
-        <div className="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-raised px-3 py-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-300">
+        <div className="flex items-center gap-2 rounded-input border border-surface-control bg-surface-raised px-3 py-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-300">
           <Search className="h-4 w-4 shrink-0 text-ink-subtle" />
           <input
             ref={inputRef}
@@ -212,7 +212,7 @@ export function Topbar({ showYear = false, noticesHref, messagesHref }: TopbarPr
               aria-label="Academic year"
               value={ay.yearId}
               onChange={(e) => ay.setYearId(Number(e.target.value))}
-              className="hidden rounded-lg border border-surface-border bg-surface-raised px-2.5 py-1.5 text-[12px] font-bold text-ink-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 lg:block"
+              className="hidden rounded-input border border-surface-control bg-surface-raised px-2.5 py-1.5 text-[12px] font-bold text-ink-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 lg:block"
             >
               {ay.years.map((y) => (
                 <option key={y.id} value={y.id}>

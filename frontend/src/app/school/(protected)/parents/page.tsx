@@ -151,7 +151,7 @@ export default function ParentsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             <option value="active">Active</option>
@@ -203,7 +203,7 @@ export default function ParentsPage() {
                       </span>
                       <button
                         onClick={() => unlinkChild(p, c.student_id, c.full_name)}
-                        className="text-rose-600 hover:underline"
+                        className="text-danger hover:underline"
                       >
                         unlink
                       </button>
@@ -364,7 +364,7 @@ function CreateParentModal({
               onChange={(e) =>
                 setForm({ ...form, relation: e.target.value as Relation })
               }
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="father">Father</option>
               <option value="mother">Mother</option>
@@ -382,7 +382,7 @@ function CreateParentModal({
                   student_id: e.target.value ? Number(e.target.value) : "",
                 })
               }
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               <option value="">Select student…</option>
@@ -459,7 +459,7 @@ function LinkChildModal({
           <select
             value={studentId}
             onChange={(e) => setStudentId(e.target.value ? Number(e.target.value) : "")}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             <option value="">Select…</option>
@@ -480,7 +480,7 @@ function LinkChildModal({
           <select
             value={relation}
             onChange={(e) => setRelation(e.target.value as Relation)}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="father">Father</option>
             <option value="mother">Mother</option>
@@ -578,14 +578,14 @@ function TempPasswordModal({
   return (
     <Modal open onClose={onClose} title="Temporary password">
       <div className="space-y-4">
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+        <div className="rounded-lg border border-success/30 bg-success-bg p-4 text-sm text-success">
           <div className="font-medium">Share these credentials with {info.name} once.</div>
           <div className="mt-1">
             Parent portal login: <code>http://127.0.0.1:3000/parent/login</code>
             <br />
             (OTP-via-SMS will replace the temp-password flow once the notifications module is wired.)
           </div>
-          <div className="mt-3 rounded bg-white px-3 py-2 text-[12px] tabular-nums">
+          <div className="mt-3 rounded bg-surface-raised px-3 py-2 text-[12px] tabular-nums">
             <div>Email: {info.email}</div>
             <div>Password: {info.password}</div>
           </div>

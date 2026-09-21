@@ -43,11 +43,11 @@ export function ProgressBar({ p, behind }: { p: SectionProgress; behind?: boolea
       </div>
       <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-surface-subtle">
         <div
-          className={cn("h-full rounded-full", p.behind > 0 ? "bg-amber-500" : "bg-emerald-500")}
+          className={cn("h-full rounded-full", p.behind > 0 ? "bg-warning" : "bg-success")}
           style={{ width: `${p.percent}%` }}
         />
       </div>
-      {behind !== false && p.behind > 0 && <div className="text-[11px] text-amber-500">{p.behind} topic(s) behind plan</div>}
+      {behind !== false && p.behind > 0 && <div className="text-[11px] text-warning">{p.behind} topic(s) behind plan</div>}
     </div>
   );
 }
@@ -87,7 +87,7 @@ export function SyllabusList({ linkBase }: { linkBase: string }) {
                 </Link>
               </td>
               <td className={td}>{r.teacher_name ?? "—"}</td>
-              <td className={td}>{r.topics ? `${r.chapters} chapters · ${r.topics} topics` : <span className="text-amber-500">not set up</span>}</td>
+              <td className={td}>{r.topics ? `${r.chapters} chapters · ${r.topics} topics` : <span className="text-warning">not set up</span>}</td>
               <td className="space-y-2 px-3 py-2">
                 {r.topics > 0 && r.sections.map((s) => <ProgressBar key={s.section_id} p={s} />)}
               </td>

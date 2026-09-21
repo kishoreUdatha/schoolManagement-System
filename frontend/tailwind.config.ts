@@ -29,6 +29,7 @@ const config: Config = {
           subtle: "rgb(var(--surface-subtle) / <alpha-value>)",
           soft: "rgb(var(--surface-soft) / <alpha-value>)",
           border: "rgb(var(--surface-border) / <alpha-value>)",
+          control: "rgb(var(--control-border) / <alpha-value>)",
           hover: "rgb(var(--surface-hover) / <alpha-value>)",
         },
         ink: {

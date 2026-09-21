@@ -310,12 +310,12 @@ function SubmissionModal({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={5}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             placeholder="Optional note for the teacher"
           />
         </label>
         {existing && existing.status !== "submitted" && (
-          <p className="text-xs text-amber-600">
+          <p className="text-xs text-warning">
             Saving will reset the teacher&apos;s review (currently:{" "}
             <strong>{existing.status}</strong>).
           </p>

@@ -168,7 +168,7 @@ export default function ClassesPage() {
             <select
               value={yearId ?? ""}
               onChange={(e) => setYearId(Number(e.target.value))}
-              className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               {years.map((y) => (
                 <option key={y.id} value={y.id}>
@@ -299,7 +299,7 @@ export default function ClassesPage() {
                       <button
                         onClick={() => deleteSection(s, c.name)}
                         disabled={selectedYear?.is_archived}
-                        className="text-xs text-rose-600 hover:underline disabled:opacity-50"
+                        className="text-xs text-danger hover:underline disabled:opacity-50"
                       >
                         delete
                       </button>
@@ -824,7 +824,7 @@ function EditSectionModal({
             onChange={(e) =>
               setTeacherUserId(e.target.value ? Number(e.target.value) : "")
             }
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">— Unassigned —</option>
             {teachers.map((t) => (

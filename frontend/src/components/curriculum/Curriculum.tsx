@@ -275,7 +275,7 @@ export function Curriculum({ csId, backHref }: { csId: string; backHref: string 
                     <td className={td}>{o.chapter_title ?? "—"}</td>
                     <td className={td}>
                       {o.topics.length === 0 ? (
-                        <span className="text-amber-500">None mapped</span>
+                        <span className="text-warning">None mapped</span>
                       ) : (
                         o.topics.map((t) => t.title).join(", ")
                       )}

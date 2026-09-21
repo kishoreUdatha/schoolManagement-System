@@ -270,7 +270,7 @@ function ProjectCreateModal({
           <select
             value={csId}
             onChange={(e) => setCsId(Number(e.target.value))}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             {subjects.map((s) => (
@@ -293,7 +293,7 @@ function ProjectCreateModal({
             onChange={(e) => setDescription(e.target.value)}
             rows={5}
             required
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -310,7 +310,7 @@ function ProjectCreateModal({
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value as ProjectKind)}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="individual">Individual</option>
               <option value="group">Group</option>

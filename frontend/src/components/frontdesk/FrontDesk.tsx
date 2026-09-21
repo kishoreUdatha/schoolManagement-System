@@ -511,7 +511,7 @@ function Passes({ office, onChange, onError }: Handlers & { office: boolean }) {
                 <td className={td}>
                   {g.pickup_name}
                   {g.pickup_relation && ` (${g.pickup_relation})`}
-                  {g.pickup_listed === false && <div className="text-xs text-rose-400">not on the pickup list</div>}
+                  {g.pickup_listed === false && <div className="text-xs text-danger">not on the pickup list</div>}
                 </td>
                 <td className={td}>{g.reason}</td>
                 <td className="space-x-1 whitespace-nowrap px-3 py-2 text-right">
@@ -705,7 +705,7 @@ function Incidents({ office, onChange, onError }: Handlers & { office: boolean }
               <td className={tdStrong}>
                 {i.category}
                 <div className="max-w-md text-xs font-normal text-ink-subtle">{i.description}</div>
-                {i.action_taken && <div className="text-xs font-normal text-emerald-500">Action: {i.action_taken}</div>}
+                {i.action_taken && <div className="text-xs font-normal text-success">Action: {i.action_taken}</div>}
               </td>
               <td className={td}>{i.location ?? "—"}</td>
               <td className="px-4 py-3">

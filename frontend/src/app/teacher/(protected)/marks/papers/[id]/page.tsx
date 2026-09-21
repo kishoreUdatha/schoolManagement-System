@@ -265,7 +265,7 @@ export default function MarksEntryPage() {
                 onChange={(e) =>
                   setSectionId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               >
                 {sections.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -350,10 +350,10 @@ export default function MarksEntryPage() {
                                     onClick={() => setStatus(r.student_id, s.value)}
                                     className={cn(
                                       "w-8 h-8 rounded-md border text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed",
-                                      active && s.tone === "emerald" && "border-emerald-600 bg-emerald-600 text-white",
-                                      active && s.tone === "rose" && "border-rose-600 bg-rose-600 text-white",
+                                      active && s.tone === "emerald" && "border-success bg-success text-white",
+                                      active && s.tone === "rose" && "border-danger bg-danger text-white",
                                       active && s.tone === "neutral" && "border-ink bg-ink text-surface-raised",
-                                      !active && "border-surface-border bg-white text-ink-muted hover:bg-surface-subtle"
+                                      !active && "border-surface-border bg-surface-raised text-ink-muted hover:bg-surface-subtle"
                                     )}
                                     title={s.value}
                                   >
@@ -407,9 +407,9 @@ export default function MarksEntryPage() {
                             {livePass == null ? (
                               "—"
                             ) : livePass ? (
-                              <span className="text-emerald-700 font-medium">Pass</span>
+                              <span className="text-success font-medium">Pass</span>
                             ) : (
-                              <span className="text-rose-700 font-medium">Fail</span>
+                              <span className="text-danger font-medium">Fail</span>
                             )}
                           </td>
                           <td className="px-4 py-3">

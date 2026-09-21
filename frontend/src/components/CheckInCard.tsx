@@ -145,7 +145,7 @@ export function CheckInCard() {
                   Check out
                 </Button>
               ) : (
-                <div className="flex-1 rounded-md bg-emerald-50 px-3 py-2 text-center text-sm text-emerald-700">
+                <div className="flex-1 rounded-md bg-success-bg px-3 py-2 text-center text-sm text-success">
                   Day complete ✓
                 </div>
               )}

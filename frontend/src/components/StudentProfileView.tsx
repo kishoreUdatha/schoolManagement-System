@@ -371,9 +371,9 @@ function Stat({
 }) {
   const valueClass =
     tone === "warn"
-      ? "text-amber-600"
+      ? "text-warning"
       : tone === "ok"
-        ? "text-emerald-600"
+        ? "text-success"
         : "text-ink";
   return (
     <Card>

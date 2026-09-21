@@ -46,7 +46,7 @@ export function AttemptReview({ r, onGrade }: { r: AttemptResult; onGrade?: (qid
   return (
     <div className="space-y-3">
       {(r.questions ?? []).map((q) => {
-        const tone = q.marks_awarded === null ? "border-amber-500/50" : q.is_correct ? "border-emerald-500/50" : "border-rose-500/40";
+        const tone = q.marks_awarded === null ? "border-warning/50" : q.is_correct ? "border-success/50" : "border-danger/40";
         return (
           <div key={q.question_id} className={cn("rounded-md border p-3 text-sm", tone)}>
             <div className="flex flex-wrap items-center gap-2 text-xs text-ink-subtle">
@@ -61,11 +61,11 @@ export function AttemptReview({ r, onGrade }: { r: AttemptResult; onGrade?: (qid
             <div className="mt-2 grid gap-1 sm:grid-cols-2">
               <div>
                 <span className="text-xs text-ink-subtle">Answer given: </span>
-                <span className={q.is_correct ? "text-emerald-500" : q.marks_awarded === null ? "text-ink" : "text-rose-400"}>{formatAnswer(q, q.response)}</span>
+                <span className={q.is_correct ? "text-success" : q.marks_awarded === null ? "text-ink" : "text-danger"}>{formatAnswer(q, q.response)}</span>
               </div>
               <div>
                 <span className="text-xs text-ink-subtle">{q.kind === "short" ? "Model answer: " : "Correct: "}</span>
-                <span className="text-emerald-500">{formatAnswer(q, q.correct)}</span>
+                <span className="text-success">{formatAnswer(q, q.correct)}</span>
               </div>
             </div>
             {q.explanation && <div className="mt-1 text-xs text-ink-muted">Why: {q.explanation}</div>}
@@ -228,7 +228,7 @@ export function TestResults({ testId, base }: { testId: string; base: string }) 
               <td className={td}>{q.answered}</td>
               <td className={td}>
                 {q.percent_correct === null ? "—" : (
-                  <span className={q.percent_correct < 40 ? "text-rose-400" : q.percent_correct < 70 ? "text-amber-500" : "text-emerald-500"}>{q.percent_correct}%</span>
+                  <span className={q.percent_correct < 40 ? "text-danger" : q.percent_correct < 70 ? "text-warning" : "text-success"}>{q.percent_correct}%</span>
                 )}
               </td>
             </tr>

@@ -130,11 +130,11 @@ function Stat({
 }) {
   const valueClass =
     tone === "emerald"
-      ? "text-emerald-300"
+      ? "text-success"
       : tone === "brand"
       ? "text-brand-300"
       : tone === "amber"
-      ? "text-amber-300"
+      ? "text-warning"
       : "text-ink";
   return (
     <div>

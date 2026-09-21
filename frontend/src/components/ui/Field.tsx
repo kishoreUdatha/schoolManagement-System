@@ -5,7 +5,7 @@ import { ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 export const fieldClass =
-  "min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink placeholder:text-ink-subtle transition-colors hover:border-brand-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-ink-subtle";
+  "min-h-[43px] rounded-input border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink placeholder:text-ink-subtle transition-colors hover:border-brand-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:bg-surface-subtle disabled:text-ink-subtle";
 
 export function Select({
   label,

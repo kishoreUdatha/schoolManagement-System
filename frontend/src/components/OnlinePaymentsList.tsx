@@ -82,7 +82,7 @@ export function OnlinePaymentsList() {
               <td className={td}>
                 {inr(o.amount)}
                 {Number(o.excess_amount) > 0 && (
-                  <div className="text-xs text-amber-500">refund {inr(o.excess_amount)}</div>
+                  <div className="text-xs text-warning">refund {inr(o.excess_amount)}</div>
                 )}
               </td>
               <td className="px-4 py-3">

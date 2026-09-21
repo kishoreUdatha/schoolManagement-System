@@ -115,12 +115,12 @@ export default function VehiclesPage() {
               <td className="px-4 py-3 text-xs">
                 {v.expiring_documents.length ? (
                   v.expiring_documents.map((d) => (
-                    <div key={d} className={d.includes("expired") ? "text-rose-400" : "text-amber-400"}>
+                    <div key={d} className={d.includes("expired") ? "text-danger" : "text-warning"}>
                       {d}
                     </div>
                   ))
                 ) : (
-                  <span className="text-emerald-400">OK</span>
+                  <span className="text-success">OK</span>
                 )}
               </td>
               <td className={td}>

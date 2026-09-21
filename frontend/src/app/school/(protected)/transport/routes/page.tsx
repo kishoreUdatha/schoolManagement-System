@@ -78,7 +78,7 @@ export default function RoutesPage() {
                 </CardTitle>
                 <div className="mt-1 text-xs text-ink-muted">
                   {r.vehicle_label ?? "No vehicle"} ·{" "}
-                  <span className={over ? "font-semibold text-rose-400" : ""}>
+                  <span className={over ? "font-semibold text-danger" : ""}>
                     {r.student_count}
                     {r.vehicle_capacity != null && ` / ${r.vehicle_capacity}`} students
                   </span>{" "}

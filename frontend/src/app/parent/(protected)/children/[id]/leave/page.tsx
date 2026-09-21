@@ -78,7 +78,7 @@ export default function ChildLeavePage() {
           <form onSubmit={submit} className="grid gap-3 sm:grid-cols-3">
             <label className="text-sm text-ink-muted">
               Type
-              <select className="mt-1 w-full min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300" value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}>
+              <select className="mt-1 w-full min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300" value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value })}>
                 {KINDS.map(([v, l]) => (
                   <option key={v} value={v}>
                     {l}

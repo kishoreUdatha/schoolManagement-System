@@ -15,9 +15,9 @@ export function HealthBadge() {
 
   const color =
     status === "ok"
-      ? "bg-emerald-100 text-emerald-700"
+      ? "bg-success-bg text-success"
       : status === "down"
-      ? "bg-rose-100 text-rose-700"
+      ? "bg-danger-bg text-danger"
       : "bg-surface-hover text-ink-muted";
 
   const label =

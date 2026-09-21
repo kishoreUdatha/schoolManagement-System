@@ -140,7 +140,7 @@ export default function AttendanceReportsPage() {
             className={
               "rounded-md px-3 py-1.5 font-medium transition " +
               (tab === k
-                ? "bg-white text-brand-700 shadow-sm"
+                ? "bg-surface-raised text-brand-700 shadow-sm"
                 : "text-ink-muted hover:bg-surface-hover")
             }
           >
@@ -220,7 +220,7 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
             onChange={(e) => setOnDate(e.target.value)}
             max={todayIso()}
             required
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
@@ -231,7 +231,7 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {classes.map((c) => (
@@ -248,7 +248,7 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
             onChange={(e) =>
               setSectionId(e.target.value ? Number(e.target.value) : "")
             }
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             disabled={!selectedClass}
           >
             <option value="">All</option>
@@ -377,7 +377,7 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
             onChange={(e) => setFromDate(e.target.value)}
             max={toDate}
             required
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
@@ -389,7 +389,7 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
             min={fromDate}
             max={todayIso()}
             required
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
@@ -397,7 +397,7 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
           <select
             value={classId}
             onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {classes.map((c) => (
@@ -451,9 +451,9 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
                   <td className="px-4 py-3 text-right text-ink-muted">
                     {r.distinct_days}
                   </td>
-                  <td className="px-4 py-3 text-right text-emerald-700">{r.present}</td>
-                  <td className="px-4 py-3 text-right text-rose-700">{r.absent}</td>
-                  <td className="px-4 py-3 text-right text-amber-700">{r.late}</td>
+                  <td className="px-4 py-3 text-right text-success">{r.present}</td>
+                  <td className="px-4 py-3 text-right text-danger">{r.absent}</td>
+                  <td className="px-4 py-3 text-right text-warning">{r.late}</td>
                   <td className="px-4 py-3 text-right text-ink-muted">{r.half_day}</td>
                   <td className="px-4 py-3 text-right font-semibold text-ink">
                     {r.attendance_pct}%
@@ -548,7 +548,7 @@ function StudentMonthlyTab({
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             <option value="">Select…</option>
@@ -566,7 +566,7 @@ function StudentMonthlyTab({
             onChange={(e) =>
               setSectionId(e.target.value ? Number(e.target.value) : "")
             }
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             disabled={!selectedClass}
             required
           >
@@ -595,7 +595,7 @@ function StudentMonthlyTab({
           <select
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             required
           >
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -667,11 +667,11 @@ function StudentMonthlyTab({
                     <td className="px-4 py-3 font-medium text-ink">
                       {r.full_name}
                     </td>
-                    <td className="px-4 py-3 text-right text-emerald-700">
+                    <td className="px-4 py-3 text-right text-success">
                       {r.present}
                     </td>
-                    <td className="px-4 py-3 text-right text-rose-700">{r.absent}</td>
-                    <td className="px-4 py-3 text-right text-amber-700">{r.late}</td>
+                    <td className="px-4 py-3 text-right text-danger">{r.absent}</td>
+                    <td className="px-4 py-3 text-right text-warning">{r.late}</td>
                     <td className="px-4 py-3 text-right text-ink-muted">
                       {r.half_day}
                     </td>

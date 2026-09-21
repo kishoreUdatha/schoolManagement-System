@@ -145,7 +145,7 @@ export default function ChildFeesPage() {
       </div>
 
       {payable.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-surface-border bg-white px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-surface-border bg-surface-raised px-4 py-3">
           <div className="text-sm text-ink-muted">
             {selected.size
               ? `${selected.size} selected`
@@ -278,10 +278,10 @@ function SummaryCard({
     accent === "brand"
       ? "text-brand-700"
       : accent === "emerald"
-      ? "text-emerald-700"
+      ? "text-success"
       : accent === "amber"
-      ? "text-amber-700"
-      : "text-rose-700";
+      ? "text-warning"
+      : "text-danger";
   return (
     <Card className="p-4">
       <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-subtle">{label}</div>

@@ -28,10 +28,10 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 const typeStyle: Record<CalendarItem["type"], { dot: string; label: string; tone: "brand" | "amber" | "rose" | "emerald" | "neutral" }> = {
   event: { dot: "bg-brand-500", label: "Event", tone: "brand" },
-  holiday: { dot: "bg-emerald-500", label: "Holiday", tone: "emerald" },
-  exam: { dot: "bg-rose-500", label: "Exam", tone: "rose" },
-  ptm: { dot: "bg-amber-500", label: "PT meeting", tone: "amber" },
-  ptm_slot: { dot: "bg-amber-300", label: "My meeting", tone: "amber" },
+  holiday: { dot: "bg-success", label: "Holiday", tone: "emerald" },
+  exam: { dot: "bg-danger", label: "Exam", tone: "rose" },
+  ptm: { dot: "bg-warning", label: "PT meeting", tone: "amber" },
+  ptm_slot: { dot: "bg-warning", label: "My meeting", tone: "amber" },
 };
 
 export function hhmm(t: string | null): string {

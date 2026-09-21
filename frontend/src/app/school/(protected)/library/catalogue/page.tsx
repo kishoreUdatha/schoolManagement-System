@@ -100,7 +100,7 @@ export default function CataloguePage() {
               <td className={td}>
                 {b.total_copies ? (
                   <>
-                    <span className={b.available_copies ? "text-emerald-400" : "text-amber-400"}>{b.available_copies}</span> / {b.total_copies}{" "}
+                    <span className={b.available_copies ? "text-success" : "text-warning"}>{b.available_copies}</span> / {b.total_copies}{" "}
                     available
                   </>
                 ) : (

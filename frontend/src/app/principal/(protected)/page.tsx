@@ -312,11 +312,11 @@ function KV({
 }) {
   const valueTone =
     tone === "amber"
-      ? "text-amber-300"
+      ? "text-warning"
       : tone === "rose"
-      ? "text-rose-300"
+      ? "text-danger"
       : tone === "emerald"
-      ? "text-emerald-300"
+      ? "text-success"
       : tone === "brand"
       ? "text-brand-300"
       : "text-ink";

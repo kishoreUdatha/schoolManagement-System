@@ -117,13 +117,13 @@ export default function FeeRemindersPage() {
       </Card>
 
       {lastRun && (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+        <div className="rounded-md border border-success/30 bg-success/10 px-3 py-2 text-sm text-success">
           Last run: <strong>{lastRun.sent}</strong> reminder
           {lastRun.sent === 1 ? "" : "s"} sent
           {lastRun.skipped_already_sent > 0 &&
             ` · ${lastRun.skipped_already_sent} skipped (already sent today)`}
           {Object.keys(lastRun.by_kind).length > 0 && (
-            <div className="mt-1 text-xs text-emerald-200">
+            <div className="mt-1 text-xs text-success">
               {Object.entries(lastRun.by_kind)
                 .map(
                   ([k, n]) =>

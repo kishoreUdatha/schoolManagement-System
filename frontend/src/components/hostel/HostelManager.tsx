@@ -243,7 +243,7 @@ function Rooms({ hostel, manager, onChange, onError }: Handlers & { hostel: Host
                       {b.student_name} <span className="text-xs text-ink-subtle">{b.section_label}</span>
                     </span>
                   ) : (
-                    <span className="flex-1 text-emerald-500">empty</span>
+                    <span className="flex-1 text-success">empty</span>
                   )}
                   {manager &&
                     (b.student_id ? (
@@ -436,10 +436,10 @@ function Outings({ hostel, onChange, onError }: Handlers & { hostel: Hostel }) {
               </td>
               <td className={td}>{humanize(o.kind)}</td>
               <td className={td}>{dt(o.leave_at)}</td>
-              <td className={`px-3 py-2 ${o.overdue ? "font-medium text-rose-400" : "text-ink-muted"}`}>
+              <td className={`px-3 py-2 ${o.overdue ? "font-medium text-danger" : "text-ink-muted"}`}>
                 {dt(o.return_by)}
                 {o.overdue && <div className="text-xs">overdue</div>}
-                {o.late_by_minutes ? <div className="text-xs text-amber-500">returned {o.late_by_minutes} min late</div> : null}
+                {o.late_by_minutes ? <div className="text-xs text-warning">returned {o.late_by_minutes} min late</div> : null}
               </td>
               <td className={td}>
                 {o.reason}

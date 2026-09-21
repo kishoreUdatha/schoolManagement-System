@@ -358,7 +358,7 @@ export function Recruitment({ canEdit }: { canEdit: boolean }) {
               )}
             </div>
             {detail.notes && <p className="text-sm text-ink">{detail.notes}</p>}
-            {detail.rejected_reason && <p className="text-sm text-rose-400">Rejected: {detail.rejected_reason}</p>}
+            {detail.rejected_reason && <p className="text-sm text-danger">Rejected: {detail.rejected_reason}</p>}
 
             {canEdit && detail.stage !== "hired" && (
               <div className="flex flex-wrap items-end gap-2">
@@ -418,7 +418,7 @@ export function Recruitment({ canEdit }: { canEdit: boolean }) {
                         <button type="button" className="text-xs text-brand-500 hover:underline" onClick={() => feedback(i)}>
                           Add feedback
                         </button>
-                        <button type="button" className="text-xs text-rose-400 hover:underline" onClick={() => run(() => api.delete(`${base}/interviews/${i.id}`), "Interview removed.").then(() => openDetail(detail))}>
+                        <button type="button" className="text-xs text-danger hover:underline" onClick={() => run(() => api.delete(`${base}/interviews/${i.id}`), "Interview removed.").then(() => openDetail(detail))}>
                           Cancel
                         </button>
                       </span>

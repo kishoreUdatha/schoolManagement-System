@@ -191,7 +191,7 @@ export default function StudentsPage() {
           <select
             value={yearId ?? ""}
             onChange={(e) => setYearId(Number(e.target.value))}
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             {years.map((y) => (
               <option key={y.id} value={y.id}>
@@ -209,7 +209,7 @@ export default function StudentsPage() {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             {classes.map((c) => (
@@ -224,7 +224,7 @@ export default function StudentsPage() {
           <select
             value={sectionId}
             onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             disabled={!selectedClass}
           >
             <option value="">All</option>
@@ -240,7 +240,7 @@ export default function StudentsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="">All</option>
             <option value="active">Active</option>
@@ -496,7 +496,7 @@ function CreateStudentModal({
             <select
               value={yearId}
               onChange={(e) => setYearId(e.target.value ? Number(e.target.value) : "")}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               <option value="">Select…</option>
@@ -515,7 +515,7 @@ function CreateStudentModal({
                 setClassId(e.target.value ? Number(e.target.value) : "");
                 setSectionId("");
               }}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               <option value="">Select…</option>
@@ -531,7 +531,7 @@ function CreateStudentModal({
             <select
               value={sectionId}
               onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               disabled={!selectedClass}
               required
             >
@@ -575,7 +575,7 @@ function CreateStudentModal({
             <select
               value={form.gender}
               onChange={(e) => setForm({ ...form, gender: e.target.value as Gender | "" })}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="">—</option>
               <option value="male">Male</option>
@@ -692,7 +692,7 @@ function EditStudentModal({
             <select
               value={classId}
               onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : "")}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               {classes.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -708,7 +708,7 @@ function EditStudentModal({
               onChange={(e) =>
                 setForm({ ...form, section_id: Number(e.target.value) })
               }
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               {selectedClass?.sections.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -735,7 +735,7 @@ function EditStudentModal({
             <select
               value={form.gender}
               onChange={(e) => setForm({ ...form, gender: e.target.value as Gender | "" })}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="">—</option>
               <option value="male">Male</option>
@@ -991,7 +991,7 @@ function BulkImportModal({
             <select
               value={yearId}
               onChange={(e) => setYearId(e.target.value ? Number(e.target.value) : "")}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="">Select…</option>
               {years.map((y) => (
@@ -1009,7 +1009,7 @@ function BulkImportModal({
                 setClassId(e.target.value ? Number(e.target.value) : "");
                 setSectionId("");
               }}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="">Select…</option>
               {classes.map((c) => (
@@ -1024,7 +1024,7 @@ function BulkImportModal({
             <select
               value={sectionId}
               onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               disabled={!selectedClass}
             >
               <option value="">Select…</option>
@@ -1046,7 +1046,7 @@ function BulkImportModal({
           >
             Download CSV template
           </Button>
-          <label className="inline-flex cursor-pointer items-center rounded-md border border-surface-border bg-white px-2.5 py-1 font-medium text-ink-muted hover:bg-surface-subtle">
+          <label className="inline-flex cursor-pointer items-center rounded-md border border-surface-border bg-surface-raised px-2.5 py-1 font-medium text-ink-muted hover:bg-surface-subtle">
             Upload .csv file
             <input
               type="file"
@@ -1263,7 +1263,7 @@ function PromoteStudentsModal({
                 onChange={(e) =>
                   setSrcYearId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -1282,7 +1282,7 @@ function PromoteStudentsModal({
                   setSrcClassId(e.target.value ? Number(e.target.value) : "");
                   setSrcSectionId("");
                 }}
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -1300,7 +1300,7 @@ function PromoteStudentsModal({
                 onChange={(e) =>
                   setSrcSectionId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 disabled={!srcSelectedClass}
                 required
               >
@@ -1328,7 +1328,7 @@ function PromoteStudentsModal({
                 onChange={(e) =>
                   setTgtYearId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -1349,7 +1349,7 @@ function PromoteStudentsModal({
                   setTgtClassId(e.target.value ? Number(e.target.value) : "");
                   setTgtSectionId("");
                 }}
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 required
               >
                 <option value="">Select…</option>
@@ -1367,7 +1367,7 @@ function PromoteStudentsModal({
                 onChange={(e) =>
                   setTgtSectionId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
                 disabled={!tgtSelectedClass}
                 required
               >
@@ -1381,7 +1381,7 @@ function PromoteStudentsModal({
             </label>
           </div>
           {tgtClasses.length === 0 && tgtYearId !== "" && (
-            <p className="mt-2 text-xs text-amber-600">
+            <p className="mt-2 text-xs text-warning">
               No classes exist in the target year yet. Create one in Classes
               first.
             </p>

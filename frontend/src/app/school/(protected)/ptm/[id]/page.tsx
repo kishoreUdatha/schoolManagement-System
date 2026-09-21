@@ -205,7 +205,7 @@ export default function PtmDetailPage() {
                         {x.parent_note && <div className="text-xs italic text-ink-subtle">“{x.parent_note}”</div>}
                         {x.teacher_notes && <div className="mt-1 text-xs text-ink">Notes: {x.teacher_notes}</div>}
                         {x.status === "booked" && (
-                          <button type="button" className="mt-1 text-xs text-rose-400 hover:underline" onClick={() => cancelBooking(x)}>
+                          <button type="button" className="mt-1 text-xs text-danger hover:underline" onClick={() => cancelBooking(x)}>
                             Cancel booking
                           </button>
                         )}

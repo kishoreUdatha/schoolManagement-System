@@ -134,7 +134,7 @@ export function VisitorMaster({ onChange, onError }: Handlers) {
             empty={people.length === 0 && "No visitor records yet."}
           >
             {people.map((p) => (
-              <tr key={p.id} className={p.is_blocked ? "bg-rose-50/50" : undefined}>
+              <tr key={p.id} className={p.is_blocked ? "bg-danger-bg/50" : undefined}>
                 <td className={tdStrong}>
                   {p.full_name}
                   {p.is_blocked && (

@@ -198,7 +198,7 @@ function CreatePlanModal({
             <select
               value={form.tier}
               onChange={(e) => setForm({ ...form, tier: e.target.value as typeof form.tier })}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="basic">Basic</option>
               <option value="standard">Standard</option>

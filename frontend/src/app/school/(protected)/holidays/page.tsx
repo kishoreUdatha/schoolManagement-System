@@ -128,15 +128,15 @@ export default function HolidaysPage() {
         </div>
         <div className="flex gap-3 text-xs text-ink-muted">
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-3 rounded-sm bg-rose-300" />
+            <span className="inline-block h-2 w-3 rounded-sm bg-danger" />
             national
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-3 rounded-sm bg-amber-300" />
+            <span className="inline-block h-2 w-3 rounded-sm bg-warning" />
             school
           </span>
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-3 rounded-sm bg-emerald-300" />
+            <span className="inline-block h-2 w-3 rounded-sm bg-success" />
             vacation
           </span>
         </div>
@@ -291,7 +291,7 @@ function HolidayFormModal({
               onChange={(e) =>
                 setForm({ ...form, type: e.target.value as HolidayType })
               }
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="national">National</option>
               <option value="school">School</option>
@@ -324,7 +324,7 @@ function HolidayFormModal({
           <textarea
             value={form.description ?? ""}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             rows={2}
           />
         </label>

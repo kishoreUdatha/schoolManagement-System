@@ -29,7 +29,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         id={inputId}
         ref={ref}
         className={cn(
-          "min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink",
+          "min-h-[43px] rounded-input border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink",
           "placeholder:text-ink-subtle focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300",
           error &&
             "border-danger/60 focus:border-danger focus:ring-danger/25",

@@ -397,7 +397,7 @@ function IssueModal({
           </div>
         )}
         {preview && (
-          <Card className="bg-white p-5 text-ink">
+          <Card className="bg-surface-raised p-5 text-ink">
             <div className="mb-3 text-center font-bold underline">{preview.title}</div>
             {preview.body.split("\n\n").map((p, i) => (
               <p key={i} className="mb-2 text-sm leading-relaxed">
@@ -405,7 +405,7 @@ function IssueModal({
               </p>
             ))}
             {preview.missing.length > 0 && (
-              <p className="mt-2 text-xs text-amber-700">
+              <p className="mt-2 text-xs text-warning">
                 Blank on the certificate: {preview.missing.map(humanize).join(", ")}. Fill these on the student or parent record first if needed.
               </p>
             )}

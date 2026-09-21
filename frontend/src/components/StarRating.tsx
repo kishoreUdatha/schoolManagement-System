@@ -23,7 +23,7 @@ export function StarRating({ value, onChange, size = "md", readOnly }: Props) {
             onClick={() => onChange?.(n)}
             className={cn(
               "transition disabled:cursor-default",
-              active ? "text-amber-500" : "text-ink-subtle",
+              active ? "text-warning" : "text-ink-subtle",
               !readOnly && "hover:scale-110"
             )}
             aria-label={`${n} stars`}

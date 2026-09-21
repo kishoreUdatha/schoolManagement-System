@@ -175,7 +175,7 @@ export function Discipline() {
                         <span className="text-xs text-ink-subtle">by {a.assigned_by_name ?? "—"}</span>
                         {a.counselling_case_id && <Badge tone="amber">counselling opened</Badge>}
                         {i.is_office && (
-                          <button type="button" className="ml-auto text-xs text-rose-400 hover:underline" onClick={() => run(() => api.delete(`${base}/actions/${a.id}`), "Action removed.")}>
+                          <button type="button" className="ml-auto text-xs text-danger hover:underline" onClick={() => run(() => api.delete(`${base}/actions/${a.id}`), "Action removed.")}>
                             Remove
                           </button>
                         )}

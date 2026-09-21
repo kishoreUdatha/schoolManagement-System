@@ -240,7 +240,7 @@ function ProgressModal({
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as ProgressStatus)}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="in_progress">In progress</option>
             <option value="submitted">Submitted</option>
@@ -259,11 +259,11 @@ function ProgressModal({
             onChange={(e) => setComment(e.target.value)}
             rows={5}
             placeholder="Notes for the teacher"
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         {existing && existing.teacher_remark && (
-          <p className="text-xs text-amber-600">
+          <p className="text-xs text-warning">
             Saving will reset the teacher&apos;s previous review.
           </p>
         )}

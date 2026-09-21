@@ -137,7 +137,7 @@ export default function BehaviourPage() {
                 onChange={(e) =>
                   setSectionId(e.target.value ? Number(e.target.value) : "")
                 }
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               >
                 {sections.map((s) => (
                   <option key={s.section_id} value={s.section_id}>
@@ -151,7 +151,7 @@ export default function BehaviourPage() {
               <select
                 value={periodKind}
                 onChange={(e) => setPeriodKind(e.target.value as PeriodKind)}
-                className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               >
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
@@ -342,7 +342,7 @@ function RateModal({
             onChange={(e) => setNote(e.target.value)}
             rows={4}
             placeholder="A line or two about the student this period…"
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           />
         </label>
         <div className="flex flex-wrap gap-2">

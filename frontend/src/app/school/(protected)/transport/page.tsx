@@ -117,12 +117,12 @@ export default function TransportOverviewPage() {
           <CardBody>
             <ul className="space-y-1 text-sm">
               {dash.overloaded_routes.map((o) => (
-                <li key={o.route} className="text-rose-400">
+                <li key={o.route} className="text-danger">
                   {o.route}: {o.students} students for {o.capacity} seats
                 </li>
               ))}
               {dash.expiring_documents.map((d, i) => (
-                <li key={i} className="text-amber-400">
+                <li key={i} className="text-warning">
                   {d.vehicle}: {d.message}
                 </li>
               ))}

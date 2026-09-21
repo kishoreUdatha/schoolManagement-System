@@ -55,7 +55,7 @@ export default function LandingPage() {
             href="http://127.0.0.1:8000/docs"
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-surface-border px-5 py-3 font-medium text-ink-muted hover:bg-white"
+            className="rounded-lg border border-surface-border px-5 py-3 font-medium text-ink-muted hover:bg-surface-raised"
           >
             API docs
           </a>

@@ -123,7 +123,7 @@ export function PayrollHome({ basePath }: { basePath: string }) {
                 <Input label="Month" type="month" value={period} onChange={(e) => setPeriod(e.target.value)} required />
                 <Button type="submit">Run payroll</Button>
                 {withoutSalary.length > 0 && (
-                  <span className="text-sm text-amber-500">
+                  <span className="text-sm text-warning">
                     {withoutSalary.length} active staff have no salary set and will be skipped.
                   </span>
                 )}
@@ -168,7 +168,7 @@ export function PayrollHome({ basePath }: { basePath: string }) {
                   <div className="text-xs font-normal text-ink-subtle">{s.employee_no}</div>
                 </td>
                 <td className={td}>{s.designation ?? "—"}</td>
-                <td className={td}>{s.salary ? inr(s.salary.monthly_gross) : <span className="text-amber-500">not set</span>}</td>
+                <td className={td}>{s.salary ? inr(s.salary.monthly_gross) : <span className="text-warning">not set</span>}</td>
                 <td className={td}>
                   {s.salary ? `${s.salary.pf_applicable ? "PF" : "—"} / ${s.salary.esi_applicable ? "ESI" : "—"}` : "—"}
                 </td>

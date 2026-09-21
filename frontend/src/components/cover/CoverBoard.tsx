@@ -186,7 +186,7 @@ export function CoverBoard() {
                 {reasonText[a.reason] ?? a.reason} · {a.periods} period{a.periods === 1 ? "" : "s"}
               </span>
               {a.reason === "marked_absent" && (
-                <button type="button" className="text-ink-subtle hover:text-rose-400" onClick={() => setExtra(extra.filter((x) => x !== a.user_id))} aria-label="Remove">
+                <button type="button" className="text-ink-subtle hover:text-danger" onClick={() => setExtra(extra.filter((x) => x !== a.user_id))} aria-label="Remove">
                   ✕
                 </button>
               )}
@@ -303,7 +303,7 @@ export function CoverBoard() {
                   </span>
                   <button
                     type="button"
-                    className="ml-auto text-xs text-rose-400 hover:underline"
+                    className="ml-auto text-xs text-danger hover:underline"
                     onClick={async () => {
                       const r = await api.delete<Block[]>(`/api/v1/school/cover/unavailability/${b.id}`);
                       setBlocks(r.data);

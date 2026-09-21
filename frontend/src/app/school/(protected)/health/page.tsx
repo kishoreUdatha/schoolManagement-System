@@ -231,7 +231,7 @@ export default function HealthPage() {
                   <div className="text-xs font-normal text-ink-subtle">{a.section_label}</div>
                 </td>
                 <td className={td}>{a.blood_group ?? "—"}</td>
-                <td className="px-4 py-3 text-rose-400">{a.allergies ?? "—"}</td>
+                <td className="px-4 py-3 text-danger">{a.allergies ?? "—"}</td>
                 <td className={td}>{a.chronic_conditions ?? "—"}</td>
                 <td className={td}>{a.current_medications ?? "—"}</td>
                 <td className={td}>{a.emergency_contact_phone ?? "—"}</td>

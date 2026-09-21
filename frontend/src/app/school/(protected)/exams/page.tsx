@@ -179,7 +179,7 @@ export default function ExamsPage() {
         <select
           value={yearId ?? ""}
           onChange={(e) => setYearId(Number(e.target.value))}
-          className="rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+          className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
         >
           {years.map((y) => (
             <option key={y.id} value={y.id}>
@@ -505,7 +505,7 @@ function BulkReportCardModal({
                 setClassId(e.target.value ? Number(e.target.value) : "");
                 setSectionId("");
               }}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             >
               <option value="">Select…</option>
               {allClasses.map((c) => (
@@ -522,7 +522,7 @@ function BulkReportCardModal({
               onChange={(e) =>
                 setSectionId(e.target.value ? Number(e.target.value) : "")
               }
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               disabled={!classId}
             >
               <option value="">Select…</option>
@@ -605,7 +605,7 @@ function ExamFormModal({
           <select
             value={form.kind}
             onChange={(e) => setForm({ ...form, kind: e.target.value as ExamKind })}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
           >
             <option value="unit_test">Unit test</option>
             <option value="mid_term">Mid-term</option>
@@ -720,7 +720,7 @@ function PaperFormModal({
                 setClassId(e.target.value ? Number(e.target.value) : "");
                 setForm({ ...form, class_subject_id: "" });
               }}
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               <option value="">Select…</option>
@@ -741,7 +741,7 @@ function PaperFormModal({
                   class_subject_id: e.target.value ? Number(e.target.value) : "",
                 })
               }
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
               disabled={!classId}
             >

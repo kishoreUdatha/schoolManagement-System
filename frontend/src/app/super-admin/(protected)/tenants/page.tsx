@@ -230,13 +230,13 @@ function CreateTenantModal({
     <Modal open={open} onClose={onClose} title="Create new tenant" size="lg">
       {tempPwd ? (
         <div className="space-y-4">
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          <div className="rounded-lg border border-success/30 bg-success-bg p-4 text-sm text-success">
             <div className="font-medium">Tenant created successfully.</div>
             <div className="mt-2">
               Share these credentials with the school admin <strong>once</strong> — the
               password is not stored in plain text and cannot be retrieved later.
             </div>
-            <div className="mt-3 rounded bg-white px-3 py-2 text-[12px] tabular-nums">
+            <div className="mt-3 rounded bg-surface-raised px-3 py-2 text-[12px] tabular-nums">
               <div>Email: {form.school_admin_email}</div>
               <div>Temporary password: {tempPwd}</div>
             </div>

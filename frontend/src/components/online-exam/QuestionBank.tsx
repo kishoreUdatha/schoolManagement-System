@@ -195,14 +195,14 @@ export function QuestionBank() {
                   {q.options.length > 0 && (
                     <ul className="pl-2">
                       {q.options.map((o) => (
-                        <li key={o.key} className={(q.answer.keys ?? []).includes(o.key) ? "font-medium text-emerald-500" : "text-ink-muted"}>
+                        <li key={o.key} className={(q.answer.keys ?? []).includes(o.key) ? "font-medium text-success" : "text-ink-muted"}>
                           {o.key}. {o.text}
                         </li>
                       ))}
                     </ul>
                   )}
                   {q.kind !== "single" && q.kind !== "multiple" && (
-                    <div className="text-emerald-500">Answer: {formatAnswer(q, q.answer)}{q.answer.tolerance ? ` (± ${q.answer.tolerance})` : ""}</div>
+                    <div className="text-success">Answer: {formatAnswer(q, q.answer)}{q.answer.tolerance ? ` (± ${q.answer.tolerance})` : ""}</div>
                   )}
                   {q.explanation && <div className="text-ink-muted">Why: {q.explanation}</div>}
                   {canWrite(q) && (

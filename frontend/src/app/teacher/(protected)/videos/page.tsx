@@ -136,7 +136,7 @@ export default function TeacherVideosPage() {
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value ? Number(e.target.value) : "")}
-          className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+          className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
         >
           <option value="">All</option>
           {subjects.map((s) => (
@@ -297,7 +297,7 @@ function CompletionsModal({
                     className={
                       "rounded-md px-2.5 py-1 font-medium " +
                       (showOnly === t
-                        ? "bg-white text-ink shadow-sm"
+                        ? "bg-surface-raised text-ink shadow-sm"
                         : "text-ink-muted hover:bg-surface-hover")
                     }
                   >
@@ -432,7 +432,7 @@ function VideoFormModal({
               onChange={(e) =>
                 setForm({ ...form, class_subject_id: Number(e.target.value) })
               }
-              className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
               required
             >
               {subjects.map((s) => (
@@ -455,7 +455,7 @@ function VideoFormModal({
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={3}
-            className="min-h-[43px] rounded-lg border border-surface-border bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
             placeholder="Optional — what should the student learn from this?"
           />
         </label>
@@ -478,7 +478,7 @@ function VideoFormModal({
           </div>
         ) : (
           form.youtube_url.length > 0 && (
-            <div className="text-xs text-amber-600">
+            <div className="text-xs text-warning">
               That doesn&apos;t look like a YouTube URL. Use youtube.com/watch?v=
               or youtu.be/.
             </div>

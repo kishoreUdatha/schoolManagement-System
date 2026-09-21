@@ -180,7 +180,7 @@ export default function EnquiryDetailPage() {
           {converted.parent_temporary_password && (
             <div className="mt-1">
               Parent login created for {e.parent_email}. Temporary password:{" "}
-              <code className="rounded bg-emerald-100 px-1.5 py-0.5 font-mono">
+              <code className="rounded bg-success-bg px-1.5 py-0.5 font-mono">
                 {converted.parent_temporary_password}
               </code>{" "}
               (shown once — share it with the parent).
