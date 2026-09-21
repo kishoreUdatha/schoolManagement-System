@@ -71,12 +71,6 @@ Parent_Mobile_58_Screens*
 # scripts that edit them. The originals stay in git; these are the undo.
 *.backup.xlsx
 
-# Working documents that live with whoever is editing them. Small enough to
-# track if they should be shared — nothing here is generated, so ignoring
-# them means this machine is the only copy.
-School_ERP_Functional_Test_Plan_and_Cases.xlsx
-School_ERP_Functional_Testing_Extended_Coverage.xlsx
-School_Management_ERP_295_Screen_Blueprint.xlsx
-School_Management_ERP_Complete_PRD_Agile_Backlog.xlsx
-school_erp_postgresql_schema_v1.sql
+# An empty file someone saved a URL into. Not ignored because it is big —
+# ignored because there is nothing in it.
 httpswww.myclassboard reference.txt
