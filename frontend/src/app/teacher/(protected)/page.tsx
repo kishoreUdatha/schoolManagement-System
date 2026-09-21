@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { Bell, BookOpen, CalendarDays, ClipboardCheck, Users } from "lucide-react";
+
 import { CheckInCard } from "@/components/CheckInCard";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { StatCard } from "@/components/ui/StatCard";
+import { PageHeader } from "@/components/ui/Field";
+import { Hero, QuickActions, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { auth } from "@/lib/auth";
 
@@ -57,38 +61,67 @@ export default function TeacherDashboard() {
     );
   if (!data) return <div className="text-sm text-ink-muted">Loading dashboard…</div>;
 
+  const firstName = user?.full_name?.split(" ")[0] ?? "";
+  const teaching = data.todays_classes.filter((c) => !c.is_break).length;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
-          Hello {user?.full_name?.split(" ").slice(-1)[0]}
-        </h1>
-        <p className="mt-1.5 text-[13px] text-ink-muted">
-          {DAYS[data.today_day_of_week]} · {new Date(data.today_iso_date).toLocaleDateString()}
-        </p>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Dashboard"
+        actions={
+          <Link href="/teacher/attendance">
+            <Button>Mark attendance</Button>
+          </Link>
+        }
+      />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Today's classes"
-          value={data.todays_classes.filter((c) => !c.is_break).length}
-        />
-        <StatCard
-          label="Class teacher of"
-          value={data.class_teacher_of.length}
-          accent="brand"
-        />
-        <StatCard
-          label="Unread notices"
-          value={data.unread_notices}
-          accent={data.unread_notices > 0 ? "amber" : "emerald"}
-        />
-      </div>
+      {/* The greeting is the name the session was opened with and the date
+          the server says the school is on — neither is computed a second
+          time here. */}
+      <Hero
+        eyebrow={`${DAYS[data.today_day_of_week]} · ${new Date(
+          data.today_iso_date
+        ).toLocaleDateString()}`}
+        title={firstName ? `Hello, ${firstName}` : "Hello"}
+        action={
+          <Link href="/teacher/my-classes">
+            <Button variant="secondary">My classes</Button>
+          </Link>
+        }
+      >
+        {teaching === 0
+          ? "Nothing is timetabled for you today."
+          : `You have ${teaching} ${teaching === 1 ? "class" : "classes"} to teach today.`}
+        {data.unread_notices > 0 &&
+          ` There ${data.unread_notices === 1 ? "is" : "are"} ${data.unread_notices} notice${
+            data.unread_notices === 1 ? "" : "s"
+          } you haven't read.`}
+      </Hero>
 
-      <CheckInCard />
+      <StatStrip
+        stats={[
+          { label: "Today's classes", value: teaching, icon: CalendarDays },
+          {
+            label: "Class teacher of",
+            value: data.class_teacher_of.length,
+            note: data.class_teacher_of.map((s) => s.section_label).join(", ") || undefined,
+            icon: Users,
+          },
+          { label: "Unread notices", value: data.unread_notices, icon: Bell },
+        ]}
+      />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
+      <QuickActions
+        actions={[
+          { label: "Homework", href: "/teacher/homework", icon: BookOpen },
+          { label: "Marks", href: "/teacher/marks", icon: ClipboardCheck },
+          { label: "Timetable", href: "/teacher/timetable", icon: CalendarDays },
+          { label: "Notices", href: "/teacher/notices", icon: Bell },
+        ]}
+      />
+
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_304px]">
+        <Card>
           <CardHeader>
             <CardTitle>Today&apos;s timetable</CardTitle>
           </CardHeader>
@@ -140,7 +173,37 @@ export default function TeacherDashboard() {
           </CardBody>
         </Card>
 
+        {/* The rail sits at the top of the row rather than stretching to the
+            height of the timetable beside it. */}
+        <div className="self-start">
+          <CheckInCard />
+        </div>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_304px]">
         <Card>
+          <CardHeader>
+            <CardTitle>Coming soon</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <PlaceholderCard
+                title="Mark attendance"
+                note="Story 3.3 — class teacher marks daily Present/Absent/Late."
+              />
+              <PlaceholderCard
+                title="Assign homework"
+                note="Story 3.5 — post homework to a class-subject."
+              />
+              <PlaceholderCard
+                title="Enter marks"
+                note="Story 3.7 — exam marks + report card PDF."
+              />
+            </div>
+          </CardBody>
+        </Card>
+
+        <Card className="self-start">
           <CardHeader>
             <CardTitle>Class teacher of</CardTitle>
           </CardHeader>
@@ -169,26 +232,6 @@ export default function TeacherDashboard() {
             )}
           </CardBody>
         </Card>
-      </div>
-
-      <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">
-          Coming soon
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <PlaceholderCard
-            title="Mark attendance"
-            note="Story 3.3 — class teacher marks daily Present/Absent/Late."
-          />
-          <PlaceholderCard
-            title="Assign homework"
-            note="Story 3.5 — post homework to a class-subject."
-          />
-          <PlaceholderCard
-            title="Enter marks"
-            note="Story 3.7 — exam marks + report card PDF."
-          />
-        </div>
       </div>
     </div>
   );

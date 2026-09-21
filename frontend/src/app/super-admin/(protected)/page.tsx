@@ -1,10 +1,13 @@
 "use client";
 
+import { Building2, CalendarClock, CreditCard, Gauge, IndianRupee, School } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { StatCard } from "@/components/ui/StatCard";
+import { PageHeader } from "@/components/ui/Field";
+import { Hero, QuickActions, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { auth } from "@/lib/auth";
 
@@ -32,6 +35,11 @@ type Renewal = {
   expires_at: string | null;
   contact_email: string;
 };
+
+const contentRow = "grid gap-5 lg:grid-cols-[minmax(0,1fr)_304px]";
+
+const secondaryLink =
+  "inline-flex min-h-[40px] items-center justify-center gap-2 whitespace-nowrap rounded-[9px] border border-surface-control bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300";
 
 export default function SuperAdminDashboard() {
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -107,28 +115,45 @@ export default function SuperAdminDashboard() {
     return <div className="text-sm text-ink-muted">Loading dashboard…</div>;
   }
 
+  const firstName = auth.getUser()?.full_name?.trim().split(/\s+/)[0];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Platform overview</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Live counters across all tenants. Last 30 days for usage and revenue.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={downloadCsv}>
-            Export usage CSV
-          </Button>
-          <Button
-            onClick={sendRenewals}
-            loading={sending}
-            disabled={renewals.length === 0}
-          >
-            Send {renewals.length} renewal reminder(s)
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Platform overview"
+        subtitle="Live counters across all tenants. Last 30 days for usage and revenue."
+        actions={
+          <>
+            <Button variant="secondary" onClick={downloadCsv}>
+              Export usage CSV
+            </Button>
+            <Button
+              onClick={sendRenewals}
+              loading={sending}
+              disabled={renewals.length === 0}
+            >
+              Send {renewals.length} renewal reminder(s)
+            </Button>
+          </>
+        }
+      />
+
+      <Hero
+        title={firstName ? `Good morning, ${firstName}` : "Good morning."}
+        action={
+          <Link href="/super-admin/tenants" className={secondaryLink}>
+            All tenants
+          </Link>
+        }
+      >
+        {`${summary.total_schools} school(s) and ${summary.total_students.toLocaleString(
+          "en-IN"
+        )} students across ${summary.total_tenants} tenant(s). ${
+          renewals.length > 0
+            ? `${renewals.length} subscription(s) expire within 30 days.`
+            : "No subscription expires in the next 30 days."
+        }`}
+      </Hero>
 
       {notice && (
         <div className="rounded-lg bg-success-bg px-4 py-3 text-[13px] font-medium text-success dark:bg-emerald-500/15 dark:text-emerald-200">
@@ -141,33 +166,48 @@ export default function SuperAdminDashboard() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total tenants" value={summary.total_tenants} />
-        <StatCard
-          label="Active"
-          value={summary.active_tenants}
-          accent="emerald"
-          hint={`${summary.suspended_tenants} suspended`}
-        />
-        <StatCard
-          label="Revenue (30d)"
-          value={`₹${summary.revenue_30d.toLocaleString("en-IN")}`}
-          accent="brand"
-        />
-        <StatCard
-          label="Renewals due"
-          value={summary.pending_renewals}
-          accent={summary.pending_renewals > 0 ? "amber" : "emerald"}
-          hint="next 14 days"
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Total tenants",
+            value: summary.total_tenants.toLocaleString("en-IN"),
+            icon: Building2,
+          },
+          {
+            label: "Active",
+            value: summary.active_tenants.toLocaleString("en-IN"),
+            note: `${summary.suspended_tenants} suspended`,
+            icon: School,
+          },
+          {
+            label: "Revenue (30d)",
+            value: `₹${summary.revenue_30d.toLocaleString("en-IN")}`,
+            icon: IndianRupee,
+          },
+          {
+            label: "Renewals due",
+            value: summary.pending_renewals.toLocaleString("en-IN"),
+            note: "next 14 days",
+            icon: CalendarClock,
+          },
+        ]}
+      />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <QuickActions
+        actions={[
+          { label: "Tenants", href: "/super-admin/tenants", icon: Building2 },
+          { label: "Schools", href: "/super-admin/schools", icon: School },
+          { label: "Billing", href: "/super-admin/billing", icon: CreditCard },
+          { label: "Usage and quotas", href: "/super-admin/usage", icon: Gauge },
+        ]}
+      />
+
+      <div className={contentRow}>
         <Card>
           <CardHeader>
             <CardTitle>People</CardTitle>
           </CardHeader>
-          <CardBody className="space-y-2 text-sm">
+          <CardBody className="space-y-2 pt-0 text-sm">
             <Row label="Schools" value={summary.total_schools} />
             <Row label="Students" value={summary.total_students} />
             <Row label="Staff" value={summary.total_staff} />
@@ -175,28 +215,30 @@ export default function SuperAdminDashboard() {
           </CardBody>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Messages sent (30d)</CardTitle>
-          </CardHeader>
-          <CardBody className="space-y-2 text-sm">
-            <Row label="SMS" value={summary.sms_sent_30d} />
-            <Row label="WhatsApp" value={summary.whatsapp_sent_30d} />
-            <Row label="Email" value={summary.email_sent_30d} />
-          </CardBody>
-        </Card>
+        <div className="space-y-5">
+          <Card>
+            <CardHeader>
+              <CardTitle>Messages sent (30d)</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-2 pt-0 text-sm">
+              <Row label="SMS" value={summary.sms_sent_30d} />
+              <Row label="WhatsApp" value={summary.whatsapp_sent_30d} />
+              <Row label="Email" value={summary.email_sent_30d} />
+            </CardBody>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Storage</CardTitle>
-          </CardHeader>
-          <CardBody className="space-y-2 text-sm">
-            <Row label="Used" value={`${summary.storage_used_mb.toLocaleString()} MB`} />
-            <p className="pt-1 text-xs text-ink-subtle">
-              Populated when S3 upload module is wired (currently stays at 0).
-            </p>
-          </CardBody>
-        </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Storage</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-2 pt-0 text-sm">
+              <Row label="Used" value={`${summary.storage_used_mb.toLocaleString()} MB`} />
+              <p className="pt-1 text-xs text-ink-subtle">
+                Populated when S3 upload module is wired (currently stays at 0).
+              </p>
+            </CardBody>
+          </Card>
+        </div>
       </div>
 
       {renewals.length > 0 && (

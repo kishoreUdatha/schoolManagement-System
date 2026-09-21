@@ -17,7 +17,7 @@ import {
 import { ChartCard, TrendChart } from "@/components/charts/Charts";
 import { Card } from "@/components/ui/Card";
 import { ErrorBox, PageHeader, inr } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { Hero, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Dashboard = {
@@ -49,6 +49,11 @@ const owing = (n: number) => (n === 1 ? "1 family owing" : `${n} families owing`
 const compact = (v: number) =>
   v >= 100000 ? `${(v / 100000).toFixed(1)}L` : v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`;
 
+const primaryLink =
+  "inline-flex min-h-[40px] items-center justify-center gap-2 whitespace-nowrap rounded-[9px] bg-brand-600 px-4 py-2 text-xs font-extrabold text-white transition-colors hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300";
+const secondaryLink =
+  "inline-flex min-h-[40px] items-center justify-center gap-2 whitespace-nowrap rounded-[9px] border border-surface-control bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300";
+
 export default function AccountantHomePage() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -64,44 +69,64 @@ export default function AccountantHomePage() {
     month: m.month,
     amount: Number(m.amount),
   }));
-  const overdue = Number(data?.overdue ?? 0);
   const nothingCollected = months.length === 0 || months.every((m) => m.amount === 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Money"
         subtitle="What came in today and this month, against what is still owed."
+        actions={
+          <Link href="/accountant/fees" className={primaryLink}>
+            Take a payment
+          </Link>
+        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Collected today"
-          value={data ? inr(data.collected_today) : "—"}
-          hint={data ? receipts(data.receipts_today) : undefined}
-          accent="emerald"
-          icon={IndianRupee}
-        />
-        <StatCard
-          label="Collected this month"
-          value={data ? inr(data.collected_this_month) : "—"}
-          icon={Calculator}
-        />
-        <StatCard
-          label="Outstanding"
-          value={data ? inr(data.outstanding) : "—"}
-          accent="amber"
-          icon={Wallet}
-        />
-        <StatCard
-          label="Overdue"
-          value={data ? inr(data.overdue) : "—"}
-          hint={data ? owing(data.families_owing) : undefined}
-          accent={overdue > 0 ? "rose" : "emerald"}
-          icon={AlertCircle}
-        />
-      </div>
+      {/* No name reaches this page, so the band greets without one and spends
+          its line on today's takings — the figures already fetched below. */}
+      <Hero
+        title="Good morning."
+        action={
+          <Link href="/accountant/accounts" className={secondaryLink}>
+            Cash book
+          </Link>
+        }
+      >
+        {data
+          ? `${inr(data.collected_today)} came in today across ${receipts(
+              data.receipts_today
+            )}. ${inr(data.outstanding)} is still owed.`
+          : "Fetching today's takings…"}
+      </Hero>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Collected today",
+            value: data ? inr(data.collected_today) : "—",
+            note: data ? receipts(data.receipts_today) : undefined,
+            icon: IndianRupee,
+          },
+          {
+            label: "Collected this month",
+            value: data ? inr(data.collected_this_month) : "—",
+            icon: Calculator,
+          },
+          {
+            label: "Outstanding",
+            value: data ? inr(data.outstanding) : "—",
+            icon: Wallet,
+          },
+          {
+            label: "Overdue",
+            value: data ? inr(data.overdue) : "—",
+            note: data ? owing(data.families_owing) : undefined,
+            icon: AlertCircle,
+          },
+        ]}
+      />
 
       <ChartCard
         title="Collections"
@@ -120,6 +145,9 @@ export default function AccountantHomePage() {
         />
       </ChartCard>
 
+      {/* This grid is the screen's quick actions already — every link the row
+          of shortcuts would hold, with a line each saying what it is. A second
+          copy above it would be the same seven destinations twice. */}
       <div className="space-y-3">
         <h2 className="text-[13px] font-extrabold uppercase tracking-[0.6px] text-ink-muted">
           Where the work is

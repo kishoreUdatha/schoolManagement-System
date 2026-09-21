@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
+
+import { AlertTriangle, Car, Clock, DoorOpen, HeartPulse, Hourglass, ScrollText, Users } from "lucide-react";
 
 import { PickedStudent, StudentPicker } from "@/components/StudentPicker";
 import { Badge } from "@/components/ui/Badge";
@@ -9,7 +12,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, Table, Textarea, humanize, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { QuickActions, StatStrip } from "@/components/ui/Workspace";
 import { VisitorMaster } from "@/components/frontdesk/VisitorMaster";
 import { api, apiError } from "@/lib/api";
 
@@ -101,20 +104,52 @@ export function FrontDesk({ office }: { office: boolean }) {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Front desk" subtitle="Visitors, early pickups at the gate, and security incidents." />
+    <div className="space-y-[18px]">
+      {/* No welcome band. The desk is a post rather than a portal — whoever
+          is on shift opens this and leaves it open all day, and 178px of
+          greeting would push the gate's figures below the fold. */}
+      <PageHeader
+        title="Front desk"
+        subtitle="Visitors, early pickups at the gate, and security incidents."
+        actions={
+          office ? (
+            <Link href="/school/front-desk/passes">
+              <Button>Gate passes</Button>
+            </Link>
+          ) : undefined
+        }
+      />
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
       {dash && (
-        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          <StatCard label="Inside now" value={dash.inside_now} />
-          <StatCard label="Visitors today" value={dash.visitors_today} />
-          <StatCard label="Expected" value={dash.expected_today} />
-          <StatCard label="Early pickups" value={dash.gate_passes_today} />
-          <StatCard label="To approve" value={dash.gate_passes_pending} accent={dash.gate_passes_pending ? "amber" : "brand"} />
-          <StatCard label="Open incidents" value={dash.open_incidents} accent={dash.open_incidents ? "rose" : "brand"} />
-        </div>
+        // Six figures on one card in two rows of three. All six are what the
+        // dashboard endpoint returns, and none of them is droppable: the two
+        // that would go are the two that mean somebody is waiting.
+        <StatStrip
+          className="lg:grid-cols-3"
+          stats={[
+            { label: "Inside now", value: dash.inside_now, icon: Users },
+            { label: "Visitors today", value: dash.visitors_today, icon: DoorOpen },
+            { label: "Expected", value: dash.expected_today, icon: Clock },
+            { label: "Early pickups", value: dash.gate_passes_today, icon: Car },
+            { label: "To approve", value: dash.gate_passes_pending, icon: Hourglass },
+            { label: "Open incidents", value: dash.open_incidents, icon: AlertTriangle },
+          ]}
+        />
       )}
+      {/* Only the school portal has these pages; the staff copy of this
+          screen is mounted at /staff/front-desk on its own, so it gets no
+          shortcut row rather than links that would 404. */}
+      <QuickActions
+        actions={
+          office
+            ? [
+                { label: "Gate log", href: "/school/front-desk/staff-log", icon: ScrollText },
+                { label: "Health room", href: "/school/health", icon: HeartPulse },
+              ]
+            : []
+        }
+      />
       <nav className="flex gap-1 border-b border-surface-border">
         {(["visitors", "passes", "incidents", "people"] as const).map((t) => (
           <button

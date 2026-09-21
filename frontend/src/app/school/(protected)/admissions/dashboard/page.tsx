@@ -2,14 +2,21 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarClock, FileCheck2, GraduationCap, UserPlus } from "lucide-react";
+import {
+  CalendarClock,
+  CheckCircle2,
+  FileCheck2,
+  FileSearch,
+  GraduationCap,
+  UserPlus,
+} from "lucide-react";
 
 import { BreakdownChart, ChartCard } from "@/components/charts/Charts";
 import { SERIES } from "@/components/charts/theme";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, PageHeader, Table, humanize, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { Hero, QuickActions, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { daysLeft, shortDate } from "@/lib/dates";
 import { stageTone } from "@/app/school/(protected)/admissions/types";
@@ -53,6 +60,11 @@ type Application = {
 };
 
 const base = "/api/v1/school/admissions";
+
+const primaryLink =
+  "inline-flex min-h-[40px] items-center justify-center gap-2 whitespace-nowrap rounded-[9px] bg-brand-600 px-4 py-2 text-xs font-extrabold text-white transition-colors hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300";
+const secondaryLink =
+  "inline-flex min-h-[40px] items-center justify-center gap-2 whitespace-nowrap rounded-[9px] border border-surface-control bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300";
 
 // The order a child actually moves through, so the funnel reads as a journey
 // rather than as whatever order the database happened to group by.
@@ -120,31 +132,78 @@ export default function AdmissionsDashboardPage() {
   }).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Admissions"
         subtitle="Where every enquiry and application has got to, and what is waiting on the school."
+        actions={
+          <Link href="/school/admissions" className={primaryLink}>
+            All enquiries
+          </Link>
+        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Enquiries" value={stats?.total ?? "—"} hint={stats ? `${stats.open} still open` : undefined} icon={UserPlus} />
-        <StatCard
-          label="Follow-ups due"
-          value={stats?.follow_ups_due ?? "—"}
-          hint={overdue ? `${overdue} already overdue` : undefined}
-          accent={stats && stats.follow_ups_due ? "amber" : "emerald"}
-          icon={CalendarClock}
-        />
-        <StatCard label="Applications" value={funnel?.total ?? "—"} hint={funnel ? `${funnel.in_progress} in progress` : undefined} icon={FileCheck2} />
-        <StatCard
-          label="Conversion"
-          value={stats ? `${stats.conversion_rate}%` : "—"}
-          hint={stats ? `${stats.enrolled} enrolled, ${stats.lost} lost` : undefined}
-          accent="emerald"
-          icon={GraduationCap}
-        />
-      </div>
+      {/* The band leads on the only thing here that is time-bound: who has
+          to be rung today. Both figures come from the calls already made. */}
+      <Hero
+        title={
+          stats
+            ? stats.follow_ups_due > 0
+              ? `${stats.follow_ups_due} enquiry(ies) to chase today`
+              : "Nothing is due to be chased today."
+            : "Admissions today"
+        }
+        action={
+          <Link href="/school/admissions/follow-ups" className={secondaryLink}>
+            Open follow-ups
+          </Link>
+        }
+      >
+        {funnel && stats
+          ? `${funnel.total} application(s) in all, ${funnel.in_progress} part way through, ${stats.enrolled} enrolled.${
+              overdue ? ` ${overdue} follow-up(s) are already overdue.` : ""
+            }`
+          : "Fetching enquiries and applications…"}
+      </Hero>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Enquiries",
+            value: stats?.total ?? "—",
+            note: stats ? `${stats.open} still open` : undefined,
+            icon: UserPlus,
+          },
+          {
+            label: "Follow-ups due",
+            value: stats?.follow_ups_due ?? "—",
+            note: overdue ? `${overdue} already overdue` : undefined,
+            icon: CalendarClock,
+          },
+          {
+            label: "Applications",
+            value: funnel?.total ?? "—",
+            note: funnel ? `${funnel.in_progress} in progress` : undefined,
+            icon: FileCheck2,
+          },
+          {
+            label: "Conversion",
+            value: stats ? `${stats.conversion_rate}%` : "—",
+            note: stats ? `${stats.enrolled} enrolled, ${stats.lost} lost` : undefined,
+            icon: GraduationCap,
+          },
+        ]}
+      />
+
+      <QuickActions
+        actions={[
+          { label: "Applications", href: "/school/admissions/applications", icon: FileCheck2 },
+          { label: "Verification", href: "/school/admissions/verification", icon: FileSearch },
+          { label: "Decisions", href: "/school/admissions/decisions", icon: CheckCircle2 },
+          { label: "Assessments", href: "/school/admissions/assessments", icon: GraduationCap },
+        ]}
+      />
 
       <ChartCard
         title="Where the applications are"

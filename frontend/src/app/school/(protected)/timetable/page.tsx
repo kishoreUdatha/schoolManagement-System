@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AlertTriangle, CalendarCheck, CheckCircle2, Gauge, Grid3x3, Hourglass, LayoutGrid } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, PageHeader, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, QuickActions, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -58,48 +60,48 @@ export default function TimetableDashboardPage() {
   const clashes = data?.clashes ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
+      {/* No welcome band. This is a dashboard for one week's timetable, not
+          somebody's landing page, and "Good morning" above a clash list is
+          the wrong voice for the one screen that says the week cannot be
+          taught. The two secondary links moved down into the quick actions
+          so the header carries the single thing this page is for. */}
       <PageHeader
         title="Timetables"
         subtitle="How far each section's week has got, and anything that cannot stand."
         actions={
-          <>
-            <Link href="/school/timetable/coordinator">
-              <Button variant="secondary">Day view</Button>
-            </Link>
-            <Link href="/school/timetable/availability">
-              <Button variant="secondary">Availability</Button>
-            </Link>
-            <Link href="/school/timetable/generate">
-              <Button>Generate</Button>
-            </Link>
-          </>
+          <Link href="/school/timetable/generate">
+            <Button>Generate</Button>
+          </Link>
         }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Sections finished"
-          value={data ? `${data.complete} of ${rows.length}` : "—"}
-          accent={data && data.complete === rows.length && rows.length ? "emerald" : "neutral"}
-        />
-        <StatCard
-          label="Not started"
-          value={data?.not_started ?? "—"}
-          accent={data && data.not_started ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Slots filled"
-          value={data ? `${data.percent}%` : "—"}
-          hint={data ? `${data.teaching_slots_per_week} teaching slots a week` : undefined}
-        />
-        <StatCard
-          label="Teacher clashes"
-          value={clashes.length}
-          accent={clashes.length ? "rose" : "emerald"}
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Sections finished",
+            value: data ? `${data.complete} of ${rows.length}` : "—",
+            icon: CheckCircle2,
+          },
+          { label: "Not started", value: data?.not_started ?? "—", icon: Hourglass },
+          {
+            label: "Slots filled",
+            value: data ? `${data.percent}%` : "—",
+            note: data ? `${data.teaching_slots_per_week} teaching slots a week` : undefined,
+            icon: Gauge,
+          },
+          { label: "Teacher clashes", value: clashes.length, icon: AlertTriangle },
+        ]}
+      />
+
+      <QuickActions
+        actions={[
+          { label: "Day view", href: "/school/timetable/coordinator", icon: LayoutGrid },
+          { label: "Availability", href: "/school/timetable/availability", icon: CalendarCheck },
+          { label: "Period setup", href: "/school/timetable/setup", icon: Grid3x3 },
+        ]}
+      />
 
       {clashes.length > 0 && (
         <WarnBox>
@@ -183,6 +185,12 @@ export default function TimetableDashboardPage() {
             ))}
           </Table>
         </CardBody>
+        {data && (
+          <PanelFooter
+            left={`${rows.length} section${rows.length === 1 ? "" : "s"} · ${data.complete} finished`}
+            right={data.not_started ? `${data.not_started} not started` : "Every section has been started"}
+          />
+        )}
       </Card>
     </div>
   );

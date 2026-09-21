@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
+import { AlertTriangle, DoorOpen, HeartPulse, Pill, Stethoscope, Syringe } from "lucide-react";
+
 import { PickedStudent, StudentPicker } from "@/components/StudentPicker";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, Table, Textarea, humanize, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, QuickActions, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Visit = {
@@ -120,20 +122,57 @@ export default function HealthPage() {
   const mustNotify = ["sent_home", "parent_picked_up", "referred_hospital"].includes(form.outcome);
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Health" subtitle="Sick-room visits, medical alerts, checkups and immunizations." />
+    <div className="space-y-[18px]">
+      {/* No welcome band here. This is the sick room's own screen rather than
+          somebody's landing page — a nurse opens it mid-incident, and a
+          greeting would be the first thing between them and the figures. */}
+      <PageHeader
+        title="Health"
+        subtitle="Sick-room visits, medical alerts, checkups and immunizations."
+        actions={
+          <Link href="/school/health/emergency">
+            <Button>Emergency contacts</Button>
+          </Link>
+        }
+      />
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
       {dash && (
-        <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          <StatCard label="Visits today" value={dash.visits_today} />
-          <StatCard label="Sent home" value={dash.sent_home_today} accent={dash.sent_home_today ? "amber" : "brand"} />
-          <StatCard label="Referred to hospital" value={dash.referred_today} accent={dash.referred_today ? "rose" : "brand"} />
-          <StatCard label="Medical alerts" value={dash.students_with_alerts} hint="Allergies / conditions" />
-          <StatCard label="Vaccines due (30 days)" value={dash.immunizations_due} />
-        </div>
+        // Five figures, not four: they are the five the dashboard endpoint
+        // already returns, and dropping one to make the grid tidy would
+        // hide a child who has been sent to hospital.
+        <StatStrip
+          className="lg:grid-cols-5"
+          stats={[
+            { label: "Visits today", value: dash.visits_today, icon: Stethoscope },
+            { label: "Sent home", value: dash.sent_home_today, icon: DoorOpen },
+            { label: "Referred to hospital", value: dash.referred_today, icon: AlertTriangle },
+            {
+              label: "Medical alerts",
+              value: dash.students_with_alerts,
+              note: "Allergies / conditions",
+              icon: HeartPulse,
+            },
+            {
+              label: "Vaccines due",
+              value: dash.immunizations_due,
+              note: "Next 30 days",
+              icon: Syringe,
+            },
+          ]}
+        />
       )}
+
+      {/* Two, not four. /school/health/students has no index page — only
+          the per-student route the tables below already link to — so a
+          "Health records" shortcut would have been a 404. */}
+      <QuickActions
+        actions={[
+          { label: "Immunisation", href: "/school/health/immunisation", icon: Syringe },
+          { label: "Medication", href: "/school/health/medication", icon: Pill },
+        ]}
+      />
 
       <Card>
         <CardHeader>
@@ -189,38 +228,47 @@ export default function HealthPage() {
       </nav>
 
       {tab === "visits" && (
-        <>
-          <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} />
-          <Card>
-            <Table head={["Time", "Student", "Complaint", "Given", "Outcome", ""]} empty={visits.length === 0 && "No visits on this day."}>
-              {visits.map((v) => (
-                <tr key={v.id}>
-                  <td className={td}>{new Date(v.visited_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</td>
-                  <td className={tdStrong}>
-                    <Link href={`/school/health/students/${v.student_id}`} className="hover:underline">
-                      {v.student_name}
-                    </Link>
-                    <div className="text-xs font-normal text-ink-subtle">{v.section_label}</div>
-                  </td>
-                  <td className={td}>
-                    {v.complaint}
-                    {v.temperature_c && <span className="text-ink-subtle"> · {v.temperature_c}°C</span>}
-                  </td>
-                  <td className={td}>{v.medicine_given ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={outcomeTone(v.outcome)}>{humanize(v.outcome)}</Badge>
-                    {v.parent_notified && <div className="text-xs text-ink-subtle">parents notified</div>}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-ink-subtle">{v.recorded_by_name}</td>
-                </tr>
-              ))}
-            </Table>
-          </Card>
-        </>
+        <Card>
+          {/* The day being looked at belongs on the panel it filters, not
+              floating above it. */}
+          <CardHeader>
+            <CardTitle>Visits</CardTitle>
+            <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} />
+          </CardHeader>
+          <Table head={["Time", "Student", "Complaint", "Given", "Outcome", ""]} empty={visits.length === 0 && "No visits on this day."}>
+            {visits.map((v) => (
+              <tr key={v.id}>
+                <td className={td}>{new Date(v.visited_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</td>
+                <td className={tdStrong}>
+                  <Link href={`/school/health/students/${v.student_id}`} className="hover:underline">
+                    {v.student_name}
+                  </Link>
+                  <div className="text-xs font-normal text-ink-subtle">{v.section_label}</div>
+                </td>
+                <td className={td}>
+                  {v.complaint}
+                  {v.temperature_c && <span className="text-ink-subtle"> · {v.temperature_c}°C</span>}
+                </td>
+                <td className={td}>{v.medicine_given ?? "—"}</td>
+                <td className="px-4 py-3">
+                  <Badge tone={outcomeTone(v.outcome)}>{humanize(v.outcome)}</Badge>
+                  {v.parent_notified && <div className="text-xs text-ink-subtle">parents notified</div>}
+                </td>
+                <td className="px-4 py-3 text-xs text-ink-subtle">{v.recorded_by_name}</td>
+              </tr>
+            ))}
+          </Table>
+          <PanelFooter
+            left={`${visits.length} visit${visits.length === 1 ? "" : "s"} on ${day}`}
+          />
+        </Card>
       )}
 
       {tab === "alerts" && (
         <Card>
+          <CardHeader>
+            <CardTitle>Medical alerts</CardTitle>
+          </CardHeader>
           <Table head={["Student", "Blood", "Allergies", "Conditions", "Medication", "Emergency"]} empty={alerts.length === 0 && "No medical alerts recorded."}>
             {alerts.map((a) => (
               <tr key={a.student_id}>
@@ -238,11 +286,17 @@ export default function HealthPage() {
               </tr>
             ))}
           </Table>
+          <PanelFooter
+            left={`${alerts.length} student${alerts.length === 1 ? "" : "s"} with something the school must know`}
+          />
         </Card>
       )}
 
       {tab === "immunizations" && (
         <Card>
+          <CardHeader>
+            <CardTitle>Vaccines due</CardTitle>
+          </CardHeader>
           <Table head={["Student", "Vaccine", "Dose", "Due"]} empty={due.length === 0 && "Nothing due in the next 30 days."}>
             {due.map((d) => (
               <tr key={d.id}>
@@ -258,6 +312,7 @@ export default function HealthPage() {
               </tr>
             ))}
           </Table>
+          <PanelFooter left={`${due.length} due in the next 30 days`} />
         </Card>
       )}
     </div>

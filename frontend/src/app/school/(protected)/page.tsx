@@ -1,11 +1,22 @@
 "use client";
 
+import {
+  BarChart3,
+  CalendarDays,
+  GraduationCap,
+  IndianRupee,
+  Layers,
+  Users,
+  UsersRound,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { StatCard } from "@/components/ui/StatCard";
+import { PageHeader } from "@/components/ui/Field";
+import { Hero, QuickActions, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { auth } from "@/lib/auth";
 
@@ -83,6 +94,18 @@ const holidayTone = {
   vacation: "emerald",
 } as const;
 
+/** The mock's two content columns: the panel you read and the one you
+ *  glance at, on the same baseline. */
+const contentRow = "grid gap-5 lg:grid-cols-[minmax(0,1fr)_304px]";
+
+/** A Link that carries a button's weight. Button itself renders a <button>,
+ *  and a destination should be a link — openable in a new tab, and right
+ *  under the cursor's middle click. */
+const primaryLink =
+  "inline-flex min-h-[40px] items-center justify-center gap-2 whitespace-nowrap rounded-[9px] bg-brand-600 px-4 py-2 text-xs font-extrabold text-white transition-colors hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300";
+const secondaryLink =
+  "inline-flex min-h-[40px] items-center justify-center gap-2 whitespace-nowrap rounded-[9px] border border-surface-control bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300";
+
 export default function SchoolAdminDashboard() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,110 +128,219 @@ export default function SchoolAdminDashboard() {
   }
 
   const overduePresent = data.fees.overdue_count > 0;
+  const firstName = user?.full_name?.trim().split(/\s+/)[0];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
-            Good morning, {user?.full_name?.split(" ")[0]}
-          </h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Academic year:{" "}
-            <strong>{data.current_academic_year_name ?? "— set a current year"}</strong>
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <QuickAction href="/school/students" label="+ Admit student" />
-          <QuickAction href="/school/notices" label="Send notice" />
-          <QuickAction href="/school/fees" label="View fees" />
-        </div>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Dashboard"
+        actions={
+          <Link href="/school/students" className={primaryLink}>
+            + Admit student
+          </Link>
+        }
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Active students" value={data.counts.students_active} />
-        <StatCard
-          label="Teachers"
-          value={data.counts.teachers_active}
-          accent="emerald"
-          hint={`+ ${data.counts.non_teaching_active} non-teaching`}
-        />
-        <StatCard
-          label="Parents linked"
-          value={data.counts.parents_active}
-          accent="brand"
-        />
-        <StatCard
-          label="Pending fees"
-          value={inr(data.fees.pending_outstanding)}
-          accent={overduePresent ? "amber" : "emerald"}
-          hint={
-            overduePresent
-              ? `${data.fees.overdue_count} overdue — ${inr(
-                  data.fees.overdue_outstanding
-                )}`
-              : `${data.fees.pending_count} record(s) pending`
-          }
-        />
-      </div>
+      {/* The welcome band says the one thing that cannot wait: whether any
+          money is late. Both branches are figures the dashboard already
+          fetched — the hero repeats them, it does not invent them. */}
+      <Hero
+        eyebrow={
+          data.current_academic_year_name
+            ? `${data.current_academic_year_name} academic year`
+            : undefined
+        }
+        title={firstName ? `Good morning, ${firstName}` : "Good morning."}
+        action={
+          <Link href="/school/notices" className={secondaryLink}>
+            Send a notice
+          </Link>
+        }
+      >
+        {overduePresent
+          ? `${data.fees.overdue_count} fee record(s) are overdue — ${inr(
+              data.fees.overdue_outstanding
+            )} in all. Everything else on this page is on track.`
+          : `Nothing is overdue. ${data.admissions.this_month_count} admission(s) this month and ${inr(
+              data.fees.paid_this_month
+            )} collected.`}
+      </Hero>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <StatStrip
+        stats={[
+          {
+            label: "Active students",
+            value: data.counts.students_active.toLocaleString("en-IN"),
+            note: data.current_academic_year_name ?? "No current year set",
+            icon: GraduationCap,
+          },
+          {
+            label: "Teachers",
+            value: data.counts.teachers_active.toLocaleString("en-IN"),
+            note: `+ ${data.counts.non_teaching_active} non-teaching`,
+            icon: Users,
+          },
+          {
+            label: "Parents linked",
+            value: data.counts.parents_active.toLocaleString("en-IN"),
+            note: "Accounts on the parent app",
+            icon: UsersRound,
+          },
+          {
+            label: "Pending fees",
+            value: inr(data.fees.pending_outstanding),
+            note: overduePresent
+              ? `${data.fees.overdue_count} overdue — ${inr(data.fees.overdue_outstanding)}`
+              : `${data.fees.pending_count} record(s) pending`,
+            icon: IndianRupee,
+          },
+        ]}
+      />
+
+      <QuickActions
+        actions={[
+          { label: "Fees", href: "/school/fees", icon: Wallet },
+          { label: "Classes", href: "/school/classes", icon: Layers },
+          { label: "Timetable", href: "/school/timetable", icon: CalendarDays },
+          { label: "Reports", href: "/school/reports", icon: BarChart3 },
+        ]}
+      />
+
+      <div className={contentRow}>
         <Card>
           <CardHeader>
-            <CardTitle>This month</CardTitle>
+            <CardTitle>Latest notices</CardTitle>
             <Link
-              href="/school/students"
+              href="/school/notices"
               className="text-xs text-brand-700 hover:underline"
             >
-              View students
+              All notices →
             </Link>
           </CardHeader>
-          <CardBody className="space-y-2 text-sm">
-            <Row
-              label="New admissions"
-              value={String(data.admissions.this_month_count)}
-            />
-            <Row
-              label="Last 30 days"
-              value={String(data.admissions.last_30_days_count)}
-            />
-            <Row label="Fees collected" value={inr(data.fees.paid_this_month)} />
+          <CardBody className="pt-0">
+            {data.latest_notices.length === 0 ? (
+              <p className="text-sm text-ink-muted">
+                No notices sent yet. Click <strong>Send a notice</strong> above.
+              </p>
+            ) : (
+              <ul className="divide-y divide-surface-border text-sm">
+                {data.latest_notices.map((n) => (
+                  <li key={n.id} className="flex items-center justify-between py-2">
+                    <div>
+                      <div className="font-medium text-ink">{n.title}</div>
+                      <div className="text-xs text-ink-muted">
+                        {n.audience.replace("_", " ")} · {n.recipient_count}{" "}
+                        recipient(s)
+                      </div>
+                    </div>
+                    <span className="text-xs text-ink-muted">
+                      {n.sent_at && new Date(n.sent_at).toLocaleString()}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardBody>
         </Card>
 
+        <div className="space-y-5">
+          <Card>
+            <CardHeader>
+              <CardTitle>This month</CardTitle>
+              <Link
+                href="/school/students"
+                className="text-xs text-brand-700 hover:underline"
+              >
+                View students
+              </Link>
+            </CardHeader>
+            <CardBody className="space-y-2 pt-0 text-sm">
+              <Row
+                label="New admissions"
+                value={String(data.admissions.this_month_count)}
+              />
+              <Row
+                label="Last 30 days"
+                value={String(data.admissions.last_30_days_count)}
+              />
+              <Row label="Fees collected" value={inr(data.fees.paid_this_month)} />
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Academic setup</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-2 pt-0 text-sm">
+              <Row
+                label="Classes"
+                value={String(data.counts.classes_current_year)}
+              />
+              <Row
+                label="Sections"
+                value={String(data.counts.sections_current_year)}
+              />
+              <div className="flex flex-wrap gap-3 pt-1">
+                <Link
+                  href="/school/classes"
+                  className="text-xs font-medium text-brand-700 hover:underline"
+                >
+                  Classes →
+                </Link>
+                <Link
+                  href="/school/subjects"
+                  className="text-xs font-medium text-brand-700 hover:underline"
+                >
+                  Subjects →
+                </Link>
+                <Link
+                  href="/school/timetable"
+                  className="text-xs font-medium text-brand-700 hover:underline"
+                >
+                  Timetable →
+                </Link>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+      </div>
+
+      <div className={contentRow}>
         <Card>
           <CardHeader>
-            <CardTitle>Academic setup</CardTitle>
+            <CardTitle>Upcoming exams (next 7 days)</CardTitle>
+            <Link
+              href="/school/exams"
+              className="text-xs text-brand-700 hover:underline"
+            >
+              All exams →
+            </Link>
           </CardHeader>
-          <CardBody className="space-y-2 text-sm">
-            <Row
-              label="Classes"
-              value={String(data.counts.classes_current_year)}
-            />
-            <Row
-              label="Sections"
-              value={String(data.counts.sections_current_year)}
-            />
-            <div className="flex gap-3 pt-1">
-              <Link
-                href="/school/classes"
-                className="text-xs font-medium text-brand-700 hover:underline"
-              >
-                Classes →
-              </Link>
-              <Link
-                href="/school/subjects"
-                className="text-xs font-medium text-brand-700 hover:underline"
-              >
-                Subjects →
-              </Link>
-              <Link
-                href="/school/timetable"
-                className="text-xs font-medium text-brand-700 hover:underline"
-              >
-                Timetable →
-              </Link>
-            </div>
+          <CardBody className="pt-0">
+            {data.upcoming_exams.length === 0 ? (
+              <p className="text-sm text-ink-muted">
+                No exams scheduled in the next 7 days.
+              </p>
+            ) : (
+              <ul className="divide-y divide-surface-border text-sm">
+                {data.upcoming_exams.map((e) => (
+                  <li key={e.id} className="flex items-center justify-between py-2">
+                    <div>
+                      <div className="font-medium text-ink">{e.name}</div>
+                      <div className="text-xs text-ink-muted">
+                        {e.kind.replace("_", " ")} · {e.papers_count} paper(s) ·{" "}
+                        {e.start_date} → {e.end_date}
+                      </div>
+                    </div>
+                    {e.is_published ? (
+                      <Badge tone="emerald">published</Badge>
+                    ) : (
+                      <Badge tone="amber">draft</Badge>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </CardBody>
         </Card>
 
@@ -222,13 +354,13 @@ export default function SchoolAdminDashboard() {
               Calendar →
             </Link>
           </CardHeader>
-          <CardBody>
+          <CardBody className="pt-0">
             {data.upcoming_holidays.length === 0 ? (
               <p className="text-sm text-ink-muted">No upcoming holidays.</p>
             ) : (
               <ul className="space-y-2 text-sm">
                 {data.upcoming_holidays.map((h) => (
-                  <li key={h.id} className="flex items-center justify-between gap-3">
+                  <li key={h.id} className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-medium text-ink">{h.name}</span>
                     <span className="flex items-center gap-2">
                       <span className="text-xs text-ink-muted">
@@ -246,82 +378,8 @@ export default function SchoolAdminDashboard() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Latest notices</CardTitle>
-          <Link
-            href="/school/notices"
-            className="text-xs text-brand-700 hover:underline"
-          >
-            All notices →
-          </Link>
-        </CardHeader>
-        <CardBody>
-          {data.latest_notices.length === 0 ? (
-            <p className="text-sm text-ink-muted">
-              No notices sent yet. Click <strong>Send notice</strong> above.
-            </p>
-          ) : (
-            <ul className="divide-y divide-surface-border text-sm">
-              {data.latest_notices.map((n) => (
-                <li key={n.id} className="flex items-center justify-between py-2">
-                  <div>
-                    <div className="font-medium text-ink">{n.title}</div>
-                    <div className="text-xs text-ink-muted">
-                      {n.audience.replace("_", " ")} · {n.recipient_count}{" "}
-                      recipient(s)
-                    </div>
-                  </div>
-                  <span className="text-xs text-ink-muted">
-                    {n.sent_at && new Date(n.sent_at).toLocaleString()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Upcoming exams (next 7 days)</CardTitle>
-          <Link
-            href="/school/exams"
-            className="text-xs text-brand-700 hover:underline"
-          >
-            All exams →
-          </Link>
-        </CardHeader>
-        <CardBody>
-          {data.upcoming_exams.length === 0 ? (
-            <p className="text-sm text-ink-muted">
-              No exams scheduled in the next 7 days.
-            </p>
-          ) : (
-            <ul className="divide-y divide-surface-border text-sm">
-              {data.upcoming_exams.map((e) => (
-                <li key={e.id} className="flex items-center justify-between py-2">
-                  <div>
-                    <div className="font-medium text-ink">{e.name}</div>
-                    <div className="text-xs text-ink-muted">
-                      {e.kind.replace("_", " ")} · {e.papers_count} paper(s) ·{" "}
-                      {e.start_date} → {e.end_date}
-                    </div>
-                  </div>
-                  {e.is_published ? (
-                    <Badge tone="emerald">published</Badge>
-                  ) : (
-                    <Badge tone="amber">draft</Badge>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
-
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-ink-muted">
+        <h2 className="mb-3 text-[13px] font-extrabold uppercase tracking-[0.6px] text-ink-muted">
           Coming soon
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -330,17 +388,6 @@ export default function SchoolAdminDashboard() {
         </div>
       </div>
     </div>
-  );
-}
-
-function QuickAction({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-700"
-    >
-      {label}
-    </Link>
   );
 }
 

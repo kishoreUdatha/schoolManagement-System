@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { FileSignature, FileText, PencilLine, Users } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
 
@@ -75,24 +77,30 @@ export default function ExamOverviewPage() {
   const rows = data?.rows ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Papers" value={data?.papers ?? "—"} />
-        <StatCard label="Candidates" value={data?.candidates ?? "—"} />
-        <StatCard
-          label="Marks entered"
-          value={data?.marks_entered ?? "—"}
-          hint={data ? `${data.marks_percent}% of those expected` : undefined}
-          accent={data && data.marks_percent >= 100 ? "emerald" : "amber"}
-        />
-        <StatCard
-          label="Papers signed off"
-          value={data ? `${data.papers_verified} of ${data.papers}` : "—"}
-          accent={data && data.papers_verified === data.papers ? "emerald" : "amber"}
-        />
-      </div>
+      {/* No page header and no welcome band here. The exam's name, its dates
+          and its publish state are the layout's, printed once above the tab
+          row for every page of this exam, and a second heading here would
+          say the same thing twice. Quick actions would repeat those tabs. */}
+      <StatStrip
+        stats={[
+          { label: "Papers", value: data?.papers ?? "—", icon: FileText },
+          { label: "Candidates", value: data?.candidates ?? "—", icon: Users },
+          {
+            label: "Marks entered",
+            value: data?.marks_entered ?? "—",
+            note: data ? `${data.marks_percent}% of those expected` : undefined,
+            icon: PencilLine,
+          },
+          {
+            label: "Papers signed off",
+            value: data ? `${data.papers_verified} of ${data.papers}` : "—",
+            icon: FileSignature,
+          },
+        ]}
+      />
 
       {/* The backend words each blocker as something somebody can act on, so
           it is printed as written rather than re-phrased into a percentage. */}
@@ -179,6 +187,12 @@ export default function ExamOverviewPage() {
             ))}
           </Table>
         </CardBody>
+        {data && (
+          <PanelFooter
+            left={`${rows.length} paper${rows.length === 1 ? "" : "s"}`}
+            right={`${data.papers_allocated} of ${data.papers} fully seated`}
+          />
+        )}
       </Card>
     </div>
   );

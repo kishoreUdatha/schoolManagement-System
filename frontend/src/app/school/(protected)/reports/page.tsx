@@ -23,7 +23,7 @@ import { SERIES } from "@/components/charts/theme";
 import { ReportShell } from "@/components/reports/ReportShell";
 import { Card } from "@/components/ui/Card";
 import { inr } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Overview = {
@@ -103,23 +103,33 @@ export default function ReportsIndexPage() {
       subtitle="The school in figures. Everything here reads; nothing here changes a record."
       error={error}
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Students" value={data?.students ?? "—"} icon={Users} />
-        <StatCard label="Staff" value={data?.staff ?? "—"} icon={UserCheck} />
-        <StatCard
-          label="Attendance this month"
-          value={data ? `${data.attendance_this_month}%` : "—"}
-          accent={data && data.attendance_this_month >= 85 ? "emerald" : "amber"}
-          icon={CalendarCheck}
-        />
-        <StatCard
-          label="Outstanding fees"
-          value={data ? inr(data.outstanding) : "—"}
-          hint={data ? `${inr(data.collected_this_month)} collected this month` : undefined}
-          accent={data && Number(data.outstanding) > 0 ? "amber" : "emerald"}
-          icon={IndianRupee}
-        />
-      </div>
+      {/* One strip rather than four cards: these are four readings of the
+          same school, not four separate things. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Students",
+            value: data ? data.students.toLocaleString("en-IN") : "—",
+            icon: Users,
+          },
+          {
+            label: "Staff",
+            value: data ? data.staff.toLocaleString("en-IN") : "—",
+            icon: UserCheck,
+          },
+          {
+            label: "Attendance this month",
+            value: data ? `${data.attendance_this_month}%` : "—",
+            icon: CalendarCheck,
+          },
+          {
+            label: "Outstanding fees",
+            value: data ? inr(data.outstanding) : "—",
+            note: data ? `${inr(data.collected_this_month)} collected this month` : undefined,
+            icon: IndianRupee,
+          },
+        ]}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard

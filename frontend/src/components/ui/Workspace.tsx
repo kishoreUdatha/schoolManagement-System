@@ -1,6 +1,7 @@
 "use client";
 
 import { LucideIcon } from "lucide-react";
+import Link from "next/link";
 import { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -196,6 +197,86 @@ export function MiniBar({ percent, className }: { percent: number; className?: s
       <span className="text-[11px] text-ink-muted [font-variant-numeric:tabular-nums]">
         {pct.toFixed(1)}%
       </span>
+    </div>
+  );
+}
+
+/* ── .hero ──────────────────────────────────────────────────────────────── */
+
+/** The welcome band at the top of a dashboard.
+ *
+ *  The mock fills its right third with an illustration. There isn't one in
+ *  this codebase and inventing artwork is not a layout change, so the space
+ *  is given back to the text and the band keeps its 178px.
+ *
+ *  `eyebrow` is the date in the mock. It is passed in rather than computed
+ *  here because a dashboard that already knows the school's date should not
+ *  have a second opinion about it.
+ *
+ *  The mock's #DCE9FF body and #CDE0FF eyebrow measure 4.22 and 3.86 on this
+ *  blue. brand-50 is the lightest tint in the ramp and clears it at 4.75,
+ *  which is the same idea one step further from the background.
+ */
+export function Hero({
+  eyebrow,
+  title,
+  children,
+  action,
+}: {
+  eyebrow?: string;
+  title: string;
+  children?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <section className="mb-[22px] min-h-[178px] overflow-hidden rounded-[16px] bg-brand-600">
+      <div className="relative z-[2] px-[30px] py-[27px]">
+        {eyebrow && (
+          <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.7px] text-brand-50">
+            {eyebrow}
+          </div>
+        )}
+        <h2 className="text-[27px] font-extrabold leading-tight tracking-[-0.7px] text-white">
+          {title}
+        </h2>
+        {children && (
+          <p className="my-[9px] mb-[17px] max-w-[490px] text-[12px] text-brand-50">{children}</p>
+        )}
+        {action}
+      </div>
+    </section>
+  );
+}
+
+/* ── .dashboard-actions / .quick-action ─────────────────────────────────── */
+
+export type QuickAction = { label: string; href: string; icon?: LucideIcon };
+
+/** The row of shortcuts under a dashboard's figures.
+ *
+ *  Links, not buttons: every one of them goes somewhere, and a person who
+ *  wants the page in a new tab should be able to have it.
+ */
+export function QuickActions({ actions }: { actions: QuickAction[] }) {
+  if (actions.length === 0) return null;
+  return (
+    <div className="mb-[22px] flex flex-wrap items-center gap-x-4 gap-y-2.5">
+      <span className="text-[12px] font-bold text-ink-muted">Quick actions</span>
+      <div className="flex flex-wrap gap-2.5">
+        {actions.map((a) => {
+          const Icon = a.icon;
+          return (
+            <Link
+              key={a.href}
+              href={a.href}
+              className="flex items-center gap-[9px] rounded-control bg-surface-soft px-3 py-[11px] text-[11px] font-extrabold text-brand-700 transition-colors hover:bg-brand-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+            >
+              {Icon && <Icon className="h-[17px] w-[17px]" aria-hidden="true" />}
+              {a.label}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

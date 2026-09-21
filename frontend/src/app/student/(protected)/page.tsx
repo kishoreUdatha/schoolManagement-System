@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { BookOpen, CalendarCheck, GraduationCap } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ErrorBox, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { ErrorBox, PageHeader, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
+import { Hero, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime, hhmm, shortDate } from "@/lib/dates";
 
@@ -83,19 +86,35 @@ export default function StudentHomePage() {
   const late = homework.filter((h) => h.overdue && !h.submitted);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">
-          {data ? `Hello, ${firstName}` : "Hello"}
-        </h1>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Home"
+        actions={
+          <Link href="/student/homework">
+            <Button>My homework</Button>
+          </Link>
+        }
+      />
+
+      {/* The name comes from the dashboard the server just sent for this
+          pupil, first name only. There is no date on this payload, so the
+          band has no eyebrow rather than a date invented here. */}
+      <Hero
+        title={data ? `Hello, ${firstName}` : "Hello"}
+        action={
+          <Link href="/student/exams">
+            <Button variant="secondary">My results</Button>
+          </Link>
+        }
+      >
         {data && (
-          <p className="mt-1.5 text-[13px] text-ink-muted">
+          <>
             {[data.class_name, data.section_name].filter(Boolean).join(" ")}
             {data.class_name && " · "}
             {data.school_name}
-          </p>
+          </>
         )}
-      </div>
+      </Hero>
 
       <ErrorBox>{error}</ErrorBox>
 
@@ -112,114 +131,130 @@ export default function StudentHomePage() {
         </WarnBox>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Homework to do"
-          value={data?.homework_due ?? "—"}
-          accent={data && data.homework_due > 0 ? "amber" : "emerald"}
-          hint={data && data.homework_due === 0 ? "Nothing waiting" : undefined}
-        />
-        {/* Attendance is never shown in red. A child who has been off ill did
-            not choose it, and a red number reads as blame for something that
-            is usually a parent's or a doctor's call. */}
-        <StatCard
-          label="Attendance"
-          value={data ? `${data.attendance.percent}%` : "—"}
-          accent={data && data.attendance.percent >= 90 ? "emerald" : "brand"}
-          hint={data ? `${data.attendance.present} of ${data.attendance.marked_days} days` : undefined}
-        />
-        <StatCard
-          label="Results out"
-          value={data?.recent_exams.length ?? "—"}
-          hint={data && data.recent_exams.length === 0 ? "None yet" : undefined}
-        />
-      </div>
+      {/* Three figures, not four: these are the only ones this payload has
+          that belong to the child rather than to the office. Nothing here is
+          tinted — a red number on a child's own page reads as blame for an
+          illness that was usually a parent's or a doctor's call. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Homework to do",
+            value: data?.homework_due ?? "—",
+            note: data && data.homework_due === 0 ? "Nothing waiting" : undefined,
+            icon: BookOpen,
+          },
+          {
+            label: "Attendance",
+            value: data ? `${data.attendance.percent}%` : "—",
+            note: data
+              ? `${data.attendance.present} of ${data.attendance.marked_days} days`
+              : undefined,
+            icon: CalendarCheck,
+          },
+          {
+            label: "Results out",
+            value: data?.recent_exams.length ?? "—",
+            note: data && data.recent_exams.length === 0 ? "None yet" : undefined,
+            icon: GraduationCap,
+          },
+        ]}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Today&rsquo;s lessons</CardTitle>
-        </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["Time", "Lesson", "Teacher"]}
-            empty={lessons.length === 0 && "There are no lessons on the timetable for today."}
-          >
-            {lessons.map((p) => (
-              <tr key={p.period_number} className={p.is_break ? "bg-surface-subtle" : undefined}>
-                <td className={td}>
-                  {hhmm(p.start_time)}–{hhmm(p.end_time)}
-                </td>
-                <td className={p.is_break ? td : tdStrong}>
-                  {p.is_break ? p.label ?? "Break" : p.subject_name ?? "—"}
-                </td>
-                <td className={td}>{p.is_break ? "—" : p.teacher_name ?? "—"}</td>
-              </tr>
-            ))}
-          </Table>
-        </CardBody>
-      </Card>
+      {/* The two things a child came for on the left, and the school's own
+          voice in the rail beside them. Nothing was dropped to make the row:
+          the notices panel is simply narrower than the tables now. */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_304px]">
+        <div className="space-y-5">
+          <Card>
+            <CardHeader>
+              <CardTitle>Today&rsquo;s lessons</CardTitle>
+            </CardHeader>
+            <CardBody className="p-0">
+              <Table
+                head={["Time", "Lesson", "Teacher"]}
+                empty={lessons.length === 0 && "There are no lessons on the timetable for today."}
+              >
+                {lessons.map((p) => (
+                  <tr key={p.period_number} className={p.is_break ? "bg-surface-subtle" : undefined}>
+                    <td className={td}>
+                      {hhmm(p.start_time)}–{hhmm(p.end_time)}
+                    </td>
+                    <td className={p.is_break ? td : tdStrong}>
+                      {p.is_break ? p.label ?? "Break" : p.subject_name ?? "—"}
+                    </td>
+                    <td className={td}>{p.is_break ? "—" : p.teacher_name ?? "—"}</td>
+                  </tr>
+                ))}
+              </Table>
+            </CardBody>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Homework</CardTitle>
-          <Link href="/student/homework" className="text-[12px] font-bold text-brand-600 hover:underline">
-            See all
-          </Link>
-        </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["Subject", "What to do", "Due", ""]}
-            empty={homework.length === 0 && "You have no homework set at the moment."}
-          >
-            {homework.map((h) => (
-              <tr key={h.homework_id}>
-                <td className={td}>{h.subject_name ?? "—"}</td>
-                <td className={tdStrong}>
-                  <Link href="/student/homework" className="hover:underline">
-                    {h.title}
-                  </Link>
-                </td>
-                <td className={td}>{shortDate(h.due_date)}</td>
-                <td className={td}>
-                  {h.submitted ? (
-                    <Badge tone="emerald">Handed in</Badge>
-                  ) : h.overdue ? (
-                    <Badge tone="rose">Late</Badge>
-                  ) : (
-                    <Badge tone="amber">To do</Badge>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </Table>
-        </CardBody>
-      </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Homework</CardTitle>
+              <Link
+                href="/student/homework"
+                className="text-[12px] font-bold text-brand-600 hover:underline"
+              >
+                See all
+              </Link>
+            </CardHeader>
+            <CardBody className="p-0">
+              <Table
+                head={["Subject", "What to do", "Due", ""]}
+                empty={homework.length === 0 && "You have no homework set at the moment."}
+              >
+                {homework.map((h) => (
+                  <tr key={h.homework_id}>
+                    <td className={td}>{h.subject_name ?? "—"}</td>
+                    <td className={tdStrong}>
+                      <Link href="/student/homework" className="hover:underline">
+                        {h.title}
+                      </Link>
+                    </td>
+                    <td className={td}>{shortDate(h.due_date)}</td>
+                    <td className={td}>
+                      {h.submitted ? (
+                        <Badge tone="emerald">Handed in</Badge>
+                      ) : h.overdue ? (
+                        <Badge tone="rose">Late</Badge>
+                      ) : (
+                        <Badge tone="amber">To do</Badge>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </Table>
+            </CardBody>
+          </Card>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>From school</CardTitle>
-        </CardHeader>
-        <CardBody className="space-y-4">
-          {notices.length === 0 && (
-            <p className="text-[13px] text-ink-subtle">
-              There is nothing from the school right now.
-            </p>
-          )}
-          {notices.map((n) => (
-            <div key={n.notice_id}>
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="text-[14px] font-extrabold text-ink">{n.title}</span>
-                {/* created_at is a full timestamp; the date helpers take a
-                    plain YYYY-MM-DD, so trim it before formatting. */}
-                <span className="text-[11px] text-ink-subtle">
-                  {dateTime(n.created_at)}
-                </span>
+        <Card className="self-start">
+          <CardHeader>
+            <CardTitle>From school</CardTitle>
+          </CardHeader>
+          <CardBody className="space-y-4">
+            {notices.length === 0 && (
+              <p className="text-[13px] text-ink-subtle">
+                There is nothing from the school right now.
+              </p>
+            )}
+            {notices.map((n) => (
+              <div key={n.notice_id}>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <span className="text-[14px] font-extrabold text-ink">{n.title}</span>
+                  {/* created_at is a full timestamp; the date helpers take a
+                      plain YYYY-MM-DD, so trim it before formatting. */}
+                  <span className="text-[11px] text-ink-subtle">
+                    {dateTime(n.created_at)}
+                  </span>
+                </div>
+                {n.body && <p className="mt-1 text-[13px] text-ink-muted">{n.body}</p>}
               </div>
-              {n.body && <p className="mt-1 text-[13px] text-ink-muted">{n.body}</p>}
-            </div>
-          ))}
-        </CardBody>
-      </Card>
+            ))}
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }

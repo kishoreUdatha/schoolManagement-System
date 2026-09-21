@@ -1,10 +1,12 @@
 "use client";
 
 import {
+  BarChart3,
   Bell,
   BookOpen,
   CalendarCheck,
   ClipboardCheck,
+  FileCheck2,
   GraduationCap,
   IndianRupee,
   ReceiptText,
@@ -14,8 +16,9 @@ import {
 import Link from "next/link";
 import { ReactNode, useEffect, useState } from "react";
 
-import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
+import { Hero, QuickActions, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Counts = {
@@ -93,6 +96,13 @@ function formatINR(amount: string | number): string {
   }).format(n);
 }
 
+const contentRow = "grid gap-5 lg:grid-cols-[minmax(0,1fr)_304px]";
+
+const primaryLink =
+  "inline-flex min-h-[40px] items-center justify-center gap-2 whitespace-nowrap rounded-[9px] bg-brand-600 px-4 py-2 text-xs font-extrabold text-white transition-colors hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300";
+const secondaryLink =
+  "inline-flex min-h-[40px] items-center justify-center gap-2 whitespace-nowrap rounded-[9px] border border-surface-control bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300";
+
 export default function PrincipalDashboard() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -116,65 +126,84 @@ export default function PrincipalDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">School overview</h1>
-          {data.current_academic_year_name && (
-            <Badge tone="brand">{data.current_academic_year_name}</Badge>
-          )}
-        </div>
-        <p className="mt-1.5 text-[13px] text-ink-muted">
-          Daily snapshot of attendance, fees, exams, and notifications.
-        </p>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="School overview"
+        subtitle="Daily snapshot of attendance, fees, exams, and notifications."
+        actions={
+          <Link href="/principal/reports" className={primaryLink}>
+            Today&apos;s absentees
+          </Link>
+        }
+      />
+
+      {/* No name is in scope on this screen, so the band greets without one
+          and spends its line on the figure a head teacher opens this page
+          for: whether the school has been marked in today. */}
+      <Hero
+        eyebrow={data.current_academic_year_name ?? undefined}
+        title="Good morning."
+        action={
+          <Link href="/principal/approvals" className={secondaryLink}>
+            Approvals waiting
+          </Link>
+        }
+      >
+        {data.attendance.marked
+          ? `${data.attendance.attendance_pct}% of the school is in today — ${data.attendance.present} present, ${data.attendance.absent} absent.`
+          : `Attendance has not been marked${
+              data.attendance.as_of_date ? ` for ${data.attendance.as_of_date}` : " yet"
+            }.`}
+      </Hero>
 
       {/* Headline counts */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile
-          icon={<GraduationCap className="h-4 w-4" />}
-          label="Total students"
-          value={data.counts.students_active.toLocaleString("en-IN")}
-        />
-        <StatTile
-          icon={<Users className="h-4 w-4" />}
-          label="Total teachers"
-          value={data.counts.teachers_active.toLocaleString("en-IN")}
-          hint={`+ ${data.counts.non_teaching_active} non-teaching`}
-        />
-        <StatTile
-          icon={<CalendarCheck className="h-4 w-4" />}
-          label="Today's attendance"
-          value={
-            data.attendance.marked
+      <StatStrip
+        stats={[
+          {
+            label: "Total students",
+            value: data.counts.students_active.toLocaleString("en-IN"),
+            icon: GraduationCap,
+          },
+          {
+            label: "Total teachers",
+            value: data.counts.teachers_active.toLocaleString("en-IN"),
+            note: `+ ${data.counts.non_teaching_active} non-teaching`,
+            icon: Users,
+          },
+          {
+            label: "Today's attendance",
+            value: data.attendance.marked
               ? `${data.attendance.attendance_pct}%`
-              : "Not marked"
-          }
-          hint={
-            data.attendance.marked
+              : "Not marked",
+            note: data.attendance.marked
               ? `${data.attendance.present} present · ${data.attendance.absent} absent`
-              : data.attendance.as_of_date ?? ""
-          }
-          link="/principal/reports"
-        />
-        <StatTile
-          icon={<TrendingUp className="h-4 w-4" />}
-          label="Exam performance"
-          value={
-            data.exam_performance.available
+              : data.attendance.as_of_date ?? undefined,
+            icon: CalendarCheck,
+          },
+          {
+            label: "Exam performance",
+            value: data.exam_performance.available
               ? `${data.exam_performance.average_pct}%`
-              : "No exam yet"
-          }
-          hint={
-            data.exam_performance.available
+              : "No exam yet",
+            note: data.exam_performance.available
               ? `${data.exam_performance.exam_name} · ${data.exam_performance.pass_rate_pct}% pass`
-              : data.exam_performance.note ?? ""
-          }
-        />
-      </div>
+              : data.exam_performance.note ?? undefined,
+            icon: TrendingUp,
+          },
+        ]}
+      />
 
-      {/* Fees + notifications + homework */}
-      <div className="grid gap-3 lg:grid-cols-3">
+      <QuickActions
+        actions={[
+          { label: "Reports", href: "/principal/reports", icon: BarChart3 },
+          { label: "Approvals", href: "/principal/approvals", icon: ClipboardCheck },
+          { label: "Exams", href: "/principal/exams", icon: GraduationCap },
+          { label: "Applications", href: "/principal/applications", icon: FileCheck2 },
+        ]}
+      />
+
+      {/* Fees, with the invoice counts beside them */}
+      <div className={contentRow}>
         <Tile title="Fee collection" icon={<IndianRupee className="h-4 w-4" />}>
           <KV label="This month" value={formatINR(data.fees.paid_this_month)} />
           <KV
@@ -191,6 +220,13 @@ export default function PrincipalDashboard() {
           />
         </Tile>
 
+        <Tile title="Invoices" icon={<ReceiptText className="h-4 w-4" />}>
+          <KV label="Pending count" value={String(data.fees.pending_count)} />
+          <KV label="Overdue count" value={String(data.fees.overdue_count)} />
+        </Tile>
+      </div>
+
+      <div className={contentRow}>
         <Tile title="Homework completion" icon={<BookOpen className="h-4 w-4" />}>
           <KV
             label="Homework posted (this month)"
@@ -222,7 +258,7 @@ export default function PrincipalDashboard() {
         </Tile>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-3">
+      <div className={contentRow}>
         <Tile title="Today" icon={<ClipboardCheck className="h-4 w-4" />}>
           <KV label="Present" value={String(data.attendance.present)} tone="emerald" />
           <KV label="Absent" value={String(data.attendance.absent)} tone="rose" />
@@ -235,11 +271,6 @@ export default function PrincipalDashboard() {
           <KV label="Sections" value={String(data.counts.sections_current_year)} />
           <KV label="Parents on app" value={String(data.counts.parents_active)} />
         </Tile>
-
-        <Tile title="Invoices" icon={<ReceiptText className="h-4 w-4" />}>
-          <KV label="Pending count" value={String(data.fees.pending_count)} />
-          <KV label="Overdue count" value={String(data.fees.overdue_count)} />
-        </Tile>
       </div>
 
       <p className="text-xs text-ink-subtle">
@@ -247,34 +278,6 @@ export default function PrincipalDashboard() {
       </p>
     </div>
   );
-}
-
-function StatTile({
-  icon,
-  label,
-  value,
-  hint,
-  link,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-  hint?: string;
-  link?: string;
-}) {
-  const body = (
-    <Card className="transition-colors hover:border-brand-500/30">
-      <CardBody>
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-ink-subtle">
-          <span className="text-brand-400">{icon}</span>
-          {label}
-        </div>
-        <div className="mt-2 text-2xl font-semibold text-ink">{value}</div>
-        {hint && <div className="mt-1 text-xs text-ink-muted">{hint}</div>}
-      </CardBody>
-    </Card>
-  );
-  return link ? <Link href={link}>{body}</Link> : body;
 }
 
 function Tile({
