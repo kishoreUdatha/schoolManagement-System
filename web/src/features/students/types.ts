@@ -21,3 +21,34 @@ export type Student = {
   is_active: boolean;
   created_at: string;
 };
+
+export type ParentContact = { user_id: number; full_name: string; email: string | null; phone: string | null; relation: string | null };
+
+export type StudentProfile = Omit<Student, "created_at"> & {
+  section_name: string | null;
+  class_id: number;
+  class_name: string | null;
+  academic_year_name: string | null;
+  parents: ParentContact[];
+  attendance: { days_present: number; days_absent: number; days_late: number; days_half_day: number; days_marked: number; attendance_percent: number | null };
+  behaviour_recent: { id: number; title?: string; kind?: string; category?: string; occurred_on?: string; created_at?: string }[];
+  exams: { exam_id?: number; exam_name?: string; percentage?: number | null; grade?: string | null }[];
+  homework_recent: { id: number; title: string; subject_name: string | null; subject_code: string | null; due_date: string | null; is_past_due: boolean }[];
+  fees_pending_amount: number | null;
+};
+
+export type Guardian = {
+  guardian_id: number;
+  link_id: number;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  occupation: string | null;
+  address: string | null;
+  relation: string;
+  is_primary: boolean;
+  can_pickup: boolean;
+  is_emergency_contact: boolean;
+  lives_with_student: boolean;
+  has_portal_login: boolean;
+};

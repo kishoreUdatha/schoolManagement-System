@@ -2,7 +2,7 @@
 // Module: Public Website & Authentication · Role: All Users · Release: MVP · Stories: US-0005 / US-0006
 // Mock: screens/SCR-003_Sign_In.html
 // Backend: the old frontend served this at /school/login and six other portals — Seven sign-in pages, each posts auth/login
-// Wired: posts to /api/v1/<portal>/auth/login (and verify-otp for parents). Hand-maintained; listed in KEEP.
+// Wired: posts to /api/v1/<portal>/auth/login (and verify-otp for parents). Hand-maintained.
 
 import Link from "next/link";
 import { Suspense } from "react";

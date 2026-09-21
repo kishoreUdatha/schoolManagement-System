@@ -2,7 +2,7 @@
 // Module: Students · Role: School Admin · Release: MVP · Stories: US-0109 / US-0110
 // Mock: screens/SCR-055_Student_Directory.html
 // Backend: the old frontend served this at /school/students — Year, class, section, status filters and search
-// Wired: GET /api/v1/school/students, /classes, /academic-years. Hand-maintained; listed in KEEP.
+// Wired: GET /api/v1/school/students, /classes, /academic-years. Hand-maintained.
 
 import Link from "next/link";
 import { AppShell } from "@/components/shell/AppShell";

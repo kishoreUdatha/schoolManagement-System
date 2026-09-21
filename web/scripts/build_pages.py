@@ -16,7 +16,8 @@ less componentised than it might be, but never different from its mock.
 
 Regenerates src/lib/screens.ts, src/components/ui/Icon.tsx and every page
 under src/app/(screens). Hand edits to generated pages are overwritten, so
-once a page is being wired to the backend, take it off the list in KEEP.
+once a page is wired to the backend its header says so ("// Wired:") and the
+converter leaves it alone.
 """
 from __future__ import annotations
 
@@ -34,11 +35,20 @@ MOCK = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO / "Mock Screen/School_ER
 APP = WEB / "src/app"
 PAGES = APP / "(screens)"
 
-# Pages that have been wired to the backend and must not be regenerated.
-KEEP: set[str] = {
-    "SCR-003",  # sign-in
-    "SCR-055",  # student directory
-}
+# A page whose header carries this marker has been wired to the backend by
+# hand. The converter never overwrites it and the page check skips it.
+WIRED_MARK = "// Wired:"
+
+
+def page_path(sid: str) -> Path:
+    r = ROUTE_OF_ID[sid]
+    return APP / "page.tsx" if r == "/" else PAGES / r.strip("/") / "page.tsx"
+
+
+def is_wired(sid: str) -> bool:
+    p = page_path(sid)
+    return p.exists() and WIRED_MARK in p.read_text(encoding="utf-8")[:2000]
+
 
 sys.path.insert(0, str(MOCK / "source"))
 import build_screens as G  # noqa: E402  (the designers' generator)
@@ -58,6 +68,7 @@ def route_for(s: dict) -> str:
 
 
 ROUTE = {s["id"]: route_for(s) for s in SCREENS}
+ROUTE_OF_ID = ROUTE
 BY_FILE = {G.filename(s): s for s in SCREENS}
 
 
@@ -556,7 +567,7 @@ def main() -> None:
     stats = {"DataTable": 0, "StatStrip": 0, "Panel": 0, "Chart": 0}
     written = 0
     for s in SCREENS:
-        if s["id"] in KEEP:
+        if is_wired(s["id"]):
             continue
         src = page_source(s, legacy)
         for k in stats:

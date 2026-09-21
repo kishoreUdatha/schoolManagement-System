@@ -87,9 +87,9 @@ def tokens(html, strip_chrome):
 
 def main():
     bad = 0
-    wired = [s for s in B.SCREENS if s["id"] in B.KEEP]
+    wired = [s for s in B.SCREENS if B.is_wired(s["id"])]
     for s in B.SCREENS:
-        if s["id"] in B.KEEP:
+        if B.is_wired(s["id"]):
             continue  # wired to the API by hand; compared by people, not this script
         route = B.ROUTE[s["id"]]
         built = NEXT / ("index.html" if route == "/" else route.strip("/") + ".html")
