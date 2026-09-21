@@ -15,7 +15,7 @@ import type { Expense, ExpenseCategory, Supplier } from "./types";
 
 /**
  * SCR-167, live: GET /school/accounts/expenses?from=&to=&category_id=,
- * POST to record one, POST /{id}/void with a reason. Categories from
+ * POST to record one, PATCH /{id} to amend it, POST /{id}/void with a reason. Categories from
  * /accounts/expense-categories, suppliers from /inventory/suppliers.
  */
 export function ExpenseList() {
@@ -26,6 +26,7 @@ export function ExpenseList() {
   const [q, setQ] = useState("");
   const [adding, setAdding] = useState(false);
   const [open, setOpen] = useState<Expense | null>(null);
+  const [editing, setEditing] = useState<Expense | null>(null);
   const [error, setError] = useState<string | null>(null);
   const cats = useApi<ExpenseCategory[]>("/api/v1/school/accounts/expense-categories");
   const suppliers = useApi<Supplier[]>("/api/v1/school/inventory/suppliers");
@@ -124,20 +125,37 @@ export function ExpenseList() {
               Close
             </button>
             {!open.is_void ? (
-              <button type="button" className="btn danger" onClick={() => voidIt(open)}>
-                Void expense
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setEditing(open);
+                    setOpen(null);
+                  }}
+                >
+                  Edit
+                </button>
+                <button type="button" className="btn danger" onClick={() => voidIt(open)}>
+                  Void expense
+                </button>
+              </>
             ) : null}
           </div>
         </Dialog>
       ) : null}
-      {adding ? (
+      {adding || editing ? (
         <NewExpense
           cats={(cats.data ?? []).filter((c) => c.is_active)}
           suppliers={(suppliers.data ?? []).filter((s) => s.is_active)}
-          onClose={() => setAdding(false)}
+          expense={editing ?? undefined}
+          onClose={() => {
+            setAdding(false);
+            setEditing(null);
+          }}
           onSaved={() => {
             setAdding(false);
+            setEditing(null);
             list.reload();
           }}
         />
@@ -146,8 +164,29 @@ export function ExpenseList() {
   );
 }
 
-function NewExpense({ cats, suppliers, onClose, onSaved }: { cats: ExpenseCategory[]; suppliers: Supplier[]; onClose: () => void; onSaved: () => void }) {
-  const [f, setF] = useState({ spent_on: isoToday(), category_id: "", supplier_id: "", payee: "", amount: "", tax_amount: "", mode: "bank_transfer", reference: "", description: "" });
+/**
+ * Add an expense (POST /accounts/expenses) or, given `expense`, amend it
+ * (PATCH /accounts/expenses/{id}, only the fields that changed; the server
+ * refuses a void voucher).
+ */
+function NewExpense({ cats, suppliers, expense, onClose, onSaved }: { cats: ExpenseCategory[]; suppliers: Supplier[]; expense?: Expense; onClose: () => void; onSaved: () => void }) {
+  const [initial] = useState(() =>
+    expense
+      ? {
+          spent_on: expense.spent_on,
+          category_id: String(expense.category_id),
+          supplier_id: expense.supplier_id ? String(expense.supplier_id) : "",
+          // With a supplier the API reports the supplier's name as the payee; the typed payee is not returned.
+          payee: expense.supplier_id ? "" : (expense.payee_name ?? ""),
+          amount: String(Number(expense.amount)),
+          tax_amount: String(Number(expense.tax_amount)),
+          mode: expense.mode as string,
+          reference: expense.reference ?? "",
+          description: expense.description,
+        }
+      : { spent_on: isoToday(), category_id: "", supplier_id: "", payee: "", amount: "", tax_amount: "", mode: "bank_transfer", reference: "", description: "" },
+  );
+  const [f, setF] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
@@ -157,19 +196,30 @@ function NewExpense({ cats, suppliers, onClose, onSaved }: { cats: ExpenseCatego
     setSaving(true);
     setError(null);
     const t = (v: string) => v.trim() || null;
+    const body: Record<string, unknown> = {
+      spent_on: f.spent_on,
+      category_id: Number(f.category_id),
+      supplier_id: f.supplier_id ? Number(f.supplier_id) : null,
+      payee: t(f.payee),
+      amount: f.amount,
+      tax_amount: f.tax_amount || "0",
+      mode: f.mode,
+      reference: t(f.reference),
+      description: f.description.trim(),
+    };
     try {
-      await api.post("/api/v1/school/accounts/expenses", {
-        spent_on: f.spent_on,
-        category_id: Number(f.category_id),
-        supplier_id: f.supplier_id ? Number(f.supplier_id) : null,
-        payee: t(f.payee),
-        amount: f.amount,
-        tax_amount: f.tax_amount || "0",
-        mode: f.mode,
-        reference: t(f.reference),
-        description: f.description.trim(),
-      });
-      notify("Expense recorded.");
+      if (expense) {
+        const changed = Object.fromEntries(Object.entries(body).filter(([k]) => f[k as keyof typeof f] !== initial[k as keyof typeof f]));
+        if (!Object.keys(changed).length) {
+          onClose();
+          return;
+        }
+        await api.patch(`/api/v1/school/accounts/expenses/${expense.id}`, changed);
+        notify("Expense updated.");
+      } else {
+        await api.post("/api/v1/school/accounts/expenses", body);
+        notify("Expense recorded.");
+      }
       onSaved();
     } catch (err) {
       setError(errorText(err));
@@ -178,8 +228,12 @@ function NewExpense({ cats, suppliers, onClose, onSaved }: { cats: ExpenseCatego
     }
   }
 
+  // Keep the voucher's own category and supplier selectable even if since switched off.
+  const catOptions = expense && !cats.some((c) => c.id === expense.category_id) ? [...cats, { id: expense.category_id, name: expense.category_name, is_active: false }] : cats;
+  const supOptions = expense?.supplier_id && !suppliers.some((s) => s.id === expense.supplier_id) ? [...suppliers, { id: expense.supplier_id, name: expense.payee_name ?? `Supplier ${expense.supplier_id}` } as Supplier] : suppliers;
+
   return (
-    <Dialog title="Add expense" onClose={onClose}>
+    <Dialog title={expense ? `Edit ${expense.reference ?? `EXP-${expense.id}`}` : "Add expense"} onClose={onClose}>
       <form onSubmit={save}>
         <ErrorNote>{error}</ErrorNote>
         <div className="form-grid">
@@ -189,7 +243,7 @@ function NewExpense({ cats, suppliers, onClose, onSaved }: { cats: ExpenseCatego
           <Field label="Category" required>
             <select value={f.category_id} onChange={set("category_id")} required>
               <option value="">Select category</option>
-              {cats.map((c) => (
+              {catOptions.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -199,7 +253,7 @@ function NewExpense({ cats, suppliers, onClose, onSaved }: { cats: ExpenseCatego
           <Field label="Supplier">
             <select value={f.supplier_id} onChange={set("supplier_id")}>
               <option value="">None</option>
-              {suppliers.map((s) => (
+              {supOptions.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
@@ -237,7 +291,7 @@ function NewExpense({ cats, suppliers, onClose, onSaved }: { cats: ExpenseCatego
           </button>
           <button type="submit" className="btn primary" disabled={saving}>
             <Icon name="check" className="sm" />
-            {saving ? "Saving…" : "Record expense"}
+            {saving ? "Saving…" : expense ? "Save changes" : "Record expense"}
           </button>
         </div>
       </form>

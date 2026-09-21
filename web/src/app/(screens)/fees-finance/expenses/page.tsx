@@ -2,7 +2,7 @@
 // Module: Fees & Finance · Role: Accountant · Release: Phase 3 · Stories: US-0333 / US-0334
 // Mock: screens/SCR-167_Expenses.html
 // Backend: the old frontend served this at /school/accounts — Expenses with void and reason
-// Wired: GET/POST /api/v1/school/accounts/expenses, POST /accounts/expenses/{id}/void, GET /accounts/expense-categories, /inventory/suppliers. Hand-maintained.
+// Wired: GET/POST /api/v1/school/accounts/expenses, PATCH /accounts/expenses/{id}, POST /accounts/expenses/{id}/void, GET /accounts/expense-categories, /inventory/suppliers. Hand-maintained.
 
 import Link from "next/link";
 import { AppShell } from "@/components/shell/AppShell";

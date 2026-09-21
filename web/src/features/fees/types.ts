@@ -397,3 +397,96 @@ export type OnlineOrder = {
 };
 
 export type PickedStudent = { id: number; full_name: string; admission_no: string; section_label: string | null };
+
+/** A purchase-order line, as GET /finance/orders returns it. */
+export type OrderLine = {
+  id: number;
+  item_id: number | null;
+  description: string;
+  qty: Amount;
+  unit_cost: Amount;
+  line_total: Amount;
+  received_qty: Amount;
+  outstanding_qty: Amount;
+};
+
+export type PurchaseOrderFull = PurchaseOrder & { lines: OrderLine[] };
+
+export type GenerateResult = { created: number; skipped: number; period: string };
+export type TransportFeeResult = { period: string; created: number; skipped: number; total_amount: string };
+
+export type Gateway = {
+  configured: boolean;
+  provider: string;
+  key_id: string | null;
+  mode: string | null;
+  has_webhook_secret: boolean;
+  is_enabled: boolean;
+  webhook_url_path: string;
+  test_mode_available: boolean;
+};
+
+export type ReconRow = {
+  order_id: number;
+  provider_order_id: string;
+  provider_payment_id: string | null;
+  student_id: number;
+  student_name: string | null;
+  amount: string;
+  applied: string;
+  difference: string;
+  excess: string | null;
+  paid_at: string | null;
+  receipt_no: string | null;
+};
+
+export type Reconciliation = {
+  from_date: string;
+  to_date: string;
+  orders: number;
+  settled: number;
+  settled_amount: string;
+  abandoned: number;
+  failed: number;
+  unapplied: ReconRow[];
+  unapplied_amount: string;
+  excess: ReconRow[];
+  excess_amount: string;
+  clean: boolean;
+};
+
+export type ChequeStatus = "received" | "deposited" | "cleared" | "bounced" | "returned";
+
+export type Cheque = {
+  id: number;
+  student_id: number;
+  student_name: string;
+  section_label: string | null;
+  fee_ids: number[];
+  fees_label: string;
+  amount: string;
+  cheque_no: string;
+  bank_name: string;
+  drawer_name: string | null;
+  cheque_date: string;
+  received_on: string;
+  status: ChequeStatus;
+  deposited_on: string | null;
+  cleared_on: string | null;
+  bounce_reason: string | null;
+  due_for_deposit: boolean;
+};
+
+/** An inventory item (GET /school/inventory/items). */
+export type InventoryItem = {
+  id: number;
+  name: string;
+  sku: string;
+  category: string | null;
+  unit: string;
+  is_sellable: boolean;
+  sale_price: string | null;
+  is_active: boolean;
+  on_hand: string;
+  low_stock: boolean;
+};
