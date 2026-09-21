@@ -1,15 +1,18 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Languages, Library, Tags } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
-import { ErrorBox, NoticeBox, PageHeader, Select } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { ErrorBox, NoticeBox, PageHeader } from "@/components/ui/Field";
+import { FilterBar, SearchBox, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar, matching the search box beside it. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Book = {
   id: number;
@@ -80,38 +83,40 @@ export default function DigitalLibraryPage() {
       <PageHeader
         title="Digital library"
         subtitle="Titles the library holds a link to, rather than a copy of."
-        actions={
-          <form
-            className="flex flex-wrap items-end gap-2"
-            onSubmit={(e: FormEvent) => {
-              e.preventDefault();
-              load();
-            }}
-          >
-            <Input
-              placeholder="Title, author or ISBN"
-              aria-label="Search digital titles"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-            <Select
-              aria-label="Category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">Every category</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </Select>
-            <Button type="submit" variant="secondary">
-              Search
-            </Button>
-          </form>
-        }
       />
+
+      <form
+        onSubmit={(e: FormEvent) => {
+          e.preventDefault();
+          load();
+        }}
+      >
+        <FilterBar>
+          <SearchBox
+            value={q}
+            onChange={setQ}
+            placeholder="Title, author or ISBN"
+            label="Search digital titles"
+          />
+          <select
+            aria-label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className={filterSelect}
+          >
+            <option value="">Every category</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
+      </form>
+
       <ErrorBox>{error}</ErrorBox>
 
       <NoticeBox>
@@ -121,11 +126,28 @@ export default function DigitalLibraryPage() {
         them.
       </NoticeBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Digital titles" value={loading ? "—" : books.length} />
-        <StatCard label="Categories" value={categories.length || "—"} />
-        <StatCard label="Languages" value={languages.size || "—"} />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Digital titles",
+            value: loading ? "—" : books.length,
+            note: q || category ? "Matching this search" : "Every linked title",
+            icon: Library,
+          },
+          {
+            label: "Categories",
+            value: categories.length || "—",
+            note: category || "Across the whole catalogue",
+            icon: Tags,
+          },
+          {
+            label: "Languages",
+            value: languages.size || "—",
+            note: "Among the titles shown",
+            icon: Languages,
+          },
+        ]}
+      />
 
       {loading ? (
         <p className="text-[13px] text-ink-subtle">Loading…</p>

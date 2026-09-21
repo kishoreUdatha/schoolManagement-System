@@ -15,11 +15,10 @@ import {
   Textarea,
   humanize,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { daysLeft, shortDate } from "@/lib/dates";
 import { stageTone } from "@/app/school/(protected)/admissions/types";
@@ -47,6 +46,16 @@ const KINDS = ["call", "visit", "email", "whatsapp", "note"];
  *  overdue / today / this week / later turns the list into an order of work.
  */
 type Bucket = { key: string; title: string; tone: "rose" | "amber" | "brand" | "neutral"; rows: Enquiry[] };
+
+/** What each bucket means, spelled out. The strip cannot tint a figure the
+ *  way the old tiles did, so the urgency is said in words instead — and the
+ *  tone-coded badge on each section below still carries the colour. */
+const BUCKET_NOTE: Record<string, string> = {
+  overdue: "Past the date somebody set",
+  today: "Due today",
+  week: "Within the next seven days",
+  later: "More than a week away",
+};
 
 function bucketOf(iso: string | null): string {
   const d = daysLeft(iso);
@@ -146,22 +155,22 @@ export default function FollowUpsPage() {
       <ErrorBox>{error}</ErrorBox>
       {done && <NoticeBox>{done}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {buckets.map((b) => (
-          <StatCard
-            key={b.key}
-            label={b.title}
-            value={b.rows.length}
-            accent={b.key === "overdue" && b.rows.length ? "rose" : b.key === "today" && b.rows.length ? "amber" : "brand"}
-          />
-        ))}
-      </div>
+      <StatStrip
+        stats={buckets.map((b) => ({
+          label: b.title,
+          value: b.rows.length,
+          note: BUCKET_NOTE[b.key],
+        }))}
+      />
 
       {buckets.map((b) =>
         b.rows.length === 0 ? null : (
           <Card key={b.key}>
             <CardHeader>
-              <CardTitle>{b.title}</CardTitle>
+              <div>
+                <CardTitle>{b.title}</CardTitle>
+                <p className="mt-[5px] text-[11px] text-ink-muted">{BUCKET_NOTE[b.key]}</p>
+              </div>
               <Badge tone={b.tone}>{b.rows.length}</Badge>
             </CardHeader>
             <CardBody className="p-0">
@@ -169,15 +178,13 @@ export default function FollowUpsPage() {
                 {b.rows.map((e) => (
                   <tr key={e.id}>
                     <td className={td}>{shortDate(e.next_follow_up_date as string)}</td>
-                    <td className={tdStrong}>
+                    <td className="px-4 py-3">
                       <Link href={`/school/admissions/${e.id}`} className="hover:underline">
-                        {e.student_name}
+                        <PersonCell
+                          name={e.student_name}
+                          sub={e.applying_for_class ? `for ${e.applying_for_class}` : null}
+                        />
                       </Link>
-                      {e.applying_for_class && (
-                        <span className="block text-[11px] font-normal text-ink-subtle">
-                          for {e.applying_for_class}
-                        </span>
-                      )}
                     </td>
                     <td className={td}>
                       {e.parent_name}
@@ -196,6 +203,10 @@ export default function FollowUpsPage() {
                 ))}
               </Table>
             </CardBody>
+            <PanelFooter
+              left={`${b.rows.length} enquir${b.rows.length === 1 ? "y" : "ies"} here`}
+              right="Soonest date first"
+            />
           </Card>
         )
       )}
@@ -210,7 +221,12 @@ export default function FollowUpsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>No date set</CardTitle>
+          <div>
+            <CardTitle>No date set</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Enquiries nobody has put a next step against
+            </p>
+          </div>
           <Badge tone="neutral">{unscheduled.length}</Badge>
         </CardHeader>
         <CardBody className="p-0">
@@ -220,9 +236,9 @@ export default function FollowUpsPage() {
           >
             {unscheduled.slice(0, 20).map((e) => (
               <tr key={e.id}>
-                <td className={tdStrong}>
+                <td className="px-4 py-3">
                   <Link href={`/school/admissions/${e.id}`} className="hover:underline">
-                    {e.student_name}
+                    <PersonCell name={e.student_name} />
                   </Link>
                 </td>
                 <td className={td}>
@@ -242,6 +258,10 @@ export default function FollowUpsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${Math.min(unscheduled.length, 20)} of ${unscheduled.length}`}
+          right={unscheduled.length > 20 ? "Put a date on these to clear the list" : "All of them"}
+        />
       </Card>
 
       <Modal

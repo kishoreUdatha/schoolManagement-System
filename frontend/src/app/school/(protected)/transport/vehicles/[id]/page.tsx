@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { ChevronLeft, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, Fuel, MapPin, Plus, Trash2, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { daysLeft, readableDate } from "@/lib/dates";
 
@@ -160,9 +160,8 @@ export default function VehicleDetailPage() {
     const left = daysLeft(vehicle?.[p.key] as string | null);
     return left !== null && left < 0;
   });
-  const spentOnFuel = logs
-    .filter((l) => l.kind === "fuel")
-    .reduce((n, l) => n + Number(l.amount ?? 0), 0);
+  const fuelLogs = logs.filter((l) => l.kind === "fuel");
+  const spentOnFuel = fuelLogs.reduce((n, l) => n + Number(l.amount ?? 0), 0);
 
   return (
     <div className="space-y-6">
@@ -197,32 +196,50 @@ export default function VehicleDetailPage() {
         </WarnBox>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Seats" value={vehicle?.capacity ?? "—"} />
-        <StatCard
-          label="Children on board"
-          value={vehicle?.assigned_students ?? "—"}
-          accent={
-            vehicle && vehicle.assigned_students > vehicle.capacity ? "rose" : "brand"
-          }
-          hint={
-            vehicle && vehicle.assigned_students > vehicle.capacity
-              ? "More riders than seats"
-              : undefined
-          }
-        />
-        <StatCard label="Fuel spend logged" value={spentOnFuel ? inr(spentOnFuel) : "—"} />
-        <StatCard
-          label="GPS"
-          value={vehicle?.gps_enabled ? "On" : "Off"}
-          accent={vehicle?.gps_enabled ? "emerald" : "brand"}
-        />
-      </div>
+      {/* The over-capacity warning used to be a rose tint; it is words now, so
+          it survives being printed or read aloud. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Seats",
+            value: vehicle?.capacity ?? "—",
+            note: vehicle ? humanize(vehicle.kind) : undefined,
+            icon: Users,
+          },
+          {
+            label: "Children on board",
+            value: vehicle?.assigned_students ?? "—",
+            note: vehicle
+              ? vehicle.assigned_students > vehicle.capacity
+                ? "More riders than seats"
+                : `of ${vehicle.capacity} seats`
+              : undefined,
+            icon: Users,
+          },
+          {
+            label: "Fuel spend logged",
+            value: spentOnFuel ? inr(spentOnFuel) : "—",
+            note: `${fuelLogs.length} fuel entr${fuelLogs.length === 1 ? "y" : "ies"}`,
+            icon: Fuel,
+          },
+          {
+            label: "GPS",
+            value: vehicle?.gps_enabled ? "On" : "Off",
+            note: vehicle?.gps_enabled ? "Position is being reported" : "No position reported",
+            icon: MapPin,
+          },
+        ]}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Papers</CardTitle>
+            <div>
+              <CardTitle>Papers</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                Insurance and fitness are the two that stop a bus legally.
+              </p>
+            </div>
           </CardHeader>
           <CardBody className="p-0">
             <Table head={["Document", "Expires", "State"]}>
@@ -255,7 +272,12 @@ export default function VehicleDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Crew</CardTitle>
+            <div>
+              <CardTitle>Crew</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                Who is on this vehicle, and the number to ring.
+              </p>
+            </div>
           </CardHeader>
           <CardBody className="p-0">
             <Table head={["Role", "Name", "Phone"]}>
@@ -276,7 +298,12 @@ export default function VehicleDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Fuel and service log</CardTitle>
+          <div>
+            <CardTitle>Fuel and service log</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Every fill, service and repair entered against this vehicle.
+            </p>
+          </div>
           <Button variant="secondary" onClick={() => setAdding(true)}>
             <Plus className="mr-1.5 h-4 w-4" />
             Add entry
@@ -314,6 +341,10 @@ export default function VehicleDetailPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${logs.length} entr${logs.length === 1 ? "y" : "ies"}`}
+          right={spentOnFuel ? `${inr(spentOnFuel)} on fuel` : undefined}
+        />
       </Card>
 
       <Modal open={adding} onClose={() => setAdding(false)} title="Add a log entry">

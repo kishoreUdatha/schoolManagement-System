@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { FileWarning, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FileCheck, FileWarning, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -10,16 +10,24 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   PageHeader,
-  Select,
   Table,
   WarnBox,
   humanize,
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { openAuthed } from "@/lib/download";
+
+/** A select sized for the filter bar: one row of controls, no stacked label. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type AcademicYear = { id: number; name: string; is_current: boolean };
 type Leaver = {
@@ -77,38 +85,60 @@ export default function LeaversPage() {
 
   const rows = data?.leavers ?? [];
   const missing = data?.without_certificate ?? 0;
+  const selectedYear = useMemo(
+    () => years.find((y) => y.id === yearId) ?? null,
+    [years, yearId]
+  );
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Leavers"
         subtitle="Children who are no longer studying here, and whether they were given their certificate."
-        actions={
-          <Select
-            aria-label="Academic year"
-            value={yearId}
-            onChange={(e) => setYearId(e.target.value ? Number(e.target.value) : "")}
-          >
-            <option value="">Every year</option>
-            {years.map((y) => (
-              <option key={y.id} value={y.id}>
-                {y.name}
-              </option>
-            ))}
-          </Select>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Leavers" value={data?.total ?? "—"} icon={Users} />
-        <StatCard
-          label="Without a certificate"
-          value={missing}
-          accent={missing ? "amber" : "emerald"}
-          icon={missing ? FileWarning : undefined}
-        />
-      </div>
+      {/* Both figures come back with the list itself — no second request. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Leavers",
+            value: data?.total ?? "—",
+            note: selectedYear ? selectedYear.name : "Every year",
+            icon: Users,
+          },
+          {
+            label: "Without a certificate",
+            value: missing,
+            note: "They will need one to enrol elsewhere",
+            icon: FileWarning,
+          },
+          {
+            label: "Shown here",
+            value: rows.length,
+            note: data ? `of ${data.total} in total` : undefined,
+            icon: FileCheck,
+          },
+        ]}
+      />
+
+      {/* This year picker is the page's own — "Every year" is a real choice
+          here and must not be taken over by the top bar's year. */}
+      <FilterBar>
+        <select
+          aria-label="Academic year"
+          value={yearId}
+          onChange={(e) => setYearId(e.target.value ? Number(e.target.value) : "")}
+          className={filterSelect}
+        >
+          <option value="">Every year</option>
+          {years.map((y) => (
+            <option key={y.id} value={y.id}>
+              {y.name}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
 
       {missing > 0 && (
         <WarnBox>
@@ -120,7 +150,13 @@ export default function LeaversPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Who has left</CardTitle>
+          <div>
+            <CardTitle>Who has left</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {selectedYear ? selectedYear.name : "Every year"} · derived from who is
+              still active, so it cannot disagree with the roll
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -135,7 +171,7 @@ export default function LeaversPage() {
                     href={`/school/students/${r.student_id}`}
                     className="hover:text-brand-600 hover:underline"
                   >
-                    {r.full_name}
+                    <PersonCell name={r.full_name} sub={r.admission_no} />
                   </Link>
                 </td>
                 <td className={td}>{r.last_year_name ?? "—"}</td>
@@ -172,6 +208,12 @@ export default function LeaversPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} of ${data?.total ?? 0} leaver(s)`}
+          right={
+            missing > 0 ? `${missing} still without a certificate` : "All certificates issued"
+          }
+        />
       </Card>
     </div>
   );

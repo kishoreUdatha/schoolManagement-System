@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 
+import { CalendarDays, Droplet, GraduationCap, Users } from "lucide-react";
+
 import { BreakdownChart, ChartCard, ShareChart } from "@/components/charts/Charts";
 import { ReportShell } from "@/components/reports/ReportShell";
-import { StatCard } from "@/components/ui/StatCard";
+import { StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type LabelCount = { label: string; count: number };
@@ -52,27 +54,42 @@ export default function DemographicsReportPage() {
       subtitle="Gender, age and blood group across the school, and how much of it is actually on file."
       error={error}
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="On the roll" value={data?.total ?? "—"} />
-        <StatCard
-          label="Date of birth"
-          value={data?.recorded.dob ?? "—"}
-          hint={data ? `of ${total} on file` : undefined}
-          accent={data && data.recorded.dob < total ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Gender"
-          value={data?.recorded.gender ?? "—"}
-          hint={data ? `of ${total} on file` : undefined}
-          accent={data && data.recorded.gender < total ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Blood group"
-          value={data?.recorded.blood_group ?? "—"}
-          hint={data ? `of ${total} on file` : undefined}
-          accent={data && data.recorded.blood_group < total ? "amber" : "emerald"}
-        />
-      </div>
+      {/* No filter bar: the demographics endpoint takes no year, class or
+          window — every child currently on the roll is in scope, and there is
+          no filter state on this screen to move into one.
+
+          The strip restates that scope rather than counting entities: how many
+          children the figures below were drawn from, and how many of them
+          actually have each field on file. A chart built from a third of the
+          school looks exactly like one built from all of it. */}
+      <StatStrip
+        stats={[
+          {
+            label: "In scope",
+            value: data?.total ?? "—",
+            note: data ? "Every child currently on the roll" : undefined,
+            icon: GraduationCap,
+          },
+          {
+            label: "Date of birth on file",
+            value: data?.recorded.dob ?? "—",
+            note: data ? `of ${total} children` : undefined,
+            icon: CalendarDays,
+          },
+          {
+            label: "Gender on file",
+            value: data?.recorded.gender ?? "—",
+            note: data ? `of ${total} children` : undefined,
+            icon: Users,
+          },
+          {
+            label: "Blood group on file",
+            value: data?.recorded.blood_group ?? "—",
+            note: data ? `of ${total} children` : undefined,
+            icon: Droplet,
+          },
+        ]}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard

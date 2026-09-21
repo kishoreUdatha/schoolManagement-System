@@ -3,20 +3,26 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AlertTriangle, Gauge, School, SlidersHorizontal } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   NoticeBox,
   PageHeader,
-  Select,
   Table,
   WarnBox,
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Slice = { used: number; limit: number; percent: number; unlimited: boolean };
 type Row = {
@@ -97,40 +103,51 @@ export default function UsagePage() {
       <PageHeader
         title="Usage and quotas"
         subtitle="What each school is using against the plan it is on."
-        actions={
-          <Select
-            aria-label="Filter"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as Filter)}
-          >
-            <option value="all">Every school</option>
-            <option value="over">Over a limit</option>
-            <option value="near">Near a limit</option>
-            <option value="no_limits">No limits set</option>
-          </Select>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Schools" value={data?.total ?? "—"} />
-        <StatCard
-          label="Over a limit"
-          value={data?.over_quota ?? "—"}
-          accent={data && data.over_quota ? "rose" : "emerald"}
-        />
-        <StatCard
-          label="Near a limit"
-          value={data?.near_quota ?? "—"}
-          accent={data && data.near_quota ? "amber" : "emerald"}
-          hint="At or above 80%"
-        />
-        <StatCard
-          label="No limits set"
-          value={data?.without_limits ?? "—"}
-          hint="Nothing to breach"
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Schools",
+            value: data?.total ?? "—",
+            note: "On any plan",
+            icon: School,
+          },
+          {
+            label: "Over a limit",
+            value: data?.over_quota ?? "—",
+            note: "Reported, not enforced",
+            icon: AlertTriangle,
+          },
+          {
+            label: "Near a limit",
+            value: data?.near_quota ?? "—",
+            note: "At or above 80%",
+            icon: Gauge,
+          },
+          {
+            label: "No limits set",
+            value: data?.without_limits ?? "—",
+            note: "Nothing to breach",
+            icon: SlidersHorizontal,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Filter"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as Filter)}
+          className={filterSelect}
+        >
+          <option value="all">Every school</option>
+          <option value="over">Over a limit</option>
+          <option value="near">Near a limit</option>
+          <option value="no_limits">No limits set</option>
+        </select>
+      </FilterBar>
 
       {data && data.over_quota > 0 && (
         <WarnBox>
@@ -147,10 +164,12 @@ export default function UsagePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>School by school</CardTitle>
-          <span className="text-[12px] font-bold text-ink-muted">
-            {rows.length} of {data?.total ?? 0}
-          </span>
+          <div>
+            <CardTitle>School by school</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              What each school has used, against the limit its plan sets.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -193,6 +212,18 @@ export default function UsagePage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} of ${data?.total ?? 0} schools`}
+          right={
+            filter === "all"
+              ? "Every school"
+              : filter === "over"
+                ? "Over a limit only"
+                : filter === "near"
+                  ? "Near a limit only"
+                  : "No limits set only"
+          }
+        />
       </Card>
     </div>
   );

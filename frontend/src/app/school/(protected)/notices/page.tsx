@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PageHeader } from "@/components/ui/Field";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { CalendarClock, FileText, Megaphone, Send } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { useAcademicYear } from "@/components/AcademicYearProvider";
 
@@ -131,17 +134,41 @@ export default function NoticesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Notices</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Announce updates to parents, teachers, or a specific class. In-app
-            delivery is live; SMS/email/WhatsApp are queued as <em>skipped</em>{" "}
-            until providers are wired.
-          </p>
-        </div>
-        <Button onClick={() => setOpenCreate(true)}>+ New notice</Button>
-      </div>
+      <PageHeader
+        title="Notices"
+        subtitle="Announce updates to parents, teachers, or a specific class. In-app delivery is live; SMS/email/WhatsApp are queued as skipped until providers are wired."
+        actions={<Button onClick={() => setOpenCreate(true)}>+ New notice</Button>}
+      />
+
+      {/* Counted from the notices already loaded above — no second request. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Notices",
+            value: items.length,
+            note: "All audiences",
+            icon: Megaphone,
+          },
+          {
+            label: "Sent",
+            value: items.filter((n) => n.status === "sent").length,
+            note: "Already dispatched",
+            icon: Send,
+          },
+          {
+            label: "Scheduled",
+            value: items.filter((n) => n.status === "scheduled").length,
+            note: "Still need 'Send now'",
+            icon: CalendarClock,
+          },
+          {
+            label: "Drafts",
+            value: items.filter((n) => n.status === "draft").length,
+            note: "Not yet announced",
+            icon: FileText,
+          },
+        ]}
+      />
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
@@ -462,7 +489,12 @@ function DeliveryReportModal({
         </div>
         <Card>
           <CardHeader>
-            <CardTitle>Per channel</CardTitle>
+            <div>
+              <CardTitle>Per channel</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                How each channel handled the {notice.recipient_count} recipient(s).
+              </p>
+            </div>
           </CardHeader>
           <CardBody>
             <table className="min-w-full divide-y divide-surface-border text-[13px]">
@@ -490,6 +522,10 @@ function DeliveryReportModal({
               </tbody>
             </table>
           </CardBody>
+          <PanelFooter
+            left={`${notice.delivery.length} channel(s) attempted`}
+            right={`${totals.sent} sent · ${totals.skipped} skipped · ${totals.failed} failed`}
+          />
         </Card>
         <div className="flex justify-end">
           <Button variant="secondary" onClick={onClose}>

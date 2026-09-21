@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AlertTriangle, CalendarCheck, Gauge, Users } from "lucide-react";
 
 import { BreakdownChart, ChartCard } from "@/components/charts/Charts";
 import { Badge } from "@/components/ui/Badge";
@@ -15,7 +16,7 @@ import {
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Row = {
@@ -72,20 +73,34 @@ export default function WorkloadPage() {
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Teaching staff" value={data?.count ?? "—"} />
-        <StatCard label="With a timetable" value={data?.teaching_count ?? "—"} />
-        <StatCard
-          label="Median periods a week"
-          value={data?.median_periods ?? "—"}
-          hint="Half are above this, half below"
-        />
-        <StatCard
-          label="No lessons timetabled"
-          value={data?.without_timetable ?? "—"}
-          accent={data && data.without_timetable > 0 ? "amber" : "emerald"}
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Teaching staff",
+            value: data?.count ?? "—",
+            note: data ? `${data.total_periods} periods a week between them` : undefined,
+            icon: Users,
+          },
+          {
+            label: "With a timetable",
+            value: data?.teaching_count ?? "—",
+            note: data ? `of ${data.count} on the staff list` : undefined,
+            icon: CalendarCheck,
+          },
+          {
+            label: "Median periods a week",
+            value: data?.median_periods ?? "—",
+            note: "Half are above this, half below",
+            icon: Gauge,
+          },
+          {
+            label: "No lessons timetabled",
+            value: data?.without_timetable ?? "—",
+            note: data ? "Nothing on the timetable for them" : undefined,
+            icon: AlertTriangle,
+          },
+        ]}
+      />
 
       <NoticeBox>
         These are counts, not a judgement. What a fair load looks like depends on
@@ -110,7 +125,12 @@ export default function WorkloadPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Everybody</CardTitle>
+          <div>
+            <CardTitle>Everybody</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Heaviest first, including the people with nothing timetabled.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -127,13 +147,13 @@ export default function WorkloadPage() {
           >
             {sorted.map((r) => (
               <tr key={r.staff_id}>
-                <td className={tdStrong}>
+                <td className={td}>
                   <Link href={`/school/staff/${r.staff_id}`} className="hover:underline">
-                    {r.full_name}
+                    <PersonCell
+                      name={r.full_name}
+                      sub={`${r.employee_no} · ${humanize(r.role)}`}
+                    />
                   </Link>
-                  <span className="block text-[11px] font-normal text-ink-subtle">
-                    {r.employee_no} · {humanize(r.role)}
-                  </span>
                 </td>
                 <td className={tdStrong}>
                   {r.periods_per_week === 0 ? (
@@ -155,6 +175,10 @@ export default function WorkloadPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${sorted.length} member${sorted.length === 1 ? "" : "s"} of staff`}
+          right={data ? `${data.total_periods} periods a week in total` : undefined}
+        />
       </Card>
 
       <p className="text-[12px] text-ink-subtle">

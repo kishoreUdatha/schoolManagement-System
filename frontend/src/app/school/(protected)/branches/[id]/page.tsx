@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, GraduationCap, Grid2x2, UserCog, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +19,7 @@ import {
   tdStrong,
 } from "@/components/ui/Field";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Branch = {
@@ -176,12 +176,23 @@ export default function BranchDetailPage() {
 
       {branch && (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Sections here" value={branch.sections} />
-            <StatCard label="Staff here" value={branch.staff} />
-            <StatCard label="Children here" value={branch.students} />
-            <StatCard label="Head of campus" value={branch.head_name ?? "Nobody"} />
-          </div>
+          <StatStrip
+            stats={[
+              { label: "Sections here", value: branch.sections, icon: Grid2x2 },
+              { label: "Staff here", value: branch.staff, icon: Users },
+              { label: "Children here", value: branch.students, icon: GraduationCap },
+              {
+                label: "Head of campus",
+                value: (
+                  <span className="text-[19px] leading-[1.4]">
+                    {branch.head_name ?? "Nobody"}
+                  </span>
+                ),
+                note: branch.head_name ? "Named as head" : "Nobody named yet",
+                icon: UserCog,
+              },
+            ]}
+          />
 
           <Card>
             <CardHeader>
@@ -205,7 +216,12 @@ export default function BranchDetailPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Sections at this branch</CardTitle>
+              <div>
+                <CardTitle>Sections at this branch</CardTitle>
+                <p className="mt-[5px] text-[11px] text-ink-muted">
+                  Saved as a complete set — unticking one leaves it unassigned.
+                </p>
+              </div>
               <Button
                 variant="secondary"
                 onClick={() => setPickSections(new Set(branch.section_ids))}
@@ -232,6 +248,12 @@ export default function BranchDetailPage() {
                   ))}
               </Table>
             </CardBody>
+            <PanelFooter
+              left={`${branch.section_ids.length} section${
+                branch.section_ids.length === 1 ? "" : "s"
+              } placed here`}
+              right="From the current year's classes"
+            />
           </Card>
 
           <Card>

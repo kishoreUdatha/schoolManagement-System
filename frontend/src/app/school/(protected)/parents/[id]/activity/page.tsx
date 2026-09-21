@@ -12,15 +12,19 @@ import {
   ErrorBox,
   NoticeBox,
   PageHeader,
-  Select,
   Table,
   humanize,
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
+
+/** A select sized for the filter bar: same height as the rest of the row, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Parent = {
   user_id: number;
@@ -145,45 +149,59 @@ export default function ParentActivityPage() {
         All parents
       </Link>
 
+      {/* ParentTabs below is navigation between this parent's three pages, not
+          a heading — so the page still needs one of its own. */}
       <PageHeader
         title={parent ? `${parent.full_name} — activity` : "Activity"}
         subtitle="When this parent last signed in, what they have changed, and what the office has changed about them."
-        actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Select
-              label="Show"
-              value={view}
-              onChange={(e) => setView(e.target.value as "by" | "to")}
-            >
-              <option value="by">Things this parent did</option>
-              <option value="to">Changes to this parent&apos;s account</option>
-            </Select>
-            <Button variant="secondary" onClick={load} loading={loading}>
-              Refresh
-            </Button>
-          </div>
-        }
       />
 
       <ParentTabs id={id} />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Last signed in"
-          value={parent?.last_login_at ? dateTime(parent.last_login_at) : "Never"}
-          accent={parent?.last_login_at ? "brand" : "amber"}
-          icon={Clock}
-        />
-        <StatCard
-          label="Account"
-          value={parent ? (parent.is_active ? "Active" : "Cannot sign in") : "—"}
-          accent={parent?.is_active ? "emerald" : "rose"}
-          icon={parent?.is_active ? CircleCheck : CircleSlash}
-        />
-        <StatCard label="Things they did" value={byThem.length} />
-        <StatCard label="Changes to the account" value={toThem.length} />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Last signed in",
+            value: parent?.last_login_at ? dateTime(parent.last_login_at) : "Never",
+            note: parent?.last_login_at ? undefined : "This account has never been used",
+            icon: Clock,
+          },
+          {
+            label: "Account",
+            value: parent ? (parent.is_active ? "Active" : "Cannot sign in") : "—",
+            note: parent?.is_active ? "Sign-in is allowed" : "Sign-in is blocked",
+            icon: parent?.is_active ? CircleCheck : CircleSlash,
+          },
+          {
+            label: "Things they did",
+            value: byThem.length,
+            note: "Entries where this parent was the actor",
+          },
+          {
+            label: "Changes to the account",
+            value: toThem.length,
+            note: "Entries where somebody changed their record",
+          },
+        ]}
+      />
+
+      {/* The one filter this page already had, moved out of the header and in
+          above the table it narrows. The state behind it is unchanged. */}
+      <FilterBar>
+        <select
+          aria-label="Show"
+          value={view}
+          onChange={(e) => setView(e.target.value as "by" | "to")}
+          className={filterSelect}
+        >
+          <option value="by">Things this parent did</option>
+          <option value="to">Changes to this parent&apos;s account</option>
+        </select>
+        <Button variant="secondary" onClick={load} loading={loading}>
+          Refresh
+        </Button>
+      </FilterBar>
 
       {!loading && byThem.length === 0 && view === "by" && (
         <NoticeBox>
@@ -197,12 +215,14 @@ export default function ParentActivityPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            {view === "by" ? "What they did" : "What was changed about them"}
-          </CardTitle>
-          <span className="text-[12px] font-bold text-ink-muted">
-            {rows.length} entr{rows.length === 1 ? "y" : "ies"}
-          </span>
+          <div>
+            <CardTitle>
+              {view === "by" ? "What they did" : "What was changed about them"}
+            </CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {rows.length} entr{rows.length === 1 ? "y" : "ies"} · up to 200 are loaded
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -249,6 +269,14 @@ export default function ParentActivityPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} entr${rows.length === 1 ? "y" : "ies"}`}
+          right={
+            view === "by"
+              ? "Things this parent did"
+              : "Changes to this parent’s account"
+          }
+        />
       </Card>
     </div>
   );

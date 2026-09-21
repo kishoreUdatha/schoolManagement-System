@@ -1,14 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BookOpen, ClipboardList, NotebookPen, Users } from "lucide-react";
 
 import { BreakdownChart, ChartCard } from "@/components/charts/Charts";
 import { ReportShell, percentTone } from "@/components/reports/ReportShell";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { NoticeBox, Select, Table, humanize, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { NoticeBox, Table, humanize, td, tdStrong } from "@/components/ui/Field";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type TeacherRow = {
   user_id: number;
@@ -69,40 +75,63 @@ export default function TeacherActivityReportPage() {
       title="Teacher activity"
       subtitle="Classes held, syllabus covered, marks entered and homework set over the chosen window."
       error={error}
-      actions={
-        <Select
+    >
+      {/* The window decides every count below it, so it is picked before the
+          figures rather than beside the title. */}
+      <FilterBar>
+        <select
           aria-label="Window"
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
+          className={filterSelect}
         >
           {WINDOWS.map((d) => (
             <option key={d} value={d}>
               Last {d} days
             </option>
           ))}
-        </Select>
-      }
-    >
+        </select>
+      </FilterBar>
+
       <NoticeBox>
         These are counts of work done, not a ranking and not an appraisal. Read them alongside what
         you already know about a person — a single ordered number would be taken as an assessment
         that these figures cannot support.
       </NoticeBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Teachers" value={teachers.length || "—"} />
-        <StatCard
-          label="Average syllabus covered"
-          value={averageCovered === null ? "—" : `${averageCovered}%`}
-          hint={
-            withSyllabus.length && withSyllabus.length < teachers.length
-              ? `${teachers.length - withSyllabus.length} with no syllabus entered`
-              : undefined
-          }
-        />
-        <StatCard label="Marks entered" value={marks} />
-        <StatCard label="Homework set" value={homework} hint={data ? `since ${data.since}` : undefined} />
-      </div>
+      {/* A restatement of the window, not a census of the school: these are
+          the people and the work inside the chosen number of days. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Teachers in view",
+            value: teachers.length || "—",
+            note: data ? `Last ${data.days} days, since ${data.since}` : undefined,
+            icon: Users,
+          },
+          {
+            label: "Average syllabus covered",
+            value: averageCovered === null ? "—" : `${averageCovered}%`,
+            note:
+              withSyllabus.length && withSyllabus.length < teachers.length
+                ? `${teachers.length - withSyllabus.length} with no syllabus entered`
+                : undefined,
+            icon: BookOpen,
+          },
+          {
+            label: "Marks entered",
+            value: marks,
+            note: data ? `since ${data.since}` : undefined,
+            icon: ClipboardList,
+          },
+          {
+            label: "Homework set",
+            value: homework,
+            note: data ? `since ${data.since}` : undefined,
+            icon: NotebookPen,
+          },
+        ]}
+      />
 
       <ChartCard
         title="Syllabus covered"
@@ -121,7 +150,13 @@ export default function TeacherActivityReportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Teacher by teacher</CardTitle>
+          <div>
+            <CardTitle>Teacher by teacher</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Sorted by name, never by any of the counts
+              {data ? ` · last ${data.days} days` : ""}.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -139,7 +174,9 @@ export default function TeacherActivityReportPage() {
           >
             {teachers.map((t) => (
               <tr key={t.user_id}>
-                <td className={tdStrong}>{t.name}</td>
+                <td className={tdStrong}>
+                  <PersonCell name={t.name} />
+                </td>
                 <td className={td}>{humanize(t.role)}</td>
                 <td className={td}>{t.subjects || "—"}</td>
                 <td className={td}>{t.class_teacher_of || "—"}</td>
@@ -160,6 +197,10 @@ export default function TeacherActivityReportPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${teachers.length} teacher(s)`}
+          right={data ? `Last ${data.days} days, since ${data.since}` : undefined}
+        />
       </Card>
     </ReportShell>
   );

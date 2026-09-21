@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Catalogue = {
@@ -205,7 +206,12 @@ export default function NotificationSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Templates</CardTitle>
+          <div>
+            <CardTitle>Templates</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              The wording the school reuses, with {"{braces}"} filled in when it is sent.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -255,6 +261,10 @@ export default function NotificationSettingsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${rows.length} template${rows.length === 1 ? "" : "s"}`}
+          right={`${rows.filter((t) => t.is_active).length} in use`}
+        />
       </Card>
 
       <Modal

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft, Plus, Trash2 } from "lucide-react";
+import { Award, ChevronLeft, FileText, Plus, ShieldCheck, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { openAuthed } from "@/lib/download";
 import { daysLeft, readableDate } from "@/lib/dates";
@@ -160,15 +160,31 @@ export default function QualificationsPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Recorded" value={rows.length} />
-        <StatCard
-          label="Not checked"
-          value={page?.unverified ?? 0}
-          accent={(page?.unverified ?? 0) > 0 ? "amber" : "emerald"}
-        />
-        <StatCard label="Documents on file" value={page?.documents.length ?? 0} />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Recorded",
+            value: rows.length,
+            note: page ? `${page.employee_no} · ${humanize(page.role)}` : undefined,
+            icon: Award,
+          },
+          {
+            label: "Not checked",
+            value: page?.unverified ?? 0,
+            note:
+              (page?.unverified ?? 0) > 0
+                ? "Told to us, not yet proved"
+                : "Every one checked against a certificate",
+            icon: ShieldCheck,
+          },
+          {
+            label: "Documents on file",
+            value: page?.documents.length ?? 0,
+            note: "Uploaded against this person",
+            icon: FileText,
+          },
+        ]}
+      />
 
       {(page?.unverified ?? 0) > 0 && (
         <WarnBox>
@@ -180,7 +196,13 @@ export default function QualificationsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Qualifications</CardTitle>
+          <div>
+            <CardTitle>Qualifications</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Each one its own row, so it can be checked against the certificate that
+              proves it.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -233,11 +255,24 @@ export default function QualificationsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${rows.length} qualification(s) recorded`}
+          right={
+            (page?.unverified ?? 0) > 0
+              ? `${page?.unverified} awaiting a check`
+              : "Nothing awaiting a check"
+          }
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Documents on file</CardTitle>
+          <div>
+            <CardTitle>Documents on file</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Only these can be attached to a qualification as its certificate.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -285,6 +320,10 @@ export default function QualificationsPage() {
             })}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${page?.documents.length ?? 0} document(s) uploaded`}
+          right="Upload a new one from the documents page"
+        />
       </Card>
 
       <Modal open={adding} onClose={() => setAdding(false)} title="Add a qualification">

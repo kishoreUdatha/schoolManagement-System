@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { api, apiError } from "@/lib/api";
 
@@ -156,14 +157,14 @@ export default function SchoolProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">School profile</h1>
-        <p className="mt-1.5 text-[13px] text-ink-muted">
-          Used across reports, fee receipts, and notifications. Code{" "}
-          <code>{profile?.code}</code> is assigned by the platform and cannot be
-          changed.
-        </p>
-      </div>
+      <PageHeader
+        title="School profile"
+        subtitle={
+          profile
+            ? `Used across reports, fee receipts, and notifications. Code ${profile.code} is assigned by the platform and cannot be changed.`
+            : "Used across reports, fee receipts, and notifications. The school code is assigned by the platform and cannot be changed."
+        }
+      />
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">

@@ -8,9 +8,19 @@ import { BorrowerPicker, BorrowerValue, borrowerPayload } from "@/components/Bor
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ErrorBox, NoticeBox, Table, humanize, inr, td, tdStrong } from "@/components/ui/Field";
+import {
+  ErrorBox,
+  NoticeBox,
+  PageHeader,
+  Table,
+  humanize,
+  inr,
+  td,
+  tdStrong,
+} from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PanelFooter, PersonCell } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 import { BookModal } from "../../BookModal";
@@ -57,35 +67,35 @@ export default function BookDetailPage() {
       <Link href="/school/library/catalogue" className="text-sm text-ink-muted hover:underline">
         ← Catalogue
       </Link>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{book.title}</h1>
-          <div className="mt-1.5 text-[13px] text-ink-muted">
-            {[book.authors, book.publisher, book.edition, book.publish_year].filter(Boolean).join(" · ")}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {book.category && <Badge>{book.category}</Badge>}
-            {book.is_reference && <Badge tone="amber">reference only</Badge>}
-            {!book.is_active && <Badge tone="rose">inactive</Badge>}
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {book.digital_url && (
-            <a href={book.digital_url} target="_blank" rel="noreferrer">
-              <Button variant="secondary">Open digital copy</Button>
-            </a>
-          )}
-          <Button variant="secondary" onClick={() => setEditing(true)}>
-            Edit
-          </Button>
-          {!book.is_reference && book.total_copies > 0 && (
-            <Button variant="secondary" onClick={() => setReserving(true)}>
-              Reserve for…
+      <PageHeader
+        title={book.title}
+        subtitle={[book.authors, book.publisher, book.edition, book.publish_year]
+          .filter(Boolean)
+          .join(" · ")}
+        actions={
+          <>
+            <span className="flex flex-wrap items-center gap-2">
+              {book.category && <Badge>{book.category}</Badge>}
+              {book.is_reference && <Badge tone="amber">reference only</Badge>}
+              {!book.is_active && <Badge tone="rose">inactive</Badge>}
+            </span>
+            {book.digital_url && (
+              <a href={book.digital_url} target="_blank" rel="noreferrer">
+                <Button variant="secondary">Open digital copy</Button>
+              </a>
+            )}
+            <Button variant="secondary" onClick={() => setEditing(true)}>
+              Edit
             </Button>
-          )}
-          <Button onClick={() => setAddingCopies(true)}>+ Copies</Button>
-        </div>
-      </div>
+            {!book.is_reference && book.total_copies > 0 && (
+              <Button variant="secondary" onClick={() => setReserving(true)}>
+                Reserve for…
+              </Button>
+            )}
+            <Button onClick={() => setAddingCopies(true)}>+ Copies</Button>
+          </>
+        }
+      />
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
@@ -97,10 +107,13 @@ export default function BookDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            Copies · {book.available_copies}/{book.total_copies} on shelf
-            {book.waiting_reservations > 0 && ` · ${book.waiting_reservations} waiting`}
-          </CardTitle>
+          <div>
+            <CardTitle>Copies</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {book.available_copies}/{book.total_copies} on shelf
+              {book.waiting_reservations > 0 && ` · ${book.waiting_reservations} waiting`}
+            </p>
+          </div>
           {book.shelf && <span className="text-sm text-ink-muted">Shelf {book.shelf}</span>}
         </CardHeader>
         <Table head={["Accession no.", "Status", "With", "Price", "Acquired", "Note", ""]} empty={book.copies.length === 0 && "No physical copies."}>
@@ -110,9 +123,15 @@ export default function BookDetailPage() {
               <td className="px-4 py-3">
                 <Badge tone={copyTone[c.status]}>{humanize(c.status)}</Badge>
               </td>
-              <td className={td}>
-                {c.borrower_name ?? "—"}
-                {c.due_on && <div className="text-xs text-ink-subtle">due {c.due_on}</div>}
+              <td className="px-4 py-3">
+                {c.borrower_name ? (
+                  <PersonCell
+                    name={c.borrower_name}
+                    sub={c.due_on ? `due ${c.due_on}` : null}
+                  />
+                ) : (
+                  <span className="text-[13px] text-ink-muted">—</span>
+                )}
               </td>
               <td className={td}>{inr(c.price)}</td>
               <td className={td}>{c.acquired_on ?? "—"}</td>
@@ -137,6 +156,14 @@ export default function BookDetailPage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${book.copies.length} cop${book.copies.length === 1 ? "y" : "ies"} on this record`}
+          right={
+            book.waiting_reservations > 0
+              ? `${book.waiting_reservations} waiting`
+              : "Nobody waiting"
+          }
+        />
       </Card>
 
       {editing && (

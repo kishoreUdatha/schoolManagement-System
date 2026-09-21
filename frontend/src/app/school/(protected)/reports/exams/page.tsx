@@ -2,15 +2,21 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Award, BookOpen, ClipboardList, Percent } from "lucide-react";
 
 import { BreakdownChart, ChartCard, ShareChart } from "@/components/charts/Charts";
 import { VERDICT } from "@/components/charts/theme";
 import { ReportShell, percentTone } from "@/components/reports/ReportShell";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { NoticeBox, Select, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { NoticeBox, Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type ExamOption = {
   id: number;
@@ -88,6 +94,8 @@ export default function ExamAnalysisPage() {
   const subjects = data?.subjects ?? [];
   const toppers = data?.toppers ?? [];
   const grades = data?.grades ?? [];
+  const selectedExam = exams.find((x) => String(x.id) === examId) ?? null;
+  const graded = grades.reduce((n, g) => n + g.count, 0);
 
   const subjectBars = subjects.map((s) => ({
     label: s.subject_name,
@@ -99,12 +107,15 @@ export default function ExamAnalysisPage() {
       title="Exam analysis"
       subtitle="How a whole exam went: who passed, which grades were awarded, and which subjects went wrong."
       error={error}
-      actions={
-        <Select
+    >
+      {/* The exam is the scope of everything below it, so it is chosen above
+          the figures rather than off to one side of the title. */}
+      <FilterBar>
+        <select
           aria-label="Exam"
           value={examId}
           onChange={(e) => setExamId(e.target.value)}
-          className="min-w-[220px]"
+          className={`${filterSelect} min-w-[220px]`}
         >
           {exams.length === 0 && <option value="">No exams yet</option>}
           {exams.map((x) => (
@@ -113,9 +124,9 @@ export default function ExamAnalysisPage() {
               {x.academic_year_name ? ` — ${x.academic_year_name}` : ""}
             </option>
           ))}
-        </Select>
-      }
-    >
+        </select>
+      </FilterBar>
+
       {data && !data.is_published && (
         <NoticeBox>
           This exam has not been published, so these figures are provisional and the
@@ -123,20 +134,46 @@ export default function ExamAnalysisPage() {
         </NoticeBox>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Marks entered" value={data?.marks_entered ?? "—"} />
-        <StatCard
-          label="Pass rate"
-          value={data ? `${data.pass_percent}%` : "—"}
-          accent={data ? percentTone(data.pass_percent) : "brand"}
-        />
-        <StatCard label="Subjects" value={subjects.length || "—"} />
-        <StatCard
-          label="Subjects below 60%"
-          value={data?.struggling.length ?? "—"}
-          accent={data && data.struggling.length > 0 ? "rose" : "emerald"}
-        />
-      </div>
+      {/* What is in view, not a count of the school: one exam, its marks, and
+          whether the families have seen them. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Marks entered",
+            value: data?.marks_entered ?? "—",
+            note: selectedExam
+              ? `${selectedExam.name}${selectedExam.academic_year_name ? ` · ${selectedExam.academic_year_name}` : ""}`
+              : undefined,
+            icon: ClipboardList,
+          },
+          {
+            label: "Pass rate",
+            value: data ? `${data.pass_percent}%` : "—",
+            note: data
+              ? data.is_published
+                ? "Published to families"
+                : "Provisional — not published"
+              : undefined,
+            icon: Percent,
+          },
+          {
+            label: "Subjects in view",
+            value: subjects.length || "—",
+            note: data
+              ? data.struggling.length > 0
+                ? `${data.struggling.length} below 60%`
+                : "None below 60%"
+              : undefined,
+            icon: BookOpen,
+          },
+          {
+            label: "Grades awarded",
+            value: data ? graded : "—",
+            note: grades.length ? `Across ${grades.length} grade band(s)` : undefined,
+            icon: Award,
+          },
+        ]}
+      />
 
       {data && data.struggling.length > 0 && (
         <WarnBox>
@@ -184,7 +221,12 @@ export default function ExamAnalysisPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Subject by subject</CardTitle>
+          <div>
+            <CardTitle>Subject by subject</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Weakest pass rate first. Absent candidates are excluded, not failed.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -216,12 +258,20 @@ export default function ExamAnalysisPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${subjects.length} subject(s)`}
+          right={data ? `${data.marks_entered} mark(s) entered` : undefined}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Highest aggregates</CardTitle>
-          <span className="text-[12px] font-bold text-ink-muted">Top ten</span>
+          <div>
+            <CardTitle>Highest aggregates</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Top ten by total across every subject in this exam.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -250,6 +300,10 @@ export default function ExamAnalysisPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${toppers.length} student(s)`}
+          right={selectedExam ? selectedExam.name : undefined}
+        />
       </Card>
     </ReportShell>
   );

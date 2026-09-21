@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { CalendarCheck, Eye, EyeOff, Plus } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -18,9 +18,13 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { readableDate, toIso } from "@/lib/dates";
+
+/** A select sized for the filter bar: one row of controls, no stacked label. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Observation = {
   id: number;
@@ -135,43 +139,54 @@ export default function ObservationsPage() {
         title="Lesson observations"
         subtitle="What was seen, what went well, and what to try next."
         actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Select
-              label="Teacher"
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="">Everybody</option>
-              {staff.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.full_name}
-                </option>
-              ))}
-            </Select>
-            <Button onClick={() => setAdding(true)}>
-              <Plus className="mr-1.5 h-4 w-4" />
-              Record one
-            </Button>
-          </div>
+          <Button onClick={() => setAdding(true)}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            Record one
+          </Button>
         }
       />
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Observations" value={page?.count ?? "—"} />
-        <StatCard
-          label="Not shared yet"
-          value={page?.unshared ?? 0}
-          accent={(page?.unshared ?? 0) > 0 ? "amber" : "emerald"}
-          hint="A note is a draft until the conversation has happened"
-        />
-        <StatCard
-          label="Follow-ups due"
-          value={page?.follow_ups_due ?? 0}
-          accent={(page?.follow_ups_due ?? 0) > 0 ? "amber" : "emerald"}
-        />
-      </div>
+      {/* The figures the endpoint already returns for this filter. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Observations",
+            value: page?.count ?? "—",
+            note: filter ? "This teacher" : "Everybody",
+            icon: Eye,
+          },
+          {
+            label: "Not shared yet",
+            value: page?.unshared ?? 0,
+            note: "A note is a draft until the conversation has happened",
+            icon: EyeOff,
+          },
+          {
+            label: "Follow-ups due",
+            value: page?.follow_ups_due ?? 0,
+            note: "Dates already set on a note",
+            icon: CalendarCheck,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Teacher"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">Everybody</option>
+          {staff.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.full_name}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
 
       <NoticeBox>
         Nothing here is scored. A mark out of five travels further than the

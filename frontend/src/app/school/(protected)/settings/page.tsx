@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, PageHeader, Table, td, tdStrong } from "@/components/ui/Field";
+import { PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type SettingsRow = {
@@ -70,7 +71,13 @@ export default function SchoolSettingsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>School settings</CardTitle>
+          <div>
+            <CardTitle>School settings</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Each area lives with the module that owns it — this is the index, not a
+              second place to change them.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table head={["Area", "What it covers", "Module", "State", ""]} empty={areas.length === 0 && "Loading…"}>
@@ -99,11 +106,21 @@ export default function SchoolSettingsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${areas.length} settings area${areas.length === 1 ? "" : "s"}`}
+          right={`${areas.filter((a) => a.configured).length} set up`}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Outside services</CardTitle>
+          <div>
+            <CardTitle>Outside services</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Anything the school depends on that is not this system: payments, files,
+              messages.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table head={["Service", "What it is for", "State", "Detail", ""]} empty={integrations.length === 0 && "None."}>
@@ -134,6 +151,10 @@ export default function SchoolSettingsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${integrations.length} service${integrations.length === 1 ? "" : "s"}`}
+          right={`${integrations.filter((i) => i.enabled).length} switched on`}
+        />
       </Card>
     </div>
   );

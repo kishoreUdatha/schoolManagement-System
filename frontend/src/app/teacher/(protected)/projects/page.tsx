@@ -1,12 +1,15 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { CalendarClock, ClipboardList, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type ProjectKind = "individual" | "group";
@@ -104,18 +107,43 @@ export default function TeacherProjectsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Projects</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Assign hands-on projects to your classes and review student
-            submissions.
-          </p>
-        </div>
-        <Button onClick={() => setOpenCreate(true)} disabled={subjects.length === 0}>
-          + New project
-        </Button>
-      </div>
+      <PageHeader
+        title="Projects"
+        subtitle="Assign hands-on projects to your classes and review student submissions."
+        actions={
+          <Button onClick={() => setOpenCreate(true)} disabled={subjects.length === 0}>
+            + New project
+          </Button>
+        }
+      />
+
+      {/* Only what the project list already carries — no second request to
+          count anything. With nothing assigned yet the empty card below says
+          more than a row of noughts would. */}
+      {items.length > 0 && (
+        <StatStrip
+          stats={[
+            {
+              label: "Projects assigned",
+              value: items.length,
+              note: `Across ${subjects.length} class-subject${subjects.length === 1 ? "" : "s"} you teach`,
+              icon: ClipboardList,
+            },
+            {
+              label: "Past their deadline",
+              value: items.filter((p) => p.is_past_due).length,
+              note: "Still open for late submissions",
+              icon: CalendarClock,
+            },
+            {
+              label: "Updates received",
+              value: items.reduce((n, p) => n + p.progress_count, 0),
+              note: `of ${items.reduce((n, p) => n + p.eligible_student_count, 0)} students expected`,
+              icon: Users,
+            },
+          ]}
+        />
+      )}
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">

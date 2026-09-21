@@ -5,10 +5,17 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, PersonCell } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A control sized for the filter bar: one row of equal-height controls, so
+ *  the stacked labels come off and the name goes on the control itself. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type AcademicYear = { id: number; name: string; is_current: boolean };
 type SectionLite = { id: number; name: string };
@@ -132,51 +139,41 @@ export default function FeesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Fees</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Manage fee records, record payments, generate monthly bills. Set up{" "}
-            <Link className="text-brand-700 hover:underline" href="/school/fees/heads">
-              heads
-            </Link>{" "}
-            and{" "}
-            <Link className="text-brand-700 hover:underline" href="/school/fees/structures">
-              structures
-            </Link>{" "}
-            first.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/school/fees/heads"
-            className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
-          >
-            Fee heads
-          </Link>
-          <Link
-            href="/school/fees/structures"
-            className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
-          >
-            Structures
-          </Link>
-          <Link
-            href="/school/fees/reminders"
-            className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
-          >
-            Reminders
-          </Link>
-          <Button onClick={() => setGenOpen(true)}>Generate monthly</Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Fees"
+        subtitle="Fee records, payments and the monthly run. Heads and structures are set up first — both are a click away."
+        actions={
+          <>
+            <Link
+              href="/school/fees/heads"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
+            >
+              Fee heads
+            </Link>
+            <Link
+              href="/school/fees/structures"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
+            >
+              Structures
+            </Link>
+            <Link
+              href="/school/fees/reminders"
+              className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-[9px] border border-surface-border bg-surface-raised px-4 py-2 text-xs font-extrabold text-ink transition-colors hover:bg-surface-hover"
+            >
+              Reminders
+            </Link>
+            <Button onClick={() => setGenOpen(true)}>Generate monthly</Button>
+          </>
+        }
+      />
 
-      <form className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Year</span>
+      <form>
+        <FilterBar>
           <select
+            aria-label="Academic year"
             value={yearId ?? ""}
             onChange={(e) => setYearId(Number(e.target.value))}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
             {years.map((y) => (
               <option key={y.id} value={y.id}>
@@ -184,65 +181,59 @@ export default function FeesPage() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Class</span>
           <select
+            aria-label="Class"
             value={classId}
             onChange={(e) => {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
-            <option value="">All</option>
+            <option value="">All classes</option>
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Section</span>
           <select
+            aria-label="Section"
             value={sectionId}
             onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
             disabled={!selectedClass}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
-            <option value="">All</option>
+            <option value="">All sections</option>
             {selectedClass?.sections.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
             ))}
           </select>
-        </label>
-        <Input
-          label="Period"
-          placeholder="2026-06 / ONETIME"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value)}
-          className="w-32"
-        />
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Status</span>
+          <input
+            aria-label="Period"
+            placeholder="2026-06 / ONETIME"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className={`${filterSelect} w-[170px] placeholder:text-ink-subtle`}
+          />
           <select
+            aria-label="Status"
             value={statusFilter}
             onChange={(e) =>
               setStatusFilter(e.target.value as typeof statusFilter)
             }
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
-            <option value="">All</option>
+            <option value="">All statuses</option>
             <option value="outstanding">Outstanding (pending+overdue)</option>
             <option value="overdue">Overdue only</option>
             <option value="pending">Pending (not overdue)</option>
             <option value="paid">Paid</option>
             <option value="waived">Waived</option>
           </select>
-        </label>
+        </FilterBar>
       </form>
 
       {error && (
@@ -253,6 +244,18 @@ export default function FeesPage() {
       )}
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Fee records</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                selectedClass ? selectedClass.name : "All classes",
+                period || "Every period",
+                statusFilter || "Every status",
+              ].join(" · ")}
+            </p>
+          </div>
+        </CardHeader>
         <table className="min-w-full divide-y divide-surface-border text-[13px]">
           <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
@@ -270,8 +273,7 @@ export default function FeesPage() {
             {data?.items.map((f) => (
               <tr key={f.id} className="hover:bg-surface-subtle">
                 <td className="px-4 py-3">
-                  <div className="font-medium text-ink">{f.student_name}</div>
-                  <div className="text-xs text-ink-muted">{f.section_label}</div>
+                  <PersonCell name={f.student_name} sub={f.section_label} />
                 </td>
                 <td className="px-4 py-3 text-[12px] font-mono">{f.fee_head_code}</td>
                 <td className="px-4 py-3">{f.period}</td>
@@ -317,33 +319,39 @@ export default function FeesPage() {
             )}
           </tbody>
         </table>
+        {data && (
+          <PanelFooter
+            left={`Showing ${data.items.length} of ${data.total.toLocaleString("en-IN")} records`}
+            right={
+              data.pages > 1 ? (
+                <span className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => p - 1)}
+                  >
+                    ← Prev
+                  </Button>
+                  <span className="text-[11px] font-bold text-ink-muted">
+                    Page {data.page} of {data.pages}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={page >= data.pages}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next →
+                  </Button>
+                </span>
+              ) : (
+                "All records on this page"
+              )
+            }
+          />
+        )}
       </Card>
-
-      {data && data.pages > 1 && (
-        <div className="flex justify-between text-sm text-ink-muted">
-          <div>
-            Page {data.page} of {data.pages} · {data.total} total
-          </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              ← Prev
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={page >= data.pages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next →
-            </Button>
-          </div>
-        </div>
-      )}
 
       {payFee && (
         <RecordPaymentModal

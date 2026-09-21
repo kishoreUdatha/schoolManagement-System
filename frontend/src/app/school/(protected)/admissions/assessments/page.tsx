@@ -14,11 +14,11 @@ import {
   Textarea,
   humanize,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
+import { CalendarClock, CheckCircle2, ClipboardCheck, GraduationCap } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { dateTime, hhmm } from "@/lib/dates";
 
@@ -155,11 +155,11 @@ export default function EntranceAssessmentsPage() {
       {list.map((r) => (
         <tr key={r.test.id}>
           <td className={td}>{dateTime(r.test.scheduled_at)}</td>
-          <td className={tdStrong}>
-            {r.app.student_name}
-            <span className="block text-[11px] font-normal text-ink-subtle">
-              {r.app.application_no} · {r.app.class_name ?? r.app.applying_for_class ?? "—"}
-            </span>
+          <td className="px-4 py-3">
+            <PersonCell
+              name={r.app.student_name}
+              sub={`${r.app.application_no} · ${r.app.class_name ?? r.app.applying_for_class ?? "—"}`}
+            />
           </td>
           <td className={td}>{humanize(r.test.kind)}</td>
           {showResult ? (
@@ -221,31 +221,67 @@ export default function EntranceAssessmentsPage() {
       <ErrorBox>{error}</ErrorBox>
       {done && <NoticeBox>{done}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Scheduled" value={loading ? "…" : rows.length} />
-        <StatCard label="Still to mark" value={loading ? "…" : waiting.length} accent={waiting.length ? "amber" : "emerald"} />
-        <StatCard label="Marked" value={loading ? "…" : marked.length} />
-        <StatCard
-          label="Passed"
-          value={loading ? "…" : marked.filter((r) => r.test.passed).length}
-          accent="emerald"
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Scheduled",
+            value: loading ? "…" : rows.length,
+            note: "Everybody at the assessment stage",
+            icon: CalendarClock,
+          },
+          {
+            label: "Still to mark",
+            value: loading ? "…" : waiting.length,
+            note: waiting.length ? "Sat, or waiting to sit" : "Nothing outstanding",
+            icon: ClipboardCheck,
+          },
+          {
+            label: "Marked",
+            value: loading ? "…" : marked.length,
+            note: "Done, absent or cancelled",
+            icon: CheckCircle2,
+          },
+          {
+            label: "Passed",
+            value: loading ? "…" : marked.filter((r) => r.test.passed).length,
+            note: `of ${marked.length} marked`,
+            icon: GraduationCap,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Waiting to be marked</CardTitle>
+          <div>
+            <CardTitle>Waiting to be marked</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Sat or scheduled, with no result recorded yet. Earliest first.
+            </p>
+          </div>
           <Badge tone={waiting.length ? "amber" : "neutral"}>{waiting.length}</Badge>
         </CardHeader>
         <CardBody className="p-0">{renderTable(waiting, false)}</CardBody>
+        <PanelFooter
+          left={loading ? "Loading…" : `${waiting.length} of ${rows.length} assessments`}
+          right="Record a result to move one to the list below"
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Already marked</CardTitle>
+          <div>
+            <CardTitle>Already marked</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Done, absent or cancelled — and what the child scored.
+            </p>
+          </div>
           <Badge tone="neutral">{marked.length}</Badge>
         </CardHeader>
         <CardBody className="p-0">{renderTable(marked, true)}</CardBody>
+        <PanelFooter
+          left={loading ? "Loading…" : `${marked.length} of ${rows.length} assessments`}
+          right={`${marked.filter((r) => r.test.passed).length} passed`}
+        />
       </Card>
 
       <Modal

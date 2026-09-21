@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { IndianRupee, Layers, Package, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -17,7 +17,7 @@ import {
   tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { FormFooter, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Supplier = { id: number; name: string; is_active: boolean };
@@ -143,7 +143,12 @@ export default function GoodsReceiptPage() {
       {results && failed.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Lines that failed</CardTitle>
+            <div>
+              <CardTitle>Lines that failed</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                Nothing was written to stock for these. Enter just them again.
+              </p>
+            </div>
           </CardHeader>
           <CardBody className="p-0">
             <Table head={["Line", "Item", "Why"]}>
@@ -156,14 +161,35 @@ export default function GoodsReceiptPage() {
               ))}
             </Table>
           </CardBody>
+          <PanelFooter
+            left={`${failed.length} of ${results.length} line(s) failed`}
+            right={`${wentIn.length} already in stock`}
+          />
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Lines" value={filled.length} />
-        <StatCard label="Units" value={filled.reduce((n, l) => n + Number(l.qty || 0), 0)} />
-        <StatCard label="Receipt value" value={inr(total)} />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Lines",
+            value: filled.length,
+            note: `of ${lines.length} entered`,
+            icon: Layers,
+          },
+          {
+            label: "Units",
+            value: filled.reduce((n, l) => n + Number(l.qty || 0), 0),
+            note: "Across every line with a quantity",
+            icon: Package,
+          },
+          {
+            label: "Receipt value",
+            value: inr(total),
+            note: "Quantity × unit cost, before any tax",
+            icon: IndianRupee,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
@@ -197,9 +223,15 @@ export default function GoodsReceiptPage() {
         </CardBody>
       </Card>
 
-      <Card>
+      {/* overflow-hidden so the tinted form footer keeps the panel's corners */}
+      <Card className="overflow-hidden">
         <CardHeader>
-          <CardTitle>Lines</CardTitle>
+          <div>
+            <CardTitle>Lines</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              One row per item. A line with no quantity is ignored.
+            </p>
+          </div>
           <Button variant="secondary" onClick={() => setLines((l) => [...l, blankLine()])}>
             <Plus className="mr-1.5 h-4 w-4" />
             Add a line
@@ -264,16 +296,12 @@ export default function GoodsReceiptPage() {
             </p>
           )}
         </CardBody>
+        <FormFooter note="Each line is saved separately, so a problem with one does not undo the others.">
+          <Button onClick={submit} loading={busy} disabled={filled.length === 0}>
+            Receive {filled.length || ""} line(s)
+          </Button>
+        </FormFooter>
       </Card>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={submit} loading={busy} disabled={filled.length === 0}>
-          Receive {filled.length || ""} line(s)
-        </Button>
-        <span className="text-[12px] text-ink-subtle">
-          Each line is saved separately, so a problem with one does not undo the others.
-        </span>
-      </div>
     </div>
   );
 }

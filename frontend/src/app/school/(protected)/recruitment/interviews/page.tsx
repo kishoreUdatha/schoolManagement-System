@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Clock, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, WarnBox, humanize } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { longDate, toIso } from "@/lib/dates";
 
@@ -209,19 +209,40 @@ export default function InterviewCalendarPage() {
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="This week" value={weekSlots.length} />
-        <StatCard
-          label="Still to happen"
-          value={weekSlots.filter((s) => s.status === "scheduled").length}
-        />
-        <StatCard
-          label="Clashes"
-          value={clashing.size}
-          accent={clashing.size ? "rose" : "emerald"}
-        />
-        <StatCard label="Interviews on file" value={slots.length} />
-      </div>
+      {/* Every figure is already counted for the board below — the strip is a
+          summary of the week on screen, not a second set of requests. */}
+      <StatStrip
+        stats={[
+          {
+            label: "This week",
+            value: weekSlots.length,
+            note: `Week beginning ${longDate(toIso(days[0]))}`,
+            icon: CalendarDays,
+          },
+          {
+            label: "Still to happen",
+            value: weekSlots.filter((s) => s.status === "scheduled").length,
+            note: "Not yet done or cancelled",
+            icon: Clock,
+          },
+          {
+            label: "Clashes",
+            value: clashing.size,
+            note: clashing.size
+              ? "A panel member is in two places at once"
+              : "Nobody is double-booked",
+            icon: AlertTriangle,
+          },
+          {
+            label: "Interviews on file",
+            value: slots.length,
+            note: truncated
+              ? `From the first ${MAX_LOOKUPS} applications`
+              : "Across every application",
+            icon: Users,
+          },
+        ]}
+      />
 
       {clashing.size > 0 && (
         <WarnBox>

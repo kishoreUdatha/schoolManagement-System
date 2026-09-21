@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BookOpen, CircleSlash, Clock, Layers } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, PageHeader, Select } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { hhmm } from "@/lib/dates";
 
@@ -104,20 +105,36 @@ export default function CoordinatorViewPage() {
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Sections" value={sections.length} />
-        <StatCard label="Teaching periods" value={teaching.length} />
-        <StatCard
-          label="Lessons on"
-          value={filled}
-          hint={capacity ? `of ${capacity} possible` : undefined}
-        />
-        <StatCard
-          label="Free slots"
-          value={Math.max(capacity - filled, 0)}
-          accent={capacity && filled < capacity ? "amber" : "emerald"}
-        />
-      </div>
+      {/* A summary of the board below, counted from the same response. The
+          board itself is left exactly as it was. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Sections",
+            value: sections.length,
+            note: `On ${DAY_NAME[day]}`,
+            icon: Layers,
+          },
+          {
+            label: "Teaching periods",
+            value: teaching.length,
+            note: `${periods.length - teaching.length} break(s) besides`,
+            icon: Clock,
+          },
+          {
+            label: "Lessons on",
+            value: filled,
+            note: capacity ? `of ${capacity} possible` : undefined,
+            icon: BookOpen,
+          },
+          {
+            label: "Free slots",
+            value: Math.max(capacity - filled, 0),
+            note: capacity ? "Nothing timetabled in these" : undefined,
+            icon: CircleSlash,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>

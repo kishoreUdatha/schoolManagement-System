@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { BadgeCheck, BookOpen, ChevronLeft, Clock, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -17,7 +17,7 @@ import {
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { daysLeft, readableDate, shortDate } from "@/lib/dates";
 
@@ -140,20 +140,36 @@ export default function StaffProfilePage() {
         </WarnBox>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Periods a week" value={load?.periods_per_week ?? "—"} />
-        <StatCard label="Subjects taught" value={load?.subjects_taught ?? "—"} />
-        <StatCard
-          label="Class teacher of"
-          value={load?.class_teacher_of.length ?? "—"}
-          hint={load?.class_teacher_of.map((c) => c.label).join(", ") || undefined}
-        />
-        <StatCard
-          label="Unchecked qualifications"
-          value={unverified}
-          accent={unverified ? "amber" : "emerald"}
-        />
-      </div>
+      <StatStrip
+        stats={[
+          {
+            label: "Periods a week",
+            value: load?.periods_per_week ?? "—",
+            note: `${load?.sections_taught ?? 0} section(s) taught`,
+            icon: Clock,
+          },
+          {
+            label: "Subjects taught",
+            value: load?.subjects_taught ?? "—",
+            note: "Across every class",
+            icon: BookOpen,
+          },
+          {
+            label: "Class teacher of",
+            value: load?.class_teacher_of.length ?? "—",
+            note: load?.class_teacher_of.map((c) => c.label).join(", ") || undefined,
+            icon: Users,
+          },
+          {
+            // The tile used to go amber on anything unchecked. The strip has
+            // no accent, so the state is said in words under the figure.
+            label: "Unchecked qualifications",
+            value: unverified,
+            note: unverified ? "Somebody needs to check these" : "All checked",
+            icon: BadgeCheck,
+          },
+        ]}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

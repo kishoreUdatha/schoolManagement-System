@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Syringe } from "lucide-react";
+import { AlertTriangle, ShieldAlert, Syringe, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { daysLeft, readableDate, toIso } from "@/lib/dates";
 
@@ -171,12 +171,37 @@ export default function ImmunisationPage() {
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Doses due" value={due.length} accent={due.length ? "amber" : "emerald"} />
-        <StatCard label="Overdue" value={overdue.length} accent={overdue.length ? "rose" : "emerald"} />
-        <StatCard label="Children with allergies" value={withAllergies.length} />
-        <StatCard label="In the chosen section" value={roster.length} />
-      </div>
+      {/* The same four counts the cards carried, with the colour said in
+          words: a strip has no accent, and "none overdue" is clearer than a
+          green border anyway. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Doses due",
+            value: due.length,
+            note: "Within the next year",
+            icon: Syringe,
+          },
+          {
+            label: "Overdue",
+            value: overdue.length,
+            note: overdue.length ? "Past their due date" : "Nothing past its date",
+            icon: AlertTriangle,
+          },
+          {
+            label: "Children with allergies",
+            value: withAllergies.length,
+            note: `of ${alerts.length} with anything recorded`,
+            icon: ShieldAlert,
+          },
+          {
+            label: "In the chosen section",
+            value: roster.length,
+            note: sectionId ? "Active children on the roll" : "No section picked yet",
+            icon: Users,
+          },
+        ]}
+      />
 
       {result && (
         <NoticeBox>
@@ -198,7 +223,12 @@ export default function ImmunisationPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Due and overdue</CardTitle>
+          <div>
+            <CardTitle>Due and overdue</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Every dose falling due in the next year, across the whole school.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -210,11 +240,10 @@ export default function ImmunisationPage() {
               return (
                 <tr key={`${d.student_id}-${d.vaccine}-${i}`}>
                   <td className={tdStrong}>
-                    {d.student_name ?? d.full_name}
-                    <span className="block text-[11px] font-normal text-ink-subtle">
-                      {d.admission_no}
-                      {d.section_label ? ` · ${d.section_label}` : ""}
-                    </span>
+                    <PersonCell
+                      name={d.student_name ?? d.full_name ?? ""}
+                      sub={[d.admission_no, d.section_label].filter(Boolean).join(" · ")}
+                    />
                   </td>
                   <td className={td}>{d.vaccine}</td>
                   <td className={td}>
@@ -236,11 +265,20 @@ export default function ImmunisationPage() {
             })}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${due.length} dose(s) due`}
+          right={overdue.length > 0 ? `${overdue.length} past their date` : "None overdue"}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Allergies, conditions and regular medication</CardTitle>
+          <div>
+            <CardTitle>Allergies, conditions and regular medication</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              What the school must not give a child, and what it may need to.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -250,11 +288,10 @@ export default function ImmunisationPage() {
             {alerts.map((a) => (
               <tr key={a.student_id}>
                 <td className={tdStrong}>
-                  {a.student_name}
-                  <span className="block text-[11px] font-normal text-ink-subtle">
-                    {a.section_label ?? "No section"}
-                    {a.blood_group ? ` · ${a.blood_group}` : ""}
-                  </span>
+                  <PersonCell
+                    name={a.student_name}
+                    sub={`${a.section_label ?? "No section"}${a.blood_group ? ` · ${a.blood_group}` : ""}`}
+                  />
                 </td>
                 <td className={td}>
                   {a.allergies ? <Badge tone="rose">{a.allergies}</Badge> : "—"}
@@ -265,6 +302,10 @@ export default function ImmunisationPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${alerts.length} child(ren) with something recorded`}
+          right={`${withAllergies.length} with an allergy`}
+        />
       </Card>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Record a vaccination drive">

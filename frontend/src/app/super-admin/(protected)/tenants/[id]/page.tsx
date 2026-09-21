@@ -6,8 +6,10 @@ import { FormEvent, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type TenantStatus = "active" | "suspended" | "deleted";
@@ -124,28 +126,26 @@ export default function TenantDetailPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">{tenant.name}</h1>
+      {/* The status badge moves in beside the button that changes it, which is
+          where somebody looking at it is about to act. */}
+      <PageHeader
+        title={tenant.name}
+        subtitle={`Code ${tenant.code} · ${tenant.contact_email} · ${tenant.contact_mobile}`}
+        actions={
+          <>
             <Badge tone={statusTone[tenant.status]}>{tenant.status}</Badge>
-          </div>
-          <div className="mt-1.5 text-[13px] text-ink-muted">
-            Code: <code>{tenant.code}</code> · {tenant.contact_email} · {tenant.contact_mobile}
-          </div>
-        </div>
-        <div className="flex gap-2">
-          {tenant.status === "active" ? (
-            <Button variant="secondary" onClick={() => setStatus("suspended")}>
-              Suspend
-            </Button>
-          ) : (
-            <Button variant="secondary" onClick={() => setStatus("active")}>
-              Activate
-            </Button>
-          )}
-        </div>
-      </header>
+            {tenant.status === "active" ? (
+              <Button variant="secondary" onClick={() => setStatus("suspended")}>
+                Suspend
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={() => setStatus("active")}>
+                Activate
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -216,7 +216,12 @@ export default function TenantDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Payments</CardTitle>
+          <div>
+            <CardTitle>Payments</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Everything taken against this tenant, online and offline.
+            </p>
+          </div>
           <Button size="sm" onClick={() => setOpenPay(true)}>
             Record payment
           </Button>
@@ -258,6 +263,14 @@ export default function TenantDetailPage() {
             )}
           </tbody>
         </table>
+        <PanelFooter
+          left={`Showing ${payments.length} payment${payments.length === 1 ? "" : "s"}`}
+          right={
+            tenant.current_subscription
+              ? `Subscription ${tenant.current_subscription.status}`
+              : "No subscription assigned"
+          }
+        />
       </Card>
 
       <AssignPlanModal
