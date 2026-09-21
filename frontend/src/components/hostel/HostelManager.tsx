@@ -6,9 +6,11 @@ import { PickedStudent, StudentPicker } from "@/components/StudentPicker";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ErrorBox, NoticeBox, PageHeader, Select, Table, Textarea, humanize, inr, td, tdStrong } from "@/components/ui/Field";
+import { ErrorBox, NoticeBox, PageHeader, Select, Table, Textarea, humanize, inr, td } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
+import { DoorClosed, Layers, UserCheck, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 type Hostel = {
@@ -36,6 +38,11 @@ const API = "/api/v1/school/hostels";
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MEALS = ["breakfast", "lunch", "snacks", "dinner"];
 const dt = (iso: string) => new Date(iso).toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+
+/** A control sized for the filter bar: the same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 /** manager = school admin / principal (setup, allocation, fees). Wardens get the day-to-day tabs. */
 export function HostelManager({ manager }: { manager: boolean }) {
@@ -70,7 +77,7 @@ export function HostelManager({ manager }: { manager: boolean }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Hostel"
         subtitle={manager ? "Rooms, residents, roll call, outings, mess menu and complaints." : "Your hostel: roll call, outings, menu and complaints."}
@@ -87,6 +94,24 @@ export function HostelManager({ manager }: { manager: boolean }) {
       />
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
+
+      {/* The figures the hostel list already carries for the hostel being
+          looked at — nothing is fetched to fill this. */}
+      {h && (
+        <StatStrip
+          stats={[
+            { label: "Rooms", value: h.rooms || "—", note: `${h.name} · ${humanize(h.kind)}`, icon: DoorClosed },
+            { label: "Beds", value: h.beds || "—", note: "In this hostel", icon: Layers },
+            {
+              label: "Occupied",
+              value: h.occupied,
+              note: h.beds ? `${Math.round((h.occupied / h.beds) * 100)}% full` : undefined,
+              icon: Users,
+            },
+            { label: "Free beds", value: h.beds - h.occupied, note: `Warden ${h.warden_name ?? "—"}`, icon: UserCheck },
+          ]}
+        />
+      )}
 
       {hostels.length === 0 && <Card className="p-8 text-center text-sm text-ink-muted">{manager ? "No hostels yet." : "You aren't the warden of any hostel."}</Card>}
 
@@ -211,7 +236,13 @@ function Rooms({ hostel, manager, onChange, onError }: Handlers & { hostel: Host
     <div className="space-y-4">
       {manager && (
         <Card>
-          <CardBody>
+          <CardHeader>
+            <div>
+              <CardTitle>Add a room</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">Beds are created with the room; the fee falls back to the hostel&apos;s.</p>
+            </div>
+          </CardHeader>
+          <CardBody className="pt-0">
             <form onSubmit={addRoom} className="grid items-end gap-3 sm:grid-cols-6">
               <Input label="Room no. *" value={newRoom.room_no} onChange={(e) => setNewRoom({ ...newRoom, room_no: e.target.value })} required />
               <Input label="Floor" value={newRoom.floor} onChange={(e) => setNewRoom({ ...newRoom, floor: e.target.value })} />
@@ -258,6 +289,10 @@ function Rooms({ hostel, manager, onChange, onError }: Handlers & { hostel: Host
                 </div>
               ))}
             </CardBody>
+            <PanelFooter
+              left={`${r.beds.filter((b) => b.student_id).length} of ${r.beds.length} bed(s) taken`}
+              right={r.beds.every((b) => b.student_id) ? "Full" : `${r.beds.filter((b) => !b.student_id).length} free`}
+            />
           </Card>
         ))}
       </div>
@@ -350,25 +385,45 @@ function RollCall({ hostel, onChange, onError }: Handlers & { hostel: Hostel }) 
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <Input label="Date" type="date" value={day} onChange={(e) => setDay(e.target.value)} />
-        <Select label="Roll call" value={session} onChange={(e) => setSession(e.target.value as "morning" | "night")}>
+      <FilterBar>
+        <input
+          type="date"
+          aria-label="Roll call date"
+          value={day}
+          onChange={(e) => setDay(e.target.value)}
+          className={`${filterSelect} min-w-[170px]`}
+        />
+        <select
+          aria-label="Roll call session"
+          value={session}
+          onChange={(e) => setSession(e.target.value as "morning" | "night")}
+          className={filterSelect}
+        >
           <option value="morning">Morning</option>
           <option value="night">Night</option>
-        </Select>
+        </select>
         <Button onClick={save} disabled={residents.length === 0}>
           Save roll call
         </Button>
-      </div>
+      </FilterBar>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Residents &amp; roll call</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {new Date(day + "T00:00:00").toDateString()} · {session} roll call
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Room", "Student", "Class", "Status"]} empty={residents.length === 0 && "No residents."}>
           {residents.map((r) => (
             <tr key={r.student_id}>
               <td className={td}>
                 {r.room_no}-{r.bed_label}
               </td>
-              <td className={tdStrong}>
-                {r.student_name} {r.out_now && <Badge tone="amber">out</Badge>}
+              <td className="px-4 py-3">
+                <PersonCell name={r.student_name} />
+                {r.out_now && <Badge tone="amber">out</Badge>}
               </td>
               <td className={td}>{r.section_label}</td>
               <td className="space-x-1 px-3 py-2">
@@ -386,6 +441,10 @@ function RollCall({ hostel, onChange, onError }: Handlers & { hostel: Hostel }) 
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${residents.length} resident${residents.length === 1 ? "" : "s"}`}
+          right={`${Object.values(marks).filter((m) => m === "absent").length} marked absent`}
+        />
       </Card>
     </div>
   );
@@ -419,20 +478,27 @@ function Outings({ hostel, onChange, onError }: Handlers & { hostel: Hostel }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-sm text-ink-muted">
+      <FilterBar>
+        <label className="flex h-[41px] items-center gap-2 rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink-muted">
           <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} />
           Show past outings
         </label>
         <Button onClick={() => setCreating(true)}>+ Record outing</Button>
-      </div>
+      </FilterBar>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Outings</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {all ? "Every outing on record" : "Outings still open — requested, approved or out"}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Student", "Type", "Leaves", "Back by", "Reason", "Status", ""]} empty={items.length === 0 && "No outings."}>
           {items.map((o) => (
             <tr key={o.id}>
-              <td className={tdStrong}>
-                {o.student_name}
-                {o.requested_by_parent && <div className="text-xs font-normal text-ink-subtle">requested by parent</div>}
+              <td className="px-4 py-3">
+                <PersonCell name={o.student_name} sub={o.requested_by_parent ? "requested by parent" : undefined} />
               </td>
               <td className={td}>{humanize(o.kind)}</td>
               <td className={td}>{dt(o.leave_at)}</td>
@@ -480,6 +546,14 @@ function Outings({ hostel, onChange, onError }: Handlers & { hostel: Hostel }) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${items.length} outing${items.length === 1 ? "" : "s"}`}
+          right={
+            items.filter((o) => o.overdue).length > 0
+              ? `${items.filter((o) => o.overdue).length} overdue`
+              : "Nobody is overdue"
+          }
+        />
       </Card>
       {creating && (
         <OutingModal
@@ -582,6 +656,12 @@ function Menu({ hostel, onChange, onError }: Handlers & { hostel: Hostel }) {
 
   return (
     <Card>
+      <CardHeader>
+        <div>
+          <CardTitle>Mess menu</CardTitle>
+          <p className="mt-[5px] text-[11px] text-ink-muted">The week as it repeats. Leave a box empty and that meal is not listed.</p>
+        </div>
+      </CardHeader>
       <div className="overflow-x-auto">
         <table className="min-w-full text-[13px]">
           <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
@@ -646,7 +726,13 @@ function Complaints({ hostel, onChange, onError }: Handlers & { hostel: Hostel }
   return (
     <div className="space-y-4">
       <Card>
-        <CardBody>
+        <CardHeader>
+          <div>
+            <CardTitle>Log a complaint</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">Anything the warden should look at — maintenance, food, security.</p>
+          </div>
+        </CardHeader>
+        <CardBody className="pt-0">
           <form
             className="grid items-end gap-3 sm:grid-cols-5"
             onSubmit={async (e) => {
@@ -675,11 +761,19 @@ function Complaints({ hostel, onChange, onError }: Handlers & { hostel: Hostel }
           </form>
         </CardBody>
       </Card>
-      <label className="flex items-center gap-2 text-sm text-ink-muted">
-        <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} />
-        Include resolved
-      </label>
+      <FilterBar>
+        <label className="flex h-[41px] items-center gap-2 rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink-muted">
+          <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} />
+          Include resolved
+        </label>
+      </FilterBar>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Complaints</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">{all ? "Everything raised, resolved or not" : "Still open"}</p>
+          </div>
+        </CardHeader>
         <Table head={["Raised", "Category", "Issue", "Status", ""]} empty={items.length === 0 && "No complaints."}>
           {items.map((c) => (
             <tr key={c.id}>
@@ -710,6 +804,10 @@ function Complaints({ hostel, onChange, onError }: Handlers & { hostel: Hostel }
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${items.length} complaint${items.length === 1 ? "" : "s"}`}
+          right={`${items.filter((c) => c.status !== "resolved").length} still open`}
+        />
       </Card>
     </div>
   );

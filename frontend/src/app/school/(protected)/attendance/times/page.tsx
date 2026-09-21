@@ -12,14 +12,18 @@ import {
   Table,
   humanize,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { StudentPicker, type PickedStudent } from "@/components/StudentPicker";
+import { AlarmClock, CalendarCheck, LogOut, Repeat } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { hhmm, shortDate, toIso } from "@/lib/dates";
+
+/** A date control sized for the filter bar: same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Row = {
   student_id: number;
@@ -112,44 +116,66 @@ export default function LateAndEarlyPage() {
   ).size;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Late in, away early"
         subtitle="Arrivals and departures recorded against the day's own register entry."
         actions={<Button onClick={() => setOpen(true)}>Record a time</Button>}
       />
+
+      {/* Every figure is tallied off the rows this window already returned —
+          the count the server sent, and three passes over the same array. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Entries",
+            value: data?.count ?? "—",
+            note: `${shortDate(from)} → ${shortDate(to)}`,
+            icon: CalendarCheck,
+          },
+          { label: "Late arrivals", value: late, note: "Arrival time recorded", icon: AlarmClock },
+          { label: "Left early", value: early, note: "Departure time recorded", icon: LogOut },
+          {
+            label: "Three or more times",
+            value: repeat,
+            note: "Children with a pattern",
+            icon: Repeat,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <input
+          type="date"
+          aria-label="From"
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          className={filterSelect}
+        />
+        <input
+          type="date"
+          aria-label="To"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          className={filterSelect}
+        />
+        <Button variant="secondary" onClick={load}>
+          Apply
+        </Button>
+      </FilterBar>
+
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
       <Card>
-        <CardBody className="flex flex-wrap items-end gap-3">
-          <Input
-            label="From"
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-          />
-          <Input label="To" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-          <Button variant="secondary" onClick={load}>
-            Apply
-          </Button>
-        </CardBody>
-      </Card>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Entries" value={data?.count ?? "—"} />
-        <StatCard label="Late arrivals" value={late} />
-        <StatCard label="Left early" value={early} />
-        <StatCard
-          label="Three or more times"
-          value={repeat}
-          accent={repeat ? "amber" : "emerald"}
-        />
-      </div>
-
-      <Card>
         <CardHeader>
-          <CardTitle>Over the window</CardTitle>
+          <div>
+            <CardTitle>Over the window</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {shortDate(from)} to {shortDate(to)} · {rows.length} row
+              {rows.length === 1 ? "" : "s"}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -159,12 +185,11 @@ export default function LateAndEarlyPage() {
             {rows.map((r, i) => (
               <tr key={`${r.student_id}-${r.date}-${i}`}>
                 <td className={td}>{shortDate(r.date)}</td>
-                <td className={tdStrong}>
-                  {r.student_name}
-                  <span className="block text-[11px] font-normal text-ink-subtle">
-                    {r.admission_no}
-                    {r.section_label ? ` · ${r.section_label}` : ""}
-                  </span>
+                <td className="px-4 py-3">
+                  <PersonCell
+                    name={r.student_name}
+                    sub={`${r.admission_no}${r.section_label ? ` · ${r.section_label}` : ""}`}
+                  />
                 </td>
                 <td className={td}>{humanize(r.status)}</td>
                 <td className={td}>{r.arrived_at ? hhmm(r.arrived_at) : "—"}</td>
@@ -183,6 +208,10 @@ export default function LateAndEarlyPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} of ${data?.count ?? 0} entries`}
+          right={repeat > 0 ? `${repeat} child${repeat === 1 ? "" : "ren"} three or more times` : "No repeat patterns"}
+        />
       </Card>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Record an arrival or departure">

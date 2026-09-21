@@ -4,9 +4,12 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { PageHeader } from "@/components/ui/Field";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { Modal } from "@/components/ui/Modal";
+import { BookOpen, CheckCircle2, Library, Shuffle } from "lucide-react";
 import { DepartmentSelect } from "@/components/foundation/DepartmentSelect";
 import { api, apiError } from "@/lib/api";
 
@@ -64,23 +67,55 @@ export default function SubjectsPage() {
     }
   }
 
+  const coreCount = subjects.filter((s) => s.kind === "core").length;
+  const electiveCount = subjects.filter((s) => s.kind === "elective").length;
+  const activeCount = subjects.filter((s) => s.is_active).length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Subjects</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            School-wide subject master. Each subject can be assigned to multiple
-            classes from the <strong>Classes</strong> page.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setOpenBulk(true)}>
-            Bulk import (CSV)
-          </Button>
-          <Button onClick={() => setOpenCreate(true)}>+ New subject</Button>
-        </div>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Subjects"
+        subtitle="School-wide subject master. Each subject can be assigned to multiple classes from the Classes page."
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setOpenBulk(true)}>
+              Bulk import (CSV)
+            </Button>
+            <Button onClick={() => setOpenCreate(true)}>+ New subject</Button>
+          </>
+        }
+      />
+
+      {/* The master list is loaded whole (active_only=false), so these are
+          counts of the rows below rather than figures from anywhere else. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Subjects",
+            value: subjects.length,
+            note: "In the master list",
+            icon: Library,
+          },
+          {
+            label: "Core",
+            value: coreCount,
+            note: "Taken by everyone",
+            icon: BookOpen,
+          },
+          {
+            label: "Elective",
+            value: electiveCount,
+            note: "Chosen by the child",
+            icon: Shuffle,
+          },
+          {
+            label: "Active",
+            value: activeCount,
+            note: `${subjects.length - activeCount} retired`,
+            icon: CheckCircle2,
+          },
+        ]}
+      />
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
@@ -94,6 +129,14 @@ export default function SubjectsPage() {
       )}
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>All subjects</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Active and retired · {coreCount} core · {electiveCount} elective
+            </p>
+          </div>
+        </CardHeader>
         <table className="min-w-full divide-y divide-surface-border text-[13px]">
           <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
@@ -144,6 +187,10 @@ export default function SubjectsPage() {
             )}
           </tbody>
         </table>
+        <PanelFooter
+          left={`Showing ${subjects.length} subject${subjects.length === 1 ? "" : "s"}`}
+          right={`${activeCount} active · ${subjects.length - activeCount} retired`}
+        />
       </Card>
 
       <SubjectFormModal

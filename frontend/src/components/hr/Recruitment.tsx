@@ -8,6 +8,8 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, Select, Table, Textarea, humanize, inr, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
+import { Briefcase, ClipboardCheck, UserCheck, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { openAuthed } from "@/lib/download";
 
@@ -83,6 +85,12 @@ const stageTone: Record<string, "neutral" | "amber" | "brand" | "emerald" | "ros
 };
 const openingTone = { draft: "neutral", open: "emerald", on_hold: "amber", closed: "neutral", filled: "brand" } as const;
 const base = "/api/v1/school/hr";
+
+/** A select sized for the filter bar: the same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
+
 const localInput = (d = new Date()) => {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
@@ -224,17 +232,37 @@ export function Recruitment({ canEdit }: { canEdit: boolean }) {
     }, "Hired and added to staff.").then(() => setDetail(null));
   };
 
+  const openNow = openings.filter((o) => o.status === "open").length;
+  const vacancies = openings.reduce((n, o) => n + o.vacancies, 0);
+  const hired = openings.reduce((n, o) => n + o.hired, 0);
+  const totalApplications = openings.reduce((n, o) => n + o.applications, 0);
+  const filterLabel =
+    [openingId ? openings.find((o) => String(o.id) === openingId)?.title : "Every opening", stage ? humanize(stage) : "Every stage"]
+      .filter(Boolean)
+      .join(" · ");
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
+      {/* The counts the openings list already carries — no extra call. */}
+      <StatStrip
+        stats={[
+          { label: "Openings", value: openings.length || "—", note: `${openNow} open now`, icon: Briefcase },
+          { label: "Vacancies", value: vacancies || "—", note: `${hired} filled`, icon: UserCheck },
+          { label: "Applications", value: totalApplications || "—", note: "Across every opening", icon: Users },
+          { label: "Shown below", value: apps.length, note: filterLabel, icon: ClipboardCheck },
+        ]}
+      />
+
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
             <CardTitle>Openings</CardTitle>
-            {canEdit && <Button onClick={() => setFormOpen(true)}>New opening</Button>}
+            <p className="mt-[5px] text-[11px] text-ink-muted">Roles being recruited for, and how many people have applied.</p>
           </div>
+          {canEdit && <Button onClick={() => setFormOpen(true)}>New opening</Button>}
         </CardHeader>
         <Table head={["Reference", "Role", "Vacancies", "Applications", "Status", ""]} empty={openings.length === 0 && "No openings yet."}>
           {openings.map((o) => (
@@ -280,47 +308,50 @@ export function Recruitment({ canEdit }: { canEdit: boolean }) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${openings.length} opening${openings.length === 1 ? "" : "s"} · ${openNow} open`}
+          right={`${hired} of ${vacancies} vacancies filled`}
+        />
       </Card>
+
+      <FilterBar>
+        <select aria-label="Opening" value={openingId} onChange={(e) => setOpeningId(e.target.value)} className={filterSelect}>
+          <option value="">All openings</option>
+          {openings.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.title}
+            </option>
+          ))}
+        </select>
+        <select aria-label="Stage" value={stage} onChange={(e) => setStage(e.target.value)} className={filterSelect}>
+          <option value="">All stages</option>
+          {STAGES.map((s) => (
+            <option key={s} value={s}>
+              {humanize(s)}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
 
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
             <CardTitle>Applications</CardTitle>
-            <div className="flex items-end gap-2">
-              <div className="w-52">
-                <Select label="Opening" value={openingId} onChange={(e) => setOpeningId(e.target.value)}>
-                  <option value="">All</option>
-                  {openings.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.title}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div className="w-40">
-                <Select label="Stage" value={stage} onChange={(e) => setStage(e.target.value)}>
-                  <option value="">All</option>
-                  {STAGES.map((s) => (
-                    <option key={s} value={s}>
-                      {humanize(s)}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </div>
+            <p className="mt-[5px] text-[11px] text-ink-muted">{filterLabel}</p>
           </div>
         </CardHeader>
         <Table head={["Candidate", "For", "Applied", "Stage", "Rating", ""]} empty={apps.length === 0 && "No applications."}>
           {apps.map((a) => (
             <tr key={a.id}>
-              <td className={tdStrong}>
-                {a.candidate_name}
-                <div className="text-xs font-normal text-ink-subtle">
-                  {a.candidate_email}
-                  {a.candidate_phone && ` · ${a.candidate_phone}`}
-                  {a.qualification && ` · ${a.qualification}`}
-                  {a.experience_years && ` · ${Number(a.experience_years)} yrs`}
-                </div>
+              <td className="px-4 py-3">
+                <PersonCell name={a.candidate_name} sub={a.candidate_email} />
+                {(a.candidate_phone || a.qualification || a.experience_years) && (
+                  <div className="mt-1 text-xs text-ink-subtle">
+                    {[a.candidate_phone, a.qualification, a.experience_years && `${Number(a.experience_years)} yrs`]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
+                )}
               </td>
               <td className={td}>{a.opening_title}</td>
               <td className={td}>{a.applied_on}</td>
@@ -336,6 +367,10 @@ export function Recruitment({ canEdit }: { canEdit: boolean }) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`Showing ${apps.length} application${apps.length === 1 ? "" : "s"}`}
+          right={totalApplications ? `${totalApplications} in total` : "Nothing yet"}
+        />
       </Card>
 
       <Modal open={!!detail} onClose={() => setDetail(null)} title={detail ? `${detail.candidate_name} — ${detail.opening_title}` : ""} size="lg">

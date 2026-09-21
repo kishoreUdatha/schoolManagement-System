@@ -9,8 +9,13 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, Table, humanize, inr, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A control sized for the filter bar: the same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 const API = "/api/v1/school/accounts";
 const MODES = ["cash", "bank_transfer", "upi", "card", "cheque", "other"];
@@ -34,12 +39,26 @@ type CashBook = {
   daily: { date: string; in: string; out: string }[];
 };
 
+/** The two dates every section is filtered by. Bare controls, because they
+ *  sit in a filter bar rather than in a form: the aria-label names them. */
 function Range({ frm, to, onChange }: { frm: string; to: string; onChange: (f: string, t: string) => void }) {
   return (
-    <div className="flex flex-wrap items-end gap-2">
-      <Input label="From" type="date" value={frm} onChange={(e) => onChange(e.target.value, to)} />
-      <Input label="To" type="date" value={to} onChange={(e) => onChange(frm, e.target.value)} />
-    </div>
+    <>
+      <input
+        type="date"
+        aria-label="From"
+        value={frm}
+        onChange={(e) => onChange(e.target.value, to)}
+        className={filterSelect}
+      />
+      <input
+        type="date"
+        aria-label="To"
+        value={to}
+        onChange={(e) => onChange(frm, e.target.value)}
+        className={filterSelect}
+      />
+    </>
   );
 }
 
@@ -103,14 +122,21 @@ function Book({ onError }: { onError: (m: string) => void }) {
   }, [frm, to]);
   return (
     <div className="space-y-4">
-      <Range frm={frm} to={to} onChange={(f, t) => { setFrm(f); setTo(t); }} />
+      {b && (
+        /* The three totals the cash-book endpoint already returned. */
+        <StatStrip
+          stats={[
+            { label: "Money in", value: inr(b.total_in), note: `${frm} → ${to}` },
+            { label: "Money out", value: inr(b.total_out), note: `${frm} → ${to}` },
+            { label: "Net", value: inr(b.net), note: Number(b.net) >= 0 ? "in hand" : "overspent" },
+          ]}
+        />
+      )}
+      <FilterBar>
+        <Range frm={frm} to={to} onChange={(f, t) => { setFrm(f); setTo(t); }} />
+      </FilterBar>
       {b && (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <StatCard label="Money in" value={inr(b.total_in)} accent="emerald" />
-            <StatCard label="Money out" value={inr(b.total_out)} accent="rose" />
-            <StatCard label="Net" value={inr(b.net)} accent={Number(b.net) >= 0 ? "emerald" : "rose"} />
-          </div>
           <div className="grid gap-4 lg:grid-cols-3">
             <Card>
               <CardHeader>
@@ -133,7 +159,10 @@ function Book({ onError }: { onError: (m: string) => void }) {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>By mode</CardTitle>
+                <div>
+                  <CardTitle>By mode</CardTitle>
+                  <p className="mt-[5px] text-[11px] text-ink-muted">How the money moved</p>
+                </div>
               </CardHeader>
               <Table head={["Mode", "In", "Out"]}>
                 {Object.entries(b.by_mode).map(([m, v]) => (
@@ -148,7 +177,12 @@ function Book({ onError }: { onError: (m: string) => void }) {
           </div>
           <Card>
             <CardHeader>
-              <CardTitle>Day by day</CardTitle>
+              <div>
+                <CardTitle>Day by day</CardTitle>
+                <p className="mt-[5px] text-[11px] text-ink-muted">
+                  {frm} → {to}
+                </p>
+              </div>
             </CardHeader>
             <Table head={["Date", "In", "Out", "Net"]} empty={b.daily.length === 0 && "No money movement in this range."}>
               {b.daily.map((d) => (
@@ -160,6 +194,10 @@ function Book({ onError }: { onError: (m: string) => void }) {
                 </tr>
               ))}
             </Table>
+            <PanelFooter
+              left={`${b.daily.length} day${b.daily.length === 1 ? "" : "s"} with movement`}
+              right={`Net ${inr(b.net)}`}
+            />
           </Card>
         </>
       )}
@@ -182,31 +220,40 @@ function Collections({ onError }: { onError: (m: string) => void }) {
   const total = rows.reduce((s, r) => s + Number(r.amount), 0);
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-wrap items-end gap-2">
-          <Range frm={frm} to={to} onChange={(f, t) => { setFrm(f); setTo(t); }} />
-          <Select label="Mode" value={mode} onChange={(e) => setMode(e.target.value)}>
-            <option value="">All</option>
-            {[...MODES, "online"].map((m) => (
-              <option key={m} value={m}>
-                {humanize(m)}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="text-sm text-ink-muted">
-          {rows.length} receipts · <span className="font-semibold text-ink">{inr(total)}</span>
-        </div>
-      </div>
+      {/* Both figures come off the rows already loaded. */}
+      <StatStrip
+        stats={[
+          { label: "Receipts", value: rows.length, note: `${frm} → ${to}` },
+          { label: "Collected", value: inr(total), note: mode ? humanize(mode) : "Every mode" },
+        ]}
+      />
+      <FilterBar>
+        <Range frm={frm} to={to} onChange={(f, t) => { setFrm(f); setTo(t); }} />
+        <select aria-label="Mode" value={mode} onChange={(e) => setMode(e.target.value)} className={filterSelect}>
+          <option value="">All</option>
+          {[...MODES, "online"].map((m) => (
+            <option key={m} value={m}>
+              {humanize(m)}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Fee receipts</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {frm} → {to} · {mode ? humanize(mode) : "every mode"}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Receipt", "Date", "Student", "Fee", "Mode", "Amount", "By"]} empty={rows.length === 0 && "No fee receipts in this range."}>
           {rows.map((r) => (
             <tr key={r.id}>
               <td className="px-4 py-3 text-[12px] font-mono text-ink">{r.receipt_no}</td>
               <td className={td}>{r.collected_on}</td>
-              <td className={tdStrong}>
-                {r.student_name}
-                <div className="text-xs font-normal text-ink-subtle">{r.section_label}</div>
+              <td className="px-4 py-3">
+                <PersonCell name={r.student_name} sub={r.section_label} />
               </td>
               <td className={td}>
                 {r.fee_head_name} {r.period}
@@ -220,6 +267,10 @@ function Collections({ onError }: { onError: (m: string) => void }) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${rows.length} receipt${rows.length === 1 ? "" : "s"}`}
+          right={`Total ${inr(total)}`}
+        />
       </Card>
     </div>
   );
@@ -332,13 +383,25 @@ function Expenses({ onChange, onError }: Handlers) {
           </form>
         </CardBody>
       </Card>
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      {/* Both figures are counted off the rows already loaded. */}
+      <StatStrip
+        stats={[
+          { label: "Expenses", value: rows.length, note: `${frm} → ${to}` },
+          { label: "Spent", value: inr(total), note: "voided rows excluded" },
+        ]}
+      />
+      <FilterBar>
         <Range frm={frm} to={to} onChange={(a, b) => { setFrm(a); setTo(b); }} />
-        <div className="text-sm text-ink-muted">
-          Total <span className="font-semibold text-ink">{inr(total)}</span>
-        </div>
-      </div>
+      </FilterBar>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Expenses</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {frm} → {to}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Date", "Category", "Paid to", "What for", "Mode", "Amount", ""]} empty={rows.length === 0 && "No expenses in this range."}>
           {rows.map((x) => (
             <tr key={x.id} className={x.is_void ? "opacity-50" : ""}>
@@ -362,6 +425,10 @@ function Expenses({ onChange, onError }: Handlers) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${rows.length} expense${rows.length === 1 ? "" : "s"} in this range`}
+          right={`Total ${inr(total)}`}
+        />
       </Card>
     </div>
   );
@@ -428,8 +495,18 @@ function OtherIncome({ onChange, onError }: Handlers) {
           </form>
         </CardBody>
       </Card>
-      <Range frm={frm} to={to} onChange={(a, b) => { setFrm(a); setTo(b); }} />
+      <FilterBar>
+        <Range frm={frm} to={to} onChange={(a, b) => { setFrm(a); setTo(b); }} />
+      </FilterBar>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Other income</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {frm} → {to}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Receipt", "Date", "Source", "From", "Mode", "Amount", ""]} empty={rows.length === 0 && "Nothing in this range."}>
           {rows.map((r) => (
             <tr key={r.id} className={r.is_void ? "opacity-50" : ""}>
@@ -460,6 +537,7 @@ function OtherIncome({ onChange, onError }: Handlers) {
             </tr>
           ))}
         </Table>
+        <PanelFooter left={`${rows.length} receipt${rows.length === 1 ? "" : "s"} in this range`} />
       </Card>
     </div>
   );
@@ -493,18 +571,27 @@ function Cheques({ onChange, onError }: Handlers) {
   const tone = { received: "amber", deposited: "brand", cleared: "emerald", bounced: "rose", returned: "neutral" } as const;
   return (
     <div className="space-y-4">
-      <div className="flex items-end justify-between gap-3">
-        <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+      <FilterBar>
+        <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)} className={filterSelect}>
           <option value="">All</option>
           {["received", "deposited", "cleared", "bounced", "returned"].map((s) => (
             <option key={s} value={s}>
               {humanize(s)}
             </option>
           ))}
-        </Select>
+        </select>
         <Button onClick={() => setAdding(true)}>+ Record cheque</Button>
-      </div>
+      </FilterBar>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Cheques</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {status ? humanize(status) : "Every status"} · fees are credited when a cheque
+              clears
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Cheque", "Student", "For", "Amount", "Dated", "Status", ""]} empty={rows.length === 0 && "No cheques."}>
           {rows.map((c) => (
             <tr key={c.id}>
@@ -512,9 +599,8 @@ function Cheques({ onChange, onError }: Handlers) {
                 #{c.cheque_no}
                 <div className="text-xs font-normal text-ink-subtle">{c.bank_name}</div>
               </td>
-              <td className={td}>
-                {c.student_name}
-                <div className="text-xs text-ink-subtle">{c.section_label}</div>
+              <td className="px-4 py-3">
+                <PersonCell name={c.student_name} sub={c.section_label} />
               </td>
               <td className={td}>{c.fees_label}</td>
               <td className={tdStrong}>{inr(c.amount)}</td>
@@ -551,6 +637,10 @@ function Cheques({ onChange, onError }: Handlers) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${rows.length} cheque${rows.length === 1 ? "" : "s"}`}
+          right={`${rows.filter((c) => c.due_for_deposit).length} ready to deposit`}
+        />
       </Card>
       {adding && (
         <ChequeModal
@@ -801,12 +891,19 @@ function Concessions({ onChange, onError }: Handlers) {
         </CardBody>
       </Card>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Concessions and scholarships</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Everything currently reducing a student&apos;s fees
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Student", "Fee", "Concession", "Reason", "Valid", "Approved by", ""]} empty={rows.length === 0 && "No active concessions."}>
           {rows.map((c) => (
             <tr key={c.id}>
-              <td className={tdStrong}>
-                {c.student_name}
-                <div className="text-xs font-normal text-ink-subtle">{c.section_label}</div>
+              <td className="px-4 py-3">
+                <PersonCell name={c.student_name} sub={c.section_label} />
               </td>
               <td className={td}>{c.fee_head_name}</td>
               <td className={td}>{c.kind === "percent" ? `${Number(c.value)}%` : inr(c.value)}</td>
@@ -835,6 +932,7 @@ function Concessions({ onChange, onError }: Handlers) {
             </tr>
           ))}
         </Table>
+        <PanelFooter left={`${rows.length} concession${rows.length === 1 ? "" : "s"}`} />
       </Card>
     </div>
   );

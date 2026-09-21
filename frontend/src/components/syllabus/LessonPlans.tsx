@@ -5,10 +5,12 @@ import { FormEvent, useEffect, useState } from "react";
 import type { ClassSubjectSummary } from "@/components/syllabus/SyllabusList";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, Select, Textarea, humanize } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { CheckCircle2, Clock, GraduationCap, NotebookPen } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 type Status = "draft" | "submitted" | "approved" | "returned";
@@ -43,6 +45,11 @@ type Chapter = { id: number; title: string; topics: { id: number; title: string 
 const tone = { draft: "neutral", submitted: "amber", approved: "emerald", returned: "rose" } as const;
 const TEXT_FIELDS = ["objectives", "activities", "resources", "assessment", "homework"] as const;
 const base = "/api/v1/school/lesson-plans";
+
+/** A select sized for the filter bar: the same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 function PlanBody({ p }: { p: LessonPlan }) {
   return (
@@ -290,20 +297,39 @@ export function LessonPlans({ mode }: { mode: "teacher" | "reviewer" }) {
     run(() => api.post(`${base}/${p.id}/deliver`, { delivered_on: on, note: note.trim() || null }), "Recorded. Its topics are now marked as taught.");
   };
 
+  const awaiting = plans.filter((p) => p.status === "submitted").length;
+  const approved = plans.filter((p) => p.status === "approved").length;
+  const taught = plans.filter((p) => p.delivered_on).length;
+  const filterLabel = statusFilter ? humanize(statusFilter) : "Every status";
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-[18px]">
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-48">
-          <Select label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "" | Status)}>
-            <option value="">All</option>
-            <option value="draft">Draft</option>
-            <option value="submitted">Waiting for review</option>
-            <option value="approved">Approved</option>
-            <option value="returned">Returned</option>
-          </Select>
-        </div>
+
+      {/* Counted off the list already on screen — no second request. */}
+      <StatStrip
+        stats={[
+          { label: "Plans shown", value: plans.length, note: filterLabel, icon: NotebookPen },
+          { label: "Waiting for review", value: awaiting, note: "Submitted, not yet decided", icon: Clock },
+          { label: "Approved", value: approved, note: "Cleared to teach", icon: CheckCircle2 },
+          { label: "Taught", value: taught, note: "Recorded as delivered", icon: GraduationCap },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Status"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as "" | Status)}
+          className={filterSelect}
+        >
+          <option value="">All</option>
+          <option value="draft">Draft</option>
+          <option value="submitted">Waiting for review</option>
+          <option value="approved">Approved</option>
+          <option value="returned">Returned</option>
+        </select>
         {mode === "teacher" && (
           <Button
             disabled={subjects.length === 0}
@@ -318,11 +344,24 @@ export function LessonPlans({ mode }: { mode: "teacher" | "reviewer" }) {
         {mode === "teacher" && subjects.length === 0 && (
           <span className="text-xs text-ink-subtle">You aren&apos;t assigned as a subject teacher yet.</span>
         )}
-      </div>
-      {plans.length === 0 && <p className="text-sm text-ink-subtle">No lesson plans here.</p>}
-      {plans.map((p) => (
-        <Card key={p.id}>
-          <CardBody className="space-y-2">
+      </FilterBar>
+
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Lesson plans</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {filterLabel}
+              {mode === "reviewer" ? " · every teacher" : " · your own plans"} · open one to read it in full
+            </p>
+          </div>
+        </CardHeader>
+        <div className="divide-y divide-surface-border border-t border-surface-border">
+          {plans.length === 0 && (
+            <p className="px-[22px] py-10 text-center text-[13px] text-ink-muted">No lesson plans here.</p>
+          )}
+          {plans.map((p) => (
+            <div key={p.id} className="space-y-2 px-[22px] py-4">
             <button type="button" className="flex w-full flex-wrap items-center gap-2 text-left" onClick={() => setOpen(open === p.id ? null : p.id)}>
               <span className="font-medium text-ink">{p.title}</span>
               <Badge tone={tone[p.status]}>{p.status === "submitted" ? "awaiting review" : p.status}</Badge>
@@ -376,9 +415,14 @@ export function LessonPlans({ mode }: { mode: "teacher" | "reviewer" }) {
                 </>
               )}
             </div>
-          </CardBody>
-        </Card>
-      ))}
+            </div>
+          ))}
+        </div>
+        <PanelFooter
+          left={`${plans.length} plan${plans.length === 1 ? "" : "s"} · ${filterLabel.toLowerCase()}`}
+          right={awaiting ? `${awaiting} waiting for review` : "Nothing waiting for review"}
+        />
+      </Card>
       {mode === "teacher" && (
         <PlanForm
           open={formOpen}

@@ -2,27 +2,35 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { AlertTriangle, Building2, GraduationCap, Layers, Pencil, Plus } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   NoticeBox,
   PageHeader,
-  Select,
   Table,
   Textarea,
   humanize,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
+
+/** A select sized for the filter bar: the same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type School = {
   id: number;
@@ -164,76 +172,93 @@ export default function PlatformSchoolsPage() {
         title="Schools"
         subtitle="Every school on the platform, and the organisation that owns it."
         actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Input
-              label="Search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setPage(1);
-                  load();
-                }
-              }}
-              placeholder="Name, code or email"
-            />
-            <Select
-              label="Status"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="">Any status</option>
-              <option value="active">Active</option>
-              <option value="suspended">Suspended</option>
-              <option value="deleted">Deleted</option>
-            </Select>
-            <Link href="/super-admin/schools/new">
-              <Button>
-                <Plus className="mr-1.5 h-4 w-4" />
-                New school
-              </Button>
-            </Link>
-          </div>
+          <Link href="/super-admin/schools/new">
+            <Button>
+              <Plus className="mr-1.5 h-4 w-4" />
+              New school
+            </Button>
+          </Link>
         }
       />
       <ErrorBox>{error}</ErrorBox>
       {done && <NoticeBox>{done}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Organisations on this page" value={tenants} />
-        <StatCard label="Schools on this page" value={schools} />
-        <StatCard
-          label="Organisations with no school"
-          value={noSchool}
-          accent={noSchool ? "amber" : "emerald"}
-        />
-        <StatCard label="Organisations in total" value={total} />
-      </div>
+      {/* Counted from the rows already on screen and the total the list
+          endpoint returned with them — nothing here costs a request. */}
+      <StatStrip
+        stats={[
+          { label: "Organisations on this page", value: tenants, icon: Building2 },
+          { label: "Schools on this page", value: schools, icon: GraduationCap },
+          {
+            label: "Organisations with no school",
+            value: noSchool,
+            icon: AlertTriangle,
+          },
+          {
+            label: "Organisations in total",
+            value: total,
+            note: `Page ${page}`,
+            icon: Layers,
+          },
+        ]}
+      />
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setPage(1);
+          load();
+        }}
+      >
+        <FilterBar>
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            placeholder="Name, code or email"
+            label="Search organisations"
+          />
+          <select
+            aria-label="Status"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            className={filterSelect}
+          >
+            <option value="">Any status</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
+            <option value="deleted">Deleted</option>
+          </select>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
+      </form>
 
       <Card>
         <CardHeader>
-          <CardTitle>Schools</CardTitle>
+          <div>
+            <CardTitle>Schools</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[status ? humanize(status) : "Any status", search ? `“${search}”` : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
         </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["School", "Code", "Organisation", "Contact", "Status", "Added", ""]}
-            empty={!loading && rows.length === 0 && "No organisations match that search."}
-          >
+        <Table
+          head={["School", "Code", "Organisation", "Contact", "Status", "Added", ""]}
+          empty={!loading && rows.length === 0 && "No organisations match that search."}
+        >
             {rows.map((r) => (
               <tr key={`${r.tenant.id}-${r.school?.id ?? "none"}`}>
-                <td className={tdStrong}>
+                <td className="px-4 py-3">
                   {r.school ? (
-                    r.school.name
+                    <PersonCell name={r.school.name} sub={r.school.address} />
                   ) : (
-                    <span className="font-normal text-ink-subtle">No school set up yet</span>
-                  )}
-                  {r.school?.address && (
-                    <span className="block text-[11px] font-normal text-ink-subtle">
-                      {r.school.address}
-                    </span>
+                    <span className="text-[12px] text-ink-subtle">No school set up yet</span>
                   )}
                 </td>
                 <td className={td}>{r.school?.code ?? "—"}</td>
@@ -271,25 +296,36 @@ export default function PlatformSchoolsPage() {
                 </td>
               </tr>
             ))}
-          </Table>
-        </CardBody>
+        </Table>
+        <PanelFooter
+          left={
+            loading
+              ? "Loading…"
+              : `Showing ${rows.length} row(s) from ${tenants} of ${total} organisations`
+          }
+          right={
+            <span className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                Previous
+              </Button>
+              <span className="text-[11px] font-bold text-ink-muted">Page {page}</span>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={page * 20 >= total}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </Button>
+            </span>
+          }
+        />
       </Card>
-
-      {loading && <p className="text-[13px] text-ink-subtle">Loading…</p>}
-
-      <div className="flex items-center gap-2">
-        <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-          Previous
-        </Button>
-        <span className="text-[13px] text-ink-muted">Page {page}</span>
-        <Button
-          variant="secondary"
-          disabled={page * 20 >= total}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          Next
-        </Button>
-      </div>
 
       <Modal
         open={editing !== null}

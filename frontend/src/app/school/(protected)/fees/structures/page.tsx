@@ -5,10 +5,17 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { CircleAlert, Layers, ReceiptIndianRupee, Tags } from "lucide-react";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type AcademicYear = { id: number; name: string; is_current: boolean };
 type SchoolClass = { id: number; name: string };
@@ -106,31 +113,62 @@ export default function FeeStructuresPage() {
     return map;
   }, [classes, structures]);
 
+  const selectedYear = years.find((y) => y.id === yearId) ?? null;
+  const classesWithout = classes.filter((c) => (byClass.get(c.id) ?? []).length === 0).length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <Link href="/school/fees" className="text-sm text-brand-700 hover:underline">
         ← Back to Fees
       </Link>
 
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Fee structures</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Amounts per fee head × class × year. Editing only affects future
-            generation — already-issued bills stay as they were.
-          </p>
-        </div>
-        <Button onClick={() => setOpenCreate(true)} disabled={!yearId}>
-          + New structure
-        </Button>
-      </div>
+      <PageHeader
+        title="Fee structures"
+        subtitle="Amounts per fee head × class × year. Editing only affects future generation — already-issued bills stay as they were."
+        actions={
+          <Button onClick={() => setOpenCreate(true)} disabled={!yearId}>
+            + New structure
+          </Button>
+        }
+      />
 
-      <label className="flex flex-col gap-1 text-sm max-w-xs">
-        <span className="text-[12px] font-bold text-ink-muted">Academic year</span>
+      {/* Counted off the three lists this year already loaded — classes,
+          structures and the active fee heads. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Classes",
+            value: classes.length || "—",
+            note: selectedYear ? selectedYear.name : "No year selected",
+            icon: Layers,
+          },
+          {
+            label: "Structures defined",
+            value: structures.length || "—",
+            note: "Head × class rows",
+            icon: ReceiptIndianRupee,
+          },
+          {
+            label: "Fee heads available",
+            value: heads.length || "—",
+            note: "Active heads only",
+            icon: Tags,
+          },
+          {
+            label: "Classes with none",
+            value: classes.length ? classesWithout : "—",
+            note: classesWithout ? "Nothing will be generated" : "Every class covered",
+            icon: CircleAlert,
+          },
+        ]}
+      />
+
+      <FilterBar>
         <select
+          aria-label="Academic year"
           value={yearId ?? ""}
           onChange={(e) => setYearId(Number(e.target.value))}
-          className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+          className={filterSelect}
         >
           {years.map((y) => (
             <option key={y.id} value={y.id}>
@@ -138,7 +176,7 @@ export default function FeeStructuresPage() {
             </option>
           ))}
         </select>
-      </label>
+      </FilterBar>
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
@@ -147,63 +185,81 @@ export default function FeeStructuresPage() {
         <div className="rounded-lg bg-success-bg px-4 py-3 text-[13px] font-medium text-success dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
-      <div className="space-y-4">
+      <div className="space-y-[18px]">
         {classes.map((c) => {
           const items = byClass.get(c.id) ?? [];
+          const monthly = items.filter((s) => s.is_recurring).length;
           return (
-            <Card key={c.id} className="p-4">
-              <h3 className="font-semibold text-ink">{c.name}</h3>
+            <Card key={c.id}>
+              <CardHeader>
+                <div>
+                  <CardTitle>{c.name}</CardTitle>
+                  <p className="mt-[5px] text-[11px] text-ink-muted">
+                    {items.length === 0
+                      ? "Nothing will be generated for this class"
+                      : `${items.length} head${items.length === 1 ? "" : "s"} · ${monthly} monthly · ${
+                          items.length - monthly
+                        } one-time`}
+                  </p>
+                </div>
+              </CardHeader>
               {items.length === 0 ? (
-                <p className="mt-2 text-sm text-ink-muted">
+                <p className="px-[22px] pb-5 text-sm text-ink-muted">
                   No fee structures defined for this class yet.
                 </p>
               ) : (
-                <table className="mt-3 min-w-full text-sm">
-                  <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
-                    <tr>
-                      <th className="py-1 font-medium">Head</th>
-                      <th className="py-1 font-medium">Type</th>
-                      <th className="py-1 font-medium">Amount</th>
-                      <th className="py-1 font-medium">Due day</th>
-                      <th className="py-1 text-right"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-surface-border">
-                    {items.map((s) => (
-                      <tr key={s.id}>
-                        <td className="py-2 font-medium text-ink">
-                          {s.fee_head_name}{" "}
-                          <span className="text-xs text-ink-muted">
-                            ({s.fee_head_code})
-                          </span>
-                        </td>
-                        <td className="py-2">
-                          {s.is_recurring ? (
-                            <Badge tone="brand">monthly</Badge>
-                          ) : (
-                            <Badge tone="neutral">one-time</Badge>
-                          )}
-                        </td>
-                        <td className="py-2 font-medium">
-                          ₹{Number(s.amount).toLocaleString("en-IN")}
-                        </td>
-                        <td className="py-2 text-ink-muted">{s.due_day_of_month}</td>
-                        <td className="py-2 text-right space-x-2">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => setEditing(s)}
-                          >
-                            Edit
-                          </Button>
-                          <Button size="sm" variant="danger" onClick={() => remove(s)}>
-                            Delete
-                          </Button>
-                        </td>
+                <>
+                  <table className="min-w-full divide-y divide-surface-border text-[13px]">
+                    <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
+                      <tr>
+                        <th className="px-4 py-3 font-bold">Head</th>
+                        <th className="px-4 py-3 font-bold">Type</th>
+                        <th className="px-4 py-3 font-bold">Amount</th>
+                        <th className="px-4 py-3 font-bold">Due day</th>
+                        <th className="px-4 py-3 text-right font-medium">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-surface-border">
+                      {items.map((s) => (
+                        <tr key={s.id} className="hover:bg-surface-subtle">
+                          <td className="px-4 py-3 font-bold text-ink">
+                            {s.fee_head_name}{" "}
+                            <span className="text-xs font-normal text-ink-muted">
+                              ({s.fee_head_code})
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {s.is_recurring ? (
+                              <Badge tone="brand">monthly</Badge>
+                            ) : (
+                              <Badge tone="neutral">one-time</Badge>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 font-medium text-ink [font-variant-numeric:tabular-nums]">
+                            ₹{Number(s.amount).toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-4 py-3 text-ink-muted">{s.due_day_of_month}</td>
+                          <td className="px-4 py-3 text-right space-x-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => setEditing(s)}
+                            >
+                              Edit
+                            </Button>
+                            <Button size="sm" variant="danger" onClick={() => remove(s)}>
+                              Delete
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <PanelFooter
+                    left={`${items.length} structure${items.length === 1 ? "" : "s"} for ${c.name}`}
+                    right={`${monthly} recurring monthly`}
+                  />
+                </>
               )}
             </Card>
           );

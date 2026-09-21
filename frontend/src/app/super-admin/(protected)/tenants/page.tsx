@@ -3,11 +3,21 @@
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 
+import { Building2, CheckCircle2, CircleSlash, Layers } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Tenant = {
@@ -61,17 +71,43 @@ export default function TenantsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
+  const onPage = data?.items ?? [];
+  const activeOnPage = onPage.filter((t) => t.status === "active").length;
+  const suspendedOnPage = onPage.filter((t) => t.status === "suspended").length;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Tenants</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            One tenant = one school account.
-          </p>
-        </div>
-        <Button onClick={() => setOpenCreate(true)}>+ New tenant</Button>
-      </div>
+      <PageHeader
+        title="Tenants"
+        subtitle="One tenant = one school account."
+        actions={<Button onClick={() => setOpenCreate(true)}>+ New tenant</Button>}
+      />
+
+      {/* The total the list endpoint counted, and the make-up of the page it
+          returned — no figure here needs a request of its own. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Tenants",
+            value: data ? data.total.toLocaleString("en-IN") : "—",
+            note: data ? `Page ${data.page} of ${data.pages}` : undefined,
+            icon: Building2,
+          },
+          { label: "On this page", value: data ? onPage.length : "—", icon: Layers },
+          {
+            label: "Active",
+            value: data ? activeOnPage : "—",
+            note: "on this page",
+            icon: CheckCircle2,
+          },
+          {
+            label: "Suspended",
+            value: data ? suspendedOnPage : "—",
+            note: "on this page",
+            icon: CircleSlash,
+          },
+        ]}
+      />
 
       <form
         onSubmit={(e) => {
@@ -79,17 +115,18 @@ export default function TenantsPage() {
           setPage(1);
           load();
         }}
-        className="flex gap-2"
       >
-        <Input
-          placeholder="Search by name, code, or contact email"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md flex-1"
-        />
-        <Button type="submit" variant="secondary">
-          Search
-        </Button>
+        <FilterBar>
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by name, code, or contact email"
+            label="Search tenants"
+          />
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
       </form>
 
       {error && (
@@ -97,6 +134,14 @@ export default function TenantsPage() {
       )}
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>All tenants</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {search ? `Matching “${search}”` : "Every school account on the platform"}
+            </p>
+          </div>
+        </CardHeader>
         <table className="min-w-full divide-y divide-surface-border text-[13px]">
           <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
@@ -111,7 +156,9 @@ export default function TenantsPage() {
           <tbody className="divide-y divide-surface-border">
             {data?.items.map((t) => (
               <tr key={t.id} className="hover:bg-surface-subtle">
-                <td className="px-4 py-3 font-medium text-ink">{t.name}</td>
+                <td className="px-4 py-3">
+                  <PersonCell name={t.name} sub={t.contact_email} />
+                </td>
                 <td className="px-4 py-3 text-ink-muted">{t.code}</td>
                 <td className="px-4 py-3 text-ink-muted">
                   <div>{t.contact_email}</div>
@@ -142,33 +189,39 @@ export default function TenantsPage() {
             )}
           </tbody>
         </table>
+        {data && (
+          <PanelFooter
+            left={`Showing ${data.items.length} of ${data.total.toLocaleString("en-IN")} tenants`}
+            right={
+              data.pages > 1 ? (
+                <span className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  >
+                    ← Prev
+                  </Button>
+                  <span className="text-[11px] font-bold text-ink-muted">
+                    Page {data.page} of {data.pages}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={page >= data.pages}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next →
+                  </Button>
+                </span>
+              ) : (
+                "All records on this page"
+              )
+            }
+          />
+        )}
       </Card>
-
-      {data && data.pages > 1 && (
-        <div className="flex items-center justify-between text-sm text-ink-muted">
-          <div>
-            Page {data.page} of {data.pages} ({data.total} total)
-          </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              ← Prev
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={page >= data.pages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next →
-            </Button>
-          </div>
-        </div>
-      )}
 
       <CreateTenantModal
         open={openCreate}

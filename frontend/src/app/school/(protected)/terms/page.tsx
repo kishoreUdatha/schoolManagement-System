@@ -3,10 +3,16 @@
 import { FormEvent, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody } from "@/components/ui/Card";
-import { ErrorBox, NoticeBox, PageHeader, Select, Table, td, tdStrong } from "@/components/ui/Field";
+import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ErrorBox, NoticeBox, PageHeader, Table, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { CalendarRange, LayoutList, Layers } from "lucide-react";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Year = { id: number; name: string; start_date: string; end_date: string; is_current: boolean };
 type Term = { id: number; name: string; sequence: number; start_date: string; end_date: string };
@@ -71,18 +77,53 @@ export default function TermsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader title="Terms" subtitle="Split each academic year into terms or semesters. Exams can be filed under a term." />
+
+      {/* Counted off the two lists already loaded — the years, and this
+          year's terms. Nothing extra is asked of the server. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Terms in this year",
+            value: terms.length || "—",
+            note: year ? year.name : "Pick a year",
+            icon: LayoutList,
+          },
+          {
+            label: "Year runs",
+            value: year ? year.name : "—",
+            note: year ? `${year.start_date} → ${year.end_date}` : undefined,
+            icon: CalendarRange,
+          },
+          {
+            label: "Years on file",
+            value: years.length || "—",
+            note: "Each can have its own terms",
+            icon: Layers,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Academic year"
+          value={yearId}
+          onChange={(e) => setYearId(e.target.value)}
+          className={filterSelect}
+        >
+          {years.map((y) => (
+            <option key={y.id} value={y.id}>
+              {y.name}
+              {y.is_current ? " (current)" : ""}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
+
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
-      <Select label="Academic year" value={yearId} onChange={(e) => setYearId(e.target.value)}>
-        {years.map((y) => (
-          <option key={y.id} value={y.id}>
-            {y.name}
-            {y.is_current ? " (current)" : ""}
-          </option>
-        ))}
-      </Select>
+
       {year && (
         <Card>
           <CardBody>
@@ -111,6 +152,14 @@ export default function TermsPage() {
         </Card>
       )}
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Terms in this year</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {year ? `${year.name} · ${year.start_date} to ${year.end_date}` : "No year selected"}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["#", "Term", "From", "To", ""]} empty={terms.length === 0 && "No terms for this year yet."}>
           {terms.map((t) => (
             <tr key={t.id}>
@@ -136,6 +185,10 @@ export default function TermsPage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${terms.length} term${terms.length === 1 ? "" : "s"} defined`}
+          right={terms.length > 0 ? "Terms can't overlap" : "Add the first term above"}
+        />
       </Card>
     </div>
   );

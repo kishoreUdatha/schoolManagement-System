@@ -5,9 +5,16 @@ import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
+import { BellRing, GraduationCap, Inbox, TrendingUp } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 import { EnquiryFormModal } from "./EnquiryFormModal";
@@ -18,9 +25,12 @@ import {
   SOURCES,
   STAGES,
   label,
-  selectClass,
   stageTone,
 } from "./types";
+
+/** A select sized for the filter bar: same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Paginated<T> = { items: T[]; total: number; page: number; pages: number };
 
@@ -73,38 +83,41 @@ export default function AdmissionsPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Admissions</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Track enquiries from first contact to enrolment.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link href="/school/admissions/campaigns">
-            <Button variant="secondary">Campaigns</Button>
-          </Link>
-          <Button onClick={() => setOpenCreate(true)}>+ New enquiry</Button>
-        </div>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Admissions"
+        subtitle="Track enquiries from first contact to enrolment."
+        actions={
+          <>
+            <Link href="/school/admissions/campaigns">
+              <Button variant="secondary">Campaigns</Button>
+            </Link>
+            <Button onClick={() => setOpenCreate(true)}>+ New enquiry</Button>
+          </>
+        }
+      />
 
+      {/* The same four figures the stats endpoint already returns for this
+          page — one strip instead of four cards. */}
       {stats && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Open enquiries" value={stats.open} />
-          <StatCard
-            label="Follow-ups due"
-            value={stats.follow_ups_due}
-            accent={stats.follow_ups_due ? "amber" : "brand"}
-            hint="Today or overdue"
-          />
-          <StatCard label="Enrolled" value={stats.enrolled} accent="emerald" />
-          <StatCard
-            label="Conversion"
-            value={`${stats.conversion_rate}%`}
-            hint={`${stats.enrolled} enrolled · ${stats.lost} lost`}
-          />
-        </div>
+        <StatStrip
+          stats={[
+            { label: "Open enquiries", value: stats.open, note: `of ${stats.total} received`, icon: Inbox },
+            {
+              label: "Follow-ups due",
+              value: stats.follow_ups_due,
+              note: "Today or overdue",
+              icon: BellRing,
+            },
+            { label: "Enrolled", value: stats.enrolled, note: `${stats.lost} lost`, icon: GraduationCap },
+            {
+              label: "Conversion",
+              value: `${stats.conversion_rate}%`,
+              note: `${stats.enrolled} enrolled · ${stats.lost} lost`,
+              icon: TrendingUp,
+            },
+          ]}
+        />
       )}
 
       {stats && (
@@ -134,28 +147,27 @@ export default function AdmissionsPage() {
       )}
 
       <form
-        className="flex flex-wrap items-end gap-3"
         onSubmit={(e) => {
           e.preventDefault();
           setPage(1);
           load();
         }}
       >
-        <Input
-          label="Search"
-          placeholder="Student, parent, phone, email"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-ink-muted">Source</span>
+        <FilterBar>
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            placeholder="Student, parent, phone, email"
+            label="Search enquiries"
+          />
           <select
+            aria-label="Source"
             value={source}
             onChange={(e) => {
               setSource(e.target.value as AdmissionSource | "");
               setPage(1);
             }}
-            className={selectClass}
+            className={filterSelect}
           >
             <option value="">All sources</option>
             {SOURCES.map((s) => (
@@ -164,21 +176,22 @@ export default function AdmissionsPage() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex items-center gap-2 pb-2 text-sm text-ink-muted">
-          <input
-            type="checkbox"
-            checked={dueOnly}
+          <select
+            aria-label="Follow-ups"
+            value={dueOnly ? "due" : ""}
             onChange={(e) => {
-              setDueOnly(e.target.checked);
+              setDueOnly(e.target.value === "due");
               setPage(1);
             }}
-          />
-          Follow-ups due only
-        </label>
-        <Button type="submit" variant="secondary">
-          Search
-        </Button>
+            className={filterSelect}
+          >
+            <option value="">All enquiries</option>
+            <option value="due">Follow-ups due only</option>
+          </select>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
       </form>
 
       {error && (
@@ -189,6 +202,18 @@ export default function AdmissionsPage() {
       )}
 
       <Card className="overflow-x-auto">
+        <CardHeader>
+          <div>
+            <CardTitle>Enquiries</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                stage ? label(stage) : "Every stage",
+                source ? label(source) : "All sources",
+                dueOnly ? "Follow-ups due only" : "All follow-ups",
+              ].join(" · ")}
+            </p>
+          </div>
+        </CardHeader>
         <table className="min-w-full divide-y divide-surface-border text-[13px]">
           <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
@@ -213,9 +238,9 @@ export default function AdmissionsPage() {
                   <td className="px-4 py-3">
                     <Link
                       href={`/school/admissions/${e.id}`}
-                      className="font-medium text-ink hover:underline"
+                      className="block hover:underline"
                     >
-                      {e.student_name}
+                      <PersonCell name={e.student_name} />
                     </Link>
                   </td>
                   <td className="px-4 py-3 text-ink-muted">{e.applying_for_class ?? "—"}</td>
@@ -248,24 +273,34 @@ export default function AdmissionsPage() {
             )}
           </tbody>
         </table>
+        {data && (
+          <PanelFooter
+            left={`Showing ${data.items.length} of ${data.total.toLocaleString("en-IN")} enquiries`}
+            right={
+              data.pages > 1 ? (
+                <span className="flex items-center gap-2">
+                  <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                    ← Prev
+                  </Button>
+                  <span className="text-[11px] font-bold text-ink-muted">
+                    Page {data.page} of {data.pages}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={page >= data.pages}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    Next →
+                  </Button>
+                </span>
+              ) : (
+                "All records on this page"
+              )
+            }
+          />
+        )}
       </Card>
-
-      {data && data.pages > 1 && (
-        <div className="flex items-center justify-end gap-2 text-sm text-ink-muted">
-          <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-            ← Prev
-          </Button>
-          Page {data.page} of {data.pages}
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={page >= data.pages}
-            onClick={() => setPage(page + 1)}
-          >
-            Next →
-          </Button>
-        </div>
-      )}
 
       {openCreate && (
         <EnquiryFormModal

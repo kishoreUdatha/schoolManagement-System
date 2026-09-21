@@ -8,6 +8,8 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, Table, inr, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { AlertTriangle, CheckCircle2, Layers, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 import { Route, TransportTabs, Vehicle, hhmm } from "../TransportTabs";
@@ -53,14 +55,52 @@ export default function RoutesPage() {
     }
   }
 
+  const running = routes.filter((r) => r.is_active);
+  const riders = routes.reduce((n, r) => n + r.student_count, 0);
+  const overCapacity = routes.filter(
+    (r) => r.vehicle_capacity != null && r.student_count > r.vehicle_capacity
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Transport"
         subtitle="Routes with ordered stops, timings and fees."
         actions={<Button onClick={() => setCreating(true)}>+ New route</Button>}
       />
       <TransportTabs />
+
+      {/* Counted off the routes already loaded — the same numbers the cards
+          below show, added up. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Routes",
+            value: routes.length,
+            note: `${routes.reduce((n, r) => n + r.stops.length, 0)} stops in total`,
+            icon: Layers,
+          },
+          {
+            label: "Running",
+            value: running.length,
+            note: routes.length - running.length ? `${routes.length - running.length} not running` : "All routes active",
+            icon: CheckCircle2,
+          },
+          {
+            label: "Children on a route",
+            value: riders,
+            note: "Across every route",
+            icon: Users,
+          },
+          {
+            label: "Over capacity",
+            value: overCapacity.length,
+            note: overCapacity.length ? "More riders than seats" : "Every route fits its bus",
+            icon: AlertTriangle,
+          },
+        ]}
+      />
+
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
@@ -76,14 +116,14 @@ export default function RoutesPage() {
                 <CardTitle>
                   {r.code} · {r.name} {!r.is_active && <Badge>inactive</Badge>}
                 </CardTitle>
-                <div className="mt-1 text-xs text-ink-muted">
+                <p className="mt-[5px] text-[11px] text-ink-muted">
                   {r.vehicle_label ?? "No vehicle"} ·{" "}
                   <span className={over ? "font-semibold text-danger" : ""}>
                     {r.student_count}
                     {r.vehicle_capacity != null && ` / ${r.vehicle_capacity}`} students
                   </span>{" "}
                   · default fee {inr(r.monthly_fee)}/month
-                </div>
+                </p>
               </div>
               <div className="flex gap-2">
                 <Button size="sm" variant="secondary" onClick={() => setEditing(r)}>
@@ -112,6 +152,16 @@ export default function RoutesPage() {
                 </tr>
               ))}
             </Table>
+            <PanelFooter
+              left={`${r.stops.length} stop(s) · ${r.student_count} child(ren)`}
+              right={
+                over
+                  ? `Over capacity by ${r.student_count - (r.vehicle_capacity ?? 0)}`
+                  : r.vehicle_capacity != null
+                    ? `${r.vehicle_capacity - r.student_count} seat(s) free`
+                    : "No vehicle assigned"
+              }
+            />
           </Card>
         );
       })}

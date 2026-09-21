@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { BookOpen, Layers, Library, Shuffle } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 type Subject = { id: number; name: string; code: string; is_active: boolean };
@@ -143,9 +144,10 @@ export default function SubjectGroupsPage() {
   };
 
   const grouped = groups.reduce((n, g) => n + g.subject_count, 0);
+  const electives = groups.reduce((n, g) => n + g.elective_count, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Subject groups"
         subtitle="Subjects a school talks about together — a science block, a choice of languages."
@@ -159,16 +161,36 @@ export default function SubjectGroupsPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Groups" value={groups.length} />
-        <StatCard label="Subjects available" value={subjects.length} />
-        <StatCard label="Placed in a group" value={grouped} />
-        <StatCard
-          label="Offered as a choice"
-          value={groups.reduce((n, g) => n + g.elective_count, 0)}
-          accent="neutral"
-        />
-      </div>
+      {/* The same four figures as before, in the mock's single strip: all of
+          them counted off the groups and subjects already loaded. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Groups",
+            value: groups.length,
+            note: "Ways of talking about subjects",
+            icon: Layers,
+          },
+          {
+            label: "Subjects available",
+            value: subjects.length,
+            note: "Active in the master list",
+            icon: Library,
+          },
+          {
+            label: "Placed in a group",
+            value: grouped,
+            note: "Memberships across all groups",
+            icon: BookOpen,
+          },
+          {
+            label: "Offered as a choice",
+            value: electives,
+            note: "Picked from the group, not taken with it",
+            icon: Shuffle,
+          },
+        ]}
+      />
 
       {groups.length === 0 && (
         <Card>
@@ -184,7 +206,7 @@ export default function SubjectGroupsPage() {
           <CardHeader>
             <div className="min-w-0">
               <CardTitle>{g.name}</CardTitle>
-              <p className="mt-1 text-[13px] text-ink-muted">
+              <p className="mt-[5px] text-[11px] text-ink-muted">
                 <span className="font-mono">{g.code}</span>
                 {g.description ? ` · ${g.description}` : ""}
               </p>
@@ -235,6 +257,10 @@ export default function SubjectGroupsPage() {
               ))}
             </Table>
           </CardBody>
+          <PanelFooter
+            left={`${g.subject_count} subject${g.subject_count === 1 ? "" : "s"} in this group`}
+            right={`${g.elective_count} offered as a choice`}
+          />
         </Card>
       ))}
 

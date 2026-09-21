@@ -5,10 +5,24 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { PageHeader } from "@/components/ui/Field";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { Modal } from "@/components/ui/Modal";
+import { GraduationCap, Link2, UserCheck, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Relation = "father" | "mother" | "guardian" | "other";
 
@@ -121,46 +135,76 @@ export default function ParentsPage() {
     }
   }
 
+  const activeCount = parents.filter((p) => p.is_active).length;
+  const linkedChildren = parents.reduce((n, p) => n + p.children.length, 0);
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Parents</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Each parent has one login that sees only their linked children.
-          </p>
-        </div>
-        <Button onClick={() => setOpenCreate(true)}>+ New parent</Button>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Parents"
+        subtitle="Each parent has one login that sees only their linked children."
+        actions={<Button onClick={() => setOpenCreate(true)}>+ New parent</Button>}
+      />
+
+      {/* Only what this page already loaded: the parents the current filter
+          returned, how many of them are active, the child links counted off
+          those same rows, and the roster the link pickers draw from. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Parents",
+            value: parents.length,
+            note: statusFilter ? `${statusFilter} only` : "All statuses",
+            icon: Users,
+          },
+          {
+            label: "Active logins",
+            value: activeCount,
+            note: `of ${parents.length} listed`,
+            icon: UserCheck,
+          },
+          {
+            label: "Children linked",
+            value: linkedChildren,
+            note: "Across the parents shown",
+            icon: Link2,
+          },
+          {
+            label: "Students available",
+            value: students.length || "—",
+            note: "Loaded for the link pickers",
+            icon: GraduationCap,
+          },
+        ]}
+      />
 
       <form
         onSubmit={(e) => {
           e.preventDefault();
           load();
         }}
-        className="flex flex-wrap items-end gap-2"
       >
-        <Input
-          placeholder="Search name, email, phone"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-72"
-        />
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Status</span>
+        <FilterBar>
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            placeholder="Search name, email, phone…"
+            label="Search parents"
+          />
           <select
+            aria-label="Status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
-            <option value="">All</option>
+            <option value="">All statuses</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-        </label>
-        <Button type="submit" variant="secondary">
-          Search
-        </Button>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
       </form>
 
       {error && (
@@ -170,73 +214,102 @@ export default function ParentsPage() {
         <div className="rounded-lg bg-success-bg px-4 py-3 text-[13px] font-medium text-success dark:bg-emerald-500/15 dark:text-emerald-200">{notice}</div>
       )}
 
-      <div className="space-y-3">
-        {parents.map((p) => (
-          <Card key={p.user_id} className="p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2">
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>All parents</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[statusFilter ? statusFilter : "Every status", `${linkedChildren} child link(s)`]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+        </CardHeader>
+        <table className="min-w-full divide-y divide-surface-border text-[13px]">
+          <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
+            <tr>
+              <th className="px-4 py-3 font-bold">Parent</th>
+              <th className="px-4 py-3 font-bold">Phone</th>
+              <th className="px-4 py-3 font-bold">Children</th>
+              <th className="px-4 py-3 font-bold">Status</th>
+              <th className="px-4 py-3 text-right font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-surface-border">
+            {parents.map((p) => (
+              <tr key={p.user_id} className="hover:bg-surface-subtle">
+                <td className="px-4 py-3">
                   <Link
                     href={`/school/parents/${p.user_id}`}
-                    className="font-semibold text-ink hover:text-brand-600 hover:underline"
+                    className="block rounded-md hover:opacity-80"
                   >
-                    {p.full_name}
+                    <PersonCell name={p.full_name} sub={p.email ?? "no email"} />
                   </Link>
+                </td>
+                <td className="px-4 py-3 text-ink-muted">{p.phone ?? "—"}</td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-wrap gap-2">
+                    {p.children.map((c) => (
+                      <span
+                        key={c.student_id}
+                        className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-subtle px-3 py-1 text-xs"
+                      >
+                        <span className="font-medium text-ink">{c.full_name}</span>
+                        <span className="text-ink-muted">
+                          {c.admission_no} · {c.section_label} · {c.relation}
+                        </span>
+                        <button
+                          onClick={() => unlinkChild(p, c.student_id, c.full_name)}
+                          className="text-danger hover:underline"
+                        >
+                          unlink
+                        </button>
+                      </span>
+                    ))}
+                    {p.children.length === 0 && (
+                      <span className="text-xs text-ink-muted">No children linked</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-4 py-3">
                   {p.is_active ? (
                     <Badge tone="emerald">active</Badge>
                   ) : (
                     <Badge tone="rose">inactive</Badge>
                   )}
-                </div>
-                <div className="mt-0.5 text-xs text-ink-muted">
-                  {p.email} · {p.phone ?? "no phone"}
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {p.children.map((c) => (
-                    <span
-                      key={c.student_id}
-                      className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-subtle px-3 py-1 text-xs"
-                    >
-                      <span className="font-medium text-ink">{c.full_name}</span>
-                      <span className="text-ink-muted">
-                        {c.admission_no} · {c.section_label} · {c.relation}
-                      </span>
-                      <button
-                        onClick={() => unlinkChild(p, c.student_id, c.full_name)}
-                        className="text-danger hover:underline"
-                      >
-                        unlink
-                      </button>
-                    </span>
-                  ))}
-                  {p.children.length === 0 && (
-                    <span className="text-xs text-ink-muted">No children linked</span>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button size="sm" variant="secondary" onClick={() => setLinkingTo(p)}>
-                  + Link child
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => setEditing(p)}>
-                  Edit
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => toggleActive(p)}>
-                  {p.is_active ? "Deactivate" : "Activate"}
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => resetPassword(p)}>
-                  Reset pw
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
-        {parents.length === 0 && (
-          <Card className="p-8 text-center text-ink-muted">
-            No parents yet — click <strong>+ New parent</strong>.
-          </Card>
-        )}
-      </div>
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => setLinkingTo(p)}>
+                      + Link child
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => setEditing(p)}>
+                      Edit
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => toggleActive(p)}>
+                      {p.is_active ? "Deactivate" : "Activate"}
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => resetPassword(p)}>
+                      Reset pw
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {parents.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-8 text-center text-ink-muted">
+                  No parents yet — click <strong>+ New parent</strong>.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        <PanelFooter
+          left={`Showing ${parents.length} parent${parents.length === 1 ? "" : "s"}`}
+          right={`${activeCount} active · ${linkedChildren} child link(s)`}
+        />
+      </Card>
 
       <CreateParentModal
         open={openCreate}

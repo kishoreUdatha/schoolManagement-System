@@ -4,12 +4,24 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ErrorBox, NoticeBox, Select, Table, Textarea, humanize, inr, td, tdStrong } from "@/components/ui/Field";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ErrorBox, NoticeBox, Select, Table, Textarea, humanize, inr, td } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import {
+  FilterBar,
+  MiniBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { openAuthed } from "@/lib/download";
+
+/** A select sized for the filter bar: the same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Doc = { id: number; category: string; file_name: string; size_bytes: number; is_verified: boolean; remark: string | null };
 type Assessment = {
@@ -237,26 +249,61 @@ export function Applications({ canDecide }: { canDecide: boolean }) {
     }, "Student created.").then(() => setDetail(null));
   };
 
+  const admitted = items.filter((a) => a.status === "admitted").length;
+  const rejected = items.filter((a) => a.status === "rejected").length;
+  const inProgress = items.filter(
+    (a) => !["admitted", "rejected", "withdrawn"].includes(a.status)
+  ).length;
+
   return (
     <div className="space-y-4">
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-48">
-          <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {humanize(s)}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <Input label="Search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name, number or phone" />
+      {/* Counted from the list already on screen — there is no summary
+          endpoint behind these, so they describe the rows below and say so. */}
+      <StatStrip
+        stats={[
+          { label: "Applications", value: items.length, note: "matching this filter" },
+          { label: "In progress", value: inProgress, note: "not yet decided" },
+          { label: "Admitted", value: admitted, note: "in this list" },
+          { label: "Rejected", value: rejected, note: "in this list" },
+        ]}
+      />
+
+      <FilterBar>
+        <SearchBox
+          value={search}
+          onChange={setSearch}
+          placeholder="Name, number or phone"
+          label="Search applications"
+        />
+        <select
+          aria-label="Status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">All</option>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>
+              {humanize(s)}
+            </option>
+          ))}
+        </select>
         <Button onClick={() => setFormOpen(true)}>New application</Button>
-      </div>
+      </FilterBar>
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Applications</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[status ? humanize(status) : "Every stage", search ? `“${search}”` : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Number", "Applicant", "Class", "Documents", "Status", ""]} empty={items.length === 0 && "No applications."}>
           {items.map((a) => (
             <tr key={a.id}>
@@ -264,16 +311,20 @@ export function Applications({ canDecide }: { canDecide: boolean }) {
                 {a.application_no}
                 {a.submitted_at && <div className="text-xs text-ink-subtle">{new Date(a.submitted_at).toLocaleDateString()}</div>}
               </td>
-              <td className={tdStrong}>
-                {a.student_name}
-                <div className="text-xs font-normal text-ink-subtle">
-                  {a.guardian_name} · {a.phone}
-                  {a.sibling_in_school && " · sibling here"}
-                </div>
+              <td className="px-4 py-3">
+                <PersonCell
+                  name={a.student_name}
+                  sub={`${a.guardian_name} · ${a.phone}${a.sibling_in_school ? " · sibling here" : ""}`}
+                />
               </td>
               <td className={td}>{a.class_name ?? "—"}</td>
               <td className={td}>
-                {a.documents_verified}/{a.documents_total}
+                <div className="text-[11px] text-ink-muted">
+                  {a.documents_verified}/{a.documents_total} verified
+                </div>
+                {a.documents_total > 0 && (
+                  <MiniBar percent={(a.documents_verified / a.documents_total) * 100} />
+                )}
               </td>
               <td className={td}>
                 <Badge tone={tone[a.status]}>{humanize(a.status)}</Badge>
@@ -286,6 +337,10 @@ export function Applications({ canDecide }: { canDecide: boolean }) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${items.length} application${items.length === 1 ? "" : "s"} shown`}
+          right={`${inProgress} awaiting a decision`}
+        />
       </Card>
 
       <Modal open={!!detail} onClose={() => setDetail(null)} title={detail ? `${detail.student_name} · ${detail.application_no}` : ""} size="lg">

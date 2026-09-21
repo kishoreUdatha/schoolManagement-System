@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Copy, KeyRound, UserPlus } from "lucide-react";
+import { CircleSlash, Clock, Copy, KeyRound, ShieldCheck, Users, UserPlus } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -13,11 +13,10 @@ import {
   Table,
   WarnBox,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
 
@@ -117,12 +116,15 @@ export default function PlatformUsersPage() {
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Accounts" value={rows.length} />
-        <StatCard label="Active" value={active} accent="emerald" />
-        <StatCard label="Switched off" value={rows.length - active} />
-        <StatCard label="Never signed in" value={neverIn} />
-      </div>
+      {/* Counted from the list already loaded, not from a second endpoint. */}
+      <StatStrip
+        stats={[
+          { label: "Accounts", value: rows.length, icon: Users },
+          { label: "Active", value: active, icon: ShieldCheck },
+          { label: "Switched off", value: rows.length - active, icon: CircleSlash },
+          { label: "Never signed in", value: neverIn, icon: Clock },
+        ]}
+      />
 
       {active === 1 && (
         <WarnBox>
@@ -164,22 +166,28 @@ export default function PlatformUsersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Accounts</CardTitle>
+          <div>
+            <CardTitle>Accounts</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {active} active · {rows.length - active} switched off · {neverIn} never signed in
+            </p>
+          </div>
         </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["Name", "Email", "State", "Last signed in", ""]}
-            empty={rows.length === 0 && "No administrators yet."}
-          >
+        <Table
+          head={["Name", "Email", "State", "Last signed in", ""]}
+          empty={rows.length === 0 && "No administrators yet."}
+        >
             {rows.map((r) => (
               <tr key={r.id}>
-                <td className={tdStrong}>
-                  {r.full_name}
-                  {r.must_change_password && (
-                    <span className="block text-[11px] font-normal text-ink-subtle">
-                      has not chosen their own password yet
-                    </span>
-                  )}
+                <td className="px-4 py-3">
+                  <PersonCell
+                    name={r.full_name}
+                    sub={
+                      r.must_change_password
+                        ? "has not chosen their own password yet"
+                        : r.email
+                    }
+                  />
                 </td>
                 <td className={td}>{r.email ?? "—"}</td>
                 <td className={td}>
@@ -229,8 +237,11 @@ export default function PlatformUsersPage() {
                 </td>
               </tr>
             ))}
-          </Table>
-        </CardBody>
+        </Table>
+        <PanelFooter
+          left={`${rows.length} account${rows.length === 1 ? "" : "s"}`}
+          right={`${active} able to sign in`}
+        />
       </Card>
 
       <Modal

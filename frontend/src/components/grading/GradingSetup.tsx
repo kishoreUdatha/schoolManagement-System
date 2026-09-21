@@ -8,6 +8,8 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, Table, Textarea, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { Award, ClipboardList, FileText, Layers } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 export type Band = { grade: string; min_percent: string | number; max_percent: string | number; points?: string | number | null; remark?: string | null; is_pass?: boolean };
@@ -99,23 +101,52 @@ export function GradingSetup() {
         : [{ ...emptyBand, grade: "A", min_percent: "60", max_percent: "100" }, { ...emptyBand, grade: "B", min_percent: "0", max_percent: "59" }],
     });
 
+  const defaultScale = scales.find((s) => s.is_default) ?? null;
+  const bandCount = scales.reduce((n, s) => n + s.bands.length, 0);
+  const examCount = types.reduce((n, t) => n + t.exams, 0);
+  const weightTotal = types.reduce((n, t) => n + Number(t.weight_percent ?? 0), 0);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
+      {/* Only what is already loaded: the scales and exam types on screen,
+          and the counts the list endpoints return with them. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Grade scales",
+            value: scales.length,
+            note: defaultScale ? `${defaultScale.name} is the default` : "No default set",
+            icon: Award,
+          },
+          { label: "Bands", value: bandCount || "—", note: "Across every scale", icon: Layers },
+          {
+            label: "Exam types",
+            value: types.length || "—",
+            note: weightTotal ? `${weightTotal}% of the term weighted` : "No weights set",
+            icon: ClipboardList,
+          },
+          { label: "Exams using them", value: examCount || "—", note: "Already scheduled", icon: FileText },
+        ]}
+      />
+
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
             <CardTitle>Grade scales</CardTitle>
-            <div className="flex gap-2">
-              {scales.length === 0 && (
-                <Button variant="secondary" onClick={() => run(() => api.post("/api/v1/school/grade-scales/seed-cbse"), "CBSE scale created.")}>
-                  Use CBSE 8-point
-                </Button>
-              )}
-              <Button onClick={() => openScale(null)}>New scale</Button>
-            </div>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              The bands of marks, and the letter each one prints on a report card.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {scales.length === 0 && (
+              <Button variant="secondary" onClick={() => run(() => api.post("/api/v1/school/grade-scales/seed-cbse"), "CBSE scale created.")}>
+                Use CBSE 8-point
+              </Button>
+            )}
+            <Button onClick={() => openScale(null)}>New scale</Button>
           </div>
         </CardHeader>
         <Table head={["Scale", "Bands", "Used by", "", ""]} empty={scales.length === 0 && "No scales yet — marks use the built-in A–F bands."}>
@@ -157,13 +188,22 @@ export function GradingSetup() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${scales.length} scale${scales.length === 1 ? "" : "s"} · ${bandCount} band${bandCount === 1 ? "" : "s"}`}
+          right={defaultScale ? `New marks use ${defaultScale.name}` : "New marks use the built-in A–F bands"}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Exam types</CardTitle>
+          <div>
+            <CardTitle>Exam types</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              What an exam can be, and how much of the term&apos;s result each one carries.
+            </p>
+          </div>
         </CardHeader>
-        <CardBody>
+        <CardBody className="pt-0">
           <form
             className="flex flex-wrap items-end gap-2"
             onSubmit={async (e) => {
@@ -186,8 +226,8 @@ export function GradingSetup() {
               </Button>
             )}
           </form>
-          <div className="mt-3">
-            <Table head={["Type", "Code", "Weight", "Exams", ""]} empty={types.length === 0 && "No exam types yet."}>
+        </CardBody>
+        <Table head={["Type", "Code", "Weight", "Exams", ""]} empty={types.length === 0 && "No exam types yet."}>
               {types.map((t) => (
                 <tr key={t.id}>
                   <td className={tdStrong}>{t.name}</td>
@@ -206,17 +246,22 @@ export function GradingSetup() {
                   </td>
                 </tr>
               ))}
-            </Table>
-          </div>
-        </CardBody>
+        </Table>
+        <PanelFooter
+          left={`${types.length} type${types.length === 1 ? "" : "s"} · ${examCount} exam${examCount === 1 ? "" : "s"} scheduled`}
+          right={weightTotal ? `${weightTotal}% of the term weighted` : "No weights set"}
+        />
       </Card>
 
       {settings && (
         <Card>
           <CardHeader>
-            <CardTitle>Report card</CardTitle>
+            <div>
+              <CardTitle>Report card</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">What the printed report card shows, and who signs it.</p>
+            </div>
           </CardHeader>
-          <CardBody className="space-y-3">
+          <CardBody className="space-y-3 pt-0">
             <div className="flex flex-wrap gap-4 text-sm text-ink">
               {([
                 ["show_attendance", "Show attendance"],

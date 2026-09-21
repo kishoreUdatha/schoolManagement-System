@@ -14,9 +14,9 @@ import {
   WarnBox,
   humanize,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
+import { AlarmClock, Building2, Hourglass, UserX } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
 
@@ -125,31 +125,43 @@ export default function HostelWardensPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Wardens"
         subtitle="Who looks after each hostel, and what is waiting on them."
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Hostels" value={loading ? "—" : blocks.length} />
-        <StatCard
-          label="Without a warden"
-          value={loading ? "—" : noWarden.length}
-          accent={noWarden.length ? "rose" : "emerald"}
-        />
-        <StatCard
-          label="Waiting on a decision"
-          value={loading ? "—" : waiting}
-          accent={waiting ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Overdue back"
-          value={loading ? "—" : overdue.length}
-          accent={overdue.length ? "rose" : "emerald"}
-        />
-      </div>
+      {/* All four are counted off the hostels, outings and complaints this
+          page has already fetched — no extra call to fill a heading. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Hostels",
+            value: loading ? "—" : blocks.length,
+            note: "With a record in the system",
+            icon: Building2,
+          },
+          {
+            label: "Without a warden",
+            value: loading ? "—" : noWarden.length,
+            note: noWarden.length ? "Nobody assigned to decide" : "All accounted for",
+            icon: UserX,
+          },
+          {
+            label: "Waiting on a decision",
+            value: loading ? "—" : waiting,
+            note: "Outings requested + open complaints",
+            icon: Hourglass,
+          },
+          {
+            label: "Overdue back",
+            value: loading ? "—" : overdue.length,
+            note: overdue.length ? "Past the time they were due" : "Nobody late",
+            icon: AlarmClock,
+          },
+        ]}
+      />
 
       {overdue.length > 0 && (
         <WarnBox>
@@ -188,7 +200,7 @@ export default function HostelWardensPage() {
               <CardHeader>
                 <div className="min-w-0">
                   <CardTitle>{hostel.name}</CardTitle>
-                  <p className="mt-1 text-[13px] text-ink-muted">
+                  <p className="mt-[5px] text-[11px] text-ink-muted">
                     {humanize(hostel.kind)} · {hostel.occupied} of {hostel.beds} beds
                     {hostel.curfew ? ` · curfew ${hostel.curfew}` : ""}
                   </p>
@@ -210,7 +222,9 @@ export default function HostelWardensPage() {
                   >
                     {pending.map((o) => (
                       <tr key={o.id}>
-                        <td className={tdStrong}>{o.student_name}</td>
+                        <td className={td}>
+                          <PersonCell name={o.student_name} />
+                        </td>
                         <td className={td}>{humanize(o.kind)}</td>
                         <td className={td}>{dateTime(o.leave_at)}</td>
                         <td className={td}>{dateTime(o.return_by)}</td>
@@ -233,7 +247,9 @@ export default function HostelWardensPage() {
                     {complaints.map((c) => (
                       <tr key={c.id}>
                         <td className={td}>{dateTime(c.created_at)}</td>
-                        <td className={tdStrong}>{c.student_name ?? "—"}</td>
+                        <td className={td}>
+                          <PersonCell name={c.student_name ?? "—"} />
+                        </td>
                         <td className={td}>{c.category}</td>
                         <td className={td}>
                           <span className="line-clamp-2">{c.description}</span>
@@ -247,13 +263,17 @@ export default function HostelWardensPage() {
                     ))}
                   </Table>
                 </div>
-
-                <div>
-                  <Link href="/school/hostel/allocations">
-                    <Button variant="secondary">Residents</Button>
-                  </Link>
-                </div>
               </CardBody>
+              <PanelFooter
+                left={`${pending.length} outing(s) to decide · ${complaints.length} complaint(s) open`}
+                right={
+                  <Link href="/school/hostel/allocations">
+                    <Button size="sm" variant="secondary">
+                      Residents
+                    </Button>
+                  </Link>
+                }
+              />
             </Card>
           );
         })

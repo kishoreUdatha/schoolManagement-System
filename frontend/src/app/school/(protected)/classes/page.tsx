@@ -6,9 +6,16 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, StatStrip } from "@/components/ui/Workspace";
+import { Armchair, Grid2x2, Layers } from "lucide-react";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type AcademicYear = {
   id: number;
@@ -152,41 +159,67 @@ export default function ClassesPage() {
     );
   }
 
+  const sectionCount = classes.reduce((n, c) => n + c.sections.length, 0);
+  const seatCount = classes.reduce(
+    (n, c) => n + c.sections.reduce((m, s) => m + (s.capacity || 0), 0),
+    0
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Classes & sections</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Classes are scoped to an academic year. Drag the order with the
-            arrows. Sections live inside a class.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 text-sm">
-            <span className="text-[12px] font-bold text-ink-muted">Academic year:</span>
-            <select
-              value={yearId ?? ""}
-              onChange={(e) => setYearId(Number(e.target.value))}
-              className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-            >
-              {years.map((y) => (
-                <option key={y.id} value={y.id}>
-                  {y.name}
-                  {y.is_current ? " (current)" : ""}
-                  {y.is_archived ? " (archived)" : ""}
-                </option>
-              ))}
-            </select>
-          </label>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Classes & sections"
+        subtitle="Classes are scoped to an academic year. Reorder them with the arrows. Sections live inside a class."
+        actions={
           <Button
             onClick={() => setOpenCreateClass(true)}
             disabled={!selectedYear || selectedYear.is_archived}
           >
             + New class
           </Button>
-        </div>
-      </div>
+        }
+      />
+
+      {/* Three tallies over the class list already loaded for this year. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Classes",
+            value: classes.length || "—",
+            note: selectedYear ? selectedYear.name : "No year selected",
+            icon: Layers,
+          },
+          {
+            label: "Sections",
+            value: sectionCount || "—",
+            note: "Across every class",
+            icon: Grid2x2,
+          },
+          {
+            label: "Seats declared",
+            value: seatCount || "—",
+            note: "Sum of section capacities",
+            icon: Armchair,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Academic year"
+          value={yearId ?? ""}
+          onChange={(e) => setYearId(Number(e.target.value))}
+          className={filterSelect}
+        >
+          {years.map((y) => (
+            <option key={y.id} value={y.id}>
+              {y.name}
+              {y.is_current ? " (current)" : ""}
+              {y.is_archived ? " (archived)" : ""}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
 
       {selectedYear?.is_archived && (
         <div className="rounded-lg bg-warning-bg px-4 py-3 text-[13px] font-medium text-warning dark:bg-amber-500/15 dark:text-amber-200">
@@ -231,7 +264,15 @@ export default function ClassesPage() {
                     ▼
                   </button>
                 </div>
-                <CardTitle>{c.name}</CardTitle>
+                <div>
+                  <CardTitle>{c.name}</CardTitle>
+                  <p className="mt-[5px] text-[11px] text-ink-muted">
+                    {(() => {
+                      const seats = c.sections.reduce((m, s) => m + (s.capacity || 0), 0);
+                      return seats ? `${seats} seats declared` : "No capacity set";
+                    })()}
+                  </p>
+                </div>
                 <Badge tone="neutral">
                   {c.sections.length} section{c.sections.length === 1 ? "" : "s"}
                 </Badge>

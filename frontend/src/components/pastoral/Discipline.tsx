@@ -5,11 +5,16 @@ import { FormEvent, useEffect, useState } from "react";
 import { StudentPicker, type PickedStudent } from "@/components/StudentPicker";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, Select, Textarea, humanize } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { Avatar, FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: the same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Action = {
   id: number;
@@ -119,30 +124,68 @@ export function Discipline() {
     if (ok) setActionFor(null);
   }
 
+  const open_ = items.filter((i) => i.status !== "closed" && i.status !== "dismissed").length;
+  const serious = items.filter((i) => i.severity === "high").length;
+  const told = items.filter((i) => i.shared_with_parents).length;
+
   return (
     <div className="space-y-4">
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-52">
-          <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">All</option>
-            <option value="reported">Just reported</option>
-            <option value="investigating">Being looked into</option>
-            <option value="action_taken">Action taken</option>
-            <option value="closed">Closed</option>
-            <option value="dismissed">Dismissed</option>
-          </Select>
-        </div>
-        <Button onClick={() => setReportOpen(true)}>Report an incident</Button>
-      </div>
 
-      {items.length === 0 && <p className="text-sm text-ink-subtle">No incidents.</p>}
-      {items.map((i) => (
-        <Card key={i.id}>
-          <CardBody className="space-y-2">
+      {/* Counted from the incidents already loaded — no extra request. */}
+      <StatStrip
+        stats={[
+          { label: "Incidents", value: items.length, note: "matching this filter" },
+          { label: "Still open", value: open_, note: "not closed or dismissed" },
+          { label: "Very serious", value: serious, note: "in this list" },
+          { label: "Parents told", value: told, note: "in this list" },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">All</option>
+          <option value="reported">Just reported</option>
+          <option value="investigating">Being looked into</option>
+          <option value="action_taken">Action taken</option>
+          <option value="closed">Closed</option>
+          <option value="dismissed">Dismissed</option>
+        </select>
+        <Button onClick={() => setReportOpen(true)}>Report an incident</Button>
+      </FilterBar>
+
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Incidents</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {status ? humanize(status) : "Every status"} · newest first · open one to see
+              what was done
+            </p>
+          </div>
+        </CardHeader>
+        <div className="divide-y divide-surface-border border-t border-surface-border">
+          {items.length === 0 && (
+            <p className="px-[22px] py-10 text-center text-[13px] text-ink-subtle">No incidents.</p>
+          )}
+          {items.map((i) => (
+            <div key={i.id} className="space-y-2 px-[22px] py-4">
             <button type="button" className="flex w-full flex-wrap items-center gap-2 text-left" onClick={() => setOpen(open === i.id ? null : i.id)}>
-              <span className="font-medium text-ink">{i.student_name}</span>
+              {/* Avatar rather than PersonCell: this row is a <button>, and
+                  PersonCell's wrapper is a div. */}
+              <Avatar name={i.student_name} />
+              <span className="text-[12px] font-extrabold text-ink">
+                {i.student_name}
+                {i.admission_no && (
+                  <span className="ml-1.5 font-normal text-ink-subtle">{i.admission_no}</span>
+                )}
+              </span>
               <Badge tone={sevTone[i.severity]}>{i.severity}</Badge>
               <Badge>{humanize(i.category)}</Badge>
               <Badge tone={statusTone[i.status]}>{humanize(i.status)}</Badge>
@@ -239,9 +282,14 @@ export function Discipline() {
                 </div>
               </div>
             )}
-          </CardBody>
-        </Card>
-      ))}
+            </div>
+          ))}
+        </div>
+        <PanelFooter
+          left={`${items.length} incident${items.length === 1 ? "" : "s"} shown`}
+          right={`${open_} still open`}
+        />
+      </Card>
 
       <Modal open={reportOpen} onClose={() => setReportOpen(false)} title="Report an incident" size="lg">
         <form onSubmit={report} className="space-y-3">

@@ -8,6 +8,8 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, Select, Table, Textarea, humanize, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
+import { Building2, Lock, ShieldCheck, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 type Permission = { code: string; module: string; name: string; description: string | null };
@@ -136,8 +138,11 @@ export function RolesAndBranches() {
     if (ok) setBranchForm({ id: 0, name: "", code: "", address: "", phone: "", head_user_id: "", is_main: false });
   }
 
+  const customRoles = roles.filter((r) => !r.is_system).length;
+  const mainBranch = branches.find((b) => b.is_main) ?? null;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
       <p className="rounded-md bg-surface-subtle px-3 py-2 text-sm text-ink-muted">
@@ -145,14 +150,30 @@ export function RolesAndBranches() {
         office approve refunds without changing anything else.
       </p>
 
+      {/* The four lists that were already loaded, counted. */}
+      <StatStrip
+        stats={[
+          { label: "Roles", value: roles.length || "—", note: `${customRoles} made here`, icon: ShieldCheck },
+          { label: "Permissions", value: permissions.length || "—", note: `${Object.keys(byModule).length} module(s)`, icon: Lock },
+          { label: "People with an extra role", value: assignments.length || "—", note: "Beyond what they sign in as", icon: Users },
+          {
+            label: "Branches",
+            value: branches.length || "—",
+            note: mainBranch ? `${mainBranch.name} is the main campus` : "One campus",
+            icon: Building2,
+          },
+        ]}
+      />
+
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
             <CardTitle>Roles</CardTitle>
-            <Button onClick={() => setEditing({ role: null, name: "", code: "", description: "", base_role: "staff", permissions: new Set() })}>
-              New role
-            </Button>
+            <p className="mt-[5px] text-[11px] text-ink-muted">Each role is a set of permissions granted on top of a sign-in.</p>
           </div>
+          <Button onClick={() => setEditing({ role: null, name: "", code: "", description: "", base_role: "staff", permissions: new Set() })}>
+            New role
+          </Button>
         </CardHeader>
         <Table head={["Role", "Signs in as", "Can do", "People", ""]} empty={roles.length === 0 && "No roles yet."}>
           {roles.map((r) => (
@@ -194,13 +215,20 @@ export function RolesAndBranches() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${roles.length} role${roles.length === 1 ? "" : "s"} · ${customRoles} made here`}
+          right={`${roles.reduce((n, r) => n + r.users, 0)} person(s) hold one`}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Who has which role</CardTitle>
+          <div>
+            <CardTitle>Who has which role</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">Give someone a role, for the whole school or just one branch.</p>
+          </div>
         </CardHeader>
-        <CardBody className="space-y-3">
+        <CardBody className="pt-0">
           <form
             className="flex flex-wrap items-end gap-2"
             onSubmit={async (e) => {
@@ -253,10 +281,13 @@ export function RolesAndBranches() {
               Give role
             </Button>
           </form>
-          <Table head={["Person", "Role", "Branch", "Since", ""]} empty={assignments.length === 0 && "Nobody has an extra role yet."}>
+        </CardBody>
+        <Table head={["Person", "Role", "Branch", "Since", ""]} empty={assignments.length === 0 && "Nobody has an extra role yet."}>
             {assignments.map((a) => (
               <tr key={a.id}>
-                <td className={tdStrong}>{a.user_name}</td>
+                <td className="px-4 py-3">
+                  <PersonCell name={a.user_name} />
+                </td>
                 <td className={td}>{a.role_name}</td>
                 <td className={td}>{a.branch_name ?? "Whole school"}</td>
                 <td className={td}>{new Date(a.assigned_at).toLocaleDateString()}</td>
@@ -267,15 +298,21 @@ export function RolesAndBranches() {
                 </td>
               </tr>
             ))}
-          </Table>
-        </CardBody>
+        </Table>
+        <PanelFooter
+          left={`${assignments.length} extra role${assignments.length === 1 ? "" : "s"} given`}
+          right={branches.length > 0 ? "A branch role applies only at that campus" : "Every role applies school-wide"}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Branches</CardTitle>
+          <div>
+            <CardTitle>Branches</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">Separate campuses, and which sections belong to each.</p>
+          </div>
         </CardHeader>
-        <CardBody className="space-y-3">
+        <CardBody className="pt-0">
           <form className="flex flex-wrap items-end gap-2" onSubmit={saveBranch}>
             <Input label="Name *" value={branchForm.name} onChange={(e) => setBranchForm({ ...branchForm, name: e.target.value })} required placeholder="Junior wing" />
             <Input label="Code *" value={branchForm.code} onChange={(e) => setBranchForm({ ...branchForm, code: e.target.value })} required placeholder="JR" />
@@ -301,7 +338,8 @@ export function RolesAndBranches() {
               </Button>
             )}
           </form>
-          <Table head={["Branch", "Head", "Sections", "Students", "Staff", ""]} empty={branches.length === 0 && "One campus — no branches needed."}>
+        </CardBody>
+        <Table head={["Branch", "Head", "Sections", "Students", "Staff", ""]} empty={branches.length === 0 && "One campus — no branches needed."}>
             {branches.map((b) => (
               <tr key={b.id}>
                 <td className={tdStrong}>
@@ -342,8 +380,11 @@ export function RolesAndBranches() {
                 </td>
               </tr>
             ))}
-          </Table>
-        </CardBody>
+        </Table>
+        <PanelFooter
+          left={`${branches.length} branch${branches.length === 1 ? "" : "es"}`}
+          right={`${branches.reduce((n, b) => n + b.students, 0)} student(s) · ${branches.reduce((n, b) => n + b.staff, 0)} staff`}
+        />
       </Card>
 
       <Modal open={!!editing} onClose={() => setEditing(null)} title={editing?.role ? `Edit ${editing.role.name}` : "New role"} size="lg">

@@ -5,11 +5,12 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, Table, Textarea, humanize, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { AlertTriangle, CheckCircle2, CircleSlash, Clock } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { openAuthed } from "@/lib/download";
 
@@ -65,6 +66,10 @@ type Resource = {
 const base = "/api/v1/school";
 const BLOOM = ["remember", "understand", "apply", "analyze", "evaluate", "create"];
 const KINDS = ["document", "worksheet", "presentation", "link", "video", "image", "other"];
+/** A select sized for the filter bar: the same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 const TONE: Record<string, "emerald" | "amber" | "rose"> = {
   covered: "emerald",
   in_progress: "amber",
@@ -198,7 +203,7 @@ export function Curriculum({ csId, backHref }: { csId: string; backHref: string 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <Link href={backHref} className="text-sm text-brand-500 hover:underline">
         ← All subjects
       </Link>
@@ -236,31 +241,46 @@ export function Curriculum({ csId, backHref }: { csId: string; backHref: string 
 
       {tab === "outcomes" && (
         <>
+          {/* Only shown once a section is picked, because only then does the
+              server return coverage figures to show. */}
+          {cov && (
+            <StatStrip
+              stats={[
+                { label: "Met", value: cov.covered, note: `of ${cov.total} outcome(s)`, icon: CheckCircle2 },
+                { label: "Part taught", value: cov.in_progress, note: "Some topics still to teach", icon: Clock },
+                { label: "Not started", value: cov.not_started, note: "No mapped topic taught yet", icon: CircleSlash },
+                { label: "No topics mapped", value: cov.unmapped, note: "Coverage can't be worked out", icon: AlertTriangle },
+              ]}
+            />
+          )}
           {d.sections.length > 0 && (
-            <div className="max-w-xs">
-              <Select label="Show progress for" value={sectionId} onChange={(e) => setSectionId(e.target.value)}>
+            <FilterBar>
+              <select
+                aria-label="Show progress for section"
+                value={sectionId}
+                onChange={(e) => setSectionId(e.target.value)}
+                className={filterSelect}
+              >
                 <option value="">No section</option>
                 {d.sections.map((s) => (
                   <option key={s.section_id} value={s.section_id}>
                     {s.section_label}
                   </option>
                 ))}
-              </Select>
-            </div>
-          )}
-          {cov && (
-            <div className="grid gap-4 sm:grid-cols-4">
-              <StatCard label="Met" value={cov.covered} accent="emerald" />
-              <StatCard label="Part taught" value={cov.in_progress} accent="amber" />
-              <StatCard label="Not started" value={cov.not_started} accent="rose" />
-              <StatCard label="No topics mapped" value={cov.unmapped} />
-            </div>
+              </select>
+            </FilterBar>
           )}
           <Card>
             <CardHeader>
-              <CardTitle>Outcomes</CardTitle>
+              <div>
+                <CardTitle>Outcomes</CardTitle>
+                <p className="mt-[5px] text-[11px] text-ink-muted">
+                  {cov?.section_label
+                    ? `Progress for ${cov.section_label}`
+                    : "What a child should be able to do by the end of this subject."}
+                </p>
+              </div>
             </CardHeader>
-            <CardBody>
               <Table
                 head={["Code", "Outcome", "Chapter", "Topics", cov ? "In section" : "Bloom", edit ? "" : ""]}
                 empty={outcomes.length === 0 && "No outcomes written for this subject yet."}
@@ -333,7 +353,10 @@ export function Curriculum({ csId, backHref }: { csId: string; backHref: string 
                   </tr>
                 ))}
               </Table>
-            </CardBody>
+            <PanelFooter
+              left={`${outcomes.length} outcome${outcomes.length === 1 ? "" : "s"}`}
+              right={cov ? `${cov.covered} of ${cov.total} met in ${cov.section_label ?? "this section"}` : "Pick a section to see progress"}
+            />
           </Card>
         </>
       )}
@@ -341,9 +364,11 @@ export function Curriculum({ csId, backHref }: { csId: string; backHref: string 
       {tab === "resources" && (
         <Card>
           <CardHeader>
-            <CardTitle>Teaching resources</CardTitle>
+            <div>
+              <CardTitle>Teaching resources</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">Worksheets, links and files kept against this subject.</p>
+            </div>
           </CardHeader>
-          <CardBody>
             <Table
               head={["Title", "Kind", "Chapter", "Shared with parents", "Uploaded by", ""]}
               empty={resources.length === 0 && "Nothing here yet — add a worksheet or a link."}
@@ -414,7 +439,10 @@ export function Curriculum({ csId, backHref }: { csId: string; backHref: string 
                 </tr>
               ))}
             </Table>
-          </CardBody>
+          <PanelFooter
+            left={`${resources.length} resource${resources.length === 1 ? "" : "s"}`}
+            right={`${resources.filter((r) => r.visible_to_parents).length} shared with parents`}
+          />
         </Card>
       )}
 

@@ -5,10 +5,22 @@ import { FormEvent, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ErrorBox, PageHeader, Table, humanize, inr, td, tdStrong } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { ErrorBox, PageHeader, Table, humanize, inr, td } from "@/components/ui/Field";
+import {
+  FilterBar,
+  MiniBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
+import { AlertTriangle, BookOpen, IndianRupee, Lock } from "lucide-react";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Member = {
   borrower_type: "student" | "staff";
@@ -52,51 +64,80 @@ export default function LibraryMembersPage() {
   const blocked = members.filter((m) => !m.can_borrow).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Library members"
         subtitle="Who is holding what, and who has reached their limit."
-        actions={
-          <form
-            className="flex items-end gap-2"
-            onSubmit={(e: FormEvent) => {
-              e.preventDefault();
-              load();
-            }}
-          >
-            <Input
-              placeholder="Name, admission number or section"
-              aria-label="Search members"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-            <Button type="submit" variant="secondary">
-              Search
-            </Button>
-          </form>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Books out" value={out} />
-        <StatCard label="Overdue" value={overdue} accent={overdue ? "rose" : "emerald"} />
-        <StatCard label="Fines owed" value={inr(owed)} accent={owed ? "amber" : "emerald"} />
-        <StatCard label="Cannot borrow" value={blocked} accent={blocked ? "amber" : "emerald"} />
-      </div>
+      {/* Totalled off the rows already on screen: the same list, added up. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Books out",
+            value: out,
+            note: `Held by ${members.length} member(s)`,
+            icon: BookOpen,
+          },
+          {
+            label: "Overdue",
+            value: overdue,
+            note: overdue ? "Past their return date" : "Nothing late",
+            icon: AlertTriangle,
+          },
+          {
+            label: "Fines owed",
+            value: inr(owed),
+            note: owed ? "Outstanding at the counter" : "Nothing owed",
+            icon: IndianRupee,
+          },
+          {
+            label: "Cannot borrow",
+            value: blocked,
+            note: "At their limit, or owing a fine",
+            icon: Lock,
+          },
+        ]}
+      />
 
-      <label className="flex items-center gap-2 text-[13px] text-ink-muted">
-        <input
-          type="checkbox"
-          checked={withBooksOnly}
-          onChange={(e) => setWithBooksOnly(e.target.checked)}
-        />
-        Only people holding a book right now
-      </label>
+      <form
+        onSubmit={(e: FormEvent) => {
+          e.preventDefault();
+          load();
+        }}
+      >
+        <FilterBar>
+          <SearchBox
+            value={q}
+            onChange={setQ}
+            placeholder="Name, admission number or section…"
+            label="Search members"
+          />
+          <select
+            aria-label="Holding a book"
+            value={withBooksOnly ? "holding" : ""}
+            onChange={(e) => setWithBooksOnly(e.target.value === "holding")}
+            className={filterSelect}
+          >
+            <option value="">Everyone</option>
+            <option value="holding">Only people holding a book right now</option>
+          </select>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
+      </form>
 
       <Card>
         <CardHeader>
-          <CardTitle>Members</CardTitle>
+          <div>
+            <CardTitle>Members</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {withBooksOnly ? "Only people holding a book right now" : "Everyone with a borrowing history"}
+              {q ? ` · matching “${q}”` : ""}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -105,13 +146,15 @@ export default function LibraryMembersPage() {
           >
             {members.map((m) => (
               <tr key={`${m.borrower_type}-${m.student_id ?? m.user_id}`}>
-                <td className={tdStrong}>
-                  {m.name}
-                  {m.detail && <span className="block text-[11px] text-ink-subtle">{m.detail}</span>}
+                <td className={td}>
+                  <PersonCell name={m.name} sub={m.detail} />
                 </td>
                 <td className={td}>{humanize(m.borrower_type)}</td>
                 <td className={td}>
-                  {m.out} <span className="text-ink-subtle">/ {m.limit}</span>
+                  <div>
+                    {m.out} <span className="text-ink-subtle">/ {m.limit}</span>
+                  </div>
+                  {m.limit > 0 && <MiniBar percent={(m.out / m.limit) * 100} />}
                 </td>
                 <td className={td}>
                   {m.overdue > 0 ? <Badge tone="rose">{m.overdue}</Badge> : "—"}
@@ -134,6 +177,10 @@ export default function LibraryMembersPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${members.length} member${members.length === 1 ? "" : "s"}`}
+          right={`${out} book(s) out · ${overdue} overdue · ${inr(owed)} owed`}
+        />
       </Card>
     </div>
   );

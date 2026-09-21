@@ -4,10 +4,11 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, PageHeader, Textarea } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PanelFooter } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { readableDate } from "@/lib/dates";
 
@@ -58,8 +59,10 @@ export default function StudentHomeworkPage() {
     .filter((h) => h.is_past_due)
     .sort((a, b) => b.due_date.localeCompare(a.due_date));
 
+  const nextDue = todo[0];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Homework"
         subtitle="Everything your teachers have set, with what is due first at the top."
@@ -73,25 +76,41 @@ export default function StudentHomeworkPage() {
       )}
 
       {todo.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-[13px] font-extrabold uppercase tracking-[0.6px] text-ink-muted">
-            To do
-          </h2>
-          {todo.map((h) => (
-            <HomeworkCard key={h.id} hw={h} />
-          ))}
-        </section>
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>To do</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                {nextDue ? `Soonest first · next due ${readableDate(nextDue.due_date)}` : "Soonest first"}
+              </p>
+            </div>
+          </CardHeader>
+          <div className="divide-y divide-surface-border border-t border-surface-border">
+            {todo.map((h) => (
+              <HomeworkRow key={h.id} hw={h} />
+            ))}
+          </div>
+          <PanelFooter left={`${todo.length} still to hand in`} />
+        </Card>
       )}
 
       {gone.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-[13px] font-extrabold uppercase tracking-[0.6px] text-ink-muted">
-            Already due
-          </h2>
-          {gone.map((h) => (
-            <HomeworkCard key={h.id} hw={h} past />
-          ))}
-        </section>
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Already due</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                Most recent first
+              </p>
+            </div>
+          </CardHeader>
+          <div className="divide-y divide-surface-border border-t border-surface-border">
+            {gone.map((h) => (
+              <HomeworkRow key={h.id} hw={h} past />
+            ))}
+          </div>
+          <PanelFooter left={`${gone.length} past its due date`} />
+        </Card>
       )}
     </div>
   );
@@ -109,7 +128,9 @@ function statusTone(s: SubmissionStatus) {
   return "brand" as const;
 }
 
-function HomeworkCard({ hw, past }: { hw: Homework; past?: boolean }) {
+/** One piece of homework as a row inside the panel, rather than a card of
+ *  its own: the mock's list screens are one panel with divided rows. */
+function HomeworkRow({ hw, past }: { hw: Homework; past?: boolean }) {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -124,7 +145,7 @@ function HomeworkCard({ hw, past }: { hw: Homework; past?: boolean }) {
   const late = past && !handedIn;
 
   return (
-    <Card className={past ? "p-4 opacity-80" : "p-4"}>
+    <div className={past ? "px-[22px] py-4 opacity-80" : "px-[22px] py-4"}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -210,7 +231,7 @@ function HomeworkCard({ hw, past }: { hw: Homework; past?: boolean }) {
           setOpen(false);
         }}
       />
-    </Card>
+    </div>
   );
 }
 

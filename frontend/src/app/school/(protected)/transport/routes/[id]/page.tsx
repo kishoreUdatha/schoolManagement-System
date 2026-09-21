@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -17,7 +16,8 @@ import {
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
+import { BarChart3, ChevronLeft, Grid2x2, IndianRupee, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { hhmm, readableDate } from "@/lib/dates";
 
@@ -105,7 +105,7 @@ export default function RouteDetailPage() {
   const stops = [...(route?.stops ?? [])].sort((a, b) => a.sequence - b.sequence);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <Link
         href="/school/transport"
         className="inline-flex items-center gap-1 text-[13px] font-bold text-brand-600 hover:underline"
@@ -119,6 +119,41 @@ export default function RouteDetailPage() {
         subtitle={route ? `Code ${route.code}` : "Loading…"}
         actions={route && !route.is_active ? <Badge tone="neutral">Not running</Badge> : undefined}
       />
+      {/* All four come from the route record and the transport analytics
+          already fetched above — nothing is recounted here. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Riders",
+            value: route?.student_count ?? "—",
+            note: `${stops.length} stop(s) on this route`,
+            icon: Users,
+          },
+          {
+            label: "Seats",
+            value: route?.vehicle_capacity ?? "Not set",
+            note: route?.vehicle_id ? (route.vehicle_label ?? "Vehicle assigned") : "No vehicle",
+            icon: Grid2x2,
+          },
+          {
+            label: "Full",
+            value: usage && usage.capacity ? `${usage.utilisation}%` : "—",
+            note: usage?.over_capacity
+              ? "More children than seats"
+              : usage && usage.capacity
+                ? `${usage.free_seats} seat(s) free`
+                : "Nothing to work it out against",
+            icon: BarChart3,
+          },
+          {
+            label: "Monthly fee",
+            value: route ? inr(route.monthly_fee) : "—",
+            note: "Default for stops without their own",
+            icon: IndianRupee,
+          },
+        ]}
+      />
+
       <ErrorBox>{error}</ErrorBox>
 
       {route && !route.vehicle_id && (
@@ -133,21 +168,6 @@ export default function RouteDetailPage() {
           {usage.riders} children are assigned to a vehicle with {usage.capacity} seats.
         </WarnBox>
       )}
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Riders" value={route?.student_count ?? "—"} />
-        <StatCard
-          label="Seats"
-          value={route?.vehicle_capacity ?? "Not set"}
-          hint={route?.vehicle_id ? undefined : "No vehicle"}
-        />
-        <StatCard
-          label="Full"
-          value={usage && usage.capacity ? `${usage.utilisation}%` : "—"}
-          accent={usage?.over_capacity ? "rose" : usage && usage.utilisation > 90 ? "amber" : "emerald"}
-        />
-        <StatCard label="Monthly fee" value={route ? inr(route.monthly_fee) : "—"} />
-      </div>
 
       <Card>
         <CardHeader>
@@ -169,7 +189,12 @@ export default function RouteDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Stops</CardTitle>
+          <div>
+            <CardTitle>Stops</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              In pickup order · {stops.length} stop(s)
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -193,11 +218,20 @@ export default function RouteDetailPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${stops.length} stop(s)`}
+          right={`${stops.reduce((n, s) => n + s.student_count, 0)} child(ren) across the stops`}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Who rides it</CardTitle>
+          <div>
+            <CardTitle>Who rides it</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Everybody assigned to this route, with the stop they get on at
+            </p>
+          </div>
           <span className="text-[12px] font-bold text-ink-muted">{riders.length} child(ren)</span>
         </CardHeader>
         <CardBody className="p-0">
@@ -208,15 +242,16 @@ export default function RouteDetailPage() {
             {riders.map((a) => (
               <tr key={a.id}>
                 <td className={td}>{a.admission_no}</td>
-                <td className={tdStrong}>
-                  <Link href={`/school/students/${a.student_id}`} className="hover:underline">
-                    {a.student_name}
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/school/students/${a.student_id}`}
+                    className="inline-block hover:underline"
+                  >
+                    <PersonCell
+                      name={a.student_name}
+                      sub={a.section_label ?? a.admission_no}
+                    />
                   </Link>
-                  {a.section_label && (
-                    <span className="block text-[11px] font-normal text-ink-subtle">
-                      {a.section_label}
-                    </span>
-                  )}
                 </td>
                 <td className={td}>{a.stop_name}</td>
                 <td className={td}>{humanize(a.direction)}</td>
@@ -226,6 +261,14 @@ export default function RouteDetailPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${riders.length} child(ren) assigned`}
+          right={
+            route?.vehicle_capacity != null
+              ? `${route.vehicle_capacity} seat(s) on the vehicle`
+              : "No vehicle assigned"
+          }
+        />
       </Card>
     </div>
   );

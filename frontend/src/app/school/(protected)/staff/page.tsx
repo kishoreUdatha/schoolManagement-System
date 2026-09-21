@@ -4,11 +4,25 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { PageHeader } from "@/components/ui/Field";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
 import { Modal } from "@/components/ui/Modal";
+import { Briefcase, Building2, GraduationCap, UserCheck } from "lucide-react";
 import { DepartmentSelect } from "@/components/foundation/DepartmentSelect";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type StaffRole = "teacher" | "staff" | "principal" | "accountant";
 
@@ -104,60 +118,92 @@ export default function StaffPage() {
     }
   }
 
+  const activeCount = staff.filter((s) => s.is_active).length;
+  const teacherCount = staff.filter((s) => s.role === "teacher").length;
+  const departmentCount = new Set(
+    staff.map((s) => s.department_name).filter(Boolean)
+  ).size;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Staff</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Teachers and non-teaching staff. Each gets a login account.
-          </p>
-        </div>
-        <Button onClick={() => setOpenCreate(true)}>+ New staff member</Button>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Staff"
+        subtitle="Teachers and non-teaching staff. Each gets a login account."
+        actions={
+          <Button onClick={() => setOpenCreate(true)}>+ New staff member</Button>
+        }
+      />
+
+      {/* Counted off the rows this filter already returned — the endpoint
+          gives no totals of its own, so nothing here is a second query. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Staff listed",
+            value: staff.length,
+            note: roleFilter ? `${roleLabel(roleFilter)} only` : "All roles",
+            icon: Briefcase,
+          },
+          {
+            label: "Active accounts",
+            value: activeCount,
+            note: `of ${staff.length} listed`,
+            icon: UserCheck,
+          },
+          {
+            label: "Teachers",
+            value: teacherCount,
+            note: `${staff.length - teacherCount} in other roles`,
+            icon: GraduationCap,
+          },
+          {
+            label: "Departments",
+            value: departmentCount || "—",
+            note: "Named on these rows",
+            icon: Building2,
+          },
+        ]}
+      />
 
       <form
         onSubmit={(e) => {
           e.preventDefault();
           load();
         }}
-        className="flex flex-wrap items-end gap-2"
       >
-        <Input
-          placeholder="Search name, email, employee no"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-64"
-        />
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Role</span>
+        <FilterBar>
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            placeholder="Search name, email, employee no…"
+            label="Search staff directory"
+          />
           <select
+            aria-label="Role"
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
-            <option value="">All</option>
+            <option value="">All roles</option>
             <option value="teacher">Teacher</option>
             <option value="staff">Non-teaching</option>
             <option value="principal">Principal</option>
             <option value="accountant">Accountant</option>
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Status</span>
           <select
+            aria-label="Status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
-            <option value="">All</option>
+            <option value="">All statuses</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-        </label>
-        <Button type="submit" variant="secondary">
-          Search
-        </Button>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
       </form>
 
       {error && (
@@ -172,6 +218,19 @@ export default function StaffPage() {
       )}
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>All staff</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                roleFilter ? roleLabel(roleFilter) : "Every role",
+                statusFilter ? statusFilter : "Every status",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+        </CardHeader>
         <table className="min-w-full divide-y divide-surface-border text-[13px]">
           <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
@@ -190,8 +249,8 @@ export default function StaffPage() {
                 <td className="px-4 py-3 font-mono text-ink-muted">
                   {s.employee_no}
                 </td>
-                <td className="px-4 py-3 font-medium text-ink">
-                  {s.full_name}
+                <td className="px-4 py-3">
+                  <PersonCell name={s.full_name} sub={s.employee_no} />
                 </td>
                 <td className="px-4 py-3">
                   <Badge tone={roleBadgeTone(s.role)}>{roleLabel(s.role)}</Badge>
@@ -245,6 +304,10 @@ export default function StaffPage() {
             )}
           </tbody>
         </table>
+        <PanelFooter
+          left={`Showing ${staff.length} staff member${staff.length === 1 ? "" : "s"}`}
+          right={`${activeCount} active · ${teacherCount} teaching`}
+        />
       </Card>
 
       <CreateStaffModal

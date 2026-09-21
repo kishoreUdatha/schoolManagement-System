@@ -9,6 +9,8 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, Select, Table, Textarea, humanize, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { CalendarCheck, ClipboardCheck, DoorClosed, Layers } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { cn } from "@/lib/utils";
@@ -71,6 +73,11 @@ type ClassRow = { id: number; name: string; sections: { id: number; name: string
 const base = "/api/v1/school";
 const ROOM_KINDS = ["classroom", "lab", "computer_lab", "library", "hall", "sports", "staff_room", "office", "other"];
 const today = () => new Date().toISOString().slice(0, 10);
+
+/** A control sized for the filter bar: the same height as the search box,
+ *  and no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 export function Facilities({ canManage }: { canManage: boolean }) {
   // The class list on the lab-booking form follows the top bar's year.
@@ -190,19 +197,49 @@ export function Facilities({ canManage }: { canManage: boolean }) {
     if (ok) setBooking(null);
   }
 
+  const slots = (av?.periods ?? []).flatMap((p) => p.labs);
+  const freeSlots = slots.filter((s) => s.free).length;
+  const dayLabel = new Date(day + "T00:00:00").toDateString();
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
+      {/* Everything here is already on screen: the two lists that were
+          loaded, and the availability grid for the day being looked at. */}
+      <StatStrip
+        stats={[
+          { label: "Rooms", value: rooms.length || "—", note: `${rooms.filter((r) => r.is_active).length} in use`, icon: DoorClosed },
+          { label: "Labs", value: labs.length || "—", note: `${labs.filter((l) => l.is_active).length} active`, icon: Layers },
+          {
+            label: "Free lab periods",
+            value: av ? freeSlots : "—",
+            note: av?.is_holiday ? `Holiday — ${av.holiday_name}` : av ? `of ${slots.length} on ${dayLabel}` : undefined,
+            icon: CalendarCheck,
+          },
+          { label: "My bookings", value: mine.length || "—", note: "Labs you have booked", icon: ClipboardCheck },
+        ]}
+      />
+
+      <FilterBar>
+        <input
+          type="date"
+          aria-label="Day shown on the lab timetable"
+          value={day}
+          onChange={(e) => setDay(e.target.value)}
+          className={cn(filterSelect, "min-w-[170px]")}
+        />
+      </FilterBar>
+
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
             <CardTitle>Lab timetable</CardTitle>
-            <Input label="Day" type="date" value={day} onChange={(e) => setDay(e.target.value)} />
+            <p className="mt-[5px] text-[11px] text-ink-muted">{dayLabel} · pick a free period to book it.</p>
           </div>
         </CardHeader>
-        <CardBody className="space-y-3">
+        <CardBody className="space-y-3 pt-0">
           {av?.is_holiday && <Badge tone="amber">holiday — {av.holiday_name}</Badge>}
           {av && av.labs.length === 0 && <p className="text-sm text-ink-subtle">No labs set up yet.</p>}
           {av && av.labs.length > 0 && av.periods.length === 0 && (
@@ -268,11 +305,20 @@ export function Facilities({ canManage }: { canManage: boolean }) {
             </div>
           )}
         </CardBody>
+        {av && av.periods.length > 0 && (
+          <PanelFooter
+            left={`${av.periods.length} period${av.periods.length === 1 ? "" : "s"} · ${av.labs.length} lab${av.labs.length === 1 ? "" : "s"}`}
+            right={`${freeSlots} free of ${slots.length}`}
+          />
+        )}
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>My lab bookings</CardTitle>
+          <div>
+            <CardTitle>My lab bookings</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">Every lab period booked in your name, whatever the day.</p>
+          </div>
         </CardHeader>
         <Table head={["Date", "Period", "Lab", "Class", "Purpose", ""]} empty={mine.length === 0 && "You haven't booked a lab."}>
           {mine.map((b) => (
@@ -300,18 +346,23 @@ export function Facilities({ canManage }: { canManage: boolean }) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${mine.length} booking${mine.length === 1 ? "" : "s"}`}
+          right={mine.length > 0 ? "Cancel one and the period frees up straight away" : "Nothing booked"}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
             <CardTitle>Labs</CardTitle>
-            {canManage && (
-              <Button onClick={() => setLabForm({ id: 0, name: "", code: "", room_id: "", subject_id: "", in_charge_user_id: "", capacity: "", equipment: "", safety_notes: "" })}>
-                New lab
-              </Button>
-            )}
+            <p className="mt-[5px] text-[11px] text-ink-muted">The rooms that take bookings, and who looks after each one.</p>
           </div>
+          {canManage && (
+            <Button onClick={() => setLabForm({ id: 0, name: "", code: "", room_id: "", subject_id: "", in_charge_user_id: "", capacity: "", equipment: "", safety_notes: "" })}>
+              New lab
+            </Button>
+          )}
         </CardHeader>
         <Table head={["Lab", "Room", "Subject", "Looked after by", "Seats", ""]} empty={labs.length === 0 && "No labs yet."}>
           {labs.map((l) => (
@@ -354,14 +405,21 @@ export function Facilities({ canManage }: { canManage: boolean }) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${labs.length} lab${labs.length === 1 ? "" : "s"}`}
+          right={`${labs.reduce((n, l) => n + l.upcoming_bookings, 0)} upcoming booking(s)`}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Rooms</CardTitle>
+          <div>
+            <CardTitle>Rooms</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">Every teaching and non-teaching space, and where to find it.</p>
+          </div>
         </CardHeader>
-        <CardBody className="space-y-3">
-          {canManage && (
+        {canManage && (
+          <CardBody className="pt-0">
             <form className="flex flex-wrap items-end gap-2" onSubmit={saveRoom}>
               <Input label="Name *" value={roomForm.name} onChange={(e) => setRoomForm({ ...roomForm, name: e.target.value })} required />
               <Input label="Code *" value={roomForm.code} onChange={(e) => setRoomForm({ ...roomForm, code: e.target.value })} required />
@@ -384,8 +442,9 @@ export function Facilities({ canManage }: { canManage: boolean }) {
                 </Button>
               )}
             </form>
-          )}
-          <Table head={["Room", "Kind", "Where", "Seats", "Branch", ""]} empty={rooms.length === 0 && "No rooms yet."}>
+          </CardBody>
+        )}
+        <Table head={["Room", "Kind", "Where", "Seats", "Branch", ""]} empty={rooms.length === 0 && "No rooms yet."}>
             {rooms.map((r) => (
               <tr key={r.id}>
                 <td className={tdStrong}>
@@ -418,8 +477,11 @@ export function Facilities({ canManage }: { canManage: boolean }) {
                 </td>
               </tr>
             ))}
-          </Table>
-        </CardBody>
+        </Table>
+        <PanelFooter
+          left={`${rooms.length} room${rooms.length === 1 ? "" : "s"}`}
+          right={`${rooms.reduce((n, r) => n + (r.capacity ?? 0), 0)} seat(s) in total`}
+        />
       </Card>
 
       <Modal open={!!labForm} onClose={() => setLabForm(null)} title={labForm?.id ? "Edit lab" : "New lab"}>

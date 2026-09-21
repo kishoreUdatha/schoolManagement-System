@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Megaphone, Trash2 } from "lucide-react";
+import { Archive, CalendarClock, CheckCircle2, Megaphone, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   NoticeBox,
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { readableDate, toIso } from "@/lib/dates";
 
@@ -131,12 +131,16 @@ export default function AnnouncementsPage() {
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Live now" value={data?.live ?? "—"} accent="emerald" />
-        <StatCard label="Scheduled" value={data?.scheduled ?? "—"} accent="amber" />
-        <StatCard label="Finished" value={data?.finished ?? "—"} />
-        <StatCard label="All time" value={rows.length} />
-      </div>
+      {/* The counts the list endpoint already returns, plus the length of the
+          list itself — no second request behind any of them. */}
+      <StatStrip
+        stats={[
+          { label: "Live now", value: data?.live ?? "—", icon: Megaphone },
+          { label: "Scheduled", value: data?.scheduled ?? "—", icon: CalendarClock },
+          { label: "Finished", value: data?.finished ?? "—", icon: CheckCircle2 },
+          { label: "All time", value: rows.length, icon: Archive },
+        ]}
+      />
 
       <NoticeBox>
         An announcement starts and stops on its own dates. Leave the end date empty and
@@ -145,13 +149,19 @@ export default function AnnouncementsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Every announcement</CardTitle>
+          <div>
+            <CardTitle>Every announcement</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {data
+                ? `${data.live} live · ${data.scheduled} scheduled · ${data.finished} finished`
+                : "Loading…"}
+            </p>
+          </div>
         </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["Title", "Who sees it", "Runs", "State", ""]}
-            empty={rows.length === 0 && "Nothing has been announced yet."}
-          >
+        <Table
+          head={["Title", "Who sees it", "Runs", "State", ""]}
+          empty={rows.length === 0 && "Nothing has been announced yet."}
+        >
             {rows.map((a) => (
               <tr key={a.id}>
                 <td className={tdStrong}>
@@ -194,8 +204,11 @@ export default function AnnouncementsPage() {
                 </td>
               </tr>
             ))}
-          </Table>
-        </CardBody>
+        </Table>
+        <PanelFooter
+          left={`${rows.length} announcement${rows.length === 1 ? "" : "s"} in all`}
+          right={data ? `${data.live} running right now` : "—"}
+        />
       </Card>
 
       <Modal open={adding} onClose={() => setAdding(false)} title="Announce something">

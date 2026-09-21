@@ -16,8 +16,14 @@ import {
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
+import { AlertTriangle, Building2, HandCoins, Wallet } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 type Row = {
@@ -66,35 +72,53 @@ export default function VendorsPage() {
   const overdue = rows.filter((r) => Number(r.overdue) > 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Suppliers"
         subtitle="Who the school owes, worked out from their bills and payments."
-        actions={
-          <Input
-            placeholder="Search suppliers"
-            aria-label="Search suppliers"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
-        }
       />
-      <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Suppliers billing us" value={rows.length} />
-        <StatCard
-          label="Outstanding"
-          value={data ? inr(data.total_outstanding) : "—"}
-          accent={Number(data?.total_outstanding ?? 0) > 0 ? "amber" : "emerald"}
+      {/* Every figure is one the payables response already carried, or a
+          count of the rows it returned — nothing is asked for twice. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Suppliers billing us",
+            value: rows.length,
+            note: q.trim() ? `matching “${q.trim()}”` : "All suppliers with a bill",
+            icon: Building2,
+          },
+          {
+            label: "Outstanding",
+            value: data ? inr(data.total_outstanding) : "—",
+            note: "Bills raised less payments made",
+            icon: Wallet,
+          },
+          {
+            label: "Overdue",
+            value: data ? inr(data.total_overdue) : "—",
+            note: overdue.length ? `${overdue.length} supplier(s) past due` : "Nothing past its due date",
+            icon: AlertTriangle,
+          },
+          {
+            label: "Owed something",
+            value: data?.suppliers_owed ?? "—",
+            note: "Suppliers with a balance",
+            icon: HandCoins,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <SearchBox
+          value={q}
+          onChange={setQ}
+          placeholder="Search suppliers…"
+          label="Search suppliers"
         />
-        <StatCard
-          label="Overdue"
-          value={data ? inr(data.total_overdue) : "—"}
-          accent={Number(data?.total_overdue ?? 0) > 0 ? "rose" : "emerald"}
-        />
-        <StatCard label="Owed something" value={data?.suppliers_owed ?? "—"} />
-      </div>
+      </FilterBar>
+
+      <ErrorBox>{error}</ErrorBox>
 
       {overdue.length > 0 && (
         <WarnBox>
@@ -127,7 +151,16 @@ export default function VendorsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Every supplier we have billed</CardTitle>
+          <div>
+            <CardTitle>Every supplier we have billed</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                q.trim() ? `Matching “${q.trim()}”` : "All suppliers",
+                `${owed.length} owed something`,
+                overdue.length ? `${overdue.length} overdue` : "None overdue",
+              ].join(" · ")}
+            </p>
+          </div>
           <Link
             href="/school/purchasing/orders"
             className="text-[13px] font-bold text-brand-600 hover:underline"
@@ -145,18 +178,11 @@ export default function VendorsPage() {
           >
             {rows.map((r) => (
               <tr key={r.supplier_id}>
-                <td className={tdStrong}>
-                  {r.supplier_name}
-                  {!r.is_active && (
-                    <Badge tone="neutral" className="ml-2">
-                      Inactive
-                    </Badge>
-                  )}
-                  {r.gstin && (
-                    <span className="block font-mono text-[11px] font-normal text-ink-subtle">
-                      {r.gstin}
-                    </span>
-                  )}
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <PersonCell name={r.supplier_name} sub={r.gstin} />
+                    {!r.is_active && <Badge tone="neutral">Inactive</Badge>}
+                  </div>
                 </td>
                 <td className={td}>
                   {r.phone ?? "—"}
@@ -188,6 +214,10 @@ export default function VendorsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} of ${data?.suppliers.length ?? 0} supplier(s)`}
+          right={data ? `${inr(data.total_outstanding)} outstanding` : "Loading…"}
+        />
       </Card>
     </div>
   );

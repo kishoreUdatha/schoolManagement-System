@@ -9,10 +9,16 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, Table, humanize, inr, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, PersonCell, SearchBox, StatStrip } from "@/components/ui/Workspace";
+import { Monitor, Package, ReceiptText, Wallet } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 const API = "/api/v1/school/inventory";
+
+/** A select sized for the filter bar: the same height as the search box, and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Supplier = { id: number; name: string; contact_person: string | null; phone: string | null; email: string | null; gstin: string | null; address: string | null; is_active: boolean };
 type Item = { id: number; name: string; sku: string; category: string | null; unit: string; reorder_level: string; is_sellable: boolean; sale_price: string | null; location: string | null; description: string | null; is_active: boolean; on_hand: string; low_stock: boolean; stock_value: string | null };
@@ -34,7 +40,7 @@ export function InventoryApp() {
     setError(null);
   };
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader title="Inventory & store" subtitle="Stock, fixed assets, the school store counter and suppliers." />
       <nav className="flex flex-wrap gap-1 border-b border-surface-border">
         {(["overview", "stock", "assets", "assignments", "store", "suppliers"] as const).map((t) => (
@@ -68,17 +74,27 @@ function Overview({ onError }: { onError: (m: string) => void }) {
   if (!d) return null;
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Items" value={d.items} />
-        <StatCard label="Stock value" value={inr(d.stock_value)} hint="at average cost" />
-        <StatCard label="Assets" value={d.assets} />
-        <StatCard label="In repair" value={d.assets_in_repair} accent={d.assets_in_repair ? "amber" : "brand"} />
-        <StatCard label="Store today" value={inr(d.store_sales_today)} />
-        <StatCard label="Store this month" value={inr(d.store_sales_month)} />
-      </div>
+      {/* Straight off the dashboard response — the six figures it returns,
+          with the two smaller ones carried as notes rather than dropped. */}
+      <StatStrip
+        stats={[
+          { label: "Items", value: d.items, note: `${d.low_stock.length} below reorder level`, icon: Package },
+          { label: "Stock value", value: inr(d.stock_value), note: "At average cost", icon: Wallet },
+          { label: "Assets", value: d.assets, note: `${d.assets_in_repair} in repair`, icon: Monitor },
+          {
+            label: "Store this month",
+            value: inr(d.store_sales_month),
+            note: `${inr(d.store_sales_today)} today`,
+            icon: ReceiptText,
+          },
+        ]}
+      />
       <Card>
         <CardHeader>
-          <CardTitle>Low stock · {d.low_stock.length}</CardTitle>
+          <div>
+            <CardTitle>Low stock · {d.low_stock.length}</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">Items that have fallen to or below the level you set for them.</p>
+          </div>
           {d.warranty_expiring > 0 && <span className="text-sm text-warning">{d.warranty_expiring} asset warranties end within 30 days</span>}
         </CardHeader>
         <Table head={["Item", "On hand", "Reorder at"]} empty={d.low_stock.length === 0 && "Nothing below its reorder level."}>
@@ -92,6 +108,10 @@ function Overview({ onError }: { onError: (m: string) => void }) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${d.low_stock.length} of ${d.items} item(s) need restocking`}
+          right={d.warranty_expiring > 0 ? `${d.warranty_expiring} warranty(ies) ending soon` : "No warranties ending soon"}
+        />
       </Card>
     </div>
   );
@@ -122,22 +142,31 @@ function Stock({ onChange, onError }: Handlers) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <form
-          className="flex items-end gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            load();
-          }}
-        >
-          <Input label="Search" placeholder="Name or SKU" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          load();
+        }}
+      >
+        <FilterBar>
+          <SearchBox value={search} onChange={setSearch} placeholder="Name or SKU…" label="Search items and stock" />
           <Button type="submit" variant="secondary">
             Search
           </Button>
-        </form>
-        <Button onClick={() => setEditing("new")}>+ New item</Button>
-      </div>
+          <Button type="button" onClick={() => setEditing("new")}>
+            + New item
+          </Button>
+        </FilterBar>
+      </form>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Items &amp; stock</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {search ? `Matching “${search}”` : "Everything the store room holds, and what it is worth."}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Item", "Category", "On hand", "Value", "Store price", ""]} empty={items.length === 0 && "No items."}>
           {items.map((i) => (
             <tr key={i.id} className="hover:bg-surface-hover">
@@ -169,6 +198,10 @@ function Stock({ onChange, onError }: Handlers) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${items.length} item${items.length === 1 ? "" : "s"}`}
+          right={`${items.filter((i) => i.low_stock).length} below reorder level`}
+        />
       </Card>
       {editing && (
         <ItemModal
@@ -391,29 +424,39 @@ function Assets({ onChange, onError }: Handlers) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <form
-          className="flex flex-wrap items-end gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            load();
-          }}
-        >
-          <Input label="Search" placeholder="Name, tag, serial, location" value={search} onChange={(e) => setSearch(e.target.value)} />
-          <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          load();
+        }}
+      >
+        <FilterBar>
+          <SearchBox value={search} onChange={setSearch} placeholder="Name, tag, serial, location…" label="Search assets" />
+          <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value)} className={filterSelect}>
             <option value="">All (not disposed)</option>
             <option value="in_use">In use</option>
             <option value="in_store">In store</option>
             <option value="under_repair">Under repair</option>
             <option value="disposed">Disposed</option>
-          </Select>
+          </select>
           <Button type="submit" variant="secondary">
             Search
           </Button>
-        </form>
-        <Button onClick={() => setCreating(true)}>+ New asset</Button>
-      </div>
+          <Button type="button" onClick={() => setCreating(true)}>
+            + New asset
+          </Button>
+        </FilterBar>
+      </form>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Assets</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[search ? `Matching “${search}”` : null, status ? humanize(status) : "All but disposed"].filter(Boolean).join(" · ")}
+              {" · open a row for its history"}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Tag", "Asset", "Where / who", "Status", "Cost", "Warranty"]} empty={assets.length === 0 && "No assets."}>
           {assets.map((a) => (
             <tr key={a.id} className="cursor-pointer hover:bg-surface-hover" onClick={() => setOpen(a)}>
@@ -434,6 +477,10 @@ function Assets({ onChange, onError }: Handlers) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${assets.length} asset${assets.length === 1 ? "" : "s"}`}
+          right={`${assets.filter((a) => a.status === "under_repair").length} under repair`}
+        />
       </Card>
       {creating && (
         <AssetModal
@@ -676,9 +723,12 @@ function Store({ onChange, onError }: Handlers) {
     <div className="grid gap-4 lg:grid-cols-5">
       <Card className="lg:col-span-3">
         <CardHeader>
-          <CardTitle>Items for sale</CardTitle>
+          <div>
+            <CardTitle>Items for sale</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">Tap an item to add it to the bill. Anything out of stock is greyed out.</p>
+          </div>
         </CardHeader>
-        <CardBody className="grid gap-2 sm:grid-cols-2">
+        <CardBody className="grid gap-2 pt-0 sm:grid-cols-2">
           {items.length === 0 && <div className="text-sm text-ink-muted">Mark items as “sold in the store” under Items & stock.</div>}
           {items.map((i) => (
             <button
@@ -697,9 +747,14 @@ function Store({ onChange, onError }: Handlers) {
       </Card>
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Bill</CardTitle>
+          <div>
+            <CardTitle>Bill</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {cart.length === 0 ? "Nothing on the bill yet." : `${cart.length} line(s) · ${inr(total)}`}
+            </p>
+          </div>
         </CardHeader>
-        <CardBody className="space-y-3">
+        <CardBody className="space-y-3 pt-0">
           <StudentPicker label="Student" value={student} onChange={setStudent} />
           {!student && <Input label="…or buyer name" value={buyer} onChange={(e) => setBuyer(e.target.value)} />}
           <ul className="divide-y divide-surface-border text-sm">
@@ -749,13 +804,22 @@ function Store({ onChange, onError }: Handlers) {
       </Card>
       <Card className="lg:col-span-5">
         <CardHeader>
-          <CardTitle>Today&apos;s bills</CardTitle>
+          <div>
+            <CardTitle>Today&apos;s bills</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">Voiding a bill puts its stock back on the shelf.</p>
+          </div>
         </CardHeader>
         <Table head={["Bill", "Buyer", "Items", "Total", "Payment", ""]} empty={sales.length === 0 && "No sales today."}>
           {sales.map((s) => (
             <tr key={s.id} className={s.is_void ? "opacity-50" : ""}>
               <td className="px-4 py-3 text-[12px] tabular-nums text-ink">{s.bill_no}</td>
-              <td className={td}>{s.student_name ?? s.buyer_name}</td>
+              <td className="px-4 py-3">
+                {s.student_name || s.buyer_name ? (
+                  <PersonCell name={(s.student_name ?? s.buyer_name) as string} sub={s.sold_by_name ? `by ${s.sold_by_name}` : undefined} />
+                ) : (
+                  <span className="text-ink-muted">—</span>
+                )}
+              </td>
               <td className={td}>{s.lines.map((l) => `${l.item_name} × ${q(l.qty)}`).join(", ")}</td>
               <td className={tdStrong}>{inr(s.total)}</td>
               <td className={td}>{s.is_void ? <Badge tone="rose">void</Badge> : humanize(s.payment)}</td>
@@ -769,6 +833,10 @@ function Store({ onChange, onError }: Handlers) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${sales.length} bill${sales.length === 1 ? "" : "s"} today`}
+          right={inr(sales.filter((s) => !s.is_void).reduce((n, s) => n + Number(s.total), 0))}
+        />
       </Card>
     </div>
   );
@@ -788,10 +856,16 @@ function Suppliers({ onChange, onError }: Handlers) {
   }, []);
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <FilterBar>
         <Button onClick={() => setEditing("new")}>+ New supplier</Button>
-      </div>
+      </FilterBar>
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Suppliers</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">Who stock is bought from — the list a purchase is recorded against.</p>
+          </div>
+        </CardHeader>
         <Table head={["Supplier", "Contact", "GSTIN", ""]} empty={items.length === 0 && "No suppliers."}>
           {items.map((s) => (
             <tr key={s.id}>
@@ -808,6 +882,10 @@ function Suppliers({ onChange, onError }: Handlers) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${items.length} supplier${items.length === 1 ? "" : "s"}`}
+          right={`${items.filter((s) => s.is_active).length} active`}
+        />
       </Card>
       {editing && (
         <SupplierModal
@@ -910,15 +988,21 @@ function Assignments({ onError }: { onError: (m: string) => void }) {
 
   return (
     <div className="space-y-4">
-      <label className="flex items-center gap-2 text-[13px] text-ink-muted">
-        <input type="checkbox" checked={openOnly} onChange={(e) => setOpenOnly(e.target.checked)} />
-        Only what is still out
-      </label>
+      <FilterBar>
+        <label className="flex h-[41px] items-center gap-2 rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink-muted">
+          <input type="checkbox" checked={openOnly} onChange={(e) => setOpenOnly(e.target.checked)} />
+          Only what is still out
+        </label>
+      </FilterBar>
       <Card>
         <CardHeader>
-          <CardTitle>Assignments</CardTitle>
+          <div>
+            <CardTitle>Assignments</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {openOnly ? "What is out right now, and with whom" : "Every assignment ever made"}
+            </p>
+          </div>
         </CardHeader>
-        <CardBody className="p-0">
           <Table
             head={["Asset", "Held by", "From", "Until", "Ended by", "Where"]}
             empty={rows.length === 0 && (openOnly ? "Nothing is out at the moment." : "Nothing has been assigned yet.")}
@@ -929,7 +1013,7 @@ function Assignments({ onError }: { onError: (m: string) => void }) {
                   {r.asset_name}
                   <span className="block text-[11px] font-mono text-ink-subtle">{r.asset_tag}</span>
                 </td>
-                <td className={td}>{r.user_name ?? "—"}</td>
+                <td className="px-4 py-3">{r.user_name ? <PersonCell name={r.user_name} /> : <span className="text-ink-muted">—</span>}</td>
                 <td className={td}>{r.assigned_on}</td>
                 <td className={td}>
                   {r.returned_on ?? <Badge tone="amber">Still out</Badge>}
@@ -939,7 +1023,10 @@ function Assignments({ onError }: { onError: (m: string) => void }) {
               </tr>
             ))}
           </Table>
-        </CardBody>
+        <PanelFooter
+          left={`${rows.length} assignment${rows.length === 1 ? "" : "s"}`}
+          right={`${rows.filter((r) => !r.returned_on).length} still out`}
+        />
       </Card>
     </div>
   );

@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   NoticeBox,
@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { CheckCircle2, FileWarning, Grid2x2, Layers } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 import { Crew, TransportTabs, Vehicle, mapsLink } from "../TransportTabs";
@@ -79,18 +81,63 @@ export default function VehiclesPage() {
     }
   }
 
+  const activeVehicles = items.filter((v) => v.is_active);
+  const seats = items.reduce((n, v) => n + v.capacity, 0);
+  const riding = items.reduce((n, v) => n + v.assigned_students, 0);
+  const needingPaperwork = items.filter((v) => v.expiring_documents.length > 0);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Transport"
         subtitle="Fleet, compliance documents, GPS and running costs."
         actions={<Button onClick={() => setCreating(true)}>+ New vehicle</Button>}
       />
       <TransportTabs />
+
+      {/* Added up from the fleet list already loaded, not from another
+          request. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Vehicles",
+            value: items.length,
+            note: `${items.filter((v) => v.gps_enabled).length} with GPS on`,
+            icon: Layers,
+          },
+          {
+            label: "Active",
+            value: activeVehicles.length,
+            note: items.length - activeVehicles.length ? `${items.length - activeVehicles.length} off the road` : "Whole fleet in service",
+            icon: CheckCircle2,
+          },
+          {
+            label: "Seats",
+            value: seats,
+            note: `${riding} child(ren) assigned`,
+            icon: Grid2x2,
+          },
+          {
+            label: "Documents to renew",
+            value: needingPaperwork.length,
+            note: needingPaperwork.length ? "Expired or expiring soon" : "All paperwork in date",
+            icon: FileWarning,
+          },
+        ]}
+      />
+
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Fleet</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {`${items.length} vehicle(s) · ${seats} seat(s) · ${riding} child(ren) assigned`}
+            </p>
+          </div>
+        </CardHeader>
         <Table
           head={["Vehicle", "Type", "Seats", "Driver", "Documents", "Last seen", ""]}
           empty={items.length === 0 && "No vehicles yet."}
@@ -152,6 +199,14 @@ export default function VehiclesPage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${items.length} vehicle(s) in the fleet`}
+          right={
+            needingPaperwork.length
+              ? `${needingPaperwork.length} need paperwork`
+              : "Every document in date"
+          }
+        />
       </Card>
 
       {(creating || editing) && (

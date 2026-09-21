@@ -4,10 +4,17 @@ import { FormEvent, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { Archive, CalendarDays, CalendarRange, CircleDot } from "lucide-react";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type AcademicYear = {
   id: number;
@@ -69,28 +76,60 @@ export default function AcademicYearsPage() {
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Academic years</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            All attendance, marks, and fees are scoped to an academic year. Mark
-            exactly one as <strong>current</strong>.
-          </p>
-        </div>
-        <Button onClick={() => setOpenCreate(true)}>+ New academic year</Button>
-      </div>
+  const current = years.find((y) => y.is_current) ?? null;
+  const archived = years.filter((y) => y.is_archived).length;
+  const active = years.filter((y) => !y.is_archived).length;
 
-      <label className="flex items-center gap-2 text-sm text-ink-muted">
-        <input
-          type="checkbox"
-          checked={includeArchived}
-          onChange={(e) => setIncludeArchived(e.target.checked)}
-          className="rounded border-surface-border"
-        />
-        Show archived years
-      </label>
+  return (
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Academic years"
+        subtitle="All attendance, marks, and fees are scoped to an academic year. Mark exactly one as current."
+        actions={<Button onClick={() => setOpenCreate(true)}>+ New academic year</Button>}
+      />
+
+      {/* Every figure here is counted off the list this page already loaded —
+          nothing is asked of the server twice. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Years on file",
+            value: years.length || "—",
+            note: includeArchived ? "Including archived" : "Archived hidden",
+            icon: CalendarRange,
+          },
+          {
+            label: "Current year",
+            value: current ? current.name : "None",
+            note: current ? `${current.start_date} → ${current.end_date}` : "Set one as current",
+            icon: CircleDot,
+          },
+          {
+            label: "Active",
+            value: active,
+            note: "Open for new records",
+            icon: CalendarDays,
+          },
+          {
+            label: "Archived",
+            value: includeArchived ? archived : "—",
+            note: includeArchived ? "Read-only" : "Show archived to count",
+            icon: Archive,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Archived years"
+          value={includeArchived ? "yes" : "no"}
+          onChange={(e) => setIncludeArchived(e.target.value === "yes")}
+          className={filterSelect}
+        >
+          <option value="no">Hide archived years</option>
+          <option value="yes">Show archived years</option>
+        </select>
+      </FilterBar>
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
@@ -104,6 +143,17 @@ export default function AcademicYearsPage() {
       )}
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>All years</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                current ? `${current.name} is current` : "No current year set",
+                includeArchived ? "Archived included" : "Archived hidden",
+              ].join(" · ")}
+            </p>
+          </div>
+        </CardHeader>
         <table className="min-w-full divide-y divide-surface-border text-[13px]">
           <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
             <tr>
@@ -199,6 +249,10 @@ export default function AcademicYearsPage() {
             )}
           </tbody>
         </table>
+        <PanelFooter
+          left={`${years.length} year${years.length === 1 ? "" : "s"} listed`}
+          right={current ? `Current: ${current.name}` : "No current year"}
+        />
       </Card>
 
       <CreateYearModal

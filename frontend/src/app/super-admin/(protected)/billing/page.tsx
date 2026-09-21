@@ -3,23 +3,27 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AlertTriangle, CalendarClock, IndianRupee, Wallet } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   NoticeBox,
   PageHeader,
-  Select,
   Table,
   WarnBox,
   humanize,
   inr,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
+
+/** A select sized for the filter bar: the same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Row = {
   tenant_id: number;
@@ -81,44 +85,50 @@ export default function BillingPage() {
       <PageHeader
         title="Billing"
         subtitle="What every school is on, what it costs and what they have paid."
-        actions={
-          <Select
-            aria-label="Filter"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as Filter)}
-          >
-            <option value="all">Every school</option>
-            <option value="expiring">Expiring within a month</option>
-            <option value="expired">Already expired</option>
-            <option value="no_plan">Not on a plan</option>
-          </Select>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Taken in 30 days"
-          value={data ? inr(data.revenue_30d) : "—"}
-          accent="emerald"
-        />
-        <StatCard
-          label="Billed monthly"
-          value={data ? inr(data.billed_monthly) : "—"}
-          hint={data ? `${data.on_a_plan} school(s) on a plan` : undefined}
-        />
-        <StatCard
-          label="Expiring within a month"
-          value={data?.expiring_soon ?? "—"}
-          accent={data && data.expiring_soon ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Expired"
-          value={data?.expired ?? "—"}
-          accent={data && data.expired ? "rose" : "emerald"}
-          hint={data ? `${data.failed_payments_30d} failed payment(s) in 30 days` : undefined}
-        />
-      </div>
+      {/* Every figure here is one the billing endpoint already returned. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Taken in 30 days",
+            value: data ? inr(data.revenue_30d) : "—",
+            icon: IndianRupee,
+          },
+          {
+            label: "Billed monthly",
+            value: data ? inr(data.billed_monthly) : "—",
+            note: data ? `${data.on_a_plan} school(s) on a plan` : undefined,
+            icon: Wallet,
+          },
+          {
+            label: "Expiring within a month",
+            value: data?.expiring_soon ?? "—",
+            icon: CalendarClock,
+          },
+          {
+            label: "Expired",
+            value: data?.expired ?? "—",
+            note: data ? `${data.failed_payments_30d} failed payment(s) in 30 days` : undefined,
+            icon: AlertTriangle,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Filter"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as Filter)}
+          className={filterSelect}
+        >
+          <option value="all">Every school</option>
+          <option value="expiring">Expiring within a month</option>
+          <option value="expired">Already expired</option>
+          <option value="no_plan">Not on a plan</option>
+        </select>
+      </FilterBar>
 
       {data && data.without_a_plan > 0 && (
         <WarnBox>
@@ -137,28 +147,38 @@ export default function BillingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>School by school</CardTitle>
+          <div>
+            <CardTitle>School by school</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {filter === "all"
+                ? "Every school on the platform"
+                : filter === "expiring"
+                  ? "Schools whose plan expires within a month"
+                  : filter === "expired"
+                    ? "Schools whose plan has already expired"
+                    : "Schools on no plan at all"}
+            </p>
+          </div>
           <span className="text-[12px] font-bold text-ink-muted">
             {rows.length} of {data?.total_tenants ?? 0}
           </span>
         </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["School", "Plan", "Price", "Renews", "Paid to date", "Last payment"]}
-            empty={rows.length === 0 && "No schools match that filter."}
-          >
+        <Table
+          head={["School", "Plan", "Price", "Renews", "Paid to date", "Last payment"]}
+          empty={rows.length === 0 && "No schools match that filter."}
+        >
             {rows.map((t) => (
               <tr key={t.tenant_id}>
-                <td className={tdStrong}>
+                <td className="px-4 py-3">
                   <Link
                     href={`/super-admin/tenants/${t.tenant_id}`}
-                    className="hover:underline"
+                    className="block hover:underline"
                   >
-                    {t.tenant_name}
+                    <PersonCell
+                      name={t.tenant_name}
+                      sub={`${t.tenant_code} · ${humanize(t.tenant_status)}`}
+                    />
                   </Link>
-                  <span className="block text-[11px] font-normal text-ink-subtle">
-                    {t.tenant_code} · {humanize(t.tenant_status)}
-                  </span>
                 </td>
                 <td className={td}>
                   {t.plan_name ? (
@@ -206,8 +226,11 @@ export default function BillingPage() {
                 </td>
               </tr>
             ))}
-          </Table>
-        </CardBody>
+        </Table>
+        <PanelFooter
+          left={`Showing ${rows.length} of ${data?.total_tenants ?? 0} schools`}
+          right={data ? `${data.without_a_plan} on no plan` : "—"}
+        />
       </Card>
     </div>
   );

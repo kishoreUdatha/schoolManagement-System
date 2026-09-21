@@ -9,17 +9,25 @@ import {
   ErrorBox,
   NoticeBox,
   PageHeader,
-  Select,
   Table,
   WarnBox,
   humanize,
   td,
-  tdStrong,
 } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import {
+  FilterBar,
+  PanelFooter,
+  PersonCell,
+  SearchBox,
+  StatStrip,
+} from "@/components/ui/Workspace";
+import { Car, DoorOpen, ListFilter, Users } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { dateTime } from "@/lib/dates";
+
+/** A select sized for the filter bar: same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Visit = {
   id: number;
@@ -101,45 +109,74 @@ export default function GateLogPage() {
   const stillIn = shown.filter((v) => v.status === "checked_in").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Gate log"
         subtitle="Movements through the gate, and the vehicles that came with them."
-        actions={
-          <form
-            className="flex flex-wrap items-end gap-2"
-            onSubmit={(e: FormEvent) => {
-              e.preventDefault();
-              load();
-            }}
-          >
-            <Input
-              type="date"
-              label="On"
-              value={on}
-              onChange={(e) => setOn(e.target.value)}
-            />
-            <Select
-              label="Show"
-              value={only}
-              onChange={(e) => setOnly(e.target.value as typeof only)}
-            >
-              <option value="vehicles">With a vehicle</option>
-              <option value="inside">Still inside</option>
-              <option value="all">Everything</option>
-            </Select>
-            <Input
-              placeholder="Name, phone or vehicle"
-              aria-label="Search the log"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-            <Button type="submit" variant="secondary">
-              Search
-            </Button>
-          </form>
-        }
       />
+
+      {/* Four tallies over the one list this page loaded — the server is
+          asked once, for the window the filters describe. */}
+      <StatStrip
+        stats={[
+          { label: "Movements", value: loading ? "—" : visits.length, note: on || "Today and before", icon: Users },
+          {
+            label: "With a vehicle",
+            value: loading ? "—" : withVehicle.length,
+            note: "Noted a registration",
+            icon: Car,
+          },
+          {
+            label: "Still inside",
+            value: loading ? "—" : inside.length,
+            note: inside.length ? "Not signed out" : "Everyone signed out",
+            icon: DoorOpen,
+          },
+          {
+            label: "Shown",
+            value: loading ? "—" : shown.length,
+            note: "After the filter below",
+            icon: ListFilter,
+          },
+        ]}
+      />
+
+      <form
+        onSubmit={(e: FormEvent) => {
+          e.preventDefault();
+          load();
+        }}
+      >
+        <FilterBar>
+          <SearchBox
+            value={q}
+            onChange={setQ}
+            placeholder="Name, phone or vehicle"
+            label="Search the log"
+          />
+          <input
+            type="date"
+            aria-label="On"
+            value={on}
+            onChange={(e) => setOn(e.target.value)}
+            className={filterSelect}
+          />
+          <select
+            aria-label="Show"
+            value={only}
+            onChange={(e) => setOnly(e.target.value as typeof only)}
+            className={filterSelect}
+          >
+            <option value="vehicles">With a vehicle</option>
+            <option value="inside">Still inside</option>
+            <option value="all">Everything</option>
+          </select>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
+      </form>
+
       <ErrorBox>{error}</ErrorBox>
 
       <NoticeBox>
@@ -147,17 +184,6 @@ export default function GateLogPage() {
         who they came to see. So this is the whole gate log rather than a staff
         register, filtered by default to entries that noted a vehicle.
       </NoticeBox>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Movements" value={loading ? "—" : visits.length} />
-        <StatCard label="With a vehicle" value={loading ? "—" : withVehicle.length} />
-        <StatCard
-          label="Still inside"
-          value={loading ? "—" : inside.length}
-          accent={inside.length ? "amber" : "emerald"}
-        />
-        <StatCard label="Shown" value={loading ? "—" : shown.length} />
-      </div>
 
       {inside.length > 0 && (
         <WarnBox>
@@ -168,13 +194,18 @@ export default function GateLogPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            {only === "vehicles"
-              ? "Vehicle movements"
-              : only === "inside"
-                ? "Still inside"
-                : "Every movement"}
-          </CardTitle>
+          <div>
+            <CardTitle>
+              {only === "vehicles"
+                ? "Vehicle movements"
+                : only === "inside"
+                  ? "Still inside"
+                  : "Every movement"}
+            </CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[on ? on : "All dates", q ? `Matching “${q}”` : "No search term"].join(" · ")}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -189,13 +220,13 @@ export default function GateLogPage() {
           >
             {shown.map((v) => (
               <tr key={v.id}>
-                <td className={tdStrong}>
-                  {v.visitor_name}
-                  <span className="block text-[11px] font-normal text-ink-subtle">
-                    {v.phone}
-                    {v.company ? ` · ${v.company}` : ""}
-                    {v.people_count > 1 ? ` · ${v.people_count} people` : ""}
-                  </span>
+                <td className="px-4 py-3">
+                  <PersonCell
+                    name={v.visitor_name}
+                    sub={`${v.phone}${v.company ? ` · ${v.company}` : ""}${
+                      v.people_count > 1 ? ` · ${v.people_count} people` : ""
+                    }`}
+                  />
                 </td>
                 <td className={td}>
                   {v.vehicle_no ? (
@@ -255,6 +286,10 @@ export default function GateLogPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={loading ? "Loading…" : `Showing ${shown.length} of ${visits.length} movements`}
+          right={stillIn > 0 ? `${stillIn} still inside in this view` : "Nobody outstanding here"}
+        />
       </Card>
     </div>
   );

@@ -10,8 +10,14 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, Table, humanize, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
+import { FileCheck2, FileText, Inbox, LayoutTemplate } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { openAuthed } from "@/lib/download";
+
+/** A select sized for the filter bar: same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Template = {
   id: number;
@@ -83,8 +89,10 @@ export default function CertificatesPage() {
       .catch((e) => setError(apiError(e)));
   }
 
+  const issued = items.filter((c) => c.status === "issued").length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Certificates"
         subtitle="Bonafide, study, character and transfer certificates, with a numbered register."
@@ -97,6 +105,33 @@ export default function CertificatesPage() {
           </>
         }
       />
+
+      {/* Counted off the register this page already loaded and the template
+          list beside it — no second trip to the server. */}
+      <StatStrip
+        stats={[
+          {
+            label: "In this view",
+            value: items.length || "—",
+            note: status ? humanize(status) : "Every status",
+            icon: FileText,
+          },
+          { label: "Issued", value: issued, note: "With a serial number", icon: FileCheck2 },
+          {
+            label: "Awaiting a decision",
+            value: requests.length,
+            note: "Requested by parents",
+            icon: Inbox,
+          },
+          {
+            label: "Templates",
+            value: templates.length || "—",
+            note: `${templates.filter((t) => t.is_active).length} active`,
+            icon: LayoutTemplate,
+          },
+        ]}
+      />
+
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
@@ -128,27 +163,40 @@ export default function CertificatesPage() {
         </Card>
       )}
 
-      <div className="flex items-end gap-3">
-        <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+      <FilterBar>
+        <select
+          aria-label="Status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className={filterSelect}
+        >
           <option value="">All</option>
           <option value="issued">Issued</option>
           <option value="requested">Requested</option>
           <option value="cancelled">Cancelled</option>
           <option value="rejected">Rejected</option>
-        </Select>
-      </div>
+        </select>
+      </FilterBar>
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>The register</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {status ? humanize(status) : "Every status"} · numbered in the order they were issued
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Serial", "Certificate", "Student", "Purpose", "Issued", "Status", ""]} empty={items.length === 0 && "Nothing in the register yet."}>
           {items.map((c) => (
             <tr key={c.id} className="hover:bg-surface-hover">
               <td className="px-4 py-3 text-[12px] font-mono text-ink">{c.serial_no ?? "—"}</td>
               <td className={tdStrong}>{c.template_name ?? humanize(c.kind)}</td>
-              <td className={td}>
-                {c.student_name}
-                <div className="text-xs text-ink-subtle">
-                  {c.admission_no} · {c.section_label}
-                </div>
+              <td className="px-4 py-3">
+                <PersonCell
+                  name={c.student_name}
+                  sub={`${c.admission_no}${c.section_label ? ` · ${c.section_label}` : ""}`}
+                />
               </td>
               <td className={td}>{c.purpose ?? "—"}</td>
               <td className={td}>
@@ -174,6 +222,10 @@ export default function CertificatesPage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`${items.length} certificate${items.length === 1 ? "" : "s"} listed`}
+          right={requests.length > 0 ? `${requests.length} awaiting a decision` : "Nothing pending"}
+        />
       </Card>
 
       {issuing && (

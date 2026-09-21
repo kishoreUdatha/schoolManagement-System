@@ -3,20 +3,23 @@
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   PageHeader,
-  Select,
   Table,
   humanize,
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { CalendarDays, DoorClosed, Layers, UserX } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { hhmm, shortDate } from "@/lib/dates";
+
+/** A select sized for the filter bar: the same height as the search box. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Lab = {
   id: number;
@@ -83,28 +86,47 @@ export default function LabsPage() {
   const withoutRoom = labs.filter((l) => !l.room_id);
   const withoutInCharge = labs.filter((l) => !l.in_charge_user_id);
 
+  const selectedLab = labs.find((l) => l.id === labId) ?? null;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Labs"
         subtitle="Where practical lessons happen, who is responsible for each one, and what is booked in the next month."
       />
-      <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Labs" value={active.length} />
-        <StatCard
-          label="Without a room"
-          value={withoutRoom.length}
-          accent={withoutRoom.length ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Without someone in charge"
-          value={withoutInCharge.length}
-          accent={withoutInCharge.length ? "amber" : "emerald"}
-        />
-        <StatCard label="Bookings ahead" value={bookings.length} />
-      </div>
+      {/* Counted from the labs and bookings already loaded — nothing here is
+          a second query. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Labs",
+            value: active.length,
+            note: labs.length !== active.length ? `${labs.length - active.length} retired` : "All in use",
+            icon: Layers,
+          },
+          {
+            label: "Without a room",
+            value: withoutRoom.length,
+            note: withoutRoom.length ? "Nowhere to hold the lesson" : "Every lab has one",
+            icon: DoorClosed,
+          },
+          {
+            label: "Without someone in charge",
+            value: withoutInCharge.length,
+            note: withoutInCharge.length ? "Nobody responsible" : "Every lab has someone",
+            icon: UserX,
+          },
+          {
+            label: "Bookings ahead",
+            value: bookings.length,
+            note: selectedLab ? selectedLab.name : "Across every lab",
+            icon: CalendarDays,
+          },
+        ]}
+      />
+
+      <ErrorBox>{error}</ErrorBox>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {labs.map((l) => (
@@ -170,21 +192,30 @@ export default function LabsPage() {
         belong in the store, where they have quantities.
       </p>
 
+      <FilterBar>
+        <select
+          aria-label="Lab"
+          value={labId}
+          onChange={(e) => setLabId(e.target.value ? Number(e.target.value) : "")}
+          className={filterSelect}
+        >
+          <option value="">Every lab</option>
+          {labs.map((l) => (
+            <option key={l.id} value={l.id}>
+              {l.name}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
+
       <Card>
         <CardHeader>
-          <CardTitle>Bookings</CardTitle>
-          <Select
-            aria-label="Lab"
-            value={labId}
-            onChange={(e) => setLabId(e.target.value ? Number(e.target.value) : "")}
-          >
-            <option value="">Every lab</option>
-            {labs.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.name}
-              </option>
-            ))}
-          </Select>
+          <div>
+            <CardTitle>Bookings</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {selectedLab ? selectedLab.name : "Every lab"} · the next month
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -217,6 +248,10 @@ export default function LabsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${bookings.length} booking${bookings.length === 1 ? "" : "s"} in the next month`}
+          right={selectedLab ? `Filtered to ${selectedLab.name}` : "Every lab"}
+        />
       </Card>
     </div>
   );
