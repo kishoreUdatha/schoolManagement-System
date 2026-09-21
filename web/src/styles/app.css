@@ -2,7 +2,7 @@
 
 /* The school you are in sits in the top bar, left of search. */
 .topbar-left{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
-.tenant-switch{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border:1px solid var(--line);border-radius:11px;background:#f7faff;font:inherit;color:inherit;cursor:pointer;text-align:left;flex-shrink:0}
+.tenant-switch{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border:1px solid var(--line);border-radius:11px;background:#fff;font:inherit;color:inherit;cursor:pointer;text-align:left;flex-shrink:0}
 .tenant-switch:hover{border-color:#bcd2f3}
 .tenant-switch .avatar{width:32px;height:32px}
 .tenant-name{font-size:12px;font-weight:800;line-height:1.3;white-space:nowrap}
@@ -15,7 +15,7 @@
    without changing any layout. Remove this block to get the mock back.
    ------------------------------------------------------------------ */
 :root{
-  --ink:#0f1f4d;--muted:#4f6285;--line:#dfe8f7;--bg:#eef4ff;
+  --ink:#0f1f4d;--muted:#4f6285;--line:#e3eaf5;--bg:#fff;
   --blue:#2563eb;--blue-grad:linear-gradient(135deg,#2563eb 0%,#3b82f6 55%,#38bdf8 100%);
   --c-blue:#2563eb;--c-blue-bg:#e6efff;
   --c-violet:#7c3aed;--c-violet-bg:#f0e9ff;
@@ -25,7 +25,7 @@
   --c-green:#16a34a;--c-green-bg:#e2f7e9;
   --lift:0 1px 2px rgba(15,31,77,.04),0 10px 28px -16px rgba(37,99,235,.22);
 }
-body{background:radial-gradient(1200px 500px at 70% -10%,#dfeaff 0%,rgba(223,234,255,0) 60%),var(--bg);background-attachment:fixed}
+body{background:#fff}
 .crumb{color:#5a6f95}
 
 /* brand + primary actions */
@@ -72,7 +72,7 @@ body{background:radial-gradient(1200px 500px at 70% -10%,#dfeaff 0%,rgba(223,234
 .badge.neutral{background:#e9edf5;color:#4a5874}
 
 /* tables and tabs */
-.data-table th{background:#f3f7ff;color:#3f5380}
+.data-table th{background:#fff;color:#3f5380}
 .data-table tbody tr:hover{background:#f5f9ff}
 .module-tabs a,.module-tabs button{color:#4f6285}
 .stat-label::before{content:'';display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:7px;vertical-align:1px;background:var(--c-blue)}
@@ -80,3 +80,8 @@ body{background:radial-gradient(1200px 500px at 70% -10%,#dfeaff 0%,rgba(223,234
 .stat:nth-child(4n+3) .stat-label::before{background:var(--c-green)}
 .stat:nth-child(4n) .stat-label::before{background:var(--c-amber)}
 .bar-track i{background:var(--blue-grad)}
+
+/* No grey fills on the page: headers and strips sit on white. Disabled,
+   read-only and weekend cells keep their grey because it means something. */
+.pages button,.steps,.schedule-header,.day-head,.assessment-prompt,.upload-zone,.topsearch kbd{background:#fff}
+.tree-row.child,.tree-row.leaf{background:#fff}
