@@ -116,3 +116,4 @@ option{background:#fff}
 .subnav{display:block;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:500;color:#40527a;line-height:1.35}
 .subnav:hover{background:#f1f6ff;color:var(--blue)}
 .subnav.active{background:var(--blue-grad);color:#fff;font-weight:600;box-shadow:0 6px 14px -8px rgba(37,99,235,.7)}
+.sidebar-footer .sign-out{border:0;background:none;color:#52617a;width:34px;height:34px}.sidebar-footer .sign-out:hover{color:#c0223f;background:#ffe0e6}

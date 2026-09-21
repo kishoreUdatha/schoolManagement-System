@@ -1,17 +1,24 @@
+"use client";
+
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, type ReactNode } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Avatar, Person } from "@/components/ui/primitives";
 import { ModuleGroup } from "./ModuleGroup";
 import { MODULES, SCREENS, screen, routeOf, type Screen } from "@/lib/screens";
+import { ROLE_LABEL, session } from "@/lib/session";
+import { useApi } from "@/lib/useApi";
+import { useHydrated, useSession } from "@/lib/useSession";
 
 /*
  * The signed-in frame every workspace screen sits in: sidebar, top bar,
  * breadcrumb, page head and footer, as drawn in the BrightCampus mocks.
  *
- * Who is signed in and which menu they see is decided here from the screen
- * number, exactly as the mocks do. When auth lands, `viewerFor` becomes the
- * session and `ROLE_NAV` the role's permitted menu; nothing else changes.
+ * Who is signed in comes from the session; the menu is that role's menu.
+ * Before the session is read (the server render) it falls back to the
+ * mock's viewer for the screen, so the first paint matches the design.
+ * Signed-out visitors are sent to sign in.
  */
 
 type NavLink = [screen: number, label: string, icon: IconName];
@@ -53,8 +60,21 @@ export function viewerFor(n: number): { who: string; role: string } {
   return { who: "Ananya Rao", role: "School Admin" };
 }
 
-function Sidebar({ s }: { s: Screen }) {
-  const { who, role } = viewerFor(s.n);
+type Viewer = { who: string; role: string };
+
+/** The signed-in person, or the mock's viewer for this screen until known. */
+function useViewer(s: Screen): Viewer {
+  const sess = useSession();
+  return sess ? { who: sess.user.full_name, role: ROLE_LABEL[sess.user.role] ?? sess.user.role } : viewerFor(s.n);
+}
+
+function signOut() {
+  session.clear();
+  window.location.href = routeOf(3);
+}
+
+function Sidebar({ s, viewer }: { s: Screen; viewer: Viewer }) {
+  const { who, role } = viewer;
   const roleNav = ROLE_NAV[role];
 
   return (
@@ -95,36 +115,54 @@ function Sidebar({ s }: { s: Screen }) {
           </>
         )}
       </div>
-      <div className="sidebar-footer">
+      <div className="sidebar-footer spread">
         <Person name={who} sub={role} />
+        <button type="button" className="btn icon sign-out" aria-label="Sign out" title="Sign out" onClick={signOut}>
+          <Icon name="logout" />
+        </button>
       </div>
     </aside>
   );
 }
 
 /** The school (tenant) you are working in. The platform console has none. */
-function TenantSwitch({ role }: { role: string }) {
+type Branding = { school_id: number; name: string; code: string | null; address: string | null; logo_url: string | null };
+
+/** The signed-in school's branding; null for the platform console and before sign-in. */
+function useSchool(role: string) {
+  const sess = useSession();
+  const { data } = useApi<Branding>(sess && role !== "Super Admin" ? "/api/v1/branding/me" : null);
+  return data;
+}
+
+function initials(name: string) {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
+}
+
+function TenantSwitch({ role, school }: { role: string; school: Branding | null }) {
   const platform = role === "Super Admin";
+  const name = platform ? "BrightCampus Platform" : (school?.name ?? "Bright International");
+  const sub = platform ? "All organizations" : school ? (school.address ?? `School code ${school.code ?? ""}`) : "Main Campus, Hyderabad";
   return (
     <button type="button" className="tenant-switch" aria-label="Switch school">
-      <span className="avatar">{platform ? "BC" : "BI"}</span>
+      <span className="avatar">{platform ? "BC" : initials(name)}</span>
       <span className="tenant-name">
-        {platform ? "BrightCampus Platform" : "Bright International"}
-        <small>{platform ? "All organizations" : "Main Campus, Hyderabad"}</small>
+        {name}
+        <small>{sub}</small>
       </span>
       <Icon name="down" className="sm" />
     </button>
   );
 }
 
-function Topbar({ who, role }: { who: string; role: string }) {
+function Topbar({ who, role, school }: { who: string; role: string; school: Branding | null }) {
   return (
     <header className="topbar">
       <div className="topbar-left">
         <button type="button" className="btn mobile-menu " aria-label="Open navigation" data-toggle-nav="">
           <Icon name="menu" className="sm" />
         </button>
-        <TenantSwitch role={role} />
+        <TenantSwitch role={role} school={school} />
         <div className="topsearch">
           <Icon name="search" className="sm" />
           <input aria-label="Find screen" placeholder="Search people, classes, pages…" id="global-search" autoComplete="off" />
@@ -155,16 +193,29 @@ function Topbar({ who, role }: { who: string; role: string }) {
 export function AppShell({ screen: id, actions, children }: { screen: string; actions?: ReactNode; children: ReactNode }) {
   const s = screen(id);
   const mi = MODULES.indexOf(s.module);
-  const { who, role } = viewerFor(s.n);
+  const viewer = useViewer(s);
+  const school = useSchool(viewer.role);
+  const sess = useSession();
+  const hydrated = useHydrated();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (hydrated && !sess) {
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      router.replace(`${routeOf(3)}?next=${next}`);
+    }
+  }, [hydrated, sess, router]);
+
+  const schoolName = school?.name ?? "Bright International";
   return (
     <div className="app">
-      <Sidebar s={s} />
+      <Sidebar s={s} viewer={viewer} />
       <button className="offcanvas-backdrop" aria-label="Close navigation" data-toggle-nav="" />
       <div className="workspace">
-        <Topbar who={who} role={role} />
+        <Topbar who={viewer.who} role={viewer.role} school={school} />
         <main className="main">
           <div className="crumb">
-            <Link href={routeOf(33)}>Bright International</Link>
+            <Link href={routeOf(33)}>{schoolName}</Link>
             <span>/</span>
             <Link href={`/screens?module=${mi}`}>{s.moduleShort}</Link>
             <span>/</span>
@@ -178,7 +229,7 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
           </div>
           {children}
           <footer className="screen-note">
-            <span>BrightCampus · Sample school data</span>
+            <span>{`BrightCampus · ${schoolName}`}</span>
             <span>
               {`${s.id}   `}
               <Link href="/screens">Browse all screens</Link>

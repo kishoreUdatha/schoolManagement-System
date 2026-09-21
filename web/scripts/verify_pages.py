@@ -66,7 +66,7 @@ def tokens(html, strip_chrome):
         el.decompose()
     # Deliberate departure: the school card moved from the sidebar to the top bar.
     # ...and the menu lists every module's screens in collapsible groups.
-    for el in body.select(".sidebar .nav-scroll"):
+    for el in body.select(".sidebar .nav-scroll, .sidebar-footer, .screen-note"):
         el.decompose()
     for el in body.select(".school-switch, .tenant-switch"):
         el.decompose()
@@ -87,7 +87,10 @@ def tokens(html, strip_chrome):
 
 def main():
     bad = 0
+    wired = [s for s in B.SCREENS if s["id"] in B.KEEP]
     for s in B.SCREENS:
+        if s["id"] in B.KEEP:
+            continue  # wired to the API by hand; compared by people, not this script
         route = B.ROUTE[s["id"]]
         built = NEXT / ("index.html" if route == "/" else route.strip("/") + ".html")
         mock = B.MOCK / "screens" / B.G.filename(s)
@@ -97,7 +100,8 @@ def main():
             bad += 1
             i = next((i for i, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
             print(f"{s['id']} differs at token {i}/{len(a)}:\n   mock: {a[i] if i < len(a) else 'END'}\n    app: {b[i] if i < len(b) else 'END'}")
-    print(f"{len(B.SCREENS) - bad} of {len(B.SCREENS)} screens match their mock.")
+    checked = len(B.SCREENS) - len(wired)
+    print(f"{checked - bad} of {checked} generated screens match their mock ({len(wired)} wired by hand, not compared).")
 
 
 if __name__ == "__main__":

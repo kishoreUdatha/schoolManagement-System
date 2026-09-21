@@ -43,12 +43,27 @@ export function DataTable({
   rows,
   selectable = true,
   rowAction = true,
+  onView,
+  total,
+  page = 1,
+  pages = 1,
+  onPage,
+  empty = "No matching records. Try a different filter.",
 }: {
   columns: string[];
   rows: Row[];
   selectable?: boolean;
   rowAction?: boolean;
+  /** Live tables: open a row. Without it, "View" shows the preview dialog. */
+  onView?: (index: number) => void;
+  /** Live tables: the server's count and paging. */
+  total?: number;
+  page?: number;
+  pages?: number;
+  onPage?: (page: number) => void;
+  empty?: string;
 }) {
+  const count = total ?? rows.length;
   return (
     <>
       <div className="table-wrap">
@@ -81,9 +96,15 @@ export function DataTable({
                 ))}
                 {rowAction ? (
                   <td className="right">
-                    <button type="button" className="btn " data-view-row="">
-                      View
-                    </button>
+                    {onView ? (
+                      <button type="button" className="btn " onClick={() => onView(i)}>
+                        View
+                      </button>
+                    ) : (
+                      <button type="button" className="btn " data-view-row="">
+                        View
+                      </button>
+                    )}
                   </td>
                 ) : null}
               </tr>
@@ -91,16 +112,33 @@ export function DataTable({
           </tbody>
         </table>
       </div>
-      <div className="table-empty" hidden>
-        No matching records. Try a different filter.
+      <div className="table-empty" hidden={rows.length > 0}>
+        {empty}
       </div>
       <div className="table-footer">
-        <span data-table-count="">{`Showing ${rows.length} of ${rows.length} records`}</span>
+        <span data-table-count="">{`Showing ${rows.length} of ${count} records`}</span>
         <div className="pages">
-          <button className="active" aria-label="Page 1">
-            1
-          </button>
-          <span>All records on this page</span>
+          {onPage && pages > 1 ? (
+            <>
+              <button type="button" aria-label="Previous page" disabled={page <= 1} onClick={() => onPage(page - 1)}>
+                ‹
+              </button>
+              <button type="button" className="active" aria-label={`Page ${page}`}>
+                {page}
+              </button>
+              <button type="button" aria-label="Next page" disabled={page >= pages} onClick={() => onPage(page + 1)}>
+                ›
+              </button>
+              <span>{`Page ${page} of ${pages}`}</span>
+            </>
+          ) : (
+            <>
+              <button className="active" aria-label="Page 1">
+                1
+              </button>
+              <span>All records on this page</span>
+            </>
+          )}
         </div>
       </div>
     </>

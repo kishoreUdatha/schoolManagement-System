@@ -363,7 +363,12 @@ export function PreviewInteractions() {
         el.classList.add("active");
       }),
     );
-    on($("[data-continue-role]"), "click", () => router.push($(".role-option.active")?.dataset.roleTarget || "/screens"));
+    // Picking a workspace leads to sign-in for that role, not past it.
+    on($("[data-continue-role]"), "click", () => {
+      const label = $(".role-option.active")?.dataset.role ?? "School Admin";
+      const role = label.toLowerCase().replace(/\s+/g, "_");
+      router.push(`/welcome/sign-in?role=${encodeURIComponent(role)}`);
+    });
 
     // Sign-in family
     on($("#auth-form"), "submit", (e: SubmitEvent) => {

@@ -35,7 +35,10 @@ APP = WEB / "src/app"
 PAGES = APP / "(screens)"
 
 # Pages that have been wired to the backend and must not be regenerated.
-KEEP: set[str] = set()
+KEEP: set[str] = {
+    "SCR-003",  # sign-in
+    "SCR-055",  # student directory
+}
 
 sys.path.insert(0, str(MOCK / "source"))
 import build_screens as G  # noqa: E402  (the designers' generator)
