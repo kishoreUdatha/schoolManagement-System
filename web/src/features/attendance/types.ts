@@ -227,4 +227,36 @@ export const EV = {
   exportTimes: "attendance:export-times",
   exportMonthly: "attendance:export-monthly",
   exportReport: "attendance:export-report",
+  lockDay: "attendance:lock-day",
 } as const;
+
+/** GET /school/attendance/registers?date — one row per section. */
+export type RegisterRow = {
+  section_id: number;
+  section_label: string;
+  date: string;
+  marked: boolean;
+  marked_count: number;
+  status: "open" | "locked";
+  marked_by_name: string | null;
+  locked_by_name: string | null;
+  locked_at: string | null;
+  reopened_by_name: string | null;
+  reopen_reason: string | null;
+  present: number;
+  absent: number;
+};
+
+/** POST /school/attendance/registers/lock-day?date */
+export type LockDayResult = { date: string; sections: number; locked: number };
+
+/** GET /school/attendance-ops/periods/gaps?section_id&date */
+export type PeriodGap = {
+  student_id: number;
+  student_name: string | null;
+  admission_no: string | null;
+  period_number: number;
+  period_label: string | null;
+  remark: string | null;
+};
+export type PeriodGaps = { date: string; section_id: number; gaps: PeriodGap[]; count: number };

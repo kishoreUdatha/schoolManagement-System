@@ -52,3 +52,83 @@ export type Guardian = {
   lives_with_student: boolean;
   has_portal_login: boolean;
 };
+
+/* ---------- Bulk import, logins, enrolment history (NEW-010 … NEW-012) ---------- */
+
+export type Gender = "male" | "female" | "other";
+
+/** One row of POST /students/bulk. Every field is optional to the schema; the server checks names per row. */
+export type BulkRow = {
+  full_name: string | null;
+  dob: string | null;
+  gender: Gender | null;
+  blood_group: string | null;
+  address: string | null;
+  photo_url: string | null;
+};
+
+/** `row` is the index into the `students` array that was sent. */
+export type BulkError = { row: number; full_name?: string | null; error: string };
+
+export type BulkResult = { created: Student[]; errors: BulkError[] };
+
+/** GET /student-logins */
+export type LoginStatusRow = {
+  student_id: number;
+  admission_no: string;
+  student_name: string;
+  roll_no: number | null;
+  class_name: string | null;
+  section_name: string | null;
+  has_login: boolean;
+  is_active: boolean;
+  last_login_at: string | null;
+};
+
+/** A password, returned once by POST /student-logins/… */
+export type LoginCreated = { student_id: number; admission_no: string; student_name: string; user_id: number; password: string; created: boolean };
+
+export type ClassLoginsCreated = { class_id: number; created: LoginCreated[]; reset: LoginCreated[]; total: number };
+
+export type Outcome = "studying" | "promoted" | "repeated" | "left";
+export const OUTCOMES: Outcome[] = ["studying", "promoted", "repeated", "left"];
+
+/** GET /students/{id}/enrollments */
+export type Enrollment = {
+  id: number;
+  academic_year_id: number;
+  academic_year_name: string;
+  section_id: number;
+  section_label: string | null;
+  roll_no: number;
+  start_date: string;
+  end_date: string | null;
+  outcome: Outcome;
+  notes: string | null;
+};
+
+/** GET /enrollments?academic_year_id&section_id */
+export type RosterRow = {
+  student_id: number;
+  full_name: string;
+  admission_no: string;
+  section_label: string | null;
+  roll_no: number;
+  outcome: Outcome;
+  start_date: string;
+  end_date: string | null;
+};
+
+export const RELATIONS = ["father", "mother", "guardian", "grandparent", "uncle", "aunt", "sibling", "driver", "other"] as const;
+export type Relation = (typeof RELATIONS)[number];
+
+/** POST /students/{id}/guardians/{gid}/portal-access, shown once. */
+export type PortalGrant = { user_id: number; email: string; temporary_password: string };
+
+/** GET /school/profile, the part a login slip needs. */
+export type SchoolCode = { name: string; code: string };
+
+/** Page-head buttons announce themselves with these window events (PageAction / usePageAction). */
+export const EV = {
+  classLogins: "students:class-logins",
+} as const;

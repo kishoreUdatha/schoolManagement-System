@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
+import { api, errorText } from "@/lib/api";
 import { date, initials, label, money, pct } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { Guardian, StudentProfile as Profile } from "./types";
@@ -76,7 +80,7 @@ export function useStudent() {
 
 /** SCR-057, live: GET /api/v1/school/students/{id}. */
 export function StudentProfile() {
-  const { id, data: s, error, loading } = useStudent();
+  const { id, data: s, error, loading, reload } = useStudent();
   const guardians = useApi<Guardian[]>(id ? `/api/v1/school/students/${id}/guardians` : null);
   if (!id) return <PickFirst what="student" href={routeOf(55)} cta="Open the student directory" />;
   if (loading && !s) return <Loading what="Loading the student…" />;
@@ -181,9 +185,75 @@ export function StudentProfile() {
               <p className="muted">No homework set recently.</p>
             )}
           </Panel>
+          <RecordStatus s={s} onChange={reload} />
         </aside>
       </div>
     </>
+  );
+}
+
+/**
+ * Switching the record on or off: POST /students/{id}/activate | deactivate.
+ * The server keeps the enrolment in step. A child actually leaving the
+ * school goes through Student Exit instead, which records where and when.
+ */
+function RecordStatus({ s, onChange }: { s: Profile; onChange: () => void }) {
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const to = s.is_active ? "deactivate" : "activate";
+
+  async function go() {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.post(`/api/v1/school/students/${s.id}/${to}`);
+      notify(`${s.full_name} is now ${s.is_active ? "inactive" : "active"}.`);
+      setAsking(false);
+      onChange();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Panel title="Record status" sub={s.is_active ? "Active: on registers, lists and fee runs" : "Inactive: kept on file, out of daily lists"}>
+      <ErrorNote>{error}</ErrorNote>
+      <div className="spread">
+        <Badge>{s.is_active ? "Active" : "Inactive"}</Badge>
+        <button type="button" className={`btn ${s.is_active ? "" : "primary"}`} onClick={() => setAsking(true)} disabled={busy}>
+          {s.is_active ? "Deactivate" : "Reactivate"}
+        </button>
+      </div>
+      {s.is_active ? (
+        <p className="muted small" style={{ marginTop: 12 }}>
+          Leaving the school? Use <Link href={`${routeOf(70)}?id=${s.id}`}>Student exit</Link> so the transfer is recorded.
+        </p>
+      ) : null}
+      <Dialog
+        open={asking}
+        title={s.is_active ? "Deactivate this student?" : "Reactivate this student?"}
+        onClose={() => setAsking(false)}
+        actions={
+          <>
+            <button type="button" className="btn" onClick={() => setAsking(false)}>
+              Cancel
+            </button>
+            <button type="button" className="btn primary" onClick={go} disabled={busy}>
+              {busy ? "Saving…" : s.is_active ? "Deactivate" : "Reactivate"}
+            </button>
+          </>
+        }
+      >
+        <p>
+          {s.is_active
+            ? `${s.full_name} will drop out of class lists and attendance registers, and cannot be given a portal login. Nothing is deleted; you can reactivate the record later.`
+            : `${s.full_name} returns to ${s.class_name ?? "their class"} ${s.section_name ?? ""} lists and registers. Check the section still has a seat.`}
+        </p>
+      </Dialog>
+    </Panel>
   );
 }
 
