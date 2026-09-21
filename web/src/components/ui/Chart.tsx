@@ -1,20 +1,31 @@
 import { Fragment } from "react";
 
-/** The mocks' weekly trend chart (bar or line), drawn at 640×225. */
+const SAMPLE = [75, 90, 84, 94, 80, 88];
+
+/**
+ * The mocks' weekly trend chart (bar or line), drawn at 640×225 on a 0–100
+ * scale. `compare` draws a lighter second bar beside each bar; the mock's
+ * sample chart shows one at 76%, live data shows one only when given.
+ */
 export function Chart({
   kind = "bar",
   labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-  values = [75, 90, 84, 94, 80, 88],
+  values = SAMPLE,
+  compare,
+  label,
 }: {
   kind?: "bar" | "line";
   labels?: string[];
   values?: number[];
+  compare?: number[];
+  label?: string;
 }) {
+  const sample = values === SAMPLE && !compare;
   const grid = [0, 1, 2, 3].map((i) => 20 + i * 51);
   const pts = values.map((v, i) => [62 + i * 102, 180 - v * 1.4] as const);
   const line = pts.map(([x, y]) => `${x},${y}`).join(" ");
   return (
-    <svg className="chart-svg" viewBox="0 0 640 225" role="img" aria-label="Sample weekly trend chart">
+    <svg className="chart-svg" viewBox="0 0 640 225" role="img" aria-label={label ?? (values === SAMPLE ? "Sample weekly trend chart" : "Trend chart")}>
       {grid.map((y, i) => (
         <Fragment key={y}>
           <path d={`M38 ${y}H620`} stroke="#e9eff8" strokeDasharray="3 4" />
@@ -38,7 +49,8 @@ export function Chart({
           return (
             <Fragment key={i}>
               <rect x={x} y={183 - h} width="31" height={h} rx="5" fill={i === 3 ? "#2563eb" : "#73a6f5"} />
-              <rect x={x + 36} y={183 - h * 0.76} width="20" height={h * 0.76} rx="4" fill="#dbe9fe" />
+              {sample ? <rect x={x + 36} y={183 - h * 0.76} width="20" height={h * 0.76} rx="4" fill="#dbe9fe" /> : null}
+              {compare ? <rect x={x + 36} y={183 - compare[i] * 1.55} width="20" height={compare[i] * 1.55} rx="4" fill="#dbe9fe" /> : null}
             </Fragment>
           );
         })

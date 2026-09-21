@@ -5,8 +5,9 @@ import type { ReactNode } from "react";
 export function badgeTone(text: string): string {
   const t = text.toLowerCase();
   const has = (words: string[]) => words.some((w) => t.includes(w));
-  if (has(["pending", "follow-up", "due soon", "late", "assessment", "review", "returned", "invited", "trial"])) return "warn";
-  if (has(["overdue", "absent", "declined", "failed", "expired", "suspended"])) return "bad";
+  if (has(["cancelled", "canceled", "withdrawn"])) return "neutral";
+  if (has(["requested", "pending", "follow-up", "due soon", "late", "assessment", "review", "returned", "invited", "trial"])) return "warn";
+  if (has(["overdue", "absent", "declined", "failed", "expired", "suspended", "rejected"])) return "bad";
   if (has(["draft", "inactive", "archived", "closed", "leave"])) return "neutral";
   if (has(["published", "submitted", "issued", "new", "scheduled", "confirmed"])) return "blue";
   return "";
