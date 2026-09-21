@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+import { Armchair, Bus, Percent, Users } from "lucide-react";
+
 import { BreakdownChart, ChartCard } from "@/components/charts/Charts";
 import { SERIES } from "@/components/charts/theme";
 import { ReportShell } from "@/components/reports/ReportShell";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, WarnBox, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type RouteRow = {
@@ -53,6 +55,7 @@ export default function TransportReportPage() {
 
   const routes = data?.routes ?? [];
   const over = data?.over_capacity ?? [];
+  const seated = routes.filter((r) => r.capacity > 0).length;
 
   return (
     <ReportShell
@@ -68,24 +71,40 @@ export default function TransportReportPage() {
         </WarnBox>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Riders" value={data?.total_riders ?? "—"} />
-        <StatCard
-          label="Seats"
-          value={data ? data.total_capacity || "Not set" : "—"}
-          hint={data && !data.total_capacity ? "No vehicle capacities recorded" : undefined}
-        />
-        <StatCard
-          label="Overall utilisation"
-          value={data?.total_capacity ? `${data.utilisation}%` : "—"}
-          accent={data && data.utilisation > 100 ? "rose" : "brand"}
-        />
-        <StatCard
-          label="Routes over capacity"
-          value={data ? over.length : "—"}
-          accent={over.length ? "rose" : "emerald"}
-        />
-      </div>
+      {/* No filter bar: every route the school runs is in scope, so the strip
+          restates how many that is rather than what was chosen. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Routes in scope",
+            value: data ? routes.length : "—",
+            note: data ? `${seated} with a vehicle capacity recorded` : undefined,
+            icon: Bus,
+          },
+          {
+            label: "Riders",
+            value: data?.total_riders ?? "—",
+            note: "Children allocated to a route",
+            icon: Users,
+          },
+          {
+            label: "Seats",
+            value: data ? data.total_capacity || "Not set" : "—",
+            note: data && !data.total_capacity ? "No vehicle capacities recorded" : undefined,
+            icon: Armchair,
+          },
+          {
+            label: "Overall utilisation",
+            value: data?.total_capacity ? `${data.utilisation}%` : "—",
+            note: data
+              ? over.length
+                ? `${over.length} route(s) over capacity`
+                : "No route is over capacity"
+              : undefined,
+            icon: Percent,
+          },
+        ]}
+      />
 
       <ChartCard
         title="Route by route"
@@ -111,7 +130,12 @@ export default function TransportReportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Routes</CardTitle>
+          <div>
+            <CardTitle>Routes</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Riders against the seats on the vehicle assigned to each route.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -138,6 +162,10 @@ export default function TransportReportPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${routes.length} route(s)`}
+          right={data ? `${data.total_riders} rider(s) in total` : undefined}
+        />
       </Card>
     </ReportShell>
   );

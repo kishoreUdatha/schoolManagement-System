@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+import { Boxes, IndianRupee, Package, Wrench } from "lucide-react";
+
 import { BreakdownChart, ChartCard, ShareChart } from "@/components/charts/Charts";
 import { ReportShell } from "@/components/reports/ReportShell";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, WarnBox, humanize, inr, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type InventoryValuation = {
@@ -57,12 +59,37 @@ export default function InventoryValuationReportPage() {
       subtitle="What the store holds, what the asset register is worth, and which items need ordering."
       error={error}
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Stock value" value={data ? inr(data.stock_value) : "—"} />
-        <StatCard label="Asset value" value={data ? inr(data.asset_value) : "—"} />
-        <StatCard label="Items tracked" value={data?.items ?? "—"} />
-        <StatCard label="Assets tracked" value={data?.assets ?? "—"} />
-      </div>
+      {/* No filter bar: this report takes no scope of its own — it is the
+          whole store and the whole register, so the strip restates what that
+          amounts to rather than what was chosen. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Items in scope",
+            value: data?.items ?? "—",
+            note: data ? `Across ${categories.length} categor${categories.length === 1 ? "y" : "ies"}` : undefined,
+            icon: Package,
+          },
+          {
+            label: "Stock value",
+            value: data ? inr(data.stock_value) : "—",
+            note: "What the store is holding",
+            icon: IndianRupee,
+          },
+          {
+            label: "Assets in scope",
+            value: data?.assets ?? "—",
+            note: data ? `${statuses.length} condition${statuses.length === 1 ? "" : "s"} recorded` : undefined,
+            icon: Wrench,
+          },
+          {
+            label: "Asset value",
+            value: data ? inr(data.asset_value) : "—",
+            note: "What the register is worth",
+            icon: Boxes,
+          },
+        ]}
+      />
 
       {low.length > 0 && (
         <WarnBox>
@@ -104,7 +131,12 @@ export default function InventoryValuationReportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Needs ordering</CardTitle>
+          <div>
+            <CardTitle>Needs ordering</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Every tracked item at or below the reorder level it was given.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -128,11 +160,20 @@ export default function InventoryValuationReportPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${low.length} of ${data?.items ?? 0} tracked items`}
+          right={out.length > 0 ? `${out.length} out of stock` : "Nothing has run out"}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Value by category</CardTitle>
+          <div>
+            <CardTitle>Value by category</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              The store grouped the way it is shelved.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -148,6 +189,10 @@ export default function InventoryValuationReportPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${categories.length} categor${categories.length === 1 ? "y" : "ies"}`}
+          right={data ? `${inr(data.stock_value)} of stock in total` : undefined}
+        />
       </Card>
     </ReportShell>
   );

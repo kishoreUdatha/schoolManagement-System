@@ -1,12 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { IndianRupee, Layers, Receipt, Wallet } from "lucide-react";
 
 import { BreakdownChart, ChartCard, ShareChart, TrendChart } from "@/components/charts/Charts";
-import { CsvButton, DateRange, ReportShell } from "@/components/reports/ReportShell";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { CsvButton, ReportShell } from "@/components/reports/ReportShell";
+import { Button } from "@/components/ui/Button";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, humanize, inr, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Slice = { label: string; amount: string };
@@ -20,6 +22,10 @@ type Collection = {
   by_mode: Slice[];
   by_month: { month: string; amount: string }[];
 };
+
+/** One height for every control in the filter row. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 /** The same money, cut three ways.
  *
@@ -62,25 +68,60 @@ export default function FeeCollectionReportPage() {
       subtitle="What was actually received in the window, and where it came from."
       error={error}
       actions={
-        <div className="flex flex-wrap items-end gap-2">
-          <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} onApply={load} />
-          <CsvButton path="fee-collection.csv" query={{ from: from || undefined, to: to || undefined }} />
-        </div>
+        <CsvButton path="fee-collection.csv" query={{ from: from || undefined, to: to || undefined }} />
       }
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Collected" value={data ? inr(data.total) : "—"} accent="emerald" />
-        <StatCard label="Receipts" value={data?.receipts ?? "—"} />
-        <StatCard
-          label="Average receipt"
-          value={data && data.receipts ? inr(total / data.receipts) : "—"}
-        />
-        <StatCard
-          label="Largest head"
-          value={biggest ? humanize(biggest.label) : "—"}
-          hint={biggest ? inr(biggest.amount) : undefined}
-        />
-      </div>
+      {/* The window first — nothing below it is a figure until the period it
+          covers has been chosen. */}
+      <FilterBar>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          From
+          <input
+            type="date"
+            aria-label="From"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          To
+          <input
+            type="date"
+            aria-label="To"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+        <Button variant="secondary" onClick={load}>
+          Apply
+        </Button>
+      </FilterBar>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Collected",
+            value: data ? inr(data.total) : "—",
+            note: data ? `${data.from_date} to ${data.to_date}` : undefined,
+            icon: IndianRupee,
+          },
+          { label: "Receipts", value: data?.receipts ?? "—", icon: Receipt },
+          {
+            label: "Average receipt",
+            value: data && data.receipts ? inr(total / data.receipts) : "—",
+            note: data ? `across ${data.receipts} receipt(s)` : undefined,
+            icon: Wallet,
+          },
+          {
+            label: "Largest head",
+            value: biggest ? humanize(biggest.label) : "—",
+            note: biggest ? inr(biggest.amount) : undefined,
+            icon: Layers,
+          },
+        ]}
+      />
 
       <ChartCard
         title="Month by month"
@@ -127,24 +168,31 @@ export default function FeeCollectionReportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>By class</CardTitle>
+          <div>
+            <CardTitle>By class</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {data ? `${data.from_date} to ${data.to_date}` : "The default window"}
+            </p>
+          </div>
         </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["Class", "Collected", "Share"]}
-            empty={!data?.by_class.length && "No receipts in this window."}
-          >
-            {(data?.by_class ?? []).map((c) => (
-              <tr key={c.label}>
-                <td className={tdStrong}>{c.label}</td>
-                <td className={td}>{inr(c.amount)}</td>
-                <td className={td}>
-                  {total ? `${Math.round((Number(c.amount) / total) * 100)}%` : "—"}
-                </td>
-              </tr>
-            ))}
-          </Table>
-        </CardBody>
+        <Table
+          head={["Class", "Collected", "Share"]}
+          empty={!data?.by_class.length && "No receipts in this window."}
+        >
+          {(data?.by_class ?? []).map((c) => (
+            <tr key={c.label}>
+              <td className={tdStrong}>{c.label}</td>
+              <td className={td}>{inr(c.amount)}</td>
+              <td className={td}>
+                {total ? `${Math.round((Number(c.amount) / total) * 100)}%` : "—"}
+              </td>
+            </tr>
+          ))}
+        </Table>
+        <PanelFooter
+          left={`${data?.by_class.length ?? 0} class(es) in scope`}
+          right={data ? `${inr(data.total)} collected` : undefined}
+        />
       </Card>
     </ReportShell>
   );

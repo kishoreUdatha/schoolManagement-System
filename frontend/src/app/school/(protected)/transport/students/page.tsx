@@ -1,17 +1,24 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Bus, IndianRupee, MapPin, Route as RouteIcon } from "lucide-react";
 
 import { PickedStudent, StudentPicker } from "@/components/StudentPicker";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, Table, humanize, inr, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, SearchBox, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 import { Route, TransportTabs, hhmm } from "../TransportTabs";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Assignment = {
   id: number;
@@ -74,8 +81,16 @@ export default function TransportStudentsPage() {
     }
   }
 
+  // Figures taken from the list the server just returned for these filters:
+  // who is riding now, what has ended, and what those riders are billed.
+  const riding = items.filter((a) => !a.end_date);
+  const ended = items.length - riding.length;
+  const stopsInUse = new Set(riding.map((a) => a.stop_id)).size;
+  const monthly = riding.reduce((n, a) => n + Number(a.monthly_fee || 0), 0);
+  const selectedRoute = routes.find((r) => String(r.id) === routeId) ?? null;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Transport"
         subtitle="Which students use which route and stop."
@@ -84,34 +99,85 @@ export default function TransportStudentsPage() {
       <TransportTabs />
 
       <form
-        className="flex flex-wrap items-end gap-3"
         onSubmit={(e) => {
           e.preventDefault();
           load();
         }}
       >
-        <Select label="Route" value={routeId} onChange={(e) => setRouteId(e.target.value)}>
-          <option value="">All routes</option>
-          {routes.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.code} · {r.name}
-            </option>
-          ))}
-        </Select>
-        <Input label="Search" placeholder="Name or admission no." value={search} onChange={(e) => setSearch(e.target.value)} />
-        <label className="flex items-center gap-2 pb-2 text-sm text-ink-muted">
-          <input type="checkbox" checked={showEnded} onChange={(e) => setShowEnded(e.target.checked)} />
-          Include history
-        </label>
-        <Button type="submit" variant="secondary">
-          Search
-        </Button>
+        <FilterBar>
+          <SearchBox
+            value={search}
+            onChange={setSearch}
+            placeholder="Name or admission no…"
+            label="Search transport assignments"
+          />
+          <select
+            aria-label="Route"
+            value={routeId}
+            onChange={(e) => setRouteId(e.target.value)}
+            className={filterSelect}
+          >
+            <option value="">All routes</option>
+            {routes.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.code} · {r.name}
+              </option>
+            ))}
+          </select>
+          <label className="flex h-[41px] items-center gap-2 text-[12px] text-ink-muted">
+            <input type="checkbox" checked={showEnded} onChange={(e) => setShowEnded(e.target.checked)} />
+            Include history
+          </label>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
       </form>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Riding now",
+            value: riding.length,
+            note: ended ? `${ended} ended in this list` : "no ended assignments shown",
+            icon: Bus,
+          },
+          {
+            label: "Routes",
+            value: routes.length || "—",
+            note: selectedRoute ? `Filtered to ${selectedRoute.code}` : "All routes",
+            icon: RouteIcon,
+          },
+          {
+            label: "Stops in use",
+            value: stopsInUse,
+            note: "distinct stops on this list",
+            icon: MapPin,
+          },
+          {
+            label: "Monthly fees",
+            value: inr(monthly),
+            note: "billed to the riders shown",
+            icon: IndianRupee,
+          },
+        ]}
+      />
 
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Assigned students</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                selectedRoute ? `${selectedRoute.code} · ${selectedRoute.name}` : "All routes",
+                showEnded ? "history included" : "current assignments only",
+              ].join(" · ")}
+            </p>
+          </div>
+        </CardHeader>
         <Table
           head={["Student", "Class", "Route", "Stop", "Pickup / drop", "Uses", "Fee", "Since", ""]}
           empty={items.length === 0 && "No students assigned."}
@@ -159,6 +225,10 @@ export default function TransportStudentsPage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`Showing ${items.length} assignment(s)`}
+          right={showEnded ? "Current and past assignments" : "Current assignments only"}
+        />
       </Card>
 
       {assigning && (

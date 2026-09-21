@@ -1,24 +1,32 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  BookOpen,
+  IndianRupee,
+  Layers,
+  Library,
+  Percent,
+  Receipt,
+  RotateCcw,
+  Wallet,
+} from "lucide-react";
 
 import { BreakdownChart, ChartCard, TrendChart } from "@/components/charts/Charts";
 import { SERIES } from "@/components/charts/theme";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   PageHeader,
-  Select,
   Table,
   humanize,
   inr,
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
 
@@ -68,6 +76,10 @@ const FINE_TONE: Record<string, "emerald" | "amber" | "rose" | "neutral"> = {
   none: "neutral",
 };
 
+/** One height for every control in the filter row. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
+
 /** Library usage over a window the librarian chooses.
  *
  *  The fines table is unwindowed on purpose — the endpoint takes no dates,
@@ -116,55 +128,85 @@ export default function LibraryReportsPage() {
   }));
   const stillOut = usage ? usage.issued - usage.returned : 0;
 
+  const windowLabel = usage
+    ? `${shortDate(usage.from_date)} to ${shortDate(usage.to_date)}`
+    : "The default window";
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Library report"
         subtitle="What was borrowed over a period, what came back, and what is owed."
-        actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Input
-              type="date"
-              label="From"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-            <Input
-              type="date"
-              label="To"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
-            <Button variant="secondary" onClick={load}>
-              Apply
-            </Button>
-          </div>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Issued"
-          value={usage?.issued ?? "—"}
-          hint={usage ? `${shortDate(usage.from_date)} to ${shortDate(usage.to_date)}` : undefined}
-        />
-        <StatCard
-          label="Returned"
-          value={usage?.returned ?? "—"}
-          hint={usage && stillOut > 0 ? `${stillOut} not back yet` : undefined}
-          accent={stillOut > 0 ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Out now"
-          value={usage?.out_now ?? "—"}
-          hint={usage ? `of ${usage.copies} copies` : undefined}
-        />
-        <StatCard
-          label="Shelf in use"
-          value={usage ? `${usage.shelf_in_use}%` : "—"}
-        />
-      </div>
+      {/* The window and the fine state both narrow what follows, so they are
+          chosen here rather than tucked into the panels they govern. */}
+      <FilterBar>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          From
+          <input
+            type="date"
+            aria-label="From"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          To
+          <input
+            type="date"
+            aria-label="To"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+        <Button variant="secondary" onClick={load}>
+          Apply
+        </Button>
+        <select
+          aria-label="Fine status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">Every state</option>
+          <option value="pending">Pending</option>
+          <option value="billed">Billed</option>
+          <option value="paid">Paid</option>
+          <option value="waived">Waived</option>
+        </select>
+      </FilterBar>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Issued",
+            value: usage?.issued ?? "—",
+            note: usage ? windowLabel : undefined,
+            icon: BookOpen,
+          },
+          {
+            label: "Returned",
+            value: usage?.returned ?? "—",
+            note: usage && stillOut > 0 ? `${stillOut} not back yet` : undefined,
+            icon: RotateCcw,
+          },
+          {
+            label: "Out now",
+            value: usage?.out_now ?? "—",
+            note: usage ? `of ${usage.copies} copies` : undefined,
+            icon: Library,
+          },
+          {
+            label: "Shelf in use",
+            value: usage ? `${usage.shelf_in_use}%` : "—",
+            icon: Percent,
+          },
+        ]}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard
@@ -197,70 +239,84 @@ export default function LibraryReportsPage() {
         </ChartCard>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Fines owed"
-          value={fines ? inr(fines.pending_amount) : "—"}
-          hint={fines ? `${fines.pending} outstanding` : undefined}
-          accent={fines && Number(fines.pending_amount) > 0 ? "rose" : "emerald"}
-        />
-        <StatCard label="Collected" value={fines ? inr(fines.collected_amount) : "—"} />
-        <StatCard label="Waived" value={fines ? inr(fines.waived_amount) : "—"} />
-        <StatCard label="Billed to fees" value={fines ? inr(fines.billed_amount) : "—"} />
-      </div>
+      {/* Fines answer a different question than usage and are deliberately
+          unwindowed, so they carry their own summary rather than being read
+          as part of the period above. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Fines owed",
+            value: fines ? inr(fines.pending_amount) : "—",
+            note: fines ? `${fines.pending} outstanding` : undefined,
+            icon: IndianRupee,
+          },
+          {
+            label: "Collected",
+            value: fines ? inr(fines.collected_amount) : "—",
+            icon: Receipt,
+          },
+          {
+            label: "Waived",
+            value: fines ? inr(fines.waived_amount) : "—",
+            icon: Wallet,
+          },
+          {
+            label: "Billed to fees",
+            value: fines ? inr(fines.billed_amount) : "—",
+            icon: Layers,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Fines</CardTitle>
-          <Select
-            aria-label="Fine status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-          >
-            <option value="">Every state</option>
-            <option value="pending">Pending</option>
-            <option value="billed">Billed</option>
-            <option value="paid">Paid</option>
-            <option value="waived">Waived</option>
-          </Select>
+          <div>
+            <CardTitle>Fines</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {status ? humanize(status) : "Every state"} · every fine on record, not
+              only the window above.
+            </p>
+          </div>
         </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["Borrower", "Title", "Due", "Overdue", "Amount", "State"]}
-            empty={(fines?.fines.length ?? 0) === 0 && "No fines have been raised."}
-          >
-            {(fines?.fines ?? []).map((f) => (
-              <tr key={f.loan_id}>
-                <td className={tdStrong}>
-                  {f.borrower_name}
-                  <span className="block text-[11px] font-normal text-ink-subtle">
-                    {humanize(f.borrower_type)}
-                  </span>
-                </td>
-                <td className={td}>
-                  {f.title}
-                  <span className="block font-mono text-[11px] text-ink-subtle">
-                    {f.accession_no}
-                  </span>
-                </td>
-                <td className={td}>{shortDate(f.due_on)}</td>
-                <td className={td}>
-                  {f.overdue_days > 0 ? (
-                    <Badge tone="rose">{f.overdue_days} days</Badge>
-                  ) : (
-                    "—"
-                  )}
-                </td>
-                <td className={tdStrong}>{inr(f.amount)}</td>
-                <td className={td}>
-                  <Badge tone={FINE_TONE[f.status] ?? "neutral"}>
-                    {humanize(f.status)}
-                  </Badge>
-                </td>
-              </tr>
-            ))}
-          </Table>
-        </CardBody>
+        <Table
+          head={["Borrower", "Title", "Due", "Overdue", "Amount", "State"]}
+          empty={(fines?.fines.length ?? 0) === 0 && "No fines have been raised."}
+        >
+          {(fines?.fines ?? []).map((f) => (
+            <tr key={f.loan_id}>
+              <td className={tdStrong}>
+                {f.borrower_name}
+                <span className="block text-[11px] font-normal text-ink-subtle">
+                  {humanize(f.borrower_type)}
+                </span>
+              </td>
+              <td className={td}>
+                {f.title}
+                <span className="block font-mono text-[11px] text-ink-subtle">
+                  {f.accession_no}
+                </span>
+              </td>
+              <td className={td}>{shortDate(f.due_on)}</td>
+              <td className={td}>
+                {f.overdue_days > 0 ? (
+                  <Badge tone="rose">{f.overdue_days} days</Badge>
+                ) : (
+                  "—"
+                )}
+              </td>
+              <td className={tdStrong}>{inr(f.amount)}</td>
+              <td className={td}>
+                <Badge tone={FINE_TONE[f.status] ?? "neutral"}>
+                  {humanize(f.status)}
+                </Badge>
+              </td>
+            </tr>
+          ))}
+        </Table>
+        <PanelFooter
+          left={`Showing ${fines?.fines.length ?? 0} fine(s)`}
+          right={fines ? `${inr(fines.pending_amount)} still owed` : undefined}
+        />
       </Card>
     </div>
   );

@@ -1,14 +1,37 @@
 "use client";
 
+import { CalendarRange, CheckCircle2, FileText, PenLine } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { PageHeader, Select, fieldClass } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, FormGrid, FormSection, Req, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: the same height as the search box and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300";
+
+/** The mock's `.field` with its rose asterisk. Input and Select take a
+ *  plain-string label, so a required field is spelt out here rather than
+ *  having the requirement smuggled into the text as " *". */
+function ReqField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[12px] font-bold text-ink-muted">
+        {label}
+        <Req />
+      </span>
+      {children}
+    </label>
+  );
+}
 
 type ExamKind = "unit_test" | "mid_term" | "term" | "final" | "other";
 
@@ -161,25 +184,53 @@ export default function ExamsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Exams</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            Define exams and their subject papers. Teachers enter marks against
-            these (Story 3.7b). Parents see results only when published (3.7c).
-          </p>
-        </div>
-        <Button onClick={() => setOpenCreate(true)} disabled={!yearId}>
-          + New exam
-        </Button>
-      </div>
+      <PageHeader
+        title="Exams"
+        subtitle="Define exams and their subject papers. Teachers enter marks against these (Story 3.7b). Parents see results only when published (3.7c)."
+        actions={
+          <Button onClick={() => setOpenCreate(true)} disabled={!yearId}>
+            + New exam
+          </Button>
+        }
+      />
 
-      <label className="flex flex-col gap-1 text-sm max-w-xs">
-        <span className="text-[12px] font-bold text-ink-muted">Academic year</span>
+      {/* Counted off the exams already loaded for this year — every figure
+          here is a field the list endpoint returns. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Exams this year",
+            value: exams.length || "—",
+            note: years.find((y) => y.id === yearId)?.name ?? "No year chosen",
+            icon: CalendarRange,
+          },
+          {
+            label: "Published",
+            value: exams.filter((e) => e.is_published).length || "—",
+            note: exams.length ? `of ${exams.length} · rest are drafts` : undefined,
+            icon: CheckCircle2,
+          },
+          {
+            label: "Papers",
+            value: exams.reduce((n, e) => n + e.papers_count, 0) || "—",
+            note: "Across every exam",
+            icon: FileText,
+          },
+          {
+            label: "Marks entered",
+            value: exams.reduce((n, e) => n + e.total_marks_entered, 0) || "—",
+            note: "By teachers so far",
+            icon: PenLine,
+          },
+        ]}
+      />
+
+      <FilterBar>
         <select
+          aria-label="Academic year"
           value={yearId ?? ""}
           onChange={(e) => setYearId(Number(e.target.value))}
-          className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+          className={filterSelect}
         >
           {years.map((y) => (
             <option key={y.id} value={y.id}>
@@ -188,7 +239,7 @@ export default function ExamsPage() {
             </option>
           ))}
         </select>
-      </label>
+      </FilterBar>
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
@@ -496,44 +547,41 @@ function BulkReportCardModal({
           Generates one PDF containing the report card for every active student in
           the chosen section.
         </p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1">
-            <span className="text-[12px] font-bold text-ink-muted">Class *</span>
-            <select
-              value={classId}
-              onChange={(e) => {
-                setClassId(e.target.value ? Number(e.target.value) : "");
-                setSectionId("");
-              }}
-              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-            >
-              <option value="">Select…</option>
-              {allClasses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-[12px] font-bold text-ink-muted">Section *</span>
-            <select
-              value={sectionId}
-              onChange={(e) =>
-                setSectionId(e.target.value ? Number(e.target.value) : "")
-              }
-              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-              disabled={!classId}
-            >
-              <option value="">Select…</option>
-              {sections.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        {/* Two fields, so the grid alone — and neither select carries a
+            `required` attribute, so their labels keep the plain asterisk
+            they have always had rather than gaining a rose one. */}
+        <FormGrid>
+          <Select
+            label="Class *"
+            value={classId}
+            onChange={(e) => {
+              setClassId(e.target.value ? Number(e.target.value) : "");
+              setSectionId("");
+            }}
+          >
+            <option value="">Select…</option>
+            {allClasses.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
+          <Select
+            label="Section *"
+            value={sectionId}
+            onChange={(e) =>
+              setSectionId(e.target.value ? Number(e.target.value) : "")
+            }
+            disabled={!classId}
+          >
+            <option value="">Select…</option>
+            {sections.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </Select>
+        </FormGrid>
         {error && (
           <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
             {error}
@@ -593,43 +641,56 @@ function ExamFormModal({
   return (
     <Modal open onClose={onClose} title={existing ? "Edit exam" : "New exam"}>
       <form onSubmit={submit} className="space-y-4">
-        <Input
-          label="Name *"
-          value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          placeholder="e.g. Mid-term"
-          required
-        />
-        <label className="flex flex-col gap-1">
-          <span className="text-[12px] font-bold text-ink-muted">Kind *</span>
-          <select
-            value={form.kind}
-            onChange={(e) => setForm({ ...form, kind: e.target.value as ExamKind })}
-            className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-          >
-            <option value="unit_test">Unit test</option>
-            <option value="mid_term">Mid-term</option>
-            <option value="term">Term</option>
-            <option value="final">Final</option>
-            <option value="other">Other</option>
-          </select>
-        </label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input
-            label="Start date *"
-            type="date"
-            value={form.start_date}
-            onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-            required
-          />
-          <Input
-            label="End date *"
-            type="date"
-            value={form.end_date}
-            onChange={(e) => setForm({ ...form, end_date: e.target.value })}
-            required
-          />
-        </div>
+        {/* Four fields — too few to number into sections, so the mock's
+            grid alone, with the name across both columns. */}
+        <FormGrid>
+          <div className="sm:col-span-2">
+            <ReqField label="Name">
+              <input
+                className={fieldClass}
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="e.g. Mid-term"
+                required
+              />
+            </ReqField>
+          </div>
+          {/* The kind select has no `required` attribute; its label keeps the
+              plain asterisk it has always had. Select's className reaches its
+              <select>, so the span goes on a wrapper that is the grid's own
+              child. */}
+          <div className="sm:col-span-2">
+            <Select
+              label="Kind *"
+              value={form.kind}
+              onChange={(e) => setForm({ ...form, kind: e.target.value as ExamKind })}
+            >
+              <option value="unit_test">Unit test</option>
+              <option value="mid_term">Mid-term</option>
+              <option value="term">Term</option>
+              <option value="final">Final</option>
+              <option value="other">Other</option>
+            </Select>
+          </div>
+          <ReqField label="Start date">
+            <input
+              className={fieldClass}
+              type="date"
+              value={form.start_date}
+              onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+              required
+            />
+          </ReqField>
+          <ReqField label="End date">
+            <input
+              className={fieldClass}
+              type="date"
+              value={form.end_date}
+              onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+              required
+            />
+          </ReqField>
+        </FormGrid>
         {error && (
           <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
         )}
@@ -711,91 +772,107 @@ function PaperFormModal({
   return (
     <Modal open onClose={onClose} title={`Add paper to ${exam.name}`} size="lg">
       <form onSubmit={submit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1">
-            <span className="text-[12px] font-bold text-ink-muted">Class *</span>
-            <select
-              value={classId}
-              onChange={(e) => {
-                setClassId(e.target.value ? Number(e.target.value) : "");
-                setForm({ ...form, class_subject_id: "" });
-              }}
-              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-              required
-            >
-              <option value="">Select…</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-[12px] font-bold text-ink-muted">Subject *</span>
-            <select
-              value={form.class_subject_id}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  class_subject_id: e.target.value ? Number(e.target.value) : "",
-                })
-              }
-              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-              required
-              disabled={!classId}
-            >
-              <option value="">Select…</option>
-              {classSubjects.map((cs) => {
-                const used = usedSubjectIds.has(cs.id);
-                return (
-                  <option key={cs.id} value={cs.id} disabled={used}>
-                    {cs.subject.name} ({cs.subject.code})
-                    {used ? " — already added" : ""}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-          <Input
-            label="Max marks *"
-            type="number"
-            min="1"
-            max="999"
-            value={form.max_marks}
-            onChange={(e) => setForm({ ...form, max_marks: Number(e.target.value) })}
-            required
-          />
-          <Input
-            label="Pass marks *"
-            type="number"
-            min="0"
-            max="999"
-            value={form.pass_marks}
-            onChange={(e) =>
-              setForm({ ...form, pass_marks: Number(e.target.value) })
-            }
-            required
-          />
-          <Input
-            label="Exam date *"
-            type="date"
-            value={form.exam_date}
-            min={exam.start_date}
-            max={exam.end_date}
-            onChange={(e) => setForm({ ...form, exam_date: e.target.value })}
-            required
-          />
-          <Input
-            label="Duration (min)"
-            type="number"
-            min="1"
-            max="600"
-            value={form.duration_minutes}
-            onChange={(e) =>
-              setForm({ ...form, duration_minutes: Number(e.target.value) })
-            }
-          />
+        {/* Six fields: which paper this is, then how it is marked and when
+            it sits. Numbered, because a flat grid of six reads as a list of
+            unrelated boxes. */}
+        <div className="space-y-[25px]">
+          <FormSection step={1} title="Which paper">
+            <FormGrid>
+              <ReqField label="Class">
+                <select
+                  value={classId}
+                  onChange={(e) => {
+                    setClassId(e.target.value ? Number(e.target.value) : "");
+                    setForm({ ...form, class_subject_id: "" });
+                  }}
+                  className={fieldClass}
+                  required
+                >
+                  <option value="">Select…</option>
+                  {classes.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </ReqField>
+              <ReqField label="Subject">
+                <select
+                  value={form.class_subject_id}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      class_subject_id: e.target.value ? Number(e.target.value) : "",
+                    })
+                  }
+                  className={fieldClass}
+                  required
+                  disabled={!classId}
+                >
+                  <option value="">Select…</option>
+                  {classSubjects.map((cs) => {
+                    const used = usedSubjectIds.has(cs.id);
+                    return (
+                      <option key={cs.id} value={cs.id} disabled={used}>
+                        {cs.subject.name} ({cs.subject.code})
+                        {used ? " — already added" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </ReqField>
+            </FormGrid>
+          </FormSection>
+
+          <FormSection step={2} title="Marks and sitting">
+            <FormGrid>
+              <ReqField label="Max marks">
+                <input
+                  className={fieldClass}
+                  type="number"
+                  min="1"
+                  max="999"
+                  value={form.max_marks}
+                  onChange={(e) => setForm({ ...form, max_marks: Number(e.target.value) })}
+                  required
+                />
+              </ReqField>
+              <ReqField label="Pass marks">
+                <input
+                  className={fieldClass}
+                  type="number"
+                  min="0"
+                  max="999"
+                  value={form.pass_marks}
+                  onChange={(e) =>
+                    setForm({ ...form, pass_marks: Number(e.target.value) })
+                  }
+                  required
+                />
+              </ReqField>
+              <ReqField label="Exam date">
+                <input
+                  className={fieldClass}
+                  type="date"
+                  value={form.exam_date}
+                  min={exam.start_date}
+                  max={exam.end_date}
+                  onChange={(e) => setForm({ ...form, exam_date: e.target.value })}
+                  required
+                />
+              </ReqField>
+              <Input
+                label="Duration (min)"
+                type="number"
+                min="1"
+                max="600"
+                value={form.duration_minutes}
+                onChange={(e) =>
+                  setForm({ ...form, duration_minutes: Number(e.target.value) })
+                }
+              />
+            </FormGrid>
+          </FormSection>
         </div>
         {error && (
           <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>

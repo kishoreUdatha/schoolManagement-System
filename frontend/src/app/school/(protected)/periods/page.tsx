@@ -1,13 +1,31 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { CalendarDays, Coffee, LayoutGrid, Timer } from "lucide-react";
+import { FormEvent, ReactNode, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { PageHeader, Select, fieldClass } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FormGrid, FormSection, Req, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** The mock's `.field` with its rose asterisk. Input takes a plain-string
+ *  label, so a required field is spelt out here rather than having the
+ *  requirement smuggled into the text as " *". */
+function ReqField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-[12px] font-bold text-ink-muted">
+        {label}
+        <Req />
+      </span>
+      {children}
+    </label>
+  );
+}
 
 const DAYS = [
   "",
@@ -78,16 +96,42 @@ export default function PeriodsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between">
-        <div>
-          <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Periods</h1>
-          <p className="mt-1.5 text-[13px] text-ink-muted">
-            School-wide weekly period schedule. Used by every section&apos;s
-            timetable.
-          </p>
-        </div>
-        <Button onClick={() => setOpen(true)}>+ New period</Button>
-      </div>
+      <PageHeader
+        title="Periods"
+        subtitle="School-wide weekly period schedule. Used by every section's timetable."
+        actions={<Button onClick={() => setOpen(true)}>+ New period</Button>}
+      />
+
+      {/* The week as it currently stands, counted off the slots already
+          loaded — no second request. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Slots defined",
+            value: periods.length || "—",
+            note: "Across the whole week",
+            icon: LayoutGrid,
+          },
+          {
+            label: "Days scheduled",
+            value: grouped.filter((g) => g.items.length > 0).length || "—",
+            note: `of ${grouped.length} weekdays`,
+            icon: CalendarDays,
+          },
+          {
+            label: "Teaching periods",
+            value: periods.filter((p) => !p.is_break).length || "—",
+            note: "Available to timetable",
+            icon: Timer,
+          },
+          {
+            label: "Breaks",
+            value: periods.filter((p) => p.is_break).length || "—",
+            note: "Lunch, recess and the like",
+            icon: Coffee,
+          },
+        ]}
+      />
 
       {error && (
         <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>
@@ -194,63 +238,80 @@ function CreatePeriodModal({
   return (
     <Modal open={open} onClose={onClose} title="New period" size="md">
       <form onSubmit={submit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1">
-            <span className="text-[12px] font-bold text-ink-muted">Day *</span>
-            <select
-              value={form.day_of_week}
-              onChange={(e) =>
-                setForm({ ...form, day_of_week: Number(e.target.value) })
-              }
-              className="min-h-[43px] rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-            >
-              {DAYS.slice(1).map((d, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Input
-            label="Period number *"
-            type="number"
-            min="1"
-            max="20"
-            value={form.period_number}
-            onChange={(e) =>
-              setForm({ ...form, period_number: Number(e.target.value) })
-            }
-            required
-          />
-          <Input
-            label="Start *"
-            type="time"
-            value={form.start_time}
-            onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-            required
-          />
-          <Input
-            label="End *"
-            type="time"
-            value={form.end_time}
-            onChange={(e) => setForm({ ...form, end_time: e.target.value })}
-            required
-          />
-          <Input
-            label="Label"
-            value={form.label}
-            onChange={(e) => setForm({ ...form, label: e.target.value })}
-            placeholder="Period 1, Lunch break, …"
-          />
-          <label className="mt-6 flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.is_break}
-              onChange={(e) => setForm({ ...form, is_break: e.target.checked })}
-              className="rounded border-surface-border"
-            />
-            This is a break (lunch, recess)
-          </label>
+        {/* Six fields is past the point where one undifferentiated grid reads
+            as a list of unrelated boxes, so the mock's numbered sections. */}
+        <div className="space-y-[25px]">
+          <FormSection step={1} title="When it runs">
+            <FormGrid>
+              {/* The day select has no `required` attribute and its label has
+                  always carried a plain asterisk — left as it was rather than
+                  changing what the form claims about itself. */}
+              <Select
+                label="Day *"
+                value={form.day_of_week}
+                onChange={(e) =>
+                  setForm({ ...form, day_of_week: Number(e.target.value) })
+                }
+              >
+                {DAYS.slice(1).map((d, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {d}
+                  </option>
+                ))}
+              </Select>
+              <ReqField label="Period number">
+                <input
+                  className={fieldClass}
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={form.period_number}
+                  onChange={(e) =>
+                    setForm({ ...form, period_number: Number(e.target.value) })
+                  }
+                  required
+                />
+              </ReqField>
+              <ReqField label="Start">
+                <input
+                  className={fieldClass}
+                  type="time"
+                  value={form.start_time}
+                  onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+                  required
+                />
+              </ReqField>
+              <ReqField label="End">
+                <input
+                  className={fieldClass}
+                  type="time"
+                  value={form.end_time}
+                  onChange={(e) => setForm({ ...form, end_time: e.target.value })}
+                  required
+                />
+              </ReqField>
+            </FormGrid>
+          </FormSection>
+
+          <FormSection step={2} title="What it is">
+            <FormGrid>
+              <Input
+                label="Label"
+                value={form.label}
+                onChange={(e) => setForm({ ...form, label: e.target.value })}
+                placeholder="Period 1, Lunch break, …"
+              />
+              <label className="flex items-center gap-2 self-end pb-2.5 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.is_break}
+                  onChange={(e) => setForm({ ...form, is_break: e.target.checked })}
+                  className="rounded border-surface-border"
+                />
+                This is a break (lunch, recess)
+              </label>
+            </FormGrid>
+          </FormSection>
         </div>
         {error && (
           <div className="rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">{error}</div>

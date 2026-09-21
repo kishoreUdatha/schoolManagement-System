@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ClipboardList, Clock, GraduationCap, Percent } from "lucide-react";
 
 import { BreakdownChart, ChartCard } from "@/components/charts/Charts";
 import { ReportShell } from "@/components/reports/ReportShell";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, humanize, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Funnel = {
@@ -41,16 +42,31 @@ export default function AdmissionFunnelReportPage() {
       subtitle="Applications by stage, and how many of them became students. These are applications rather than children — one child applying twice is two rows."
       error={error}
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Applications" value={data?.total ?? "—"} />
-        <StatCard label="Still in progress" value={data?.in_progress ?? "—"} accent="amber" />
-        <StatCard label="Admitted" value={data?.admitted ?? "—"} accent="emerald" />
-        <StatCard
-          label="Conversion"
-          value={data ? `${conversion}%` : "—"}
-          hint={data ? `${data.admitted} of ${total} applications` : undefined}
-        />
-      </div>
+      {/* No filter bar: the funnel endpoint takes no scope, so there is
+          nothing to choose before the figures are computed. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Applications in scope",
+            value: data?.total ?? "—",
+            note: data ? `${stages.length} stage(s)` : undefined,
+            icon: ClipboardList,
+          },
+          {
+            label: "Still in progress",
+            value: data?.in_progress ?? "—",
+            note: "Somebody has to move these",
+            icon: Clock,
+          },
+          { label: "Admitted", value: data?.admitted ?? "—", icon: GraduationCap },
+          {
+            label: "Conversion",
+            value: data ? `${conversion}%` : "—",
+            note: data ? `${data.admitted} of ${total} applications` : undefined,
+            icon: Percent,
+          },
+        ]}
+      />
 
       <ChartCard
         title="Where the applications sit"
@@ -68,22 +84,29 @@ export default function AdmissionFunnelReportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Stage by stage</CardTitle>
+          <div>
+            <CardTitle>Stage by stage</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Every application on record · largest stage first
+            </p>
+          </div>
         </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["Stage", "Applications", "Share"]}
-            empty={stages.length === 0 && "No applications have been received yet."}
-          >
-            {stages.map((s) => (
-              <tr key={s.status}>
-                <td className={tdStrong}>{s.name}</td>
-                <td className={td}>{s.count}</td>
-                <td className={td}>{share(s.count)}%</td>
-              </tr>
-            ))}
-          </Table>
-        </CardBody>
+        <Table
+          head={["Stage", "Applications", "Share"]}
+          empty={stages.length === 0 && "No applications have been received yet."}
+        >
+          {stages.map((s) => (
+            <tr key={s.status}>
+              <td className={tdStrong}>{s.name}</td>
+              <td className={td}>{s.count}</td>
+              <td className={td}>{share(s.count)}%</td>
+            </tr>
+          ))}
+        </Table>
+        <PanelFooter
+          left={`${stages.length} stage(s)`}
+          right={data ? `${total} application(s)` : undefined}
+        />
       </Card>
     </ReportShell>
   );

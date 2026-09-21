@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { CalendarRange, Percent, TrendingDown, Users } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
@@ -12,10 +14,12 @@ import {
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { readableDate, toIso } from "@/lib/dates";
+
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Row = {
   user_id: number;
@@ -78,46 +82,74 @@ export default function StaffAttendanceSummaryPage() {
       : 0;
   const below90 = rows.filter((r) => r.percent < 90).length;
 
+  // The month the server answered for, and the days it actually covered.
+  const monthName = data
+    ? new Date(data.year, data.month - 1, 1).toLocaleDateString("en-GB", { month: "long" })
+    : "—";
+  const period = data
+    ? `${readableDate(data.from_date)} – ${readableDate(data.to_date)}`
+    : undefined;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Staff attendance"
         subtitle="A whole month per person. Holidays are not counted as days anybody failed to turn up."
-        actions={
-          <label className="text-[12px] font-bold text-ink-muted">
-            <span className="mb-1 block">Month</span>
-            <Input
-              type="month"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-            />
-          </label>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Working days" value={data?.working_days ?? "—"} />
-        <StatCard label="Staff marked" value={rows.length} />
-        <StatCard
-          label="Average attendance"
-          value={rows.length ? `${average}%` : "—"}
-          accent={rows.length ? tone(average) : "brand"}
-        />
-        <StatCard
-          label="Below 90%"
-          value={below90}
-          accent={below90 ? "amber" : "emerald"}
-        />
-      </div>
+      {/* The month is picked before any of the figures below exist, so it
+          belongs above them rather than beside the title. */}
+      <FilterBar>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          Month
+          <input
+            type="month"
+            aria-label="Month"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+      </FilterBar>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Staff in scope",
+            value: rows.length,
+            note: data ? `${data.working_days} working day(s)` : undefined,
+            icon: Users,
+          },
+          {
+            label: "Reporting period",
+            value: monthName,
+            note: period,
+            icon: CalendarRange,
+          },
+          {
+            label: "Average attendance",
+            value: rows.length ? `${average}%` : "—",
+            note: "Across everybody marked",
+            icon: Percent,
+          },
+          {
+            label: "Below 90%",
+            value: below90,
+            note: rows.length ? `Of ${rows.length} marked` : undefined,
+            icon: TrendingDown,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            {data
-              ? `${readableDate(data.from_date)} to ${readableDate(data.to_date)}`
-              : "This month"}
-          </CardTitle>
+          <div>
+            <CardTitle>Everybody</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {period ? `${monthName} · ${period}` : "This month"}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -158,6 +190,10 @@ export default function StaffAttendanceSummaryPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} member(s) of staff`}
+          right={data ? `${data.working_days} working day(s) in ${monthName}` : undefined}
+        />
       </Card>
 
       <p className="text-[12px] text-ink-subtle">

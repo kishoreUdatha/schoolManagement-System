@@ -3,12 +3,19 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 
+import { ClipboardList, DoorOpen, ShieldAlert, UserCheck } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, Select, Table, WarnBox, humanize, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Paper = {
   id: number;
@@ -166,15 +173,18 @@ export default function ExamInvigilationPage() {
   const onDuty = (duty?.rooms ?? []).reduce((n, r) => n + r.staff.length, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="max-w-md">
-        <Select
-          label="Paper"
+      {/* The paper is what you are allocating against, so it narrows the
+          surface before the figures that describe it. */}
+      <FilterBar>
+        <select
+          aria-label="Paper"
           value={paperId}
           onChange={(e) => pickPaper(Number(e.target.value))}
           disabled={papers.length === 0}
+          className={`${filterSelect} min-w-[280px]`}
         >
           {papers.length === 0 && <option value="">No papers have been added yet</option>}
           {papers.map((p) => (
@@ -183,19 +193,44 @@ export default function ExamInvigilationPage() {
               {p.start_time ? ` ${p.start_time.slice(0, 5)}` : ""}
             </option>
           ))}
-        </Select>
-      </div>
+        </select>
+      </FilterBar>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Rooms in use" value={duty?.rooms.length ?? "—"} />
-        <StatCard label="On duty" value={duty ? onDuty : "—"} />
-        <StatCard
-          label="Rooms unwatched"
-          value={duty ? unwatched.length : "—"}
-          accent={unwatched.length ? "rose" : "emerald"}
-        />
-        <StatCard label="Duties this exam" value={roster?.total_duties ?? "—"} />
-      </div>
+      {/* Every figure is one the page already worked out: the rooms the
+          allocation returned, the staff counted across them, the rooms it
+          flagged as unwatched, and the roster's own total. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Rooms in use",
+            value: duty?.rooms.length ?? "—",
+            note: duty ? "seated for this paper" : undefined,
+            icon: DoorOpen,
+          },
+          {
+            label: "On duty",
+            value: duty ? onDuty : "—",
+            note: duty ? `across ${duty.rooms.length} room(s)` : undefined,
+            icon: UserCheck,
+          },
+          {
+            label: "Rooms unwatched",
+            value: duty ? unwatched.length : "—",
+            note: duty
+              ? unwatched.length
+                ? "nobody is watching these"
+                : "every room has somebody"
+              : undefined,
+            icon: ShieldAlert,
+          },
+          {
+            label: "Duties this exam",
+            value: roster?.total_duties ?? "—",
+            note: roster ? `${roster.staff.length} member(s) of staff` : undefined,
+            icon: ClipboardList,
+          },
+        ]}
+      />
 
       {unwatched.length > 0 && (
         <WarnBox>
@@ -218,8 +253,12 @@ export default function ExamInvigilationPage() {
       {duty?.rooms.map((room) => (
         <Card key={room.room_id}>
           <CardHeader>
-            <CardTitle>{room.room_name}</CardTitle>
-            <span className="text-[12px] font-bold text-ink-muted">{room.seated} seated</span>
+            <div>
+              <CardTitle>{room.room_name}</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                {room.seated} seated · {room.staff.length} on duty
+              </p>
+            </div>
           </CardHeader>
           <CardBody className="space-y-4">
             {room.staff.length === 0 ? (
@@ -293,10 +332,10 @@ export default function ExamInvigilationPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Duty roster</CardTitle>
-          <span className="text-[12px] font-bold text-ink-muted">
-            The whole exam, per person
-          </span>
+          <div>
+            <CardTitle>Duty roster</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">The whole exam, per person</p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -339,6 +378,12 @@ export default function ExamInvigilationPage() {
             )}
           </Table>
         </CardBody>
+        {roster && (
+          <PanelFooter
+            left={`${roster.staff.length} member(s) of staff · ${roster.total_duties} duties`}
+            right="Every duty in this exam"
+          />
+        )}
       </Card>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Archive, IndianRupee, Plus, PlusCircle, TrendingDown } from "lucide-react";
 
 import { StudentPicker, type PickedStudent } from "@/components/StudentPicker";
 import { Badge } from "@/components/ui/Badge";
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { readableDate, toIso } from "@/lib/dates";
 
@@ -163,7 +163,7 @@ export default function FeeAssignmentsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Per-child fee amounts"
         subtitle="Children charged something other than what their class pays."
@@ -177,17 +177,36 @@ export default function FeeAssignmentsPage() {
       <ErrorBox>{error}</ErrorBox>
       {applied && <NoticeBox>{applied}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="In force" value={live.length} />
-        <StatCard label="Paying less" value={reductions.length} accent="emerald" />
-        <StatCard
-          label="Extra heads"
-          value={extras.length}
-          hint="charged something their class is not"
-          accent="neutral"
-        />
-        <StatCard label="Ended" value={rows.length - live.length} accent="neutral" />
-      </div>
+      {/* The four figures the page already derives from the rows it loaded:
+          nothing here is a second query. */}
+      <StatStrip
+        stats={[
+          {
+            label: "In force",
+            value: live.length,
+            note: `of ${rows.length} on record`,
+            icon: IndianRupee,
+          },
+          {
+            label: "Paying less",
+            value: reductions.length,
+            note: "below their class amount",
+            icon: TrendingDown,
+          },
+          {
+            label: "Extra heads",
+            value: extras.length,
+            note: "charged something their class is not",
+            icon: PlusCircle,
+          },
+          {
+            label: "Ended",
+            value: rows.length - live.length,
+            note: "no longer charged this way",
+            icon: Archive,
+          },
+        ]}
+      />
 
       <WarnBox>
         This sets what a child is charged. A discount off the class amount is a
@@ -197,7 +216,12 @@ export default function FeeAssignmentsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Amounts</CardTitle>
+          <div>
+            <CardTitle>Amounts</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              What each child is charged, against what their class pays
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -270,6 +294,10 @@ export default function FeeAssignmentsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} amount(s) · ${live.length} in force`}
+          right="All records on this page"
+        />
       </Card>
 
       <p className="text-[12px] text-ink-subtle">

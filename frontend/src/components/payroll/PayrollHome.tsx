@@ -4,15 +4,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useState } from "react";
 
+import { CalendarCheck, IndianRupee, TriangleAlert, Users } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Table, inr, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
-import { Run, runTone } from "./types";
+import { Run, monthLabel, runTone } from "./types";
 
 type Salary = {
   id: number;
@@ -95,10 +98,51 @@ export function PayrollHome({ basePath }: { basePath: string }) {
   }
 
   const withoutSalary = staff.filter((s) => s.is_active && !s.salary);
+  const onPayroll = staff.filter((s) => s.is_active && s.salary).length;
+  const paidRuns = runs.filter((r) => r.status === "paid").length;
+  // Periods are "YYYY-MM", so the highest string is the latest month. The
+  // figure below is that one run's net pay and is labelled as such — a
+  // month's payroll is not "total payroll", and a tile that says otherwise
+  // is a number somebody will quote in a governors' meeting.
+  const latest = runs.length
+    ? runs.reduce((a, b) => (b.period > a.period ? b : a))
+    : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader title="Payroll" subtitle="Salary structures, monthly payroll, payslips and the bank transfer file." />
+
+      <StatStrip
+        stats={[
+          {
+            label: "Payroll runs",
+            value: runs.length,
+            note: runs.length ? `${paidRuns} marked paid` : "None run yet",
+            icon: CalendarCheck,
+          },
+          {
+            label: "On payroll",
+            value: onPayroll,
+            note: `${staff.length} staff on record`,
+            icon: Users,
+          },
+          {
+            label: "No salary set",
+            value: withoutSalary.length,
+            note: "Active staff a run would skip",
+            icon: TriangleAlert,
+          },
+          {
+            label: "Latest run, net pay",
+            value: latest ? inr(latest.total_net) : "—",
+            note: latest
+              ? `${monthLabel(latest.period)} · ${latest.staff_count} staff`
+              : undefined,
+            icon: IndianRupee,
+          },
+        ]}
+      />
+
       <nav className="flex gap-1 border-b border-surface-border">
         {(["runs", "salaries", "settings"] as const).map((t) => (
           <button
@@ -131,6 +175,14 @@ export function PayrollHome({ basePath }: { basePath: string }) {
             </CardBody>
           </Card>
           <Card>
+            <CardHeader>
+              <div>
+                <CardTitle>Monthly payroll</CardTitle>
+                <p className="mt-[5px] text-[11px] text-ink-muted">
+                  Every run the school has processed. Each total is that month&apos;s alone.
+                </p>
+              </div>
+            </CardHeader>
             <Table head={["Month", "Status", "Staff", "Gross", "Deductions", "Net pay", "Employer cost", ""]} empty={runs.length === 0 && "No payroll yet."}>
               {runs.map((r) => (
                 <tr key={r.id} className="hover:bg-surface-hover">
@@ -154,12 +206,24 @@ export function PayrollHome({ basePath }: { basePath: string }) {
                 </tr>
               ))}
             </Table>
+            <PanelFooter
+              left={`Showing ${runs.length} run(s)`}
+              right={runs.length ? `${paidRuns} paid, ${runs.length - paidRuns} not yet` : undefined}
+            />
           </Card>
         </>
       )}
 
       {tab === "salaries" && (
         <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Salary structures</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                What each member of staff is on, and since when.
+              </p>
+            </div>
+          </CardHeader>
           <Table head={["Staff", "Designation", "Monthly gross", "PF / ESI", "Bank", "Since", ""]}>
             {staff.map((s) => (
               <tr key={s.staff_id} className="hover:bg-surface-hover">
@@ -182,6 +246,10 @@ export function PayrollHome({ basePath }: { basePath: string }) {
               </tr>
             ))}
           </Table>
+          <PanelFooter
+            left={`Showing ${staff.length} member(s) of staff`}
+            right={withoutSalary.length ? `${withoutSalary.length} active staff with no salary set` : "Every active member of staff has a salary"}
+          />
         </Card>
       )}
 

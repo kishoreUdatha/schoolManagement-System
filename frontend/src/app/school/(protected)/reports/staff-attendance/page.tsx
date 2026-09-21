@@ -2,15 +2,20 @@
 
 import { useEffect, useState } from "react";
 
+import { CalendarRange, Percent, TrendingDown, Users } from "lucide-react";
+
 import { BreakdownChart, ChartCard } from "@/components/charts/Charts";
 import { SERIES } from "@/components/charts/theme";
 import { ReportShell, percentTone } from "@/components/reports/ReportShell";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, humanize, td, tdStrong } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+import { readableDate } from "@/lib/dates";
+
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type StaffRow = {
   user_id: number;
@@ -64,6 +69,14 @@ export default function StaffAttendanceReportPage() {
     : null;
   const struggling = staff.filter((s) => s.percent < 90).length;
 
+  // The month the server answered for, spelled out, and the days it covered.
+  const monthName = data
+    ? new Date(data.year, data.month - 1, 1).toLocaleDateString("en-GB", { month: "long" })
+    : "—";
+  const period = data
+    ? `${readableDate(data.from_date)} – ${readableDate(data.to_date)}`
+    : undefined;
+
   // Already sorted worst first by the API, so the ten who most need looking
   // at are simply the ten at the top.
   const lowest = staff.slice(0, 10).map((s) => ({
@@ -80,29 +93,50 @@ export default function StaffAttendanceReportPage() {
       title="Staff attendance"
       subtitle="A month at a time, per person. Holidays are not counted as days anybody failed to turn up."
       error={error}
-      actions={
-        <Input
-          type="month"
-          aria-label="Month"
-          value={month}
-          onChange={(e) => setMonth(e.target.value)}
-        />
-      }
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Working days" value={data?.working_days ?? "—"} />
-        <StatCard label="Staff marked" value={staff.length || "—"} />
-        <StatCard
-          label="Average attendance"
-          value={average === null ? "—" : `${average}%`}
-          accent={average !== null && average >= 90 ? "emerald" : "amber"}
-        />
-        <StatCard
-          label="Below 90%"
-          value={staff.length ? struggling : "—"}
-          accent={struggling ? "amber" : "emerald"}
-        />
-      </div>
+      {/* The month is chosen before anything is computed, so it sits above
+          the figures rather than beside the title. */}
+      <FilterBar>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          Month
+          <input
+            type="month"
+            aria-label="Month"
+            value={month}
+            onChange={(e) => setMonth(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+      </FilterBar>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Staff in scope",
+            value: staff.length || "—",
+            note: data ? `${data.working_days} working day(s)` : undefined,
+            icon: Users,
+          },
+          {
+            label: "Reporting period",
+            value: monthName,
+            note: period,
+            icon: CalendarRange,
+          },
+          {
+            label: "Average attendance",
+            value: average === null ? "—" : `${average}%`,
+            note: "Across everybody marked",
+            icon: Percent,
+          },
+          {
+            label: "Below 90%",
+            value: staff.length ? struggling : "—",
+            note: staff.length ? `Of ${staff.length} marked` : undefined,
+            icon: TrendingDown,
+          },
+        ]}
+      />
 
       <ChartCard
         title="The ten lowest"
@@ -127,7 +161,12 @@ export default function StaffAttendanceReportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Everybody</CardTitle>
+          <div>
+            <CardTitle>Everybody</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {period ? `${monthName} · ${period}` : "The selected month"}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -151,6 +190,10 @@ export default function StaffAttendanceReportPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${staff.length} member(s) of staff`}
+          right={data ? `${data.working_days} working day(s) in ${monthName}` : undefined}
+        />
       </Card>
     </ReportShell>
   );

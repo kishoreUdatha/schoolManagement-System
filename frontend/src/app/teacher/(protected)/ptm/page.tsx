@@ -10,6 +10,7 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, PageHeader, Select, Textarea, humanize } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FormGrid, FormSection } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { toIso } from "@/lib/dates";
 
@@ -173,59 +174,80 @@ export default function TeacherPtmPage() {
         onClose={() => setArranging(false)}
         title="Arrange a meeting for your class"
       >
-        <div className="space-y-3">
-          <Select
-            label="Class"
-            value={sectionId}
-            onChange={(e) => setSectionId(Number(e.target.value))}
-          >
-            {scopes.map((s2) => (
-              <option key={s2.section_id} value={s2.section_id}>
-                {s2.label}
-              </option>
-            ))}
-          </Select>
-          <Input
-            label="Title"
-            value={form.title}
-            placeholder="Autumn parents' evening"
-            onChange={(e) => setForm({ ...form, title: e.target.value })}
-          />
-          <Input
-            label="Date"
-            type="date"
-            min={toIso()}
-            value={form.meeting_date}
-            onChange={(e) => setForm({ ...form, meeting_date: e.target.value })}
-          />
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Input
-              label="From"
-              type="time"
-              value={form.start_time}
-              onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-            />
-            <Input
-              label="To"
-              type="time"
-              value={form.end_time}
-              onChange={(e) => setForm({ ...form, end_time: e.target.value })}
-            />
-            <Input
-              label="Minutes each"
-              type="number"
-              min={5}
-              max={120}
-              value={form.slot_minutes}
-              onChange={(e) => setForm({ ...form, slot_minutes: e.target.value })}
-            />
+        <div className="space-y-4">
+          {/* Seven fields, so the mock's numbered sections: which meeting,
+              then the hour it fills. No asterisks — nothing here carries a
+              `required` attribute; the button below stays disabled instead. */}
+          <div className="space-y-[25px]">
+            <FormSection step={1} title="The meeting">
+              <FormGrid>
+                <Select
+                  label="Class"
+                  value={sectionId}
+                  onChange={(e) => setSectionId(Number(e.target.value))}
+                >
+                  {scopes.map((s2) => (
+                    <option key={s2.section_id} value={s2.section_id}>
+                      {s2.label}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  label="Date"
+                  type="date"
+                  min={toIso()}
+                  value={form.meeting_date}
+                  onChange={(e) => setForm({ ...form, meeting_date: e.target.value })}
+                />
+                {/* `.full` — a name runs longer than half a row. Input's
+                    className reaches its <input>, so the span goes on a
+                    wrapper that is the grid's actual child. */}
+                <div className="sm:col-span-2">
+                  <Input
+                    label="Title"
+                    className="w-full"
+                    value={form.title}
+                    placeholder="Autumn parents' evening"
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  />
+                </div>
+              </FormGrid>
+            </FormSection>
+
+            <FormSection step={2} title="The hour it fills">
+              <FormGrid columns={3}>
+                <Input
+                  label="From"
+                  type="time"
+                  value={form.start_time}
+                  onChange={(e) => setForm({ ...form, start_time: e.target.value })}
+                />
+                <Input
+                  label="To"
+                  type="time"
+                  value={form.end_time}
+                  onChange={(e) => setForm({ ...form, end_time: e.target.value })}
+                />
+                <Input
+                  label="Minutes each"
+                  type="number"
+                  min={5}
+                  max={120}
+                  value={form.slot_minutes}
+                  onChange={(e) => setForm({ ...form, slot_minutes: e.target.value })}
+                />
+                <div className="sm:col-span-3">
+                  <Input
+                    label="Where"
+                    className="w-full"
+                    value={form.venue}
+                    placeholder="Your classroom"
+                    onChange={(e) => setForm({ ...form, venue: e.target.value })}
+                  />
+                </div>
+              </FormGrid>
+            </FormSection>
           </div>
-          <Input
-            label="Where"
-            value={form.venue}
-            placeholder="Your classroom"
-            onChange={(e) => setForm({ ...form, venue: e.target.value })}
-          />
           <p className="text-[12px] text-ink-subtle">
             Slots are made for you across that hour. Parents can only book once it is
             published, so nothing goes out by accident.

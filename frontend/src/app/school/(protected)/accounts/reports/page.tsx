@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { CalendarRange, IndianRupee, Receipt, Wallet } from "lucide-react";
 
 import { BreakdownChart, ChartCard, ShareChart, TrendChart } from "@/components/charts/Charts";
 import { SERIES } from "@/components/charts/theme";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   PageHeader,
@@ -15,8 +16,7 @@ import {
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Slice = { label: string; amount: string };
@@ -40,6 +40,11 @@ const compact = (v: number) =>
     : Math.abs(v) >= 1000
       ? `${Math.round(v / 1000)}k`
       : `${v}`;
+
+/** A date box sized for the filter bar, so the window is chosen in the same
+ *  row as everything else that narrows the report. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 /** Money in against money out.
  *
@@ -82,52 +87,67 @@ export default function FinanceReportsPage() {
   }));
   const surplus = Number(data?.net ?? 0) >= 0;
 
+  const scopeLine = data ? `${data.from_date} to ${data.to_date}` : "Every date on record";
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Finance reports"
         subtitle="What the school received and what it spent, over a window."
-        actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Input
-              label="From"
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-            <Input
-              label="To"
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
-            <Button variant="secondary" onClick={load}>
-              Apply
-            </Button>
-          </div>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Received"
-          value={data ? inr(data.received) : "—"}
-          hint={data ? `${data.receipts} receipt(s)` : undefined}
-          accent="emerald"
-        />
-        <StatCard label="Spent" value={data ? inr(data.spent) : "—"} accent="amber" />
-        <StatCard
-          label={surplus ? "Surplus" : "Shortfall"}
-          value={data ? inr(data.net) : "—"}
-          accent={surplus ? "emerald" : "rose"}
-        />
-        <StatCard
-          label="Window"
-          value={data ? `${data.from_date} → ${data.to_date}` : "—"}
-          accent="neutral"
-        />
-      </div>
+      {/* The window is chosen before anything is added up — on a report the
+          scope comes first, and the figures below restate it. */}
+      <FilterBar>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          From
+          <input
+            type="date"
+            aria-label="From"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          To
+          <input
+            type="date"
+            aria-label="To"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+        <Button variant="secondary" onClick={load}>
+          Apply
+        </Button>
+      </FilterBar>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Received",
+            value: data ? inr(data.received) : "—",
+            note: data ? `${data.receipts} receipt(s)` : undefined,
+            icon: IndianRupee,
+          },
+          { label: "Spent", value: data ? inr(data.spent) : "—", icon: Wallet },
+          {
+            label: surplus ? "Surplus" : "Shortfall",
+            value: data ? inr(data.net) : "—",
+            note: "Received less spent",
+            icon: Receipt,
+          },
+          {
+            label: "Window",
+            value: data ? data.from_date : "—",
+            note: data ? `to ${data.to_date}` : undefined,
+            icon: CalendarRange,
+          },
+        ]}
+      />
 
       <ChartCard
         title="In and out, month by month"
@@ -185,50 +205,60 @@ export default function FinanceReportsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Income by fee head</CardTitle>
+            <div>
+              <CardTitle>Income by fee head</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">{scopeLine}</p>
+            </div>
           </CardHeader>
-          <CardBody className="p-0">
-            <Table
-              head={["Head", "Received", "Share"]}
-              empty={income.length === 0 && "Nothing collected in this window."}
-            >
-              {income.map((s) => (
-                <tr key={s.label}>
-                  <td className={tdStrong}>{s.label}</td>
-                  <td className={td}>{inr(s.amount)}</td>
-                  <td className={td}>
-                    {Number(data?.received ?? 0)
-                      ? `${Math.round((s.amount / Number(data!.received)) * 100)}%`
-                      : "—"}
-                  </td>
-                </tr>
-              ))}
-            </Table>
-          </CardBody>
+          <Table
+            head={["Head", "Received", "Share"]}
+            empty={income.length === 0 && "Nothing collected in this window."}
+          >
+            {income.map((s) => (
+              <tr key={s.label}>
+                <td className={tdStrong}>{s.label}</td>
+                <td className={td}>{inr(s.amount)}</td>
+                <td className={td}>
+                  {Number(data?.received ?? 0)
+                    ? `${Math.round((s.amount / Number(data!.received)) * 100)}%`
+                    : "—"}
+                </td>
+              </tr>
+            ))}
+          </Table>
+          <PanelFooter
+            left={`${income.length} head(s) in scope`}
+            right={data ? `${inr(data.received)} received` : undefined}
+          />
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Spend by category</CardTitle>
+            <div>
+              <CardTitle>Spend by category</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">{scopeLine}</p>
+            </div>
           </CardHeader>
-          <CardBody className="p-0">
-            <Table
-              head={["Category", "Spent", "Share"]}
-              empty={spend.length === 0 && "Nothing spent in this window."}
-            >
-              {spend.map((s) => (
-                <tr key={s.label}>
-                  <td className={tdStrong}>{s.label}</td>
-                  <td className={td}>{inr(s.amount)}</td>
-                  <td className={td}>
-                    {Number(data?.spent ?? 0)
-                      ? `${Math.round((s.amount / Number(data!.spent)) * 100)}%`
-                      : "—"}
-                  </td>
-                </tr>
-              ))}
-            </Table>
-          </CardBody>
+          <Table
+            head={["Category", "Spent", "Share"]}
+            empty={spend.length === 0 && "Nothing spent in this window."}
+          >
+            {spend.map((s) => (
+              <tr key={s.label}>
+                <td className={tdStrong}>{s.label}</td>
+                <td className={td}>{inr(s.amount)}</td>
+                <td className={td}>
+                  {Number(data?.spent ?? 0)
+                    ? `${Math.round((s.amount / Number(data!.spent)) * 100)}%`
+                    : "—"}
+                </td>
+              </tr>
+            ))}
+          </Table>
+          <PanelFooter
+            left={`${spend.length} category(ies) in scope`}
+            right={data ? `${inr(data.spent)} spent` : undefined}
+          />
         </Card>
       </div>
 

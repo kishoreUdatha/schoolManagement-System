@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, PersonCell, StatStrip } from "@/components/ui/Workspace";
+import { ClipboardCheck, FileCheck2, Inbox, UserPlus } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { dateTime, readableDate } from "@/lib/dates";
 
@@ -211,8 +212,19 @@ export default function AdmissionDecisionsPage() {
   const latestTest = (a: AppDetail) =>
     [...a.assessments].sort((x, z) => z.scheduled_at.localeCompare(x.scheduled_at))[0];
 
+  // How long the queue has been standing: the earliest submission still
+  // undecided. Read off the rows already loaded, not a second query.
+  const oldest = rows.reduce<string | null>(
+    (o, a) => (a.submitted_at && (!o || a.submitted_at < o) ? a.submitted_at : o),
+    null
+  );
+  const docsChecked = rows.filter(
+    (a) => a.documents_total > 0 && a.documents_verified === a.documents_total
+  ).length;
+  const assessed = rows.filter((a) => latestTest(a)?.status === "done").length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Admission decisions"
         subtitle="Everything needed to decide, on one screen — and the offers still waiting to be turned into students."
@@ -225,101 +237,151 @@ export default function AdmissionDecisionsPage() {
       <ErrorBox>{error}</ErrorBox>
       {done && <NoticeBox>{done}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Awaiting a decision" value={loading ? "…" : rows.length} accent={rows.length ? "amber" : "emerald"} />
-        <StatCard
-          label="Documents all checked"
-          value={loading ? "…" : rows.filter((a) => a.documents_total > 0 && a.documents_verified === a.documents_total).length}
-        />
-        <StatCard
-          label="Assessed"
-          value={loading ? "…" : rows.filter((a) => latestTest(a)?.status === "done").length}
-        />
-        <StatCard label="Offered, not admitted" value={loading ? "…" : offered.length} />
-      </div>
-
-      {rows.length === 0 && !loading && (
-        <NoticeBox>No application is waiting on a decision.</NoticeBox>
-      )}
-
-      {rows.map((a) => {
-        const test = latestTest(a);
-        const docsDone = a.documents_total > 0 && a.documents_verified === a.documents_total;
-        return (
-          <Card key={a.id}>
-            <CardHeader>
-              <CardTitle>{a.student_name}</CardTitle>
-              <div className="flex items-center gap-2">
-                <span className="text-[12px] text-ink-muted">{a.application_no}</span>
-                <Badge tone={a.status === "assessment" ? "brand" : "amber"}>{humanize(a.status)}</Badge>
-              </div>
-            </CardHeader>
-            <CardBody className="space-y-4">
-              <div className="grid gap-3 text-[13px] sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">Applying for</div>
-                  <div className="text-ink">{a.class_name ?? a.applying_for_class ?? "Not stated"}</div>
-                </div>
-                <div>
-                  <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">Guardian</div>
-                  <div className="text-ink">{a.guardian_name}</div>
-                  <div className="text-[11px] text-ink-subtle">{a.phone}</div>
-                </div>
-                <div>
-                  <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">Date of birth</div>
-                  <div className="text-ink">{a.dob ? readableDate(a.dob) : "Not given"}</div>
-                </div>
-                <div>
-                  <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">Previous school</div>
-                  <div className="text-ink">{a.previous_school ?? "None given"}</div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Badge tone={docsDone ? "emerald" : "amber"}>
-                  Documents {a.documents_verified} of {a.documents_total}
-                </Badge>
-                {test ? (
-                  <Badge tone={test.passed === null ? "neutral" : test.passed ? "emerald" : "rose"}>
-                    {humanize(test.kind)}:{" "}
-                    {test.status === "done"
-                      ? `${test.marks_obtained ?? "—"}${test.max_marks ? ` / ${test.max_marks}` : ""}`
-                      : humanize(test.status)}
-                  </Badge>
-                ) : (
-                  <Badge tone="neutral">No assessment</Badge>
-                )}
-                {a.sibling_in_school && <Badge tone="brand">Sibling already here</Badge>}
-                {a.submitted_at && (
-                  <Badge tone="neutral">Applied {readableDate(a.submitted_at.slice(0, 10))}</Badge>
-                )}
-              </div>
-
-              {test?.remarks && (
-                <p className="text-[13px] text-ink-muted">“{test.remarks}”</p>
-              )}
-
-              {!docsDone && (
-                <WarnBox>
-                  Not every document has been checked. You can still decide, but the
-                  paperwork will be outstanding either way.
-                </WarnBox>
-              )}
-
-              <div className="flex flex-wrap gap-2">
-                <Button onClick={() => openDecision(a, true)}>Approve</Button>
-                <Button variant="danger" onClick={() => openDecision(a, false)}>
-                  Reject
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
-        );
-      })}
+      {/* What the queue looks like, from the applications already loaded:
+          how many are waiting, how far through the checks they are, and how
+          many offers have not yet been turned into students. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Awaiting a decision",
+            value: loading ? "…" : rows.length,
+            note: oldest ? `Oldest submitted ${dateTime(oldest)}` : "Submitted, verification or assessment",
+            icon: Inbox,
+          },
+          {
+            label: "Documents all checked",
+            value: loading ? "…" : docsChecked,
+            note: loading ? undefined : `of ${rows.length} waiting`,
+            icon: FileCheck2,
+          },
+          {
+            label: "Assessed",
+            value: loading ? "…" : assessed,
+            note: "Assessment marked done",
+            icon: ClipboardCheck,
+          },
+          {
+            label: "Offered, not admitted",
+            value: loading ? "…" : offered.length,
+            note: "Places offered, still to enrol",
+            icon: UserPlus,
+          },
+        ]}
+      />
 
       <Card>
         <CardHeader>
-          <CardTitle>Offered a place</CardTitle>
+          <div>
+            <CardTitle>Requests awaiting approval</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Everything a decision turns on — documents, assessment and the family — on
+              the request itself.
+            </p>
+          </div>
+          <Badge tone={rows.length ? "amber" : "neutral"}>
+            {loading ? "…" : `${rows.length} shown`}
+          </Badge>
+        </CardHeader>
+
+        <div className="divide-y divide-surface-border border-t border-surface-border">
+          {rows.length === 0 && !loading && (
+            <div className="px-[22px] py-6">
+              <NoticeBox>No application is waiting on a decision.</NoticeBox>
+            </div>
+          )}
+
+          {rows.map((a) => {
+            const test = latestTest(a);
+            const docsDone = a.documents_total > 0 && a.documents_verified === a.documents_total;
+            return (
+              <article key={a.id} className="space-y-4 px-[22px] py-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <PersonCell name={a.student_name} sub={a.application_no} />
+                  <Badge tone={a.status === "assessment" ? "brand" : "amber"}>
+                    {humanize(a.status)}
+                  </Badge>
+                </div>
+                <div className="grid gap-3 text-[13px] sm:grid-cols-2 lg:grid-cols-4">
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">Applying for</div>
+                    <div className="text-ink">{a.class_name ?? a.applying_for_class ?? "Not stated"}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">Guardian</div>
+                    <div className="text-ink">{a.guardian_name}</div>
+                    <div className="text-[11px] text-ink-subtle">{a.phone}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">Date of birth</div>
+                    <div className="text-ink">{a.dob ? readableDate(a.dob) : "Not given"}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">Previous school</div>
+                    <div className="text-ink">{a.previous_school ?? "None given"}</div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Badge tone={docsDone ? "emerald" : "amber"}>
+                    Documents {a.documents_verified} of {a.documents_total}
+                  </Badge>
+                  {test ? (
+                    <Badge tone={test.passed === null ? "neutral" : test.passed ? "emerald" : "rose"}>
+                      {humanize(test.kind)}:{" "}
+                      {test.status === "done"
+                        ? `${test.marks_obtained ?? "—"}${test.max_marks ? ` / ${test.max_marks}` : ""}`
+                        : humanize(test.status)}
+                    </Badge>
+                  ) : (
+                    <Badge tone="neutral">No assessment</Badge>
+                  )}
+                  {a.sibling_in_school && <Badge tone="brand">Sibling already here</Badge>}
+                  {a.submitted_at && (
+                    <Badge tone="neutral">Applied {readableDate(a.submitted_at.slice(0, 10))}</Badge>
+                  )}
+                </div>
+
+                {test?.remarks && (
+                  <p className="text-[13px] text-ink-muted">“{test.remarks}”</p>
+                )}
+
+                {!docsDone && (
+                  <WarnBox>
+                    Not every document has been checked. You can still decide, but the
+                    paperwork will be outstanding either way.
+                  </WarnBox>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => openDecision(a, true)}>Approve</Button>
+                  <Button variant="danger" onClick={() => openDecision(a, false)}>
+                    Reject
+                  </Button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <PanelFooter
+          left={
+            loading
+              ? "Loading the queue…"
+              : `${rows.length} request(s) awaiting a decision`
+          }
+          right={oldest ? `Oldest submitted ${dateTime(oldest)}` : "Nothing waiting"}
+        />
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Offered a place</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Decided already — these become students once a class and section are
+              chosen.
+            </p>
+          </div>
           <Badge tone="neutral">{offered.length}</Badge>
         </CardHeader>
         <CardBody className="p-0">
@@ -345,6 +407,14 @@ export default function AdmissionDecisionsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`${offered.length} offer(s) not yet enrolled`}
+          right={
+            offered.filter((a) => a.status === "fee_pending").length
+              ? `${offered.filter((a) => a.status === "fee_pending").length} waiting on the admission fee`
+              : "No fee outstanding"
+          }
+        />
       </Card>
 
       <Modal

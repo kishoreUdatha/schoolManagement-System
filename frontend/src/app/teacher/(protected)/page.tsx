@@ -180,29 +180,10 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_304px]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Coming soon</CardTitle>
-          </CardHeader>
-          <CardBody>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <PlaceholderCard
-                title="Mark attendance"
-                note="Story 3.3 — class teacher marks daily Present/Absent/Late."
-              />
-              <PlaceholderCard
-                title="Assign homework"
-                note="Story 3.5 — post homework to a class-subject."
-              />
-              <PlaceholderCard
-                title="Enter marks"
-                note="Story 3.7 — exam marks + report card PDF."
-              />
-            </div>
-          </CardBody>
-        </Card>
-
+      {/* "Coming soon" stood here, promising attendance, homework and
+          marks. All three have shipped and are the shortcuts at the top of
+          this page, so it had become an advert for work already done. */}
+      <div className="grid gap-5">
         <Card className="self-start">
           <CardHeader>
             <CardTitle>Class teacher of</CardTitle>
@@ -237,14 +218,3 @@ export default function TeacherDashboard() {
   );
 }
 
-function PlaceholderCard({ title, note }: { title: string; note: string }) {
-  return (
-    <Card className="border-dashed">
-      <CardBody>
-        <div className="text-sm font-medium text-ink-muted">{title}</div>
-        <div className="mt-2 text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink-subtle">—</div>
-        <div className="mt-1 text-xs text-ink-subtle">{note}</div>
-      </CardBody>
-    </Card>
-  );
-}

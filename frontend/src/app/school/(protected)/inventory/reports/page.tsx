@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ArrowLeftRight, Boxes, CalendarRange, Package } from "lucide-react";
 
 import { BreakdownChart, ChartCard, ShareChart } from "@/components/charts/Charts";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   PageHeader,
-  Select,
   Table,
   WarnBox,
   humanize,
@@ -16,7 +16,7 @@ import {
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
 
@@ -44,6 +44,10 @@ type Move = {
 
 const compact = (v: number) =>
   v >= 100000 ? `${(v / 100000).toFixed(1)}L` : v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`;
+
+/** One height for every control in the filter row. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 /** What the store and the asset register are worth, and what moved.
  *
@@ -86,29 +90,74 @@ export default function StockAssetReportsPage() {
     count: s.count,
   }));
 
+  const periodLabel = days === 365 ? "Last year" : days === 730 ? "Last two years" : `Last ${days} days`;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Stock and asset reports"
         subtitle="What the store holds, what the asset register is worth, and everything that moved in the period."
-        actions={
-          <Select label="Period" value={days} onChange={(e) => setDays(Number(e.target.value))}>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-            <option value={180}>Last 180 days</option>
-            <option value={365}>Last year</option>
-            <option value={730}>Last two years</option>
-          </Select>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Stock value" value={data ? inr(data.stock_value) : "—"} />
-        <StatCard label="Asset value" value={data ? inr(data.asset_value) : "—"} />
-        <StatCard label="Items tracked" value={data?.items ?? "—"} />
-        <StatCard label="Assets tracked" value={data?.assets ?? "—"} />
-      </div>
+      {/* Period and kind both narrow the ledger, so they sit together above
+          the figures rather than one in the header and one in a panel. */}
+      <FilterBar>
+        <select
+          aria-label="Period"
+          value={days}
+          onChange={(e) => setDays(Number(e.target.value))}
+          className={filterSelect}
+        >
+          <option value={30}>Last 30 days</option>
+          <option value={90}>Last 90 days</option>
+          <option value={180}>Last 180 days</option>
+          <option value={365}>Last year</option>
+          <option value={730}>Last two years</option>
+        </select>
+        <select
+          aria-label="Kind"
+          value={kind}
+          onChange={(e) => setKind(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">Every kind</option>
+          {kinds.map((k) => (
+            <option key={k} value={k}>
+              {humanize(k)}
+            </option>
+          ))}
+        </select>
+      </FilterBar>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Stock value",
+            value: data ? inr(data.stock_value) : "—",
+            note: data ? `${data.items} item(s) tracked` : undefined,
+            icon: Package,
+          },
+          {
+            label: "Asset value",
+            value: data ? inr(data.asset_value) : "—",
+            note: data ? `${data.assets} asset(s) tracked` : undefined,
+            icon: Boxes,
+          },
+          {
+            label: "Movements in scope",
+            value: shown.length,
+            note: `${inQty} in · ${outQty} out`,
+            icon: ArrowLeftRight,
+          },
+          {
+            label: "Period",
+            value: periodLabel,
+            note: kind ? humanize(kind) : "Every kind",
+            icon: CalendarRange,
+          },
+        ]}
+      />
 
       {data && data.low_stock.length > 0 && (
         <WarnBox>
@@ -152,65 +201,67 @@ export default function StockAssetReportsPage() {
         <CardHeader>
           <div className="min-w-0">
             <CardTitle>Movements</CardTitle>
-            <p className="mt-1 text-[13px] text-ink-muted">
-              {inQty} in, {outQty} out across {shown.length} movement(s).
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {periodLabel} · {kind ? humanize(kind) : "Every kind"} · {inQty} in, {outQty} out
+              across {shown.length} movement(s).
             </p>
           </div>
-          <Select aria-label="Kind" value={kind} onChange={(e) => setKind(e.target.value)}>
-            <option value="">Every kind</option>
-            {kinds.map((k) => (
-              <option key={k} value={k}>
-                {humanize(k)}
-              </option>
-            ))}
-          </Select>
         </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["Date", "Item", "Kind", "Qty", "Unit cost", "Supplier or issued to", "Reference"]}
-            empty={shown.length === 0 && "Nothing moved in this period."}
-          >
-            {shown.map((m) => (
-              <tr key={m.id}>
-                <td className={td}>{shortDate(m.moved_on)}</td>
-                <td className={tdStrong}>{m.item_name}</td>
-                <td className={td}>
-                  <Badge tone={m.direction > 0 ? "emerald" : "amber"}>{humanize(m.kind)}</Badge>
-                </td>
-                <td className={td}>
-                  {m.direction > 0 ? "+" : "−"}
-                  {m.qty}
-                </td>
-                <td className={td}>{m.unit_cost ? inr(m.unit_cost) : "—"}</td>
-                <td className={td}>{m.supplier_name || m.issued_to || "—"}</td>
-                <td className={td}>{m.reference || "—"}</td>
-              </tr>
-            ))}
-          </Table>
-        </CardBody>
+        <Table
+          head={["Date", "Item", "Kind", "Qty", "Unit cost", "Supplier or issued to", "Reference"]}
+          empty={shown.length === 0 && "Nothing moved in this period."}
+        >
+          {shown.map((m) => (
+            <tr key={m.id}>
+              <td className={td}>{shortDate(m.moved_on)}</td>
+              <td className={tdStrong}>{m.item_name}</td>
+              <td className={td}>
+                <Badge tone={m.direction > 0 ? "emerald" : "amber"}>{humanize(m.kind)}</Badge>
+              </td>
+              <td className={td}>
+                {m.direction > 0 ? "+" : "−"}
+                {m.qty}
+              </td>
+              <td className={td}>{m.unit_cost ? inr(m.unit_cost) : "—"}</td>
+              <td className={td}>{m.supplier_name || m.issued_to || "—"}</td>
+              <td className={td}>{m.reference || "—"}</td>
+            </tr>
+          ))}
+        </Table>
+        <PanelFooter
+          left={`Showing ${shown.length} of ${moves.length} movement(s)`}
+          right={periodLabel}
+        />
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>At or below reorder level</CardTitle>
+          <div>
+            <CardTitle>At or below reorder level</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Counted against the whole store, not the period above.
+            </p>
+          </div>
         </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["Item", "SKU", "On hand", "Reorder level"]}
-            empty={(data?.low_stock.length ?? 0) === 0 && "Nothing needs reordering."}
-          >
-            {(data?.low_stock ?? []).map((l) => (
-              <tr key={l.item_id}>
-                <td className={tdStrong}>{l.name}</td>
-                <td className={td}>{l.sku || "—"}</td>
-                <td className={td}>
-                  <Badge tone={Number(l.on_hand) <= 0 ? "rose" : "amber"}>{l.on_hand}</Badge>
-                </td>
-                <td className={td}>{l.reorder_level}</td>
-              </tr>
-            ))}
-          </Table>
-        </CardBody>
+        <Table
+          head={["Item", "SKU", "On hand", "Reorder level"]}
+          empty={(data?.low_stock.length ?? 0) === 0 && "Nothing needs reordering."}
+        >
+          {(data?.low_stock ?? []).map((l) => (
+            <tr key={l.item_id}>
+              <td className={tdStrong}>{l.name}</td>
+              <td className={td}>{l.sku || "—"}</td>
+              <td className={td}>
+                <Badge tone={Number(l.on_hand) <= 0 ? "rose" : "amber"}>{l.on_hand}</Badge>
+              </td>
+              <td className={td}>{l.reorder_level}</td>
+            </tr>
+          ))}
+        </Table>
+        <PanelFooter
+          left={`${data?.low_stock.length ?? 0} item(s) at or below reorder level`}
+          right={data ? `${data.items} item(s) tracked` : undefined}
+        />
       </Card>
     </div>
   );

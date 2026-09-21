@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AlertTriangle, CalendarClock, CheckCircle2, UserMinus } from "lucide-react";
 
 import { hhmm } from "@/components/events/CalendarFeed";
 import { Badge } from "@/components/ui/Badge";
@@ -9,7 +10,13 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, Select, Table, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+
+/** A control sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterControl =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Slot = {
   timetable_entry_id: number;
@@ -144,36 +151,71 @@ export function CoverBoard() {
   const absentIds = new Set(day?.absent.map((a) => a.user_id));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
-      <div className="flex flex-wrap items-end gap-3">
-        <Input label="Date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <div className="w-56">
-          <Select
-            label="Also absent today"
-            value=""
-            onChange={(e) => e.target.value && setExtra([...extra, Number(e.target.value)])}
-          >
-            <option value="">Add a teacher…</option>
-            {teachers
-              .filter((t) => !absentIds.has(t.user_id))
-              .map((t) => (
-                <option key={t.user_id} value={t.user_id}>
-                  {t.full_name}
-                </option>
-              ))}
-          </Select>
-        </div>
-        {day && day.uncovered > 0 && (
-          <Button onClick={() => run(async () => {
-            const r = await api.post<{ assigned: number }>("/api/v1/school/cover/auto-assign", { date, absent: extra });
-            setNotice(`${r.data.assigned} slot(s) filled.`);
-          }, "")}>
-            Auto-assign {day.uncovered} slot{day.uncovered === 1 ? "" : "s"}
-          </Button>
-        )}
-      </div>
+
+      {/* The day, and anyone else you know is away, narrow the board before
+          the figures that describe it. */}
+      <FilterBar>
+        <input
+          type="date"
+          aria-label="Date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className={filterControl}
+        />
+        <select
+          aria-label="Also absent today"
+          value=""
+          onChange={(e) => e.target.value && setExtra([...extra, Number(e.target.value)])}
+          className={`${filterControl} min-w-[200px]`}
+        >
+          <option value="">Add a teacher who is also away…</option>
+          {teachers
+            .filter((t) => !absentIds.has(t.user_id))
+            .map((t) => (
+              <option key={t.user_id} value={t.user_id}>
+                {t.full_name}
+              </option>
+            ))}
+        </select>
+      </FilterBar>
+
+      {/* Straight off the day the server returned: who is away, how many
+          slots that leaves, and the covered/uncovered split it counted. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Away today",
+            value: day ? day.absent.length : "—",
+            note: day ? (day.is_holiday ? "holiday" : `on ${day.date}`) : undefined,
+            icon: UserMinus,
+          },
+          {
+            label: "Slots to cover",
+            value: day ? day.slots.length : "—",
+            note: day ? "periods left by absent teachers" : undefined,
+            icon: CalendarClock,
+          },
+          {
+            label: "Covered",
+            value: day ? day.covered : "—",
+            note: day ? "a substitute is named" : undefined,
+            icon: CheckCircle2,
+          },
+          {
+            label: "Still open",
+            value: day ? day.uncovered : "—",
+            note: day
+              ? day.uncovered
+                ? "nobody is taking these classes"
+                : "every slot has somebody"
+              : undefined,
+            icon: AlertTriangle,
+          },
+        ]}
+      />
 
       {day?.is_holiday && <Badge tone="amber">holiday</Badge>}
       {day && (
@@ -197,14 +239,22 @@ export function CoverBoard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            Cover needed{" "}
+          <div>
+            <CardTitle>Cover needed</CardTitle>
             {day && (
-              <span className="text-sm font-normal text-ink-subtle">
+              <p className="mt-[5px] text-[11px] text-ink-muted">
                 {day.covered} covered · {day.uncovered} open
-              </span>
+              </p>
             )}
-          </CardTitle>
+          </div>
+          {day && day.uncovered > 0 && (
+            <Button onClick={() => run(async () => {
+              const r = await api.post<{ assigned: number }>("/api/v1/school/cover/auto-assign", { date, absent: extra });
+              setNotice(`${r.data.assigned} slot(s) filled.`);
+            }, "")}>
+              Auto-assign {day.uncovered} slot{day.uncovered === 1 ? "" : "s"}
+            </Button>
+          )}
         </CardHeader>
         <Table head={["Period", "Class", "Subject", "Regular teacher", "Covered by", ""]} empty={day?.slots.length === 0 && "No slots need cover."}>
           {day?.slots.map((s) => (
@@ -238,11 +288,22 @@ export function CoverBoard() {
             </tr>
           ))}
         </Table>
+        {day && (
+          <PanelFooter
+            left={`Showing ${day.slots.length} slot(s) for ${date}`}
+            right={`${day.covered} covered · ${day.uncovered} open`}
+          />
+        )}
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>When teachers can&apos;t cover</CardTitle>
+          <div>
+            <CardTitle>When teachers can&apos;t cover</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Standing blocks the allocator will not ask past
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="space-y-3">
           <div className="flex flex-wrap items-end gap-2">

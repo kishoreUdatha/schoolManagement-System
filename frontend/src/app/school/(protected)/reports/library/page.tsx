@@ -3,13 +3,22 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { BookOpen, Library, Percent, Undo2 } from "lucide-react";
+
 import { BreakdownChart, ChartCard, TrendChart } from "@/components/charts/Charts";
 import { SERIES } from "@/components/charts/theme";
-import { DateRange, ReportShell } from "@/components/reports/ReportShell";
+import { ReportShell } from "@/components/reports/ReportShell";
+import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+import { readableDate } from "@/lib/dates";
+
+/** A control sized for the filter bar: the same height as everything else in
+ *  the row, because the bar reads as one line rather than a stack of fields. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type LibraryUsage = {
   from_date: string;
@@ -51,30 +60,74 @@ export default function LibraryUsageReportPage() {
 
   const months = data?.by_month ?? [];
   const titles = data?.top_titles ?? [];
+  // The window the server actually answered with, not the one in the boxes —
+  // an empty box means "use the default", and the strip should say which.
+  const period = data
+    ? `${readableDate(data.from_date)} – ${readableDate(data.to_date)}`
+    : undefined;
 
   return (
     <ReportShell
       title="Library usage"
       subtitle="Books issued and returned over a period, and how much of the shelf is in use."
       error={error}
-      actions={
-        <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} onApply={load} />
-      }
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Issued"
-          value={data?.issued ?? "—"}
-          hint={data ? `${data.from_date} to ${data.to_date}` : undefined}
-        />
-        <StatCard label="Returned" value={data?.returned ?? "—"} />
-        <StatCard label="Out now" value={data?.out_now ?? "—"} />
-        <StatCard
-          label="Shelf in use"
-          value={data ? `${data.shelf_in_use}%` : "—"}
-          hint={data ? `${data.out_now} of ${data.copies} copies` : undefined}
-        />
-      </div>
+      {/* The period comes first: on a report you choose the window before any
+          of the figures below it mean anything. */}
+      <FilterBar>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          From
+          <input
+            type="date"
+            aria-label="From date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          To
+          <input
+            type="date"
+            aria-label="To date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+        <Button variant="secondary" onClick={load}>
+          Apply
+        </Button>
+      </FilterBar>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Loans in scope",
+            value: data?.issued ?? "—",
+            note: period,
+            icon: BookOpen,
+          },
+          {
+            label: "Returned",
+            value: data?.returned ?? "—",
+            note: "In the same period",
+            icon: Undo2,
+          },
+          {
+            label: "Out now",
+            value: data?.out_now ?? "—",
+            note: data ? `Of ${data.copies} copies on the shelf` : undefined,
+            icon: Library,
+          },
+          {
+            label: "Shelf in use",
+            value: data ? `${data.shelf_in_use}%` : "—",
+            note: data ? `${data.out_now} of ${data.copies} copies` : undefined,
+            icon: Percent,
+          },
+        ]}
+      />
 
       <ChartCard
         title="Issues and returns"
@@ -107,7 +160,12 @@ export default function LibraryUsageReportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Most borrowed titles</CardTitle>
+          <div>
+            <CardTitle>Most borrowed titles</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {period ? `Loans between ${period}` : "Loans in the selected period"}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -126,6 +184,10 @@ export default function LibraryUsageReportPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${titles.length} title${titles.length === 1 ? "" : "s"}`}
+          right={data ? `${data.issued} loan(s) in this period` : undefined}
+        />
       </Card>
     </ReportShell>
   );

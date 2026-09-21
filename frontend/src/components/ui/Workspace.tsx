@@ -280,3 +280,82 @@ export function QuickActions({ actions }: { actions: QuickAction[] }) {
     </div>
   );
 }
+
+/* ── .form-sections / .form-section-title / .form-grid ─────────────────── */
+
+/** A numbered group of fields.
+ *
+ *  The mock numbers its sections — 01 Student information, 02 Academic —
+ *  which is what makes a long form legible: you can see how many parts
+ *  there are before you start, and where you are in them.
+ */
+export function FormSection({
+  step,
+  title,
+  children,
+}: {
+  step: number | string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section>
+      <div className="mb-4 flex items-center gap-2.5">
+        <span className="grid h-[23px] w-[23px] place-items-center rounded-chip bg-surface-soft text-[10px] font-extrabold text-brand-600">
+          {typeof step === "number" ? String(step).padStart(2, "0") : step}
+        </span>
+        <h3 className="text-[15px] font-extrabold text-ink">{title}</h3>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** Two fields to a row, three where they are short, one where the answer is
+ *  long. `.form-grid` in the mock, with its 20px/17px gutters. */
+export function FormGrid({
+  columns = 2,
+  children,
+  className,
+}: {
+  columns?: 1 | 2 | 3;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "grid gap-x-5 gap-y-[17px]",
+        columns === 1 ? "grid-cols-1" : columns === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** The bar under a form: what will happen, and the button that does it.
+ *  `.form-footer` — tinted, ruled off, the explanation on the left so the
+ *  button is never the only thing that says what it does. */
+export function FormFooter({ note, children }: { note?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 border-t border-surface-border bg-surface-subtle px-[22px] py-[18px]">
+      <span className="text-[10px] text-ink-subtle">{note}</span>
+      <div className="flex flex-wrap items-center gap-2.5">{children}</div>
+    </div>
+  );
+}
+
+/** The asterisk after a required field's label.
+ *
+ *  Rose, and never only rose: it follows the word, so the requirement is in
+ *  the label's text for a screen reader and for anyone who cannot pick the
+ *  colour out. */
+export function Req() {
+  return (
+    <span className="ml-[3px] text-danger" title="Required">
+      *<span className="sr-only"> required</span>
+    </span>
+  );
+}

@@ -3,15 +3,22 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { BookCopy, Bookmark, Library, Tags } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ErrorBox, NoticeBox, PageHeader, Select, Table, td, tdStrong } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { ErrorBox, NoticeBox, PageHeader, Table, td, tdStrong } from "@/components/ui/Field";
+import { FilterBar, PanelFooter, SearchBox, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 import { BookModal } from "../BookModal";
 import { BookRow, LibraryTabs } from "../LibraryTabs";
+
+/** A select sized for the filter bar: the same height as the search box and
+ *  no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300";
 
 export default function CataloguePage() {
   const [q, setQ] = useState("");
@@ -54,36 +61,90 @@ export default function CataloguePage() {
       <ErrorBox>{error}</ErrorBox>
       <NoticeBox>{notice}</NoticeBox>
 
+      {/* Summed from the rows the catalogue search already returned — the
+          shelf as this filter sees it, not a second set of queries. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Titles listed",
+            value: books.length || "—",
+            note: category ? `In ${category}` : "Across every category",
+            icon: Library,
+          },
+          {
+            label: "Copies on shelf",
+            value: books.reduce((n, b) => n + b.available_copies, 0) || "—",
+            note: `of ${books.reduce((n, b) => n + b.total_copies, 0)} copies held`,
+            icon: BookCopy,
+          },
+          {
+            label: "Readers waiting",
+            value: books.reduce((n, b) => n + b.waiting_reservations, 0) || "—",
+            note: "Reservations against these titles",
+            icon: Bookmark,
+          },
+          {
+            label: "Categories",
+            value: categories.length || "—",
+            note: "In the catalogue",
+            icon: Tags,
+          },
+        ]}
+      />
+
       <form
-        className="flex flex-wrap items-end gap-3"
         onSubmit={(e) => {
           e.preventDefault();
           load();
         }}
       >
-        <Input label="Search" placeholder="Title, author, ISBN or accession no." value={q} onChange={(e) => setQ(e.target.value)} />
-        <Select label="Category" value={category} onChange={(e) => setCategory(e.target.value)}>
-          <option value="">All</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </Select>
-        <label className="flex items-center gap-2 pb-2 text-sm text-ink-muted">
-          <input type="checkbox" checked={availableOnly} onChange={(e) => setAvailableOnly(e.target.checked)} />
-          On shelf now
-        </label>
-        <label className="flex items-center gap-2 pb-2 text-sm text-ink-muted">
-          <input type="checkbox" checked={digitalOnly} onChange={(e) => setDigitalOnly(e.target.checked)} />
-          Digital
-        </label>
-        <Button type="submit" variant="secondary">
-          Search
-        </Button>
+        <FilterBar>
+          <SearchBox
+            value={q}
+            onChange={setQ}
+            placeholder="Title, author, ISBN or accession no.…"
+            label="Search the catalogue"
+          />
+          <select
+            aria-label="Category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className={filterSelect}
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <label className="flex h-[41px] items-center gap-2 text-[12px] text-ink-muted">
+            <input type="checkbox" checked={availableOnly} onChange={(e) => setAvailableOnly(e.target.checked)} />
+            On shelf now
+          </label>
+          <label className="flex h-[41px] items-center gap-2 text-[12px] text-ink-muted">
+            <input type="checkbox" checked={digitalOnly} onChange={(e) => setDigitalOnly(e.target.checked)} />
+            Digital
+          </label>
+          <Button type="submit" variant="secondary">
+            Search
+          </Button>
+        </FilterBar>
       </form>
 
       <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>Catalogue</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                category || "All categories",
+                availableOnly ? "On shelf now" : "Every copy",
+                digitalOnly ? "Digital only" : "Print and digital",
+              ].join(" · ")}
+            </p>
+          </div>
+        </CardHeader>
         <Table head={["Title", "Author", "Category", "Shelf", "Copies", ""]} empty={books.length === 0 && "No books found."}>
           {books.map((b) => (
             <tr key={b.id} className="hover:bg-surface-hover">
@@ -118,6 +179,10 @@ export default function CataloguePage() {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`Showing ${books.length} title(s)`}
+          right={books.length ? `${books.reduce((n, b) => n + b.total_copies, 0)} copies catalogued` : undefined}
+        />
       </Card>
 
       {adding && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
+import { BedDouble, DoorOpen, LogOut, UserCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -14,11 +15,15 @@ import {
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, SearchBox, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { shortDate } from "@/lib/dates";
+
+/** A select sized for the filter bar: same height as the search box, and no
+ *  stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type Hostel = {
   id: number;
@@ -177,56 +182,73 @@ export default function HostelAllocationsPage() {
   const outNow = rows.filter((r) => r.out_now).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Hostel allocations"
         subtitle="Every resident and the bed they hold, rather than one room at a time."
-        actions={
-          <form
-            className="flex flex-wrap items-end gap-2"
-            onSubmit={(e: FormEvent) => e.preventDefault()}
-          >
-            <Select
-              aria-label="Hostel"
-              value={hostelId}
-              onChange={(e) => setHostelId(e.target.value ? Number(e.target.value) : "")}
-            >
-              <option value="">Every hostel</option>
-              {hostels.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name}
-                </option>
-              ))}
-            </Select>
-            <Input
-              placeholder="Name, admission no or room"
-              aria-label="Search residents"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
-          </form>
-        }
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Beds" value={loading ? "—" : beds} />
-        <StatCard
-          label="Occupied"
-          value={loading ? "—" : occupied}
-          hint={beds ? `${Math.round((occupied / beds) * 100)}% full` : undefined}
-        />
-        <StatCard
-          label="Free"
-          value={loading ? "—" : Math.max(beds - occupied, 0)}
-          accent={beds > 0 && beds - occupied === 0 ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Signed out now"
-          value={loading ? "—" : outNow}
-          accent={outNow ? "amber" : "emerald"}
-        />
-      </div>
+      {/* Narrow the register first — the figures below describe whatever
+          hostel scope is selected, not the whole school. */}
+      <form onSubmit={(e: FormEvent) => e.preventDefault()}>
+        <FilterBar>
+          <SearchBox
+            value={q}
+            onChange={setQ}
+            placeholder="Name, admission no or room…"
+            label="Search residents"
+          />
+          <select
+            aria-label="Hostel"
+            value={hostelId}
+            onChange={(e) => setHostelId(e.target.value ? Number(e.target.value) : "")}
+            className={filterSelect}
+          >
+            <option value="">Every hostel</option>
+            {hostels.map((h) => (
+              <option key={h.id} value={h.id}>
+                {h.name}
+              </option>
+            ))}
+          </select>
+        </FilterBar>
+      </form>
+
+      {/* Capacity, exactly as the page already counts it: beds and occupancy
+          summed over the hostels in scope, free beds from the same
+          Math.max(beds - occupied, 0) the screen has always shown. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Beds",
+            value: loading ? "—" : beds,
+            note: hostelId ? "in this hostel" : "across every hostel",
+            icon: BedDouble,
+          },
+          {
+            label: "Occupied",
+            value: loading ? "—" : occupied,
+            note: beds ? `${Math.round((occupied / beds) * 100)}% full` : undefined,
+            icon: UserCheck,
+          },
+          {
+            label: "Free",
+            value: loading ? "—" : Math.max(beds - occupied, 0),
+            note:
+              !loading && beds > 0 && beds - occupied === 0
+                ? "every bed is taken"
+                : "beds still to allocate",
+            icon: DoorOpen,
+          },
+          {
+            label: "Signed out now",
+            value: loading ? "—" : outNow,
+            note: outNow ? "not in the building" : "everybody accounted for",
+            icon: LogOut,
+          },
+        ]}
+      />
 
       {!loading && beds > 0 && occupied > beds && (
         <NoticeBox>
@@ -237,10 +259,17 @@ export default function HostelAllocationsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Residents</CardTitle>
-          <span className="text-[12px] font-bold text-ink-muted">
-            {loading ? "Loading…" : `${shown.length} shown`}
-          </span>
+          <div>
+            <CardTitle>Residents</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {[
+                hostelId ? hostels.find((h) => h.id === hostelId)?.name : "Every hostel",
+                q.trim() ? `matching “${q.trim()}”` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -281,6 +310,12 @@ export default function HostelAllocationsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={
+            loading ? "Loading…" : `Showing ${shown.length} of ${rows.length} resident(s)`
+          }
+          right={loading ? "" : `${Math.max(beds - occupied, 0)} bed(s) free`}
+        />
       </Card>
 
       <Modal

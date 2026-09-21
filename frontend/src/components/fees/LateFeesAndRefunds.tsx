@@ -9,6 +9,8 @@ import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { ErrorBox, NoticeBox, Select, Table, humanize, inr, td, tdStrong } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
+import { Banknote, CheckCircle2, Inbox, Wallet } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 
 type Head = { id: number; name: string };
@@ -129,6 +131,12 @@ export function LateFeesAndRefunds({ canApprove }: { canApprove: boolean }) {
     run(() => api.post(`${base}/refunds/${r.id}/process`, { processed_on: on, reference: reference.trim() || null }), "Refund paid out and the parent told.");
   };
 
+  // The state of the refund queue, counted off the refunds already loaded.
+  const requested = refunds.filter((r) => r.status === "requested");
+  const toPay = refunds.filter((r) => r.status === "approved");
+  const paidOut = refunds.filter((r) => r.status === "processed");
+  const waitingAmount = requested.reduce((n, r) => n + Number(r.amount), 0);
+
   return (
     <div className="space-y-6">
       <ErrorBox>{error}</ErrorBox>
@@ -136,7 +144,13 @@ export function LateFeesAndRefunds({ canApprove }: { canApprove: boolean }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Late fee rules</CardTitle>
+          <div>
+            <CardTitle>Late fee rules</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              What is charged when a fee is paid late, and the head it is booked
+              under.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="space-y-3">
           <form
@@ -244,24 +258,25 @@ export function LateFeesAndRefunds({ canApprove }: { canApprove: boolean }) {
       {preview && preview.rules > 0 && (
         <Card>
           <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle>
-                Late fees to charge <span className="text-sm font-normal text-ink-subtle">{preview.rows.length} fee(s) · {inr(preview.total)}</span>
-              </CardTitle>
-              {preview.rows.length > 0 && (
-                <Button
-                  onClick={() =>
-                    window.confirm(`Charge ${inr(preview.total)} across ${preview.rows.length} overdue fee(s)?`) &&
-                    run(async () => {
-                      const r = await api.post<{ created: number; updated: number }>(`${base}/late-fees/apply`, { notify_parents: true });
-                      setNotice(`${r.data.created} charge(s) added, ${r.data.updated} updated. Parents were told.`);
-                    }, "")
-                  }
-                >
-                  Charge them
-                </Button>
-              )}
+            <div>
+              <CardTitle>Late fees to charge</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                {preview.rows.length} fee(s) · {inr(preview.total)} — nothing is charged until you say so
+              </p>
             </div>
+            {preview.rows.length > 0 && (
+              <Button
+                onClick={() =>
+                  window.confirm(`Charge ${inr(preview.total)} across ${preview.rows.length} overdue fee(s)?`) &&
+                  run(async () => {
+                    const r = await api.post<{ created: number; updated: number }>(`${base}/late-fees/apply`, { notify_parents: true });
+                    setNotice(`${r.data.created} charge(s) added, ${r.data.updated} updated. Parents were told.`);
+                  }, "")
+                }
+              >
+                Charge them
+              </Button>
+            )}
           </CardHeader>
           <Table head={["Student", "Fee", "Due", "Days late", "Outstanding", "Charge"]} empty={preview.rows.length === 0 && "Nothing overdue past the grace period."}>
             {preview.rows.slice(0, 200).map((r) => (
@@ -281,30 +296,69 @@ export function LateFeesAndRefunds({ canApprove }: { canApprove: boolean }) {
               </tr>
             ))}
           </Table>
+          <PanelFooter
+            left={`Showing ${Math.min(preview.rows.length, 200)} of ${preview.rows.length} overdue fee(s)`}
+            right={`${inr(preview.total)} would be charged`}
+          />
         </Card>
       )}
 
+      {/* The state of the refund queue, from the refunds already loaded:
+          how many are waiting on somebody, and how much money that is. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Waiting for approval",
+            value: requested.length,
+            note: "Nobody has decided yet",
+            icon: Inbox,
+          },
+          {
+            label: "Approved, to pay",
+            value: toPay.length,
+            note: "Agreed, money not yet out",
+            icon: Wallet,
+          },
+          {
+            label: "Paid out",
+            value: paidOut.length,
+            note: "Recorded with a reference",
+            icon: CheckCircle2,
+          },
+          {
+            label: "Amount waiting",
+            value: inr(waitingAmount),
+            note: "Across the requests not yet decided",
+            icon: Banknote,
+          },
+        ]}
+      />
+
       <Card>
         <CardHeader>
-          <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
             <CardTitle>Refunds</CardTitle>
-            <div className="flex items-end gap-2">
-              <div className="w-40">
-                <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
-                  <option value="">All</option>
-                  <option value="requested">Waiting for approval</option>
-                  <option value="approved">Approved, to pay</option>
-                  <option value="processed">Paid out</option>
-                  <option value="rejected">Rejected</option>
-                </Select>
-              </div>
-              <div className="w-64">
-                <StudentPicker
-                  label="New refund for"
-                  value={null}
-                  onChange={(s) => s && openRefund({ id: s.id, full_name: s.full_name })}
-                />
-              </div>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Asked for by the office, approved by the school, then paid out and
+              recorded.
+            </p>
+          </div>
+          <div className="flex items-end gap-2">
+            <div className="w-40">
+              <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="">All</option>
+                <option value="requested">Waiting for approval</option>
+                <option value="approved">Approved, to pay</option>
+                <option value="processed">Paid out</option>
+                <option value="rejected">Rejected</option>
+              </Select>
+            </div>
+            <div className="w-64">
+              <StudentPicker
+                label="New refund for"
+                value={null}
+                onChange={(s) => s && openRefund({ id: s.id, full_name: s.full_name })}
+              />
             </div>
           </div>
         </CardHeader>
@@ -348,6 +402,14 @@ export function LateFeesAndRefunds({ canApprove }: { canApprove: boolean }) {
             </tr>
           ))}
         </Table>
+        <PanelFooter
+          left={`Showing ${refunds.length} refund(s)`}
+          right={
+            requested.length
+              ? `${requested.length} waiting for approval · ${inr(waitingAmount)}`
+              : "Nothing waiting for approval"
+          }
+        />
       </Card>
 
       <Modal open={!!newRefund} onClose={() => setNewRefund(null)} title={`Refund for ${newRefund?.student_name ?? ""}`}>

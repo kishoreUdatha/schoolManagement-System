@@ -1,10 +1,21 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  CalendarDays,
+  CalendarRange,
+  Layers,
+  Percent,
+  School,
+  UserMinus,
+  Users,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/Field";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { auth } from "@/lib/auth";
 import { api, apiError } from "@/lib/api";
@@ -66,6 +77,12 @@ type StudentMonthlyReport = {
 
 type Tab = "daily" | "class" | "student";
 
+/** Every control in a filter bar is the same height, so the row reads as one
+ *  row of controls rather than a stack of little forms. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
+const filterLabel = "flex items-center gap-2 text-[11px] font-bold text-ink-muted";
+
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -116,14 +133,11 @@ export default function AttendanceReportsPage() {
   }, [yearId]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-[28px] font-extrabold leading-[1.28] tracking-[-1.1px] text-ink">Attendance reports</h1>
-        <p className="mt-1.5 text-[13px] text-ink-muted">
-          Daily absentees, class-wise breakdown, and per-student monthly %.
-          Export to CSV or use your browser&apos;s print dialog for PDF.
-        </p>
-      </div>
+    <div className="space-y-[18px]">
+      <PageHeader
+        title="Attendance reports"
+        subtitle="Daily absentees, class-wise breakdown, and per-student monthly %. Export to CSV or use your browser's print dialog for PDF."
+      />
 
       <div className="flex flex-wrap gap-1 rounded-md bg-surface-hover p-1 text-sm">
         {(
@@ -176,6 +190,10 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
     () => classes.find((c) => c.id === classId) ?? null,
     [classes, classId]
   );
+  const selectedSection = useMemo(
+    () => selectedClass?.sections.find((s) => s.id === sectionId) ?? null,
+    [selectedClass, sectionId]
+  );
 
   async function load(e?: FormEvent) {
     e?.preventDefault();
@@ -210,115 +228,152 @@ function DailyAbsentTab({ classes }: { classes: SchoolClass[] }) {
   }
 
   return (
-    <Card className="p-5">
-      <form onSubmit={load} className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Date *</span>
-          <input
-            type="date"
-            value={onDate}
-            onChange={(e) => setOnDate(e.target.value)}
-            max={todayIso()}
-            required
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Class</span>
+    <>
+      {/* The register being asked about is chosen first; the figures under it
+          only restate that choice. */}
+      <form onSubmit={load}>
+        <FilterBar>
+          <label className={filterLabel}>
+            Date *
+            <input
+              type="date"
+              aria-label="Date"
+              value={onDate}
+              onChange={(e) => setOnDate(e.target.value)}
+              max={todayIso()}
+              required
+              className={filterSelect}
+            />
+          </label>
           <select
+            aria-label="Class"
             value={classId}
             onChange={(e) => {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
-            <option value="">All</option>
+            <option value="">All classes</option>
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Section</span>
           <select
+            aria-label="Section"
             value={sectionId}
             onChange={(e) =>
               setSectionId(e.target.value ? Number(e.target.value) : "")
             }
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
             disabled={!selectedClass}
           >
-            <option value="">All</option>
+            <option value="">All sections</option>
             {selectedClass?.sections.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
             ))}
           </select>
-        </label>
-        <Button type="submit" loading={loading}>
-          Run
-        </Button>
-        <Button type="button" variant="secondary" onClick={downloadCsvUrl}>
-          Download CSV
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => window.print()}
-        >
-          Print
-        </Button>
+          <Button type="submit" loading={loading}>
+            Run
+          </Button>
+          <Button type="button" variant="secondary" onClick={downloadCsvUrl}>
+            Download CSV
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => window.print()}
+          >
+            Print
+          </Button>
+        </FilterBar>
       </form>
 
+      <StatStrip
+        stats={[
+          {
+            label: "Absent on this date",
+            value: rows ? rows.length : "—",
+            note: rows ? `${rows.length} child(ren) listed` : undefined,
+            icon: UserMinus,
+          },
+          { label: "Date", value: onDate, icon: CalendarDays },
+          {
+            label: "Class",
+            value: selectedClass ? selectedClass.name : "All classes",
+            icon: School,
+          },
+          {
+            label: "Section",
+            value: selectedSection ? selectedSection.name : "All sections",
+            note: selectedClass ? undefined : "Pick a class to narrow further",
+            icon: Layers,
+          },
+        ]}
+      />
+
       {error && (
-        <div className="mt-3 rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
+        <div className="mb-[18px] rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
 
       {rows !== null && (
-        <div className="mt-4 overflow-x-auto">
-          <div className="mb-2 text-sm text-ink-muted">
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Absent on {onDate}</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                {selectedClass ? selectedClass.name : "All classes"} ·{" "}
+                {selectedSection ? selectedSection.name : "All sections"}
+              </p>
+            </div>
             <Badge tone="rose">{rows.length} absent</Badge>
-          </div>
-          <table className="min-w-full divide-y divide-surface-border text-[13px]">
-            <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
-              <tr>
-                <th className="px-4 py-3 font-bold">Class</th>
-                <th className="px-4 py-3 font-bold">Sec</th>
-                <th className="px-4 py-3 font-bold">Roll</th>
-                <th className="px-4 py-3 font-bold">Adm #</th>
-                <th className="px-4 py-3 font-bold">Student</th>
-                <th className="px-4 py-3 font-bold">Remark</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-border">
-              {rows.map((r) => (
-                <tr key={r.student_id} className="hover:bg-surface-subtle">
-                  <td className="px-4 py-3 text-ink-muted">{r.class_name}</td>
-                  <td className="px-4 py-3 text-ink-muted">{r.section_name}</td>
-                  <td className="px-4 py-3 text-ink-muted">{r.roll_no}</td>
-                  <td className="px-4 py-3 font-mono text-ink-muted">{r.admission_no}</td>
-                  <td className="px-4 py-3 font-medium text-ink">{r.full_name}</td>
-                  <td className="px-4 py-3 text-ink-muted">{r.remark || "—"}</td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-ink-muted">
-                    No absences on this date.
-                  </td>
+                  <th className="px-4 py-3 font-bold">Class</th>
+                  <th className="px-4 py-3 font-bold">Sec</th>
+                  <th className="px-4 py-3 font-bold">Roll</th>
+                  <th className="px-4 py-3 font-bold">Adm #</th>
+                  <th className="px-4 py-3 font-bold">Student</th>
+                  <th className="px-4 py-3 font-bold">Remark</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-surface-border">
+                {rows.map((r) => (
+                  <tr key={r.student_id} className="hover:bg-surface-subtle">
+                    <td className="px-4 py-3 text-ink-muted">{r.class_name}</td>
+                    <td className="px-4 py-3 text-ink-muted">{r.section_name}</td>
+                    <td className="px-4 py-3 text-ink-muted">{r.roll_no}</td>
+                    <td className="px-4 py-3 font-mono text-ink-muted">{r.admission_no}</td>
+                    <td className="px-4 py-3 font-medium text-ink">{r.full_name}</td>
+                    <td className="px-4 py-3 text-ink-muted">{r.remark || "—"}</td>
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-6 text-center text-ink-muted">
+                      No absences on this date.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <PanelFooter
+            left={`Showing ${rows.length} absence(s)`}
+            right={onDate}
+          />
+        </Card>
       )}
-    </Card>
+    </>
   );
 }
 
@@ -335,6 +390,11 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
   const [rows, setRows] = useState<ClassSummaryRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const selectedClass = useMemo(
+    () => classes.find((c) => c.id === classId) ?? null,
+    [classes, classId]
+  );
 
   async function load(e?: FormEvent) {
     e?.preventDefault();
@@ -367,114 +427,152 @@ function ClassSummaryTab({ classes }: { classes: SchoolClass[] }) {
   }
 
   return (
-    <Card className="p-5">
-      <form onSubmit={load} className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">From *</span>
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            max={toDate}
-            required
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">To *</span>
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            min={fromDate}
-            max={todayIso()}
-            required
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Class</span>
+    <>
+      <form onSubmit={load}>
+        <FilterBar>
+          <label className={filterLabel}>
+            From *
+            <input
+              type="date"
+              aria-label="From"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              max={toDate}
+              required
+              className={filterSelect}
+            />
+          </label>
+          <label className={filterLabel}>
+            To *
+            <input
+              type="date"
+              aria-label="To"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              min={fromDate}
+              max={todayIso()}
+              required
+              className={filterSelect}
+            />
+          </label>
           <select
+            aria-label="Class"
             value={classId}
             onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : "")}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
           >
-            <option value="">All</option>
+            <option value="">All classes</option>
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
           </select>
-        </label>
-        <Button type="submit" loading={loading}>
-          Run
-        </Button>
-        <Button type="button" variant="secondary" onClick={downloadCsvUrl}>
-          Download CSV
-        </Button>
-        <Button type="button" variant="secondary" onClick={() => window.print()}>
-          Print
-        </Button>
+          <Button type="submit" loading={loading}>
+            Run
+          </Button>
+          <Button type="button" variant="secondary" onClick={downloadCsvUrl}>
+            Download CSV
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => window.print()}>
+            Print
+          </Button>
+        </FilterBar>
       </form>
 
+      <StatStrip
+        stats={[
+          {
+            label: "Sections in scope",
+            value: rows ? rows.length : "—",
+            note: selectedClass ? `Within ${selectedClass.name}` : "Across all classes",
+            icon: Users,
+          },
+          {
+            label: "Reporting period",
+            value: fromDate,
+            note: `to ${toDate}`,
+            icon: CalendarRange,
+          },
+          {
+            label: "Class",
+            value: selectedClass ? selectedClass.name : "All classes",
+            icon: School,
+          },
+        ]}
+      />
+
       {error && (
-        <div className="mt-3 rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
+        <div className="mb-[18px] rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
 
       {rows !== null && (
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full divide-y divide-surface-border text-[13px]">
-            <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
-              <tr>
-                <th className="px-4 py-3 font-bold">Class</th>
-                <th className="px-4 py-3 font-bold">Sec</th>
-                <th className="px-4 py-3 text-right font-medium">Students</th>
-                <th className="px-4 py-3 text-right font-medium">Days</th>
-                <th className="px-4 py-3 text-right font-medium">Present</th>
-                <th className="px-4 py-3 text-right font-medium">Absent</th>
-                <th className="px-4 py-3 text-right font-medium">Late</th>
-                <th className="px-4 py-3 text-right font-medium">Half</th>
-                <th className="px-4 py-3 text-right font-medium">Att. %</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-border">
-              {rows.map((r) => (
-                <tr key={r.section_id} className="hover:bg-surface-subtle">
-                  <td className="px-4 py-3 text-ink-muted">{r.class_name}</td>
-                  <td className="px-4 py-3 text-ink-muted">{r.section_name}</td>
-                  <td className="px-4 py-3 text-right text-ink-muted">
-                    {r.distinct_students}
-                  </td>
-                  <td className="px-4 py-3 text-right text-ink-muted">
-                    {r.distinct_days}
-                  </td>
-                  <td className="px-4 py-3 text-right text-success">{r.present}</td>
-                  <td className="px-4 py-3 text-right text-danger">{r.absent}</td>
-                  <td className="px-4 py-3 text-right text-warning">{r.late}</td>
-                  <td className="px-4 py-3 text-right text-ink-muted">{r.half_day}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-ink">
-                    {r.attendance_pct}%
-                  </td>
-                </tr>
-              ))}
-              {rows.length === 0 && (
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Class summary</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                {selectedClass ? selectedClass.name : "All classes"} · {fromDate} to {toDate}
+              </p>
+            </div>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-surface-border text-[13px]">
+              <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
                 <tr>
-                  <td
-                    colSpan={9}
-                    className="px-3 py-6 text-center text-ink-muted"
-                  >
-                    No attendance recorded in this range.
-                  </td>
+                  <th className="px-4 py-3 font-bold">Class</th>
+                  <th className="px-4 py-3 font-bold">Sec</th>
+                  <th className="px-4 py-3 text-right font-medium">Students</th>
+                  <th className="px-4 py-3 text-right font-medium">Days</th>
+                  <th className="px-4 py-3 text-right font-medium">Present</th>
+                  <th className="px-4 py-3 text-right font-medium">Absent</th>
+                  <th className="px-4 py-3 text-right font-medium">Late</th>
+                  <th className="px-4 py-3 text-right font-medium">Half</th>
+                  <th className="px-4 py-3 text-right font-medium">Att. %</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-surface-border">
+                {rows.map((r) => (
+                  <tr key={r.section_id} className="hover:bg-surface-subtle">
+                    <td className="px-4 py-3 text-ink-muted">{r.class_name}</td>
+                    <td className="px-4 py-3 text-ink-muted">{r.section_name}</td>
+                    <td className="px-4 py-3 text-right text-ink-muted">
+                      {r.distinct_students}
+                    </td>
+                    <td className="px-4 py-3 text-right text-ink-muted">
+                      {r.distinct_days}
+                    </td>
+                    <td className="px-4 py-3 text-right text-success">{r.present}</td>
+                    <td className="px-4 py-3 text-right text-danger">{r.absent}</td>
+                    <td className="px-4 py-3 text-right text-warning">{r.late}</td>
+                    <td className="px-4 py-3 text-right text-ink-muted">{r.half_day}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-ink">
+                      {r.attendance_pct}%
+                    </td>
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={9}
+                      className="px-3 py-6 text-center text-ink-muted"
+                    >
+                      No attendance recorded in this range.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <PanelFooter
+            left={`Showing ${rows.length} section(s)`}
+            right={`${fromDate} to ${toDate}`}
+          />
+        </Card>
       )}
-    </Card>
+    </>
   );
 }
 
@@ -499,6 +597,10 @@ function StudentMonthlyTab({
   const selectedClass = useMemo(
     () => classes.find((c) => c.id === classId) ?? null,
     [classes, classId]
+  );
+  const selectedSection = useMemo(
+    () => selectedClass?.sections.find((s) => s.id === sectionId) ?? null,
+    [selectedClass, sectionId]
   );
 
   async function load(e?: FormEvent) {
@@ -537,65 +639,64 @@ function StudentMonthlyTab({
   void yearId;
   void auth;
 
+  const monthName = new Date(2000, month - 1, 1).toLocaleString("en", { month: "long" });
+
   return (
-    <Card className="p-5">
-      <form onSubmit={load} className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Class *</span>
+    <>
+      <form onSubmit={load}>
+        <FilterBar>
           <select
+            aria-label="Class"
             value={classId}
             onChange={(e) => {
               setClassId(e.target.value ? Number(e.target.value) : "");
               setSectionId("");
             }}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
             required
           >
-            <option value="">Select…</option>
+            <option value="">Select class…</option>
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Section *</span>
           <select
+            aria-label="Section"
             value={sectionId}
             onChange={(e) =>
               setSectionId(e.target.value ? Number(e.target.value) : "")
             }
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
             disabled={!selectedClass}
             required
           >
-            <option value="">Select…</option>
+            <option value="">Select section…</option>
             {selectedClass?.sections.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Year *</span>
-          <input
-            type="number"
-            min={2020}
-            max={2100}
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="w-24 rounded-lg border border-surface-border px-3 py-1.5 text-sm"
-            required
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-[12px] font-bold text-ink-muted">
-          <span className="text-[12px] font-bold text-ink-muted">Month *</span>
+          <label className={filterLabel}>
+            Year *
+            <input
+              type="number"
+              aria-label="Year"
+              min={2020}
+              max={2100}
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className={`${filterSelect} w-24`}
+              required
+            />
+          </label>
           <select
+            aria-label="Month"
             value={month}
             onChange={(e) => setMonth(Number(e.target.value))}
-            className="rounded-lg border border-surface-control bg-surface-raised px-3 py-2 text-[13px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300"
+            className={filterSelect}
             required
           >
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -606,42 +707,76 @@ function StudentMonthlyTab({
               </option>
             ))}
           </select>
-        </label>
-        <Button type="submit" loading={loading}>
-          Run
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={downloadCsvUrl}
-          disabled={!sectionId}
-        >
-          Download CSV
-        </Button>
-        <Button type="button" variant="secondary" onClick={() => window.print()}>
-          Print
-        </Button>
+          <Button type="submit" loading={loading}>
+            Run
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={downloadCsvUrl}
+            disabled={!sectionId}
+          >
+            Download CSV
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => window.print()}>
+            Print
+          </Button>
+        </FilterBar>
       </form>
 
+      <StatStrip
+        stats={[
+          {
+            label: "Children in scope",
+            value: report ? report.rows.length : "—",
+            note:
+              report?.section_label ??
+              (selectedClass && selectedSection
+                ? `${selectedClass.name} ${selectedSection.name}`
+                : "No section chosen yet"),
+            icon: Users,
+          },
+          {
+            label: "Reporting period",
+            value: `${monthName} ${year}`,
+            note: report ? `${report.from_date} to ${report.to_date}` : undefined,
+            icon: CalendarRange,
+          },
+          {
+            label: "Overall attendance",
+            value: report ? `${report.overall_pct}%` : "—",
+            note: report
+              ? `P ${report.totals.present} · A ${report.totals.absent} · L ${report.totals.late} · H ${report.totals.half_day}`
+              : undefined,
+            icon: Percent,
+          },
+          {
+            label: "Section",
+            value: selectedSection ? selectedSection.name : "—",
+            note: selectedClass ? selectedClass.name : "Pick a class first",
+            icon: Layers,
+          },
+        ]}
+      />
+
       {error && (
-        <div className="mt-3 rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
+        <div className="mb-[18px] rounded-lg bg-danger-bg px-4 py-3 text-[13px] font-medium text-danger dark:bg-rose-500/15 dark:text-rose-200">
           {error}
         </div>
       )}
 
       {report && (
-        <div className="mt-4">
-          <div className="mb-3 flex flex-wrap items-center gap-3 text-sm text-ink-muted">
-            <Badge tone="brand">{report.section_label}</Badge>
-            <span>
-              {report.from_date} → {report.to_date}
-            </span>
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>{report.section_label ?? "Section"}</CardTitle>
+              <p className="mt-[5px] text-[11px] text-ink-muted">
+                {report.from_date} → {report.to_date} · P {report.totals.present} · A{" "}
+                {report.totals.absent} · L {report.totals.late} · H {report.totals.half_day}
+              </p>
+            </div>
             <Badge tone="emerald">overall {report.overall_pct}%</Badge>
-            <span className="text-ink-muted">
-              P {report.totals.present} · A {report.totals.absent} · L{" "}
-              {report.totals.late} · H {report.totals.half_day}
-            </span>
-          </div>
+          </CardHeader>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-surface-border text-[13px]">
               <thead className="bg-surface-subtle text-left text-[11px] font-bold uppercase tracking-[0.04em] text-ink-subtle">
@@ -696,8 +831,12 @@ function StudentMonthlyTab({
               </tbody>
             </table>
           </div>
-        </div>
+          <PanelFooter
+            left={`Showing ${report.rows.length} child(ren)`}
+            right={`Overall ${report.overall_pct}%`}
+          />
+        </Card>
       )}
-    </Card>
+    </>
   );
 }

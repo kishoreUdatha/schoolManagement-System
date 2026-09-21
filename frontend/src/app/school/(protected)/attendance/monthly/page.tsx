@@ -1,21 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Download } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CalendarRange, Download, Percent, UserCheck, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import {
   ErrorBox,
   PageHeader,
-  Select,
   Table,
   td,
   tdStrong,
 } from "@/components/ui/Field";
-import { Input } from "@/components/ui/Input";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { useAcademicYear } from "@/components/AcademicYearProvider";
 import { openAuthed } from "@/lib/download";
@@ -48,6 +46,10 @@ type Report = {
 };
 
 const pctTone = (p: number) => (p >= 90 ? "emerald" : p >= 75 ? "amber" : "rose");
+
+/** The filter bar's controls: one row, one height. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 function thisMonth() {
   const d = new Date();
@@ -115,8 +117,25 @@ export default function MonthlyAttendancePage() {
 
   const rows = data?.rows ?? [];
 
+  // The scope in words, from what the page already holds: the section that is
+  // selected and the month that is in the box.
+  const sectionLabel = useMemo(() => {
+    for (const k of classes) {
+      const s = k.sections.find((x) => x.id === sectionId);
+      if (s) return `${k.name} ${s.name}`;
+    }
+    return null;
+  }, [classes, sectionId]);
+  const monthLabel =
+    year && monthNo
+      ? new Date(year, monthNo - 1, 1).toLocaleString("en", {
+          month: "long",
+          year: "numeric",
+        })
+      : "—";
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Monthly attendance"
         subtitle="A month of the register for one section, per child."
@@ -129,97 +148,116 @@ export default function MonthlyAttendancePage() {
       />
       <ErrorBox>{error}</ErrorBox>
 
-      <Card>
-        <CardBody className="flex flex-wrap items-end gap-3">
-          <Select
-            label="Section"
-            value={sectionId}
-            onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
-          >
-            {classes.length === 0 && <option value="">No classes</option>}
-            {classes.map((k) =>
-              k.sections.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {k.name} {s.name}
-                </option>
-              ))
-            )}
-          </Select>
-          <Input
-            label="Month"
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-          />
-          <Button variant="secondary" onClick={load} disabled={sectionId === ""}>
-            Apply
-          </Button>
-        </CardBody>
-      </Card>
+      {/* Section and month first: nothing below means anything until the
+          register being asked about has been named. */}
+      <FilterBar>
+        <select
+          aria-label="Section"
+          value={sectionId}
+          onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : "")}
+          className={filterSelect}
+        >
+          {classes.length === 0 && <option value="">No classes</option>}
+          {classes.map((k) =>
+            k.sections.map((s) => (
+              <option key={s.id} value={s.id}>
+                {k.name} {s.name}
+              </option>
+            ))
+          )}
+        </select>
+        <input
+          type="month"
+          aria-label="Month"
+          value={month}
+          onChange={(e) => setMonth(e.target.value)}
+          className={filterSelect}
+        />
+        <Button variant="secondary" onClick={load} disabled={sectionId === ""}>
+          Apply
+        </Button>
+      </FilterBar>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Children in scope",
+            value: data ? rows.length : "—",
+            note: data?.section_label ?? sectionLabel ?? "No section chosen",
+            icon: Users,
+          },
+          {
+            label: "Reporting period",
+            value: monthLabel,
+            note: data ? `${data.from_date} to ${data.to_date}` : undefined,
+            icon: CalendarRange,
+          },
+          {
+            label: "Overall attendance",
+            value: data ? `${data.overall_pct}%` : "—",
+            note: data ? `${data.totals.present} present · ${data.totals.absent} absent` : undefined,
+            icon: Percent,
+          },
+          {
+            label: "Late / half day",
+            value: data ? `${data.totals.late} / ${data.totals.half_day}` : "—",
+            note: "Late counts as present, a half day as half",
+            icon: UserCheck,
+          },
+        ]}
+      />
 
       {data && (
-        <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              label="Overall"
-              value={`${data.overall_pct}%`}
-              accent={pctTone(data.overall_pct)}
-            />
-            <StatCard label="Present" value={data.totals.present} />
-            <StatCard label="Absent" value={data.totals.absent} />
-            <StatCard
-              label="Late / half day"
-              value={`${data.totals.late} / ${data.totals.half_day}`}
-            />
-          </div>
-
-          <Card>
-            <CardHeader>
+        <Card>
+          <CardHeader>
+            <div>
               <CardTitle>{data.section_label ?? "Section"}</CardTitle>
-              <span className="text-[12px] font-bold text-ink-muted">
+              <p className="mt-[5px] text-[11px] text-ink-muted">
                 {data.from_date} to {data.to_date}
-              </span>
-            </CardHeader>
-            <CardBody className="p-0">
-              <Table
-                head={[
-                  "Roll",
-                  "Student",
-                  "Present",
-                  "Absent",
-                  "Late",
-                  "Half day",
-                  "Marked",
-                  "Attendance",
-                ]}
-                empty={
-                  rows.length === 0 &&
-                  "Nothing was marked for this section that month."
-                }
-              >
-                {rows.map((r) => (
-                  <tr key={r.student_id}>
-                    <td className={td}>{r.roll_no}</td>
-                    <td className={tdStrong}>
-                      {r.full_name}
-                      <span className="block text-[11px] font-normal text-ink-subtle">
-                        {r.admission_no}
-                      </span>
-                    </td>
-                    <td className={td}>{r.present}</td>
-                    <td className={td}>{r.absent}</td>
-                    <td className={td}>{r.late}</td>
-                    <td className={td}>{r.half_day}</td>
-                    <td className={td}>{r.marked_days}</td>
-                    <td className={td}>
-                      <Badge tone={pctTone(r.attendance_pct)}>{r.attendance_pct}%</Badge>
-                    </td>
-                  </tr>
-                ))}
-              </Table>
-            </CardBody>
-          </Card>
-        </>
+              </p>
+            </div>
+          </CardHeader>
+          <Table
+            head={[
+              "Roll",
+              "Student",
+              "Present",
+              "Absent",
+              "Late",
+              "Half day",
+              "Marked",
+              "Attendance",
+            ]}
+            empty={
+              rows.length === 0 &&
+              "Nothing was marked for this section that month."
+            }
+          >
+            {rows.map((r) => (
+              <tr key={r.student_id}>
+                <td className={td}>{r.roll_no}</td>
+                <td className={tdStrong}>
+                  {r.full_name}
+                  <span className="block text-[11px] font-normal text-ink-subtle">
+                    {r.admission_no}
+                  </span>
+                </td>
+                <td className={td}>{r.present}</td>
+                <td className={td}>{r.absent}</td>
+                <td className={td}>{r.late}</td>
+                <td className={td}>{r.half_day}</td>
+                <td className={td}>{r.marked_days}</td>
+                <td className={td}>
+                  <Badge tone={pctTone(r.attendance_pct)}>{r.attendance_pct}%</Badge>
+                </td>
+              </tr>
+            ))}
+          </Table>
+          <PanelFooter
+            left={`Showing ${rows.length} child(ren)`}
+            right={`Overall ${data.overall_pct}%`}
+          />
+        </Card>
       )}
     </div>
   );

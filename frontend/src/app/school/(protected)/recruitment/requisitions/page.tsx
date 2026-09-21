@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { BriefcaseBusiness, CheckCircle2, Inbox, Plus, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 import { dateTime, readableDate } from "@/lib/dates";
 
@@ -43,6 +43,11 @@ type Requisition = {
 type Department = { id: number; name: string };
 
 const base = "/api/v1/school/hr-ops";
+
+/** A select sized for the filter bar: same height as the rest of the row,
+ *  and no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 const TONE: Record<Requisition["status"], "emerald" | "amber" | "rose" | "neutral"> = {
   draft: "neutral",
@@ -163,55 +168,89 @@ export default function RequisitionsPage() {
   const waiting = rows.filter((r) => r.status === "submitted");
   const approved = rows.filter((r) => r.status === "approved");
   const posts = approved.reduce((n, r) => n + r.headcount, 0);
+  // The longest-standing request still awaiting a decision.
+  const oldestWaiting = waiting.reduce<Requisition | null>(
+    (o, r) => (!o || r.created_at < o.created_at ? r : o),
+    null
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Requests to hire"
         subtitle="The case for a post, and who agreed to it — kept apart from the advert."
         actions={
-          <div className="flex flex-wrap items-end gap-2">
-            <Select
-              aria-label="Status"
-              value={state}
-              onChange={(e) => {
-                setState(e.target.value);
-                load(e.target.value);
-              }}
-            >
-              <option value="">Everything</option>
-              {["draft", "submitted", "approved", "rejected", "filled", "cancelled"].map(
-                (s) => (
-                  <option key={s} value={s}>
-                    {humanize(s)}
-                  </option>
-                )
-              )}
-            </Select>
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="mr-1.5 h-4 w-4" />
-              New request
-            </Button>
-          </div>
+          <Button onClick={() => setCreating(true)}>
+            <Plus className="mr-1.5 h-4 w-4" />
+            New request
+          </Button>
         }
       />
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Requests" value={rows.length} />
-        <StatCard
-          label="Waiting on a decision"
-          value={waiting.length}
-          accent={waiting.length ? "amber" : "neutral"}
-        />
-        <StatCard label="Approved" value={approved.length} accent="emerald" />
-        <StatCard label="Posts agreed" value={posts} />
-      </div>
+      {/* The state of the queue, counted off the requests already loaded. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Requests",
+            value: rows.length,
+            note: state ? `${humanize(state)} only` : "Every state",
+            icon: BriefcaseBusiness,
+          },
+          {
+            label: "Waiting on a decision",
+            value: waiting.length,
+            note: oldestWaiting
+              ? `Oldest raised ${dateTime(oldestWaiting.created_at)}`
+              : "Nothing sent for approval",
+            icon: Inbox,
+          },
+          {
+            label: "Approved",
+            value: approved.length,
+            note: "Agreed, not yet filled",
+            icon: CheckCircle2,
+          },
+          {
+            label: "Posts agreed",
+            value: posts,
+            note: "Headcount across approved requests",
+            icon: Users,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="Status"
+          value={state}
+          onChange={(e) => {
+            setState(e.target.value);
+            load(e.target.value);
+          }}
+          className={filterSelect}
+        >
+          <option value="">Everything</option>
+          {["draft", "submitted", "approved", "rejected", "filled", "cancelled"].map(
+            (s) => (
+              <option key={s} value={s}>
+                {humanize(s)}
+              </option>
+            )
+          )}
+        </select>
+      </FilterBar>
 
       <Card>
         <CardHeader>
-          <CardTitle>Every request</CardTitle>
+          <div>
+            <CardTitle>Every request</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {state ? humanize(state) : "Every state"} · a refused request stays on
+              record beside the ones that were agreed
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -281,6 +320,14 @@ export default function RequisitionsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} request(s)`}
+          right={
+            waiting.length
+              ? `${waiting.length} waiting on a decision`
+              : "Nothing waiting on a decision"
+          }
+        />
       </Card>
 
       <Modal open={creating} onClose={() => setCreating(false)} title="Ask for a post">

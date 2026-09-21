@@ -2,14 +2,21 @@
 
 import { useEffect, useState } from "react";
 
+import { Megaphone, Radio, TriangleAlert, Users } from "lucide-react";
+
 import { BreakdownChart, ChartCard, ShareChart, TrendChart } from "@/components/charts/Charts";
 import { SERIES } from "@/components/charts/theme";
-import { DateRange, ReportShell } from "@/components/reports/ReportShell";
+import { ReportShell } from "@/components/reports/ReportShell";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, humanize, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
+import { readableDate } from "@/lib/dates";
+
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
 
 type ChannelRow = {
   channel: string;
@@ -67,34 +74,74 @@ export default function NotificationReportPage() {
   const failed = channels.reduce((n, c) => n + c.failed, 0);
   const skipped = channels.reduce((n, c) => n + c.skipped, 0);
   const overall = deliveredPct(delivered, tried);
+  // The window the server answered with, which is not always the one in the
+  // boxes: an empty box means "use the default".
+  const period = data
+    ? `${readableDate(data.from_date)} – ${readableDate(data.to_date)}`
+    : undefined;
 
   return (
     <ReportShell
       title="Notifications"
       subtitle="What the school sent, who it went to, and how much of it reached a device."
       error={error}
-      actions={<DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} onApply={load} />}
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Notices sent"
-          value={data?.notices ?? "—"}
-          hint={data ? `${data.from_date} to ${data.to_date}` : undefined}
-        />
-        <StatCard label="Recipients" value={data?.recipients ?? "—"} />
-        <StatCard
-          label="Delivered"
-          value={overall === null ? "—" : `${overall}%`}
-          hint={tried > 0 ? `${delivered} of ${tried} attempted` : undefined}
-          accent={overall !== null && overall < 90 ? "amber" : "emerald"}
-        />
-        <StatCard
-          label="Failed"
-          value={data ? failed : "—"}
-          hint={skipped > 0 ? `${skipped} skipped for want of a number` : undefined}
-          accent={failed > 0 ? "rose" : "emerald"}
-        />
-      </div>
+      <FilterBar>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          From
+          <input
+            type="date"
+            aria-label="From date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+        <label className="flex items-center gap-2 text-[11px] font-bold text-ink-muted">
+          To
+          <input
+            type="date"
+            aria-label="To date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className={filterSelect}
+          />
+        </label>
+        <Button variant="secondary" onClick={load}>
+          Apply
+        </Button>
+      </FilterBar>
+
+      <StatStrip
+        stats={[
+          {
+            label: "Notices in scope",
+            value: data?.notices ?? "—",
+            note: period,
+            icon: Megaphone,
+          },
+          {
+            label: "Recipients",
+            value: data?.recipients ?? "—",
+            note: data
+              ? `Over ${channels.length} channel${channels.length === 1 ? "" : "s"}`
+              : undefined,
+            icon: Users,
+          },
+          {
+            label: "Delivered",
+            value: overall === null ? "—" : `${overall}%`,
+            note: tried > 0 ? `${delivered} of ${tried} attempted` : undefined,
+            icon: Radio,
+          },
+          {
+            label: "Failed",
+            value: data ? failed : "—",
+            note: skipped > 0 ? `${skipped} skipped for want of a number` : undefined,
+            icon: TriangleAlert,
+          },
+        ]}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard
@@ -148,7 +195,12 @@ export default function NotificationReportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Channel by channel</CardTitle>
+          <div>
+            <CardTitle>Channel by channel</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {period ? `Every message sent between ${period}` : "Every message in the selected period"}
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -182,6 +234,10 @@ export default function NotificationReportPage() {
             })}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${channels.length} channel${channels.length === 1 ? "" : "s"}`}
+          right={tried > 0 ? `${tried} message(s) attempted, ${skipped} skipped` : undefined}
+        />
       </Card>
 
       <p className="text-[12px] leading-relaxed text-ink-muted">

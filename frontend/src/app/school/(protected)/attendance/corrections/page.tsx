@@ -18,8 +18,9 @@ import {
 } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { StatCard } from "@/components/ui/StatCard";
+import { FilterBar, PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { StudentPicker, type PickedStudent } from "@/components/StudentPicker";
+import { CheckCircle2, Hourglass, Inbox, Undo2 } from "lucide-react";
 import { api, apiError } from "@/lib/api";
 import { dateTime, shortDate, toIso } from "@/lib/dates";
 
@@ -45,6 +46,23 @@ const STATUSES = ["present", "absent", "late", "half_day"];
 
 const stateTone = (s: string) =>
   s === "approved" ? "emerald" : s === "rejected" ? "rose" : "amber";
+
+/** A select sized for the filter bar: same height as the rest of the row,
+ *  and no stacked label, because the bar reads as one row of controls. */
+const filterSelect =
+  "h-[41px] rounded-control border border-surface-control bg-surface-raised px-3 text-[12px] text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300 disabled:cursor-not-allowed disabled:text-ink-subtle";
+
+const STATE_LABEL: Record<string, string> = {
+  "": "Every state",
+  pending: "Waiting",
+  approved: "Approved",
+  rejected: "Refused",
+};
+
+/** Whole days since a timestamp — how long the oldest request has stood. */
+function daysWaiting(iso: string): number {
+  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
+}
 
 /** The queue for disputing an attendance mark.
  *
@@ -146,10 +164,18 @@ export default function AttendanceCorrectionsPage() {
     }
   };
 
-  const pending = rows.filter((r) => r.status === "pending").length;
+  const pendingRows = rows.filter((r) => r.status === "pending");
+  const pending = pendingRows.length;
+  const approvedCount = rows.filter((r) => r.status === "approved").length;
+  const refusedCount = rows.filter((r) => r.status === "rejected").length;
+  // The longest-standing request still waiting, off the rows already loaded.
+  const oldestPending = pendingRows.reduce<Correction | null>(
+    (o, r) => (!o || r.created_at < o.created_at ? r : o),
+    null
+  );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[18px]">
       <PageHeader
         title="Register corrections"
         subtitle="Asking for an attendance mark to change, and agreeing to it."
@@ -158,27 +184,64 @@ export default function AttendanceCorrectionsPage() {
       <ErrorBox>{error}</ErrorBox>
       {saved && <NoticeBox>{saved}</NoticeBox>}
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Waiting" value={pending} accent={pending ? "amber" : "emerald"} />
-        <StatCard
-          label="Approved"
-          value={rows.filter((r) => r.status === "approved").length}
-        />
-        <StatCard
-          label="Refused"
-          value={rows.filter((r) => r.status === "rejected").length}
-        />
-      </div>
+      {/* The state of the queue, counted off the requests already loaded —
+          so it describes what the filter below is showing, not the school. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Waiting",
+            value: pending,
+            note: oldestPending
+              ? `Oldest asked ${dateTime(oldestPending.created_at)}`
+              : "Nothing to agree to",
+            icon: Inbox,
+          },
+          {
+            label: "Approved",
+            value: approvedCount,
+            note: "The register was changed",
+            icon: CheckCircle2,
+          },
+          {
+            label: "Refused",
+            value: refusedCount,
+            note: "The register was left alone",
+            icon: Undo2,
+          },
+          {
+            label: "Longest wait",
+            value: oldestPending ? `${daysWaiting(oldestPending.created_at)} days` : "—",
+            note: oldestPending
+              ? `${oldestPending.student_name ?? "A student"} · ${shortDate(oldestPending.date)}`
+              : "No request is waiting",
+            icon: Hourglass,
+          },
+        ]}
+      />
+
+      <FilterBar>
+        <select
+          aria-label="State"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          className={filterSelect}
+        >
+          <option value="">All</option>
+          <option value="pending">Waiting</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Refused</option>
+        </select>
+      </FilterBar>
 
       <Card>
         <CardHeader>
-          <CardTitle>Corrections</CardTitle>
-          <Select value={filter} onChange={(e) => setFilter(e.target.value)} aria-label="State">
-            <option value="">All</option>
-            <option value="pending">Waiting</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Refused</option>
-          </Select>
+          <div>
+            <CardTitle>Corrections</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {STATE_LABEL[filter] ?? "Every state"} · waiting first, then what has
+              already been decided
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -246,6 +309,10 @@ export default function AttendanceCorrectionsPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${rows.length} request(s)`}
+          right={pending ? `${pending} still to decide` : "Nothing waiting"}
+        />
       </Card>
 
       <Modal

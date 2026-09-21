@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 
+import { Armchair, GraduationCap, Percent, Users } from "lucide-react";
+
 import { BreakdownChart, ChartCard, TrendChart } from "@/components/charts/Charts";
 import { SERIES } from "@/components/charts/theme";
 import { CsvButton, ReportShell } from "@/components/reports/ReportShell";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type SectionRow = {
@@ -76,21 +78,41 @@ export default function StrengthReportPage() {
       error={error}
       actions={<CsvButton path="strength.csv" />}
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="On the roll" value={data?.total_students ?? "—"} />
-        <StatCard
-          label="Boys / girls"
-          value={data ? `${boys} / ${girls}` : "—"}
-          hint={data && data.total_students > boys + girls ? `${data.total_students - boys - girls} not recorded` : undefined}
-        />
-        <StatCard label="Seats" value={data?.total_capacity || "Not set"} />
-        <StatCard
-          label="Of capacity"
-          value={data?.total_capacity ? `${data.fill_percent}%` : "—"}
-          accent={data && data.fill_percent > 100 ? "rose" : "brand"}
-          hint={overfull.length ? `${overfull.length} section(s) over capacity` : undefined}
-        />
-      </div>
+      {/* No filter bar: the report is the current year's roll in full, so the
+          strip restates how far that reaches rather than what was chosen. */}
+      <StatStrip
+        stats={[
+          {
+            label: "On the roll",
+            value: data?.total_students ?? "—",
+            note: data
+              ? `${classes.length} class(es) · ${sections.length} section(s)`
+              : undefined,
+            icon: GraduationCap,
+          },
+          {
+            label: "Boys / girls",
+            value: data ? `${boys} / ${girls}` : "—",
+            note:
+              data && data.total_students > boys + girls
+                ? `${data.total_students - boys - girls} not recorded`
+                : undefined,
+            icon: Users,
+          },
+          {
+            label: "Seats",
+            value: data?.total_capacity || "Not set",
+            note: data && !data.total_capacity ? "No section capacities entered" : undefined,
+            icon: Armchair,
+          },
+          {
+            label: "Of capacity",
+            value: data?.total_capacity ? `${data.fill_percent}%` : "—",
+            note: overfull.length ? `${overfull.length} section(s) over capacity` : undefined,
+            icon: Percent,
+          },
+        ]}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ChartCard
@@ -124,7 +146,12 @@ export default function StrengthReportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Section by section</CardTitle>
+          <div>
+            <CardTitle>Section by section</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              Every section on the roll, against the seats it was given.
+            </p>
+          </div>
         </CardHeader>
         <CardBody className="p-0">
           <Table
@@ -152,6 +179,10 @@ export default function StrengthReportPage() {
             ))}
           </Table>
         </CardBody>
+        <PanelFooter
+          left={`Showing ${sections.length} section(s) across ${classes.length} class(es)`}
+          right={data ? `${data.total_students} on the roll` : undefined}
+        />
       </Card>
     </ReportShell>
   );

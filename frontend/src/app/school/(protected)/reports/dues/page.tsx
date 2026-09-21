@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Clock, Users, Wallet } from "lucide-react";
 
 import { BreakdownChart, ChartCard } from "@/components/charts/Charts";
 import { SERIES, VERDICT } from "@/components/charts/theme";
 import { CsvButton, ReportShell } from "@/components/reports/ReportShell";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Table, WarnBox, inr, td, tdStrong } from "@/components/ui/Field";
-import { StatCard } from "@/components/ui/StatCard";
+import { PanelFooter, StatStrip } from "@/components/ui/Workspace";
 import { api, apiError } from "@/lib/api";
 
 type Bucket = { label: string; amount: string };
@@ -76,22 +76,36 @@ export default function DuesReportPage() {
       error={error}
       actions={<CsvButton path="dues-ageing.csv" />}
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Outstanding" value={data ? inr(data.total) : "—"} accent="amber" />
-        <StatCard
-          label="Overdue"
-          value={data ? inr(total - notYetDue) : "—"}
-          hint={data ? `${inr(notYetDue)} not yet due` : undefined}
-          accent="amber"
-        />
-        <StatCard
-          label="Over 90 days"
-          value={data ? inr(old) : "—"}
-          accent={old > 0 ? "rose" : "emerald"}
-          icon={old > 0 ? AlertTriangle : undefined}
-        />
-        <StatCard label="Families owing" value={data?.students_owing ?? "—"} />
-      </div>
+      {/* No filter bar: the ageing endpoint takes no window — every unpaid
+          bill on the ledger is in scope, as of the date below. */}
+      <StatStrip
+        stats={[
+          {
+            label: "Outstanding",
+            value: data ? inr(data.total) : "—",
+            note: data ? `As of ${data.as_of}` : undefined,
+            icon: Wallet,
+          },
+          {
+            label: "Overdue",
+            value: data ? inr(total - notYetDue) : "—",
+            note: data ? `${inr(notYetDue)} not yet due` : undefined,
+            icon: Clock,
+          },
+          {
+            label: "Over 90 days",
+            value: data ? inr(old) : "—",
+            note: data ? "Oldest bucket on the ledger" : undefined,
+            icon: AlertTriangle,
+          },
+          {
+            label: "Families owing",
+            value: data?.students_owing ?? "—",
+            note: data ? `${defaulters.length} listed below` : undefined,
+            icon: Users,
+          },
+        ]}
+      />
 
       {old > 0 && (
         <WarnBox>
@@ -117,42 +131,47 @@ export default function DuesReportPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Who owes it</CardTitle>
-          <span className="text-[12px] font-bold text-ink-muted">
-            {defaulters.length >= 50 ? "Largest 50" : `${defaulters.length} families`}
-          </span>
+          <div>
+            <CardTitle>Who owes it</CardTitle>
+            <p className="mt-[5px] text-[11px] text-ink-muted">
+              {defaulters.length >= 50 ? "Largest 50" : `${defaulters.length} families`}
+              {data ? ` · as of ${data.as_of}` : ""}
+            </p>
+          </div>
         </CardHeader>
-        <CardBody className="p-0">
-          <Table
-            head={["Admission no", "Student", "Owed", "Bills", "Oldest"]}
-            empty={defaulters.length === 0 && "Nobody owes anything."}
-          >
-            {defaulters.map((d) => (
-              <tr key={d.student_id}>
-                <td className={td}>{d.admission_no}</td>
-                <td className={tdStrong}>
-                  <Link href={`/school/students/${d.student_id}`} className="hover:underline">
-                    {d.student_name}
-                  </Link>
-                  {d.section_label && (
-                    <span className="block text-[11px] font-normal text-ink-subtle">
-                      {d.section_label}
-                    </span>
-                  )}
-                </td>
-                <td className={tdStrong}>{inr(d.owed)}</td>
-                <td className={td}>{d.items}</td>
-                <td className={td}>
-                  {d.oldest_days > 0 ? (
-                    <Badge tone={ageTone(d.oldest_days)}>{d.oldest_days} days</Badge>
-                  ) : (
-                    <span className="text-ink-subtle">Not yet due</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </Table>
-        </CardBody>
+        <Table
+          head={["Admission no", "Student", "Owed", "Bills", "Oldest"]}
+          empty={defaulters.length === 0 && "Nobody owes anything."}
+        >
+          {defaulters.map((d) => (
+            <tr key={d.student_id}>
+              <td className={td}>{d.admission_no}</td>
+              <td className={tdStrong}>
+                <Link href={`/school/students/${d.student_id}`} className="hover:underline">
+                  {d.student_name}
+                </Link>
+                {d.section_label && (
+                  <span className="block text-[11px] font-normal text-ink-subtle">
+                    {d.section_label}
+                  </span>
+                )}
+              </td>
+              <td className={tdStrong}>{inr(d.owed)}</td>
+              <td className={td}>{d.items}</td>
+              <td className={td}>
+                {d.oldest_days > 0 ? (
+                  <Badge tone={ageTone(d.oldest_days)}>{d.oldest_days} days</Badge>
+                ) : (
+                  <span className="text-ink-subtle">Not yet due</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </Table>
+        <PanelFooter
+          left={`Showing ${defaulters.length} of ${data?.students_owing ?? 0} family(ies)`}
+          right={data ? `${inr(data.total)} outstanding` : undefined}
+        />
       </Card>
     </ReportShell>
   );
