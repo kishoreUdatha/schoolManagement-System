@@ -2,7 +2,7 @@
 // Module: Library · Role: Librarian · Release: Phase 3 · Stories: US-0409 / US-0410
 // Mock: screens/SCR-205_Fine_Lost_Damaged_Book.html
 // Backend: the old frontend served this at /school/library — Collect, waive, bill; lost and damaged
-// Wired: GET /api/v1/school/library/fines, POST /loans/{id}/fine, PATCH /fines/{loan_id}, POST /loans/{id}/lost. Hand-maintained.
+// Wired: GET /api/v1/school/library/fines, POST /loans/{id}/fine, GET/PATCH /fines/{loan_id} (?loan=), POST /loans/{id}/lost. Hand-maintained.
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";

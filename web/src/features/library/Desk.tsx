@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
@@ -549,7 +550,12 @@ export function FineDesk() {
   const [accession, setAccession] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fine, setFine] = useState<Fine | null>(null);
+  // The open fine: ?loan= opens one directly; its detail is read fresh from GET /library/fines/{loan_id}.
+  const linked = Number(useSearchParams().get("loan")) || null;
+  const [fineId, setFineId] = useState<number | null>(linked);
+  const detail = useApi<Fine>(fineId ? `${LIB}/fines/${fineId}` : null);
+  const fine: Fine | null = fineId === null ? null : detail.data?.loan_id === fineId ? detail.data : (fines.data?.fines.find((x) => x.loan_id === fineId) ?? null);
+  const setFine = (f: Fine | null) => setFineId(f ? f.loan_id : null);
 
   async function run(fn: () => Promise<unknown>, done: string) {
     setSaving(true);
@@ -558,6 +564,7 @@ export function FineDesk() {
       await fn();
       notify(done);
       fines.reload();
+      detail.reload();
       return true;
     } catch (err) {
       setError(errorText(err));
@@ -692,14 +699,22 @@ export function FineDesk() {
         }
         flush
       >
-        <DataTable columns={["Member", "Title", "Copy", "Overdue", "Amount", "Status"]} rows={rows} selectable={false} onView={(i) => setFine(list[i])} empty={fines.loading ? "Loading fines…" : "No fines here."} />
+        <DataTable columns={["Member", "Title", "Copy", "Overdue", "Amount", "Status"]} rows={rows} selectable={false} onView={(i) => setFineId(list[i].loan_id)} empty={fines.loading ? "Loading fines…" : "No fines here."} />
       </Panel>
+      {fineId !== null && !fine ? (
+        <Modal title="Fine" onClose={() => setFine(null)}>
+          <ErrorNote>{detail.error}</ErrorNote>
+          <p className="muted">{detail.loading ? "Loading the fine…" : "This fine could not be found."}</p>
+        </Modal>
+      ) : null}
       {fine ? (
         <Modal title={`${fine.borrower_name} · ${money(fine.amount)}`} onClose={() => setFine(null)}>
-          <ErrorNote>{error}</ErrorNote>
+          <ErrorNote>{error ?? detail.error}</ErrorNote>
           <Kv
             rows={[
+              ["Member", `${fine.borrower_name} · ${label(fine.borrower_type)}`],
               ["Book", `${fine.title} (${fine.accession_no})`],
+              ["Issued", date(fine.issued_on)],
               ["Due / returned", `${date(fine.due_on)} / ${date(fine.returned_on)}`],
               ["Overdue", `${fine.overdue_days} day(s)`],
               ["Status", label(fine.status)],

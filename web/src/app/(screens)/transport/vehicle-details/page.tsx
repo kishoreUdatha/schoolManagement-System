@@ -2,7 +2,7 @@
 // Module: Transport / Bus / GPS · Role: Transport Manager · Release: Phase 2 · Stories: US-0375 / US-0376
 // Mock: screens/SCR-188_Vehicle_Details.html
 // Backend: the old frontend served this at /school/transport/vehicles/[id] — Expiries flagged, fuel and service log
-// Wired: GET /api/v1/school/transport/vehicles/{id} (?id=), …/logs, /transport/routes, /transport/crew; POST …/gps-key. Hand-maintained.
+// Wired: GET /api/v1/school/transport/vehicles/{id} (?id=), …/logs, /transport/routes, /transport/crew; POST …/gps-key; DELETE /transport/vehicles/{id}. Hand-maintained.
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";

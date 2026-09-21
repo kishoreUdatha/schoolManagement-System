@@ -11,7 +11,7 @@ import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { type PtmDetail, type PtmSession, type TeacherPtm, hhmm, isoDay, useCurrentClasses, useRole } from "./shared";
+import { type PtmDetail, type PtmSession, type TeacherPtm, SLOT_STATUS, hhmm, isoDay, useCurrentClasses, useRole } from "./shared";
 
 type StaffRow = { user_id: number; full_name: string; role: string };
 type Scope = { section_id: number; class_id: number; label: string };
@@ -36,7 +36,9 @@ function slotCount(start: string, end: string, minutes: number): number {
  * SCR-250 PTM Setup. A teacher arranges a meeting for a class they are
  * class teacher of (POST /api/v1/teacher/ptm/sessions?section_id=, then
  * /sessions/{id}/publish); the office arranges one for any scope and adds
- * teachers (POST /api/v1/school/ptm, /ptm/{id}/teachers, /ptm/{id}/publish).
+ * teachers (POST /api/v1/school/ptm, /ptm/{id}/teachers, /ptm/{id}/publish),
+ * removes a teacher (DELETE /ptm/{id}/teachers/{user_id}) or deletes the
+ * meeting (DELETE /ptm/{id}) while no parent has booked.
  */
 export function PtmSetup() {
   const role = useRole();
@@ -71,11 +73,12 @@ function readTimes(f: FormData) {
   };
 }
 
-function Footer({ saving, canPublish, onCancel }: { saving: boolean; canPublish: boolean; onCancel: () => void }) {
+function Footer({ saving, canPublish, onCancel, extra }: { saving: boolean; canPublish: boolean; onCancel: () => void; extra?: JSX.Element | null }) {
   return (
     <div className="form-footer">
       <span>Fields marked * are required</span>
       <div className="actions">
+        {extra}
         <button type="button" className="btn" onClick={onCancel}>
           Cancel
         </button>
@@ -146,6 +149,40 @@ function OfficeSetup() {
   }, [s]);
 
   if (id && existing.loading && !s) return <Loading what="Loading the meeting…" />;
+
+  // The API refuses both while parents hold bookings, and says so.
+  async function removeTeacher(t: PtmDetail["teachers"][number]) {
+    if (!window.confirm(`Take ${t.teacher_name} out of “${s!.title}”? Their ${t.slots.length} slot(s) are deleted.`)) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api.delete(`/api/v1/school/ptm/${s!.id}/teachers/${t.teacher_user_id}`);
+      notify(`${t.teacher_name} removed from the meeting.`);
+      existing.reload();
+      list.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeSession() {
+    if (!window.confirm(`Delete “${s!.title}” on ${date(s!.meeting_date)} with all its slots?${s!.is_published ? " Parents have already been told about it." : ""}`)) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api.delete(`/api/v1/school/ptm/${s!.id}`);
+      notify("Meeting deleted.");
+      list.reload();
+      router.replace(routeOf(250));
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const inSession = new Set(s?.teachers.map((t) => t.teacher_user_id) ?? []);
   const available = (staff.data ?? []).filter((x) => (x.role === "teacher" || x.role === "principal") && !inSession.has(x.user_id));
   const sections = classes.find((c) => String(c.id) === classId)?.sections ?? [];
@@ -268,7 +305,49 @@ function OfficeSetup() {
             </section>
           </div>
         </div>
-        <Footer saving={saving} canPublish={!s?.is_published} onCancel={() => router.back()} />
+        {s && s.teachers.length ? (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Teacher</th>
+                  <th>Slots</th>
+                  <th>Booked</th>
+                  <th className="right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {s.teachers.map((t) => {
+                  const booked = t.slots.filter((x) => x.student_id !== null && x.student_id !== undefined).length;
+                  return (
+                    <tr key={t.teacher_user_id}>
+                      <td>{t.teacher_name}</td>
+                      <td>{t.slots.length}</td>
+                      <td>{booked ? `${booked} · ${[...new Set(t.slots.filter((x) => x.student_id).map((x) => SLOT_STATUS[x.status]))].join(", ")}` : "None"}</td>
+                      <td className="right">
+                        <button type="button" className="btn" disabled={saving} onClick={() => removeTeacher(t)} title={booked ? "Parents have booked this teacher; cancel their bookings first" : undefined}>
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+        <Footer
+          saving={saving}
+          canPublish={!s?.is_published}
+          onCancel={() => router.back()}
+          extra={
+            s ? (
+              <button type="button" className="btn" disabled={saving} onClick={removeSession}>
+                Delete meeting
+              </button>
+            ) : null
+          }
+        />
       </form>
       <Aside title="Meetings" sessions={list.data ?? []} loading={list.loading} hrefFor={(x) => `${routeOf(250)}?id=${x.id}`} />
     </div>

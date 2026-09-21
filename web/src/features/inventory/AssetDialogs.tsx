@@ -104,13 +104,100 @@ export function AssetCreateDialog({ onClose, onSaved }: { onClose: () => void; o
 }
 
 /**
+ * PATCH /inventory/assets/{id}: the asset's own details. Location, custodian
+ * and status change only through events, so they are not here. The API
+ * cannot clear a supplier, so it is sent only when one is chosen.
+ */
+export function AssetEditDialog({ asset: a, onClose, onSaved }: { asset: Asset; onClose: () => void; onSaved: () => void }) {
+  const suppliers = useApi<Supplier[]>(`${INV}/suppliers`);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const current = suppliers.data?.find((x) => x.name === a.supplier_name);
+
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const supplier = orNull(f.get("supplier_id"));
+    const body: Record<string, unknown> = {
+      name: String(f.get("name") ?? "").trim(),
+      category: orNull(f.get("category")),
+      serial_no: orNull(f.get("serial_no")),
+      purchase_date: orNull(f.get("purchase_date")),
+      cost: orNull(f.get("cost")),
+      warranty_until: orNull(f.get("warranty_until")),
+      notes: orNull(f.get("notes")),
+    };
+    if (supplier && Number(supplier) !== current?.id) body.supplier_id = Number(supplier);
+    setSaving(true);
+    setError(null);
+    try {
+      await api.patch<Asset>(`${INV}/assets/${a.id}`, body);
+      notify(`${a.asset_tag} updated.`);
+      onSaved();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title={`Edit ${a.asset_tag}`} onClose={onClose}>
+      <form onSubmit={submit} key={suppliers.data ? "ready" : "loading"}>
+        <ErrorNote>{error ?? suppliers.error}</ErrorNote>
+        <div className="form-grid">
+          <Field label="Asset name" required>
+            <input name="name" required defaultValue={a.name} />
+          </Field>
+          <Field label="Asset code">
+            <input value={a.asset_tag} readOnly />
+          </Field>
+          <Field label="Category">
+            <input name="category" defaultValue={a.category ?? ""} />
+          </Field>
+          <Field label="Serial no.">
+            <input name="serial_no" defaultValue={a.serial_no ?? ""} />
+          </Field>
+          <Field label="Purchased on">
+            <input name="purchase_date" type="date" defaultValue={a.purchase_date ?? ""} />
+          </Field>
+          <Field label="Cost (₹)">
+            <input name="cost" type="number" min={0} step="0.01" defaultValue={a.cost === null ? "" : Number(a.cost)} />
+          </Field>
+          <Field label="Supplier">
+            <select name="supplier_id" defaultValue={current?.id ?? ""}>
+              <option value="">{a.supplier_name && !current ? `${a.supplier_name} (unchanged)` : a.supplier_name ? "Keep as is" : "Not recorded"}</option>
+              {suppliers.data?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Warranty until">
+            <input name="warranty_until" type="date" defaultValue={a.warranty_until ?? ""} />
+          </Field>
+          <Field label="Notes">
+            <input name="notes" defaultValue={a.notes ?? ""} />
+          </Field>
+        </div>
+        <p className="muted small" style={{ marginTop: 10 }}>Location, custodian and status change through the asset&apos;s history (assign, move, repair, dispose).</p>
+        <ModalActions saving={saving} label="Save changes" onCancel={onClose} />
+      </form>
+    </Modal>
+  );
+}
+
+/**
  * One asset: its details, its history (GET /inventory/assets/{id}) and the
  * next event it can take (POST /inventory/assets/{id}/events).
- * `only` narrows the event choices (e.g. maintenance and repaired).
+ * `only` narrows the event choices (e.g. maintenance and repaired);
+ * `editable` adds "Edit details" (PATCH, on the asset register).
  */
-export function AssetDetailDialog({ assetId, onClose, onChanged, only }: { assetId: number; onClose: () => void; onChanged: () => void; only?: EventKind[] }) {
+export function AssetDetailDialog({ assetId, onClose, onChanged, only, editable = false }: { assetId: number; onClose: () => void; onChanged: () => void; only?: EventKind[]; editable?: boolean }) {
   const asset = useApi<Asset>(`${INV}/assets/${assetId}`);
   const staff = useApi<StaffRow[]>("/api/v1/school/directory/staff");
+  const [editing, setEditing] = useState(false);
   const [kind, setKind] = useState<EventKind | "">("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -144,6 +231,20 @@ export function AssetDetailDialog({ assetId, onClose, onChanged, only }: { asset
     }
   }
 
+  if (editing && a) {
+    return (
+      <AssetEditDialog
+        asset={a}
+        onClose={() => setEditing(false)}
+        onSaved={() => {
+          setEditing(false);
+          asset.reload();
+          onChanged();
+        }}
+      />
+    );
+  }
+
   return (
     <Modal title={a ? `${a.asset_tag} · ${a.name}` : "Asset"} onClose={onClose} wide>
       <ErrorNote>{error ?? asset.error}</ErrorNote>
@@ -171,6 +272,13 @@ export function AssetDetailDialog({ assetId, onClose, onChanged, only }: { asset
               </div>
             ))}
           </dl>
+          {editable ? (
+            <div className="row" style={{ marginTop: 12 }}>
+              <button type="button" className="btn" onClick={() => setEditing(true)}>
+                Edit details
+              </button>
+            </div>
+          ) : null}
           {choices.length ? (
             <form onSubmit={submit} style={{ marginTop: 18 }}>
               <div className="row" style={{ flexWrap: "wrap", gap: 8, marginBottom: 12 }}>

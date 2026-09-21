@@ -147,8 +147,12 @@ export type TransportDashboard = {
   seats_total: number;
   trips_today: number;
   trips_in_progress: number;
-  expiring_documents: { vehicle_id?: number; registration_no?: string; document?: string; expires_on?: string }[];
-  overloaded_routes: unknown[];
+  /** A vehicle document (vehicle_id) or a driver's licence (crew_id) expired or due within 30 days. */
+  expiring_documents: { vehicle_id?: number; crew_id?: number; vehicle: string; message: string }[];
+  /** Routes carrying more students than their vehicle seats. */
+  overloaded_routes: { route_id: number; route: string; students: number; capacity: number }[];
 };
+
+export type FeeHead = { id: number; name: string; code: string; is_active: boolean };
 
 export const KIND_LABEL: Record<VehicleKind, string> = { bus: "School bus", mini_bus: "Mini bus", van: "Van", car: "Car", other: "Other" };

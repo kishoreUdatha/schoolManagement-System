@@ -197,8 +197,8 @@ export function HealthDashboardView() {
   );
 }
 
-/** Choose a student for a health record screen: a search over /health/profiles. */
-function RecordPicker({ screen }: { screen: number }) {
+/** Choose a student for a health record screen: a search over /health/profiles. `route` for screens without an SCR number. */
+export function RecordPicker({ screen, route }: { screen?: number; route?: string }) {
   const router = useRouter();
   const [typed, setTyped] = useState("");
   const search = useDebounced(typed.trim());
@@ -217,19 +217,19 @@ function RecordPicker({ screen }: { screen: number }) {
       </div>
       <ErrorNote>{rows.error}</ErrorNote>
       <Panel title="Health records" sub="Choose a student to open their record" flush>
-        <DataTable columns={["Student", "Class", "Blood group", "Flags", "Profile status"]} rows={table} selectable={false} onView={(i) => router.push(`${routeOf(screen)}?id=${items[i].student_id}`)} empty={rows.loading ? "Loading…" : "No students match."} />
+        <DataTable columns={["Student", "Class", "Blood group", "Flags", "Profile status"]} rows={table} selectable={false} onView={(i) => router.push(`${route ?? routeOf(screen ?? 217)}?id=${items[i].student_id}`)} empty={rows.loading ? "Loading…" : "No students match."} />
       </Panel>
     </>
   );
 }
 
-function useRecord() {
+export function useRecord() {
   const id = useSearchParams().get("id");
   const rec = useApi<HealthRecord>(id ? `${HEALTH}/students/${id}` : null);
   return { id, rec };
 }
 
-function RecordBanner({ r }: { r: HealthRecord }) {
+export function RecordBanner({ r }: { r: HealthRecord }) {
   const onFile = Boolean(r.profile.updated_at);
   return (
     <div className="panel profile-banner">
@@ -404,11 +404,14 @@ export function UpdateProfileLink() {
   );
 }
 
-/** SCR-218, live: POST /health/visits (and the student's allergies from GET /health/students/{id}); today's visits from GET /health/visits?on=. */
+/** SCR-218, live: POST /health/visits (and the student's allergies from GET /health/students/{id}); a day's visits from GET /health/visits?on=, corrected with PATCH or removed with DELETE /health/visits/{id}. */
 export function ClinicVisitForm() {
   const [student, setStudent] = useState<PickedStudent | null>(null);
   const record = useApi<HealthRecord>(student ? `${HEALTH}/students/${student.id}` : null);
-  const visits = useApi<Visit[]>(`${HEALTH}/visits`, { on: today() });
+  const [day, setDay] = useState(today());
+  const visits = useApi<Visit[]>(`${HEALTH}/visits`, { on: day });
+  const [editing, setEditing] = useState<Visit | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
@@ -445,8 +448,47 @@ export function ClinicVisitForm() {
     }
   }
 
+  async function saveEdit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    setSaving(true);
+    setEditError(null);
+    try {
+      await api.patch(`${HEALTH}/visits/${editing!.id}`, {
+        complaint: formText(f, "complaint"),
+        temperature_c: formText(f, "temperature_c"),
+        treatment: formText(f, "treatment"),
+        medicine_given: formText(f, "medicine_given"),
+        outcome: formText(f, "outcome"),
+        follow_up_on: formText(f, "follow_up_on"),
+      });
+      notify("Clinic visit corrected.");
+      setEditing(null);
+      visits.reload();
+    } catch (err) {
+      setEditError(errorText(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeVisit(v: Visit) {
+    if (!window.confirm(`Delete ${v.student_name}'s clinic visit of ${dateTime(v.visited_at)}? It is removed from their health record.`)) return;
+    setEditError(null);
+    try {
+      await api.delete(`${HEALTH}/visits/${v.id}`);
+      notify("Clinic visit deleted.");
+      setEditing(null);
+      visits.reload();
+    } catch (err) {
+      setEditError(errorText(err));
+      setError(errorText(err));
+    }
+  }
+
   const now = new Date();
   const p = record.data?.profile;
+  const dayVisits = visits.data ?? [];
   return (
     <>
       <div className="two-col">
@@ -548,15 +590,75 @@ export function ClinicVisitForm() {
         </aside>
       </div>
       <div className="gap" />
-      <Panel title="Today’s visits" flush>
+      <Panel
+        title={day === today() ? "Today’s visits" : `Visits on ${date(day)}`}
+        sub="Open a visit to correct or delete it"
+        action={<input type="date" aria-label="Visits on" value={day} max={today()} onChange={(e) => setDay(e.target.value || today())} />}
+        flush
+      >
         <DataTable
           columns={["Student", "Time", "Reason", "Outcome", "Recorded by"]}
-          rows={(visits.data ?? []).map((v) => [{ name: v.student_name, sub: v.section_label ?? undefined }, dateTime(v.visited_at).split(", ")[1], v.complaint, OUTCOMES[v.outcome], v.recorded_by_name ?? "—"])}
+          rows={dayVisits.map((v) => [{ name: v.student_name, sub: v.section_label ?? undefined }, dateTime(v.visited_at).split(", ")[1], v.complaint, OUTCOMES[v.outcome], v.recorded_by_name ?? "—"])}
           selectable={false}
-          rowAction={false}
-          empty={visits.loading ? "Loading…" : "No visits recorded today."}
+          actions={(i) => (
+            <>
+              <button type="button" className="btn" onClick={() => (setEditError(null), setEditing(dayVisits[i]))}>
+                Edit
+              </button>
+              <button type="button" className="btn" onClick={() => removeVisit(dayVisits[i])}>
+                Delete
+              </button>
+            </>
+          )}
+          empty={visits.loading ? "Loading…" : day === today() ? "No visits recorded today." : "No visits recorded that day."}
         />
       </Panel>
+      {editing ? (
+        <Modal title={`${editing.student_name} · ${dateTime(editing.visited_at)}`} onClose={() => setEditing(null)}>
+          <form onSubmit={saveEdit}>
+            <ErrorNote>{editError}</ErrorNote>
+            <div className="form-grid">
+              <Field label="Reason" required>
+                <input name="complaint" required defaultValue={editing.complaint} />
+              </Field>
+              <Field label="Temperature (°C)">
+                <input name="temperature_c" type="number" step="0.1" min={30} max={45} defaultValue={editing.temperature_c ?? ""} />
+              </Field>
+              <Field label="Outcome">
+                <select name="outcome" defaultValue={editing.outcome}>
+                  {Object.entries(OUTCOMES).map(([k, t]) => (
+                    <option key={k} value={k}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Follow-up on">
+                <input type="date" name="follow_up_on" defaultValue={editing.follow_up_on ?? ""} />
+              </Field>
+              <Field label="Action taken" full>
+                <textarea name="treatment" defaultValue={editing.treatment ?? ""} />
+              </Field>
+              <Field label="Medicine given" full>
+                <input name="medicine_given" defaultValue={editing.medicine_given ?? ""} />
+              </Field>
+            </div>
+            <p className="muted small">{`The visit time and student cannot be changed. Parent ${editing.parent_notified ? "was" : "was not"} notified when it was recorded.`}</p>
+            <div className="actions row">
+              <button type="button" className="btn" onClick={() => removeVisit(editing)}>
+                Delete visit
+              </button>
+              <button type="button" className="btn" onClick={() => setEditing(null)}>
+                Cancel
+              </button>
+              <button type="submit" className="btn primary" disabled={saving}>
+                <Icon name="check" className="sm" />
+                {saving ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      ) : null}
     </>
   );
 }

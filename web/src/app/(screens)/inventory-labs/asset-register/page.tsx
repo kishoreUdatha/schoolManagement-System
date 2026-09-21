@@ -2,7 +2,7 @@
 // Module: Inventory / Assets / Labs · Role: Store Manager · Release: Phase 2 · Stories: US-0477 / US-0478
 // Mock: screens/SCR-239_Asset_Register.html
 // Backend: the old frontend served this at /school/inventory — Tag, serial, status, cost, warranty, history
-// Wired: GET/POST /api/v1/school/inventory/assets, GET /inventory/assets/{id}, POST /inventory/assets/{id}/events, GET /inventory/suppliers, /directory/staff. Hand-maintained.
+// Wired: GET/POST /api/v1/school/inventory/assets, GET/PATCH /inventory/assets/{id}, POST /inventory/assets/{id}/events, GET /inventory/suppliers, /directory/staff. Hand-maintained.
 
 import Link from "next/link";
 import { Suspense } from "react";
