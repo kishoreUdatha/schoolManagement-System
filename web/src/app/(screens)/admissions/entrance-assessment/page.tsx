@@ -1,7 +1,7 @@
 // SCR-052 · Entrance Assessment
 // Module: Admissions & Enquiries · Role: Admission Officer · Release: Phase 2 · Stories: US-0103 / US-0104
 // Mock: screens/SCR-052_Entrance_Assessment.html
-// Wired: GET /api/v1/school/admissions/applications, /applications/{id}, /directory/staff; PUT /applications/assessments/{id}; POST /applications/{id}/assessments. Hand-maintained.
+// Wired: GET /api/v1/school/admissions/applications, /applications/{id}, /directory/staff; PUT/DELETE /applications/assessments/{id}; POST /applications/{id}/assessments. Hand-maintained.
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";

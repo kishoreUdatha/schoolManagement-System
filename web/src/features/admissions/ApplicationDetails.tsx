@@ -11,8 +11,9 @@ import { date, dateTime, initials, label, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { appClass, APPS, emitChange, todayIso, useOnChange } from "./shared";
-import type { Application } from "./types";
+import { DocumentList } from "./ApplicationForm";
+import { appClass, APPS, emitChange, todayIso, uploadDocument, useOnChange } from "./shared";
+import { DOC_KINDS, type Application } from "./types";
 
 /** Application · Documents · Assessment · Approval, carrying ?id= along. */
 export function ApplicationTabs({ id, active }: { id: number | string; active: number }) {
@@ -45,7 +46,8 @@ export function useApplication() {
 /**
  * SCR-050, live: GET /admissions/applications/{id} (?id=) with documents,
  * assessments and history; the next step posts /submit, /status, /fee or
- * /withdraw.
+ * /withdraw. Edit opens SCR-049 with ?id= (PUT /applications/{id});
+ * documents upload, open and delete here.
  */
 export function ApplicationDetails() {
   const { id, data: a, error, loading } = useApplication();
@@ -98,7 +100,16 @@ export function ApplicationDetails() {
       </section>
       <div className="two-col">
         <div className="stack">
-          <Panel title="Personal information">
+          <Panel
+            title="Personal information"
+            action={
+              a.status !== "admitted" && a.status !== "withdrawn" ? (
+                <Link href={`${routeOf(49)}?id=${a.id}`} className="btn text">
+                  Edit
+                </Link>
+              ) : undefined
+            }
+          >
             {kv([
               ["Application number", a.application_no],
               ["Student", a.student_name],
@@ -118,6 +129,7 @@ export function ApplicationDetails() {
               ["Emergency contact", `${a.guardian_name} · ${a.phone}`],
             ])}
           </Panel>
+          <DocumentsPanel a={a} />
         </div>
         <aside className="stack">
           <Panel title="At a glance">
@@ -166,6 +178,72 @@ export function ApplicationDetails() {
         </aside>
       </div>
     </>
+  );
+}
+
+/**
+ * The application's documents: multipart POST /applications/{id}/documents to
+ * add one, GET …/documents/{doc}/file to open, DELETE …/documents/{doc}.
+ * Verification itself happens on SCR-051.
+ */
+function DocumentsPanel({ a }: { a: Application }) {
+  const [category, setCategory] = useState("birth_certificate");
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [inputKey, setInputKey] = useState(0);
+
+  async function upload() {
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await uploadDocument(a.id, file, category);
+      notify(`${label(category)} uploaded.`);
+      setFile(null);
+      setInputKey((k) => k + 1);
+      emitChange();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Panel
+      title="Documents"
+      sub={`${a.documents_verified} of ${a.documents_total} verified`}
+      action={
+        <Link href={`${routeOf(51)}?id=${a.id}`} className="btn text">
+          Verify
+        </Link>
+      }
+    >
+      <ErrorNote>{error}</ErrorNote>
+      <div className="form-grid">
+        <label className="field">
+          <span>Document type</span>
+          <select value={category} onChange={(e) => setCategory(e.target.value)}>
+            {DOC_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {label(k)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>File</span>
+          <input key={inputKey} type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} aria-label="Document file" />
+        </label>
+      </div>
+      <div className="gap" />
+      <button type="button" className="btn" disabled={busy || !file} onClick={upload}>
+        <Icon name="plus" className="sm" />
+        {busy ? "Uploading…" : "Upload document"}
+      </button>
+      <DocumentList a={a} onChange={emitChange} />
+    </Panel>
   );
 }
 

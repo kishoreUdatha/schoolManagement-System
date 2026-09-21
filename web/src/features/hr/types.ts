@@ -310,3 +310,43 @@ export type PayrollSettings = {
   esi_gross_ceiling: string;
   default_professional_tax: string;
 };
+
+// ----- candidate pool and leave balances -----
+
+export type CandidateSource = "website" | "referral" | "agency" | "walk_in" | "job_portal" | "other";
+
+/** /api/v1/school/hr/candidates: one row per person, however many posts they applied for. */
+export type Candidate = {
+  id: number;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  source: CandidateSource;
+  qualification: string | null;
+  experience_years: string | null;
+  current_employer: string | null;
+  notes: string | null;
+  has_resume: boolean;
+  resume_name: string | null;
+  applications: number;
+};
+
+/** /api/v1/school/hr/pipeline */
+export type Pipeline = { by_stage: Partial<Record<Stage, number>>; open_positions: number; openings_open: number; in_progress: number };
+
+/** /api/v1/school/hr/leave-balances?year=. Day counts arrive as decimal strings. */
+export type LeaveBalance = {
+  id: number;
+  user_id: number;
+  user_name: string;
+  leave_type_id: number;
+  leave_type_name: string;
+  year: number;
+  allotted: string;
+  carried_forward: string;
+  adjustment: string;
+  used: string;
+  available: string;
+  note: string | null;
+  is_paid: boolean;
+};

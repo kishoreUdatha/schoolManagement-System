@@ -135,3 +135,21 @@ export type Funnel = { by_status: Partial<Record<ApplicationStatus, number>>; to
 
 /** GET /api/v1/school/directory/staff — who can be a counsellor or assessor. */
 export type StaffOption = { user_id: number; full_name: string; role: string };
+
+/** GET /api/v1/school/admissions/campaigns. Budget arrives as a decimal string. */
+export type Campaign = {
+  id: number;
+  name: string;
+  channel: AdmissionSource;
+  start_date: string | null;
+  end_date: string | null;
+  budget: string | null;
+  description: string | null;
+  is_active: boolean;
+  enquiry_count: number;
+  enrolled_count: number;
+  created_at: string;
+};
+
+/** GET /api/v1/school/admissions/public-link: the codes in the public form URLs. */
+export type PublicLink = { tenant_code: string; code: string };

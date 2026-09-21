@@ -2,7 +2,7 @@
 // Module: HR / Leave / Payroll · Role: HR · Release: Phase 2 · Stories: US-0345 / US-0346
 // Mock: screens/SCR-173_Job_Openings.html
 // Backend: the old frontend served this at /school/recruitment — Create, publish, close, careers flag
-// Wired: GET/POST /api/v1/school/hr/openings, PUT/DELETE /hr/openings/{id}, POST /hr/openings/{id}/status; GET /departments. Hand-maintained.
+// Wired: GET/POST /api/v1/school/hr/openings, GET/PUT/DELETE /hr/openings/{id} (?id=), POST /hr/openings/{id}/status; GET /departments, /admissions/public-link (careers link). Hand-maintained.
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";

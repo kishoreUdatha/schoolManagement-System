@@ -10,7 +10,7 @@ import { date, dateTime, initials, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { SchoolClass } from "@/features/students/types";
 import { APPS, daysFromToday, ENQ, useYears } from "./shared";
 import { STAGES, type Activity, type Application, type EnquiryDetail } from "./types";
@@ -24,10 +24,11 @@ function activityTitle(a: Activity): string {
 
 /**
  * SCR-046, live: GET /admissions/enquiries/{id} (?id=) with its activity
- * timeline; POST /stage, /activities and /convert. The application tabs look
+ * timeline; POST /stage, /activities and /convert; DELETE /enquiries/{id}. The application tabs look
  * up the application made from this enquiry (GET /applications?search=).
  */
 export function EnquiryDetails() {
+  const router = useRouter();
   const id = useSearchParams().get("id");
   const res = useApi<EnquiryDetail>(id ? `${ENQ}/${id}` : null);
   const e = res.data;
@@ -66,6 +67,21 @@ export function EnquiryDetails() {
       ))}
     </dl>
   );
+
+  /** DELETE /enquiries/{id}; the API refuses once the enquiry is enrolled. */
+  async function remove() {
+    if (!e || !window.confirm(`Delete the enquiry for ${e.student_name}? Its follow-up history goes with it.${app ? ` Application ${app.application_no} stays.` : ""}`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.delete(`${ENQ}/${e.id}`);
+      notify("Enquiry deleted.");
+      router.push(routeOf(44));
+    } catch (err) {
+      setError(errorText(err));
+      setBusy(false);
+    }
+  }
 
   const due = daysFromToday(e.next_follow_up_date);
   const closed = e.stage === "enrolled" || e.stage === "lost";
@@ -161,6 +177,13 @@ export function EnquiryDetails() {
                 <Icon name="plus" className="sm" />
                 Start application
               </Link>
+            ) : null}
+            {e.stage !== "enrolled" ? (
+              <div style={{ marginTop: 12 }}>
+                <button type="button" className="btn text" disabled={busy} onClick={remove}>
+                  Delete enquiry
+                </button>
+              </div>
             ) : null}
           </Panel>
           {!closed ? <StagePanel e={e} busy={busy} run={run} /> : null}
