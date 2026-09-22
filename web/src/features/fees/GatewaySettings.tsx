@@ -12,7 +12,10 @@ import type { Gateway } from "./types";
 
 import { ask } from "@/lib/dialog";
 /**
- * NEW-043, live: GET/PUT/DELETE /school/payments/gateway (Razorpay).
+ * NEW-043, live: GET/PUT/DELETE /school/payments/gateway (Razorpay), and
+ * POST /gateway/check, which asks Razorpay whether the saved keys work
+ * (read-only); it runs when the page opens and from "Check connection".
+ * Saving new keys is refused if Razorpay rejects them.
  * The server never returns the key secret or webhook secret, only whether
  * one is stored; the inputs for them start empty and are sent only when
  * typed, which replaces the stored value. Leaving them blank keeps it.
@@ -25,8 +28,26 @@ export function GatewaySettings() {
   const [enabled, setEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [check, setCheck] = useState<{ connected: boolean; message: string; checked_at: string } | null>(null);
+  const [checking, setChecking] = useState(false);
 
   const g = gw.data;
+  async function runCheck() {
+    setChecking(true);
+    try {
+      setCheck(await api.post("/api/v1/school/payments/gateway/check"));
+    } catch (err) {
+      setCheck({ connected: false, message: errorText(err), checked_at: new Date().toISOString() });
+    } finally {
+      setChecking(false);
+    }
+  }
+  // check the saved keys with Razorpay whenever the page opens or they change
+  const savedKey = g?.configured ? g.key_id : null;
+  useEffect(() => {
+    if (savedKey) void runCheck();
+    else setCheck(null);
+  }, [savedKey]);
   useEffect(() => {
     if (!g) return;
     setKeyId(g.key_id ?? "");
@@ -46,8 +67,9 @@ export function GatewaySettings() {
       });
       setKeySecret("");
       setHookSecret("");
-      notify(enabled ? "Payment gateway saved. Parents can pay online." : "Payment gateway saved, switched off.");
+      notify(enabled ? "Razorpay accepted the keys. Parents can pay online." : "Payment gateway saved, switched off.");
       gw.reload();
+      void runCheck();
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -70,8 +92,17 @@ export function GatewaySettings() {
   }
 
   if (!g) return gw.error ? <ErrorNote>{gw.error}</ErrorNote> : <Loading />;
-  const webhook = `${typeof window === "undefined" ? "" : window.location.origin}${g.webhook_url_path}`;
-  const status = !g.configured ? "Not set up" : g.is_enabled ? `Live · ${g.mode === "live" ? "live keys" : "test keys"}` : "Saved, switched off";
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  const webhook = `${origin}${g.webhook_url_path}`;
+  const local = /\/\/(localhost|127\.|0\.0\.0\.0|192\.168\.|10\.)/.test(origin);
+  const status = !g.configured
+    ? "Not set up"
+    : !g.is_enabled
+      ? "Switched off"
+      : g.mode === "live"
+        ? "On · live mode (real payments)"
+        : "On · test mode (no real money moves)";
+  const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
     <div className="two-col">
@@ -123,6 +154,12 @@ export function GatewaySettings() {
                   />
                 </Field>
               </div>
+              {local ? (
+                <div className="tip warn" style={{ marginTop: 12 }}>
+                  <Icon name="bell" className="sm" />
+                  <span>This site is running on a local address, which Razorpay can’t reach. The webhook works once the ERP is on its public web address; payments still complete while the parent stays on the page.</span>
+                </div>
+              ) : null}
               <p className="muted small" style={{ marginTop: 12 }}>
                 Add the URL above as a webhook in Razorpay (events payment.captured, order.paid and payment.failed) with the same secret, so payments that finish after the parent closes the page are still recorded.
               </p>
@@ -153,6 +190,15 @@ export function GatewaySettings() {
       <aside className="stack">
         <div className="aside-panel">
           <h3>Status</h3>
+          {g.configured ? (
+            <div className={`gateway-conn ${checking && !check ? "" : check?.connected ? "ok" : "bad"}`} role="status">
+              <strong>{checking && !check ? "Checking with Razorpay…" : check?.connected ? "Connected to Razorpay" : "Not connected"}</strong>
+              {check ? <span>{`${check.connected ? "Razorpay accepted the keys" : check.message} · checked ${time(check.checked_at)}`}</span> : null}
+              <button type="button" className="btn sm" disabled={checking} onClick={runCheck}>
+                {checking ? "Checking…" : "Check connection"}
+              </button>
+            </div>
+          ) : null}
           <dl className="kv">
             <div>
               <dt>Provider</dt>
@@ -172,7 +218,7 @@ export function GatewaySettings() {
             </div>
             <div>
               <dt>Webhook secret</dt>
-              <dd>{g.has_webhook_secret ? "Stored (hidden)" : "Not set"}</dd>
+              <dd>{g.has_webhook_secret ? "Stored (hidden)" : "Not set · payments are confirmed only while the parent stays on the page"}</dd>
             </div>
           </dl>
           {!g.configured && g.test_mode_available ? <p style={{ marginTop: 12 }}>This is a development server: without keys, parents get a simulated checkout for testing.</p> : null}

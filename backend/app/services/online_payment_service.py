@@ -130,6 +130,37 @@ def gateway_to_read(school_id: int, gw: Optional[SchoolPaymentGateway]) -> dict:
     }
 
 
+def _razorpay_check(key_id: str, key_secret: str) -> tuple[bool, str]:
+    """Ask Razorpay whether it accepts these keys: a read-only call (list at
+    most one order) that creates nothing and charges nothing."""
+    try:
+        r = httpx.get(RAZORPAY_ORDERS_URL, params={"count": 1}, auth=(key_id, key_secret), timeout=15)
+    except httpx.HTTPError as exc:
+        return False, f"Couldn't reach Razorpay ({exc.__class__.__name__}). Check the server's internet connection."
+    if r.status_code == 200:
+        return True, "Razorpay accepted the keys."
+    if r.status_code == 401:
+        return False, "Razorpay rejected these keys. Check that the Key ID and Key secret are a matching pair from the same Razorpay account and mode."
+    try:
+        detail = r.json().get("error", {}).get("description") or r.text[:200]
+    except ValueError:
+        detail = r.text[:200]
+    return False, f"Razorpay answered {r.status_code}: {detail}"
+
+
+def check_gateway(db: Session, school_id: int) -> dict:
+    """Whether the saved keys work right now."""
+    gw = get_gateway(db, school_id)
+    if not gw:
+        return {"connected": False, "message": "No Razorpay keys are saved.", "checked_at": datetime.now(timezone.utc)}
+    try:
+        secret = crypto.decrypt(gw.key_secret_enc)
+    except ValueError as exc:
+        return {"connected": False, "message": f"{exc}. Enter the key secret again.", "checked_at": datetime.now(timezone.utc)}
+    ok, message = _razorpay_check(gw.key_id, secret)
+    return {"connected": ok, "message": message, "checked_at": datetime.now(timezone.utc)}
+
+
 def save_gateway(
     db: Session, tenant_id: int, school_id: int, data: GatewayUpdate
 ) -> SchoolPaymentGateway:
@@ -139,6 +170,13 @@ def save_gateway(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail="key_secret is required"
             )
+    # New or changed keys are tried with Razorpay first, so a typo is caught
+    # here and not when a parent tries to pay.
+    if data.key_secret or (gw and data.key_id.strip() != gw.key_id):
+        secret = data.key_secret.strip() if data.key_secret else crypto.decrypt(gw.key_secret_enc)
+        ok, message = _razorpay_check(data.key_id.strip(), secret)
+        if not ok:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Not saved. {message}")
         gw = SchoolPaymentGateway(tenant_id=tenant_id, school_id=school_id, provider="razorpay")
         db.add(gw)
     gw.key_id = data.key_id.strip()

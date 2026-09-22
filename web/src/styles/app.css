@@ -227,3 +227,9 @@ option{background:#fff}
 @media(max-width:1100px){.messaging-grid{grid-template-columns:1fr}}
 .messaging-grid input[aria-label^="Test"]{height:38px;border:1px solid #dce5f2;border-radius:8px;padding:0 10px;font:inherit}
 .page-tabs{margin:-4px 0 18px}
+.gateway-conn{display:grid;gap:4px;border-radius:12px;padding:12px 14px;margin:4px 0 14px;background:#fff;border:1px solid #dce5f2}
+.gateway-conn strong{font-size:14.5px}
+.gateway-conn span{font-size:12.5px;color:#56698a}
+.gateway-conn .btn{justify-self:start;margin-top:6px}
+.gateway-conn.ok{border-color:#bfe8d3;background:#effaf4}.gateway-conn.ok strong{color:#0f7a4d}
+.gateway-conn.bad{border-color:#f3c9c9;background:#fff5f5}.gateway-conn.bad strong{color:#b42318}

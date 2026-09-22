@@ -26,6 +26,12 @@ class GatewayRead(BaseModel):
     test_mode_available: bool  # dev-only simulated checkout when not configured
 
 
+class GatewayCheck(BaseModel):
+    connected: bool
+    message: str
+    checked_at: datetime
+
+
 class PayRequest(BaseModel):
     fee_ids: list[int] = Field(..., min_length=1, max_length=50)
 

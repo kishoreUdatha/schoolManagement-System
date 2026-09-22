@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import SchoolAdminOrAccountant, SchoolAdminUser
 from app.core.enums import OnlinePaymentStatus
 from app.database import get_db
-from app.schemas.online_payment import GatewayRead, GatewayUpdate, OrderRead, Reconciliation
+from app.schemas.online_payment import GatewayCheck, GatewayRead, GatewayUpdate, OrderRead, Reconciliation
 from app.services import online_payment_service as svc
 
 
@@ -43,6 +43,12 @@ def get_gateway(current_user: SchoolAdminUser, db: Db):
 def save_gateway(payload: GatewayUpdate, current_user: SchoolAdminUser, db: Db):
     gw = svc.save_gateway(db, current_user.tenant_id, current_user.school_id, payload)
     return GatewayRead.model_validate(svc.gateway_to_read(current_user.school_id, gw))
+
+
+@router.post("/gateway/check", response_model=GatewayCheck,
+             summary="Ask Razorpay whether the saved keys work (read-only)")
+def check_gateway(current_user: SchoolAdminUser, db: Db):
+    return svc.check_gateway(db, current_user.school_id)
 
 
 @router.delete("/gateway", status_code=status.HTTP_204_NO_CONTENT)
