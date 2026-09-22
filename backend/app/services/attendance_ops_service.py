@@ -200,7 +200,8 @@ def period_gaps(db: Session, school_id: int, section_id: int, on: date) -> dict:
 
 def set_times(db: Session, school_id: int, student_id: int, on: date, *,
               arrived_at: Optional[time], left_at: Optional[time],
-              remark: Optional[str] = None) -> dict:
+              remark: Optional[str] = None, authorised_by: Optional[str] = None,
+              recorded_by: Optional[int] = None) -> dict:
     """Record a late arrival or an early departure on the day's own row."""
     row = db.execute(
         select(StudentAttendance).where(
@@ -217,11 +218,14 @@ def set_times(db: Session, school_id: int, student_id: int, on: date, *,
     row.left_at = left_at
     if remark:
         row.remark = remark
+    row.times_authorised_by = (authorised_by or "").strip() or None
+    row.times_recorded_by_user_id = recorded_by
     db.commit()
     return {
         "student_id": student_id, "date": on,
         "arrived_at": row.arrived_at, "left_at": row.left_at,
         "status": row.status.value, "remark": row.remark,
+        "authorised_by": row.times_authorised_by,
     }
 
 
@@ -236,11 +240,18 @@ def late_and_early(db: Session, school_id: int, *, frm: date, to: date) -> dict:
             StudentAttendance.school_id == school_id,
             StudentAttendance.date >= frm,
             StudentAttendance.date <= to,
-            (StudentAttendance.arrived_at.is_not(None))
+            # A check-in time on its own (the teacher's register notes one for
+            # everybody) is not a late entry: it must be marked late, or have
+            # been logged at the late/early desk.
+            ((StudentAttendance.arrived_at.is_not(None))
+             & ((StudentAttendance.status == AttendanceStatus.late)
+                | StudentAttendance.times_recorded_by_user_id.is_not(None)))
             | (StudentAttendance.left_at.is_not(None)),
         )
         .order_by(StudentAttendance.date.desc())
     ).all()
+    uids = {a.times_recorded_by_user_id for a, *_ in rows if a.times_recorded_by_user_id}
+    names = dict(db.execute(select(User.id, User.full_name).where(User.id.in_(uids))).all()) if uids else {}
     out = [
         {
             "student_id": s.id, "student_name": s.full_name,
@@ -248,6 +259,8 @@ def late_and_early(db: Session, school_id: int, *, frm: date, to: date) -> dict:
             "section_label": f"{cls} {sec}" if cls and sec else None,
             "date": a.date, "status": a.status.value,
             "arrived_at": a.arrived_at, "left_at": a.left_at, "remark": a.remark,
+            "authorised_by": a.times_authorised_by,
+            "recorded_by_name": names.get(a.times_recorded_by_user_id),
         }
         for a, s, sec, cls in rows
     ]

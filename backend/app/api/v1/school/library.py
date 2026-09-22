@@ -12,6 +12,7 @@ from app.schemas.library import (
     BookRead,
     BookUpdate,
     CopiesAdd,
+    CopyLookup,
     CopyRead,
     CopyUpdate,
     FineAction,
@@ -107,6 +108,11 @@ def update_book(book_id: int, payload: BookUpdate, current_user: LibraryManager,
 def add_copies(book_id: int, payload: CopiesAdd, current_user: LibraryManager, db: Db):
     svc.add_copies(db, book_id, current_user.school_id, payload)
     return BookDetail.model_validate(svc.book_detail(db, book_id, current_user.school_id))
+
+
+@router.get("/copies/lookup", response_model=CopyLookup, summary="The title behind an accession number / barcode")
+def lookup_copy(current_user: LibraryManager, db: Db, accession_no: str = Query(..., min_length=1, max_length=40)):
+    return svc.lookup_copy(db, current_user.school_id, accession_no)
 
 
 @router.patch("/copies/{copy_id}", response_model=CopyRead)

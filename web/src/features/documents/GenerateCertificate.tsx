@@ -33,6 +33,7 @@ export function GenerateCertificate() {
   const [templateId, setTemplateId] = useState("");
   const [student, setStudent] = useState<PickedStudent | null>(null);
   const [purpose, setPurpose] = useState("");
+  const [signatory, setSignatory] = useState("Principal");
   const [preview, setPreview] = useState<Preview | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,11 +94,12 @@ export function GenerateCertificate() {
     setError(null);
     try {
       const cert = request
-        ? await api.post<Certificate>(`/api/v1/school/certificates/${request.id}/decide`, { approve: true, tc: null })
+        ? await api.post<Certificate>(`/api/v1/school/certificates/${request.id}/decide`, { approve: true, signatory: signatory.trim() || null, tc: null })
         : await api.post<Certificate>("/api/v1/school/certificates", {
             template_id: template.id,
             student_id: student.id,
             purpose: purpose.trim() || null,
+            signatory: signatory.trim() || null,
             tc: null,
           });
       notify(`Issued ${cert.serial_no ?? "the certificate"}.`);
@@ -149,7 +151,18 @@ export function GenerateCertificate() {
                 {field("Academic year", <input value={year?.name ?? "—"} readOnly />)}
                 {field("Issue date", <input type="date" value={today} readOnly />)}
                 {field("Certificate number", <input value={template ? `${template.serial_prefix}/${today.slice(0, 4)}/…  assigned on issue` : "Assigned on issue"} readOnly />)}
-                {/* Not wired: signatory — the API has no signatory; the PDF carries the school's own signature block. Purpose takes its place. */}
+                {field(
+                  "Signatory",
+                  <>
+                    <input value={signatory} onChange={(e) => setSignatory(e.target.value)} maxLength={120} list="certificate-signatories" placeholder="Printed under the signature line" />
+                    <datalist id="certificate-signatories">
+                      <option value="Principal" />
+                      <option value="Vice Principal" />
+                      <option value="Headmistress" />
+                      <option value="Headmaster" />
+                    </datalist>
+                  </>,
+                )}
                 {field("Purpose", <input value={purpose} onChange={(e) => setPurpose(e.target.value)} maxLength={200} placeholder="e.g. passport application" disabled={!!request} />)}
               </div>
             </section>

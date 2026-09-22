@@ -21,9 +21,9 @@ const describe = (c: Concession) => (c.kind === "percent" ? `${Number(c.value)}%
 
 /**
  * SCR-163, live: GET /school/accounts/concessions (all, active and ended),
- * POST to give one, PATCH /{id} to amend, POST /{id}/end to stop it.
- * Concessions take effect when saved — the API has no request-and-approve
- * step — so the list shows what is in force rather than a queue.
+ * POST to give one (or, with for_approval, to ask for one), PATCH /{id} to
+ * amend, POST /{id}/approve or /reject to decide a request, POST /{id}/end
+ * to stop it. A request changes no fee until it is approved.
  */
 export function Concessions() {
   const list = useApi<Concession[]>("/api/v1/school/accounts/concessions", { active_only: false });
@@ -36,14 +36,17 @@ export function Concessions() {
 
   const all = list.data ?? [];
   const active = all.filter((c) => c.is_active);
-  const ended = all.filter((c) => !c.is_active);
+  const pending = all.filter((c) => c.approval_status === "pending");
+  const ended = all.filter((c) => !c.is_active && c.approval_status === "approved");
   const classes = useMemo(() => Array.from(new Set(all.map((c) => c.section_label).filter((x): x is string => Boolean(x)))).sort(), [all]);
   const items = all.filter((c) => {
     const term = q.trim().toLowerCase();
     if (term && !`${c.student_name} ${c.reason} ${c.fee_head_name ?? ""}`.toLowerCase().includes(term)) return false;
     if (cls && c.section_label !== cls) return false;
     if (status === "active" && !c.is_active) return false;
-    if (status === "ended" && c.is_active) return false;
+    if (status === "pending" && c.approval_status !== "pending") return false;
+    if (status === "rejected" && c.approval_status !== "rejected") return false;
+    if (status === "ended" && (c.is_active || c.approval_status !== "approved")) return false;
     return true;
   });
 
@@ -51,9 +54,22 @@ export function Concessions() {
   const stats = [
     { label: "In force", value: n(active.length), note: "Reducing fees now" },
     { label: "Percentage", value: n(active.filter((c) => c.kind === "percent").length), note: "Percent off each fee" },
-    { label: "Fixed amount", value: n(active.filter((c) => c.kind === "fixed").length), note: "Rupees off each fee" },
+    { label: "Awaiting approval", value: n(pending.length), note: "Requested, not yet applied" },
     { label: "Ended", value: n(ended.length), note: "No longer applied" },
   ];
+
+  async function decide(c: Concession, approve: boolean) {
+    const verb = approve ? "Approve" : "Reject";
+    if (!window.confirm(`${verb} the ${describe(c)} concession for ${c.student_name}?`)) return;
+    setError(null);
+    try {
+      const r = await api.post<Concession>(`/api/v1/school/accounts/concessions/${c.id}/${approve ? "approve" : "reject"}`, {});
+      notify(approve ? `Concession approved${r.applied_to_pending ? `; ${r.applied_to_pending} unpaid fee(s) reduced` : ""}.` : "Request rejected.");
+      list.reload();
+    } catch (e) {
+      setError(errorText(e));
+    }
+  }
 
   async function end(c: Concession) {
     if (!window.confirm(`End the ${describe(c)} concession for ${c.student_name}? Fees raised from now on are charged in full.`)) return;
@@ -85,7 +101,9 @@ export function Concessions() {
         </select>
         <select aria-label="Filter status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="active">Active</option>
+          <option value="pending">Awaiting approval</option>
           <option value="ended">Ended</option>
+          <option value="rejected">Rejected</option>
           <option value="">All statuses</option>
         </select>
       </div>
@@ -93,7 +111,7 @@ export function Concessions() {
       <div className="two-col">
         <div className="panel">
           <div className="approval-summary">
-            <strong>{status === "ended" ? "Ended concessions" : status === "active" ? "Concessions in force" : "All concessions"}</strong>
+            <strong>{status === "ended" ? "Ended concessions" : status === "active" ? "Concessions in force" : status === "pending" ? "Requests awaiting approval" : status === "rejected" ? "Rejected requests" : "All concessions"}</strong>
             <span>{list.loading ? "Loading…" : `${items.length} shown`}</span>
           </div>
           {items.map((c, i) => (
@@ -102,13 +120,28 @@ export function Concessions() {
               <div className="request-info">
                 <h3>{c.student_name}</h3>
                 <p>{`Class: ${c.section_label ?? "—"} · Concession: ${describe(c)} · On: ${c.fee_head_name ?? "All fees"}`}</p>
-                <p>{`${label(c.reason)} · ${date(c.valid_from)} → ${c.valid_to ? date(c.valid_to) : "open"} · Approved by ${c.approved_by_name ?? "—"}`}</p>
+                <p>
+                  {`${label(c.reason)} · ${date(c.valid_from)} → ${c.valid_to ? date(c.valid_to) : "open"} · `}
+                  {c.approval_status === "pending"
+                    ? `Requested by ${c.requested_by_name ?? "—"}`
+                    : `${c.approval_status === "rejected" ? "Rejected" : "Approved"} by ${c.approved_by_name ?? "—"}`}
+                </p>
               </div>
               <div className="actions">
-                <Badge>{c.is_active ? "Active" : "Ended"}</Badge>
+                <Badge>{c.approval_status === "pending" ? "Pending" : c.approval_status === "rejected" ? "Rejected" : c.is_active ? "Active" : "Ended"}</Badge>
                 <Link className="btn" href={`${routeOf(161)}?id=${c.student_id}`}>
                   Ledger
                 </Link>
+                {c.approval_status === "pending" ? (
+                  <>
+                    <button type="button" className="btn primary" onClick={() => decide(c, true)}>
+                      Approve concession
+                    </button>
+                    <button type="button" className="btn" onClick={() => decide(c, false)}>
+                      Reject
+                    </button>
+                  </>
+                ) : null}
                 {c.is_active ? (
                   <>
                     <button type="button" className="btn" onClick={() => setEditing(c)}>
@@ -159,7 +192,7 @@ export function Concessions() {
 
 function NewConcession({ heads, onSaved }: { heads: FeeHead[]; onSaved: () => void }) {
   const [student, setStudent] = useState<PickedStudent | null>(null);
-  const [f, setF] = useState({ fee_head_id: "", kind: "percent", value: "", reason: "sibling", valid_from: isoToday(), valid_to: "", notes: "", apply_to_pending: true });
+  const [f, setF] = useState({ fee_head_id: "", kind: "percent", value: "", reason: "sibling", valid_from: isoToday(), valid_to: "", notes: "", apply_to_pending: true, for_approval: false });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
@@ -183,8 +216,9 @@ function NewConcession({ heads, onSaved }: { heads: FeeHead[]; onSaved: () => vo
         valid_to: f.valid_to || null,
         notes: f.notes.trim() || null,
         apply_to_pending: f.apply_to_pending,
+        for_approval: f.for_approval,
       });
-      notify(`Concession saved${r.applied_to_pending ? `; ${r.applied_to_pending} unpaid fee(s) reduced` : ""}.`);
+      notify(r.approval_status === "pending" ? "Concession requested; it applies once approved." : `Concession saved${r.applied_to_pending ? `; ${r.applied_to_pending} unpaid fee(s) reduced` : ""}.`);
       setStudent(null);
       setF({ ...f, value: "", notes: "" });
       onSaved();
@@ -239,9 +273,13 @@ function NewConcession({ heads, onSaved }: { heads: FeeHead[]; onSaved: () => vo
           <input type="checkbox" checked={f.apply_to_pending} onChange={(e) => setF({ ...f, apply_to_pending: e.target.checked })} />
           <span>Also reduce unpaid fees already raised in this period</span>
         </label>
+        <label className="check-item">
+          <input type="checkbox" checked={f.for_approval} onChange={(e) => setF({ ...f, for_approval: e.target.checked })} />
+          <span>Send for approval instead of applying now</span>
+        </label>
         <button type="submit" className="btn primary" disabled={saving || !student}>
           <Icon name="check" className="sm" />
-          {saving ? "Saving…" : "Save concession"}
+          {saving ? "Saving…" : f.for_approval ? "Request concession" : "Save concession"}
         </button>
       </div>
     </form>

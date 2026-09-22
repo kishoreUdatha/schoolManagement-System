@@ -27,6 +27,9 @@ export function GenerateTimetable() {
   const req = useApi<Requirements>(pick.sectionId ? `/api/v1/school/timetable-gen/sections/${pick.sectionId}/requirements` : null);
   const [replace, setReplace] = useState(true);
   const [seed, setSeed] = useState("");
+  const [maxRun, setMaxRun] = useState("");
+  const [roomPref, setRoomPref] = useState("none");
+  const rooms = useApi<{ id: number; name: string; code: string; section_id: number | null }[]>("/api/v1/school/rooms");
   const [busy, setBusy] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [result, setResult] = useState<GenResult | null>(null);
@@ -74,9 +77,14 @@ export function GenerateTimetable() {
       const out = await api.post<GenResult>(`/api/v1/school/timetable-gen/sections/${pick.sectionId}/generate`, {
         replace,
         seed: seed.trim() ? Number(seed) : null,
+        max_consecutive: maxRun.trim() ? Number(maxRun) : null,
+        room_preference: roomPref,
       });
       setResult(out);
-      notify(out.complete ? `Timetable generated: ${out.placed} lessons placed.` : `${out.placed} lessons placed; some could not fit.`);
+      notify(
+        (out.complete ? `Timetable generated: ${out.placed} lessons placed.` : `${out.placed} lessons placed; some could not fit.`) +
+          (out.room_name ? ` Room: ${out.room_name}${out.without_room ? ` (${out.without_room} lesson(s) without it, it was taken)` : ""}.` : ""),
+      );
       req.reload();
     } catch (err) {
       setError(errorText(err));
@@ -145,7 +153,24 @@ export function GenerateTimetable() {
                     <span>Weekly periods</span>
                     <input type="text" readOnly value={r ? `${r.teaching_slots_per_week} teaching slots · ${r.periods_wanted} wanted` : "…"} />
                   </label>
-                  {/* Not wired: "Consecutive limit" and "Room preference" — the generator takes neither (only replace and seed). */}
+                  <label className="field">
+                    <span>Consecutive limit</span>
+                    <input type="number" min={1} max={12} placeholder="Most periods in a row per teacher (blank: no limit)" value={maxRun} onChange={(e) => setMaxRun(e.target.value)} />
+                  </label>
+                  <label className="field">
+                    <span>Room preference</span>
+                    <select value={roomPref} onChange={(e) => setRoomPref(e.target.value)}>
+                      <option value="none">No room (the class stays in its own room)</option>
+                      <option value="home" disabled={!rooms.data?.some((x) => x.section_id === pick.sectionId)}>
+                        {"The section's home room"}
+                      </option>
+                      {rooms.data?.map((x) => (
+                        <option key={x.id} value={String(x.id)}>
+                          {`${x.name} (${x.code})`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <label className="field">
                     <span>Existing lessons</span>
                     <select value={replace ? "replace" : "keep"} onChange={(e) => setReplace(e.target.value === "replace")}>

@@ -73,6 +73,35 @@ def _paper_to_read_dict(db: Session, p: ExamSubject) -> dict:
     }
 
 
+def _class_names(db: Session, ids: list[int]) -> list[str]:
+    if not ids:
+        return []
+    rows = db.execute(select(SchoolClass.id, SchoolClass.name).where(SchoolClass.id.in_(ids))).all()
+    by_id = dict(rows)
+    return [by_id[i] for i in ids if i in by_id]
+
+
+def _check_classes(db: Session, school_id: int, ids: Optional[list[int]]) -> Optional[list[int]]:
+    """Keep the order given, drop repeats, and refuse another school's class."""
+    if ids is None:
+        return None
+    clean = list(dict.fromkeys(ids))
+    if not clean:
+        return None
+    found = set(db.execute(
+        select(SchoolClass.id).where(SchoolClass.id.in_(clean), SchoolClass.school_id == school_id)
+    ).scalars())
+    if len(found) != len(clean):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown class")
+    return clean
+
+
+def _check_result_date(start: date, end: date, result_date: Optional[date]) -> None:
+    if result_date and result_date < end:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="The result date is before the exam ends")
+
+
 def _exam_to_read_dict(db: Session, e: Exam) -> dict:
     year = db.get(AcademicYear, e.academic_year_id)
     papers = sorted(e.papers, key=lambda p: (p.exam_date, p.id))
@@ -99,6 +128,9 @@ def _exam_to_read_dict(db: Session, e: Exam) -> dict:
         "revised_at": e.revised_at,
         "revision_reason": e.revision_reason,
         "instructions": e.instructions,
+        "class_ids": list(e.class_ids or []),
+        "class_names": _class_names(db, e.class_ids or []),
+        "result_date": e.result_date,
         "created_at": e.created_at,
         "papers": paper_dicts,
         "papers_count": len(papers),
@@ -128,7 +160,10 @@ def create_exam(
         )
 
     foundation_service.check_term(db, school_id, year.id, data.term_id)
+    _check_result_date(data.start_date, data.end_date, data.result_date)
     e = Exam(
+        class_ids=_check_classes(db, school_id, data.class_ids),
+        result_date=data.result_date,
         tenant_id=tenant_id,
         school_id=school_id,
         academic_year_id=year.id,
@@ -211,6 +246,9 @@ def update_exam(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="end_date must be on or after start_date",
         )
+    _check_result_date(new_start, new_end, updates.get("result_date", e.result_date))
+    if "class_ids" in updates:
+        updates["class_ids"] = _check_classes(db, school_id, updates["class_ids"])
     for field, value in updates.items():
         setattr(e, field, value)
     try:
@@ -294,6 +332,41 @@ def set_marks_window(db: Session, exam_id: int, school_id: int, user_id: int, op
     db.commit()
     db.refresh(e)
     return e
+
+
+def paper_marks(db: Session, paper_id: int, school_id: int) -> dict:
+    """Every child who sits one paper (the active students of its class, all
+    sections) with the mark entered for them, for checking before sign-off."""
+    from app.models.academic import Section
+    from app.models.mark import Mark
+    from app.models.student import Student
+
+    paper = _get_paper(db, paper_id, school_id)
+    cs = db.get(ClassSubject, paper.class_subject_id)
+    sections = dict(db.execute(select(Section.id, Section.name).where(Section.class_id == cs.class_id)).all()) if cs else {}
+    students = list(db.execute(
+        select(Student).where(Student.section_id.in_(list(sections)), Student.is_active.is_(True))
+        .order_by(Student.section_id, Student.roll_no, Student.full_name)
+    ).scalars()) if sections else []
+    marks = {m.student_id: m for m in db.execute(
+        select(Mark).where(Mark.exam_subject_id == paper.id)
+    ).scalars()}
+    names = dict(db.execute(select(User.id, User.full_name).where(
+        User.id.in_({m.marked_by_user_id for m in marks.values() if m.marked_by_user_id})
+    )).all()) if marks else {}
+    rows = []
+    for s in students:
+        m = marks.get(s.id)
+        rows.append({
+            "student_id": s.id, "admission_no": s.admission_no, "roll_no": s.roll_no,
+            "full_name": s.full_name, "section_name": sections.get(s.section_id),
+            "status": m.status.value if m else None,
+            "marks_obtained": m.marks_obtained if m else None,
+            "grade": m.grade if m else None, "is_pass": m.is_pass if m else None,
+            "remark": m.remark if m else None,
+            "marked_by_name": names.get(m.marked_by_user_id) if m else None,
+        })
+    return {"paper_id": paper.id, "max_marks": paper.max_marks, "pass_marks": paper.pass_marks, "rows": rows}
 
 
 def verify_paper(db: Session, paper_id: int, school_id: int, user_id: int, verified: bool) -> ExamSubject:

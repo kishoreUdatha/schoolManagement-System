@@ -5,7 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
-import { initials, label, money } from "@/lib/format";
+import { dateTime, initials, label, money } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { StudentFrame, clock, today } from "./StudentFrame";
 import type { TransportAssignment, TransportRoute, Trip, Vehicle } from "./records";
@@ -14,7 +14,8 @@ import type { StudentProfile } from "./types";
 /**
  * SCR-066, live: GET /transport/assignments?search={admission no.} (the
  * child's current seat), /transport/routes/{id} (stops), /transport/vehicles/{id}
- * (bus and driver), /transport/trips?route_id=&on=today (boarding).
+ * (bus, driver and its last GPS position), /transport/trips?route_id=&on=today
+ * (boarding). The map is drawn from the stops' coordinates, to scale.
  */
 export function StudentTransport() {
   return <StudentFrame active={66}>{(s) => <Body s={s} />}</StudentFrame>;
@@ -66,7 +67,10 @@ function Body({ s }: { s: StudentProfile }) {
       <StatStrip items={stats} compact />
       <div className="two-col">
         <div>
-          {/* Not wired: the live route map — the route has no stop coordinates to draw. */}
+          <Panel title="Route map" sub={vehicle.data?.last_location_at ? `Bus last reported ${dateTime(vehicle.data.last_location_at)}` : "Stops in order"} flush>
+            <RouteMap stops={stops} mine={seat.stop_id} bus={vehicle.data?.last_lat != null && vehicle.data?.last_lng != null ? { lat: vehicle.data.last_lat, lng: vehicle.data.last_lng } : null} />
+          </Panel>
+          <div className="gap" />
           <Panel title="Route stops" sub={`${seat.route_name}${route.data?.code ? ` · ${route.data.code}` : ""}`} action={pickup ? <Badge>{label(pickup.status)}</Badge> : undefined}>
             {stops.map((st) => (
               <div key={st.id} className={`route-stop ${st.id === seat.stop_id ? "done" : ""}`}>
@@ -116,5 +120,62 @@ function Body({ s }: { s: StudentProfile }) {
         </aside>
       </div>
     </>
+  );
+}
+
+type MapStop = TransportRoute["stops"][number];
+
+/** The route drawn to scale from its stops' coordinates (north up, no street map), with the bus if it has reported. */
+function RouteMap({ stops, mine, bus }: { stops: MapStop[]; mine: number; bus: { lat: number; lng: number } | null }) {
+  const placed = stops.filter((s): s is MapStop & { lat: number; lng: number } => s.lat != null && s.lng != null);
+  if (!placed.length) {
+    return (
+      <div className="map-canvas">
+        <svg viewBox="0 0 760 360" className="map-svg" role="img" aria-label="No stop positions">
+          <rect width="760" height="360" fill="#ecf3ed" />
+          <text x="380" y="180" textAnchor="middle" fill="#5b7793" fontSize="14" fontFamily="Manrope">
+            The stops have no map positions yet
+          </text>
+        </svg>
+        <span className="map-key">Add each stop&apos;s latitude and longitude on the route to draw the map</span>
+      </div>
+    );
+  }
+  const all = [...placed, ...(bus ? [bus] : [])];
+  const lats = all.map((p) => p.lat);
+  const lngs = all.map((p) => p.lng);
+  const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)];
+  const span = Math.max(maxLat - minLat, maxLng - minLng, 0.002);
+  const xy = (p: { lat: number; lng: number }) => [60 + ((p.lng - minLng) / span) * 640, 320 - ((p.lat - minLat) / span) * 280];
+  const line = placed.map((p) => xy(p).join(" ")).join(" L ");
+  return (
+    <div className="map-canvas">
+      <svg viewBox="0 0 760 360" className="map-svg" role="img" aria-label="Route map">
+        <rect width="760" height="360" fill="#ecf3ed" />
+        {placed.length > 1 ? <path d={`M ${line}`} stroke="#2563eb" strokeWidth="4" fill="none" strokeDasharray="2 0" /> : null}
+        {placed.map((s) => {
+          const [x, y] = xy(s);
+          const here = s.id === mine;
+          return (
+            <g key={s.id}>
+              <circle cx={x} cy={y} r={here ? 11 : 7} fill={here ? "#16a34a" : "#fff"} stroke="#2563eb" strokeWidth="3" />
+              <text x={x + 12} y={y - 10} fontSize="12" fill="#1f2d3d" fontFamily="Manrope">{`${s.sequence}. ${s.name}`}</text>
+            </g>
+          );
+        })}
+        {bus
+          ? (() => {
+              const [bx, by] = xy(bus);
+              return (
+                <g>
+                  <rect x={bx - 14} y={by - 11} width="28" height="22" rx="5" fill="#f59e0b" />
+                  <rect x={bx - 8} y={by - 7} width="16" height="8" rx="2" fill="white" />
+                </g>
+              );
+            })()
+          : null}
+      </svg>
+      <span className="map-key">{`${placed.length} of ${stops.length} stop(s) placed · green is this student's stop${bus ? " · amber is the bus" : ""} · north up, to scale`}</span>
+    </div>
   );
 }

@@ -52,9 +52,12 @@ function parseCsv(text: string, max = 6): string[][] {
  * Exports download the /exports/*.csv files. A past upload opens with
  * GET /import-jobs/{id}; its bad rows download from /import-jobs/{id}/errors.csv.
  */
+type Dup = "skip" | "allow" | "stop";
+
 export function DataDesk() {
   const years = useApi<AcademicYear[]>("/api/v1/school/academic-years");
   const [kind, setKind] = useState<"students" | "staff">("students");
+  const [duplicates, setDuplicates] = useState<Dup>("skip");
   const [yearId, setYearId] = useState<number | null>(null);
   const [sectionId, setSectionId] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -96,7 +99,7 @@ export function DataDesk() {
     }
     const fd = new FormData();
     fd.append("import_type", kind);
-    fd.append("options", JSON.stringify(kind === "students" ? { section_id: Number(sectionId), academic_year_id: yearId } : {}));
+    fd.append("options", JSON.stringify(kind === "students" ? { section_id: Number(sectionId), academic_year_id: yearId, duplicates } : { duplicates }));
     fd.append("file", file);
     setBusy(true);
     setError(null);
@@ -166,7 +169,14 @@ export function DataDesk() {
             <ErrorNote>{error}</ErrorNote>
             <div className="form-grid">
               <Field label="What are you importing?" required>
-                <select value={kind} onChange={(e) => setKind(e.target.value as "students" | "staff")}>
+                <select
+                  value={kind}
+                  onChange={(e) => {
+                    const k = e.target.value as "students" | "staff";
+                    setKind(k);
+                    if (k === "staff" && duplicates === "allow") setDuplicates("skip");
+                  }}
+                >
                   <option value="students">Students</option>
                   <option value="staff">Staff</option>
                 </select>
@@ -194,7 +204,13 @@ export function DataDesk() {
                   </Field>
                 </>
               ) : null}
-              {/* Not wired: Duplicate handling — rows that fail the check are always skipped on import; no other option exists */}
+              <Field label="Duplicate handling">
+                <select value={duplicates} onChange={(e) => setDuplicates(e.target.value as Dup)}>
+                  <option value="skip">Skip rows already on record</option>
+                  {kind === "students" ? <option value="allow">Import them anyway (same name, new child)</option> : null}
+                  <option value="stop">Stop the import if any row repeats</option>
+                </select>
+              </Field>
             </div>
             <div className="gap" />
             <div className="upload-zone">

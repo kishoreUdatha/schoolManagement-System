@@ -54,7 +54,10 @@ def list_suppliers(db: Session, school_id: int) -> list[Supplier]:
 
 def save_supplier(db: Session, user: User, data: SupplierIn, supplier_id: Optional[int] = None) -> Supplier:
     s = _scoped(db, Supplier, supplier_id, user.school_id, "Supplier") if supplier_id else Supplier(tenant_id=user.tenant_id, school_id=user.school_id)
-    for k, v in data.model_dump().items():
+    fields = data.model_dump()
+    if supplier_id and "category" not in data.model_fields_set:
+        fields.pop("category")  # a form that doesn't show the category keeps it
+    for k, v in fields.items():
         setattr(s, k, v)
     if supplier_id is None:
         db.add(s)
@@ -178,7 +181,7 @@ def ledger(db: Session, school_id: int, *, item_id: Optional[int] = None, days: 
         out.append({
             "id": m.id, "item_id": m.item_id, "item_name": names.get(m.item_id, ""), "kind": m.kind, "direction": d,
             "qty": m.qty, "unit_cost": m.unit_cost, "moved_on": m.moved_on, "supplier_name": sups.get(m.supplier_id),
-            "reference": m.reference, "issued_to": m.issued_to, "notes": m.notes,
+            "reference": m.reference, "issued_to": m.issued_to, "location": m.location, "notes": m.notes,
             "recorded_by_name": users.get(m.recorded_by_user_id),
             "balance_after": running[m.item_id] if item_id else None,  # only meaningful for a full item history
         })
@@ -268,6 +271,22 @@ def asset_event(db: Session, asset_id: int, user: User, data: AssetEventIn) -> A
     return a
 
 
+def bulk_asset_event(db: Session, user: User, asset_ids: list[int], data: AssetEventIn) -> dict:
+    """The same event (usually an assignment) for several assets. Each asset
+    is its own record: one that cannot take the event is reported and the
+    rest still go through."""
+    done_ids: list[int] = []
+    failed: list[dict] = []
+    for aid in dict.fromkeys(asset_ids):
+        try:
+            asset_event(db, aid, user, data)
+            done_ids.append(aid)
+        except HTTPException as e:
+            db.rollback()
+            failed.append({"asset_id": aid, "error": e.detail})
+    return {"done": done_ids, "failed": failed}
+
+
 def asset_to_read(db: Session, a: Asset, *, with_events: bool = False) -> dict:
     who = db.get(User, a.assigned_to_user_id) if a.assigned_to_user_id else None
     sup = db.get(Supplier, a.supplier_id) if a.supplier_id else None
@@ -276,6 +295,15 @@ def asset_to_read(db: Session, a: Asset, *, with_events: bool = False) -> dict:
                                      "status", "purchase_date", "cost", "warranty_until", "notes")}
     d.update(assigned_to_name=who.full_name if who else None, supplier_name=sup.name if sup else None,
              warranty_active=bool(a.warranty_until and a.warranty_until >= date.today()), maintenance_cost=maint)
+    # The open fault is the note on the last "sent for repair" with no
+    # "repaired" after it.
+    last = db.execute(
+        select(AssetEvent).where(AssetEvent.asset_id == a.id,
+                                 AssetEvent.kind.in_((AssetEventKind.maintenance, AssetEventKind.repaired)))
+        .order_by(AssetEvent.happened_on.desc(), AssetEvent.id.desc()).limit(1)
+    ).scalar_one_or_none()
+    if last and last.kind == AssetEventKind.maintenance:
+        d.update(open_issue=last.notes or "Reported, no details given", issue_reported_on=last.happened_on)
     if with_events:
         evs = db.execute(select(AssetEvent).where(AssetEvent.asset_id == a.id).order_by(AssetEvent.happened_on.desc(), AssetEvent.id.desc())).scalars()
         d["events"] = []

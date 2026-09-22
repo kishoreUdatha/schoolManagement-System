@@ -79,6 +79,7 @@ export type Certificate = {
   section_label: string | null;
   status: CertStatus;
   purpose: string | null;
+  signatory?: string | null;
   fields: Record<string, unknown>;
   serial_no: string | null;
   title: string | null;

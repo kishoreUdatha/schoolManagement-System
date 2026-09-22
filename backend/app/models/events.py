@@ -67,6 +67,10 @@ class SchoolEvent(Base, PrimaryKeyMixin, TimestampMixin, _School, _Audience):
     consent_deadline: Mapped[Optional[date]] = mapped_column(Date)
     # Informational only (e.g. trip cost); billing stays in the fees module.
     fee_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    # Who runs it (free text: a teacher's name, "PTA", an outside provider)
+    # and the most children it can take (None = no limit).
+    coordinator: Mapped[Optional[str]] = mapped_column(String(160))
+    capacity: Mapped[Optional[int]] = mapped_column(Integer)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     is_cancelled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -159,6 +163,8 @@ class PtmSlot(Base, PrimaryKeyMixin, TimestampMixin, _School):
     )
     booked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     parent_note: Mapped[Optional[str]] = mapped_column(String(300))
+    # How the parent asked to meet: in_person, video or phone.
+    meeting_mode: Mapped[Optional[str]] = mapped_column(String(20))
     # Written by the teacher after the meeting; shared with the parent.
     teacher_notes: Mapped[Optional[str]] = mapped_column(Text)
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
@@ -18,11 +18,13 @@ import type { ExamDashboard } from "./types";
  * POST /school/exams/papers/{id}/verify {verified}; POST
  * /school/exams/{id}/marks-window {open}; marks CSV from /school/exports/marks.csv.
  * The server refuses a sign-off by whoever entered the marks; that refusal is shown.
+ * Opening a subject lists its marks per student: GET /school/exams/papers/{id}/marks.
  */
 export function MarksVerification() {
   const c = useExamChoice();
   const dash = useApi<ExamDashboard>(c.examId ? `/api/v1/school/exam-ops/${c.examId}/dashboard` : null);
   const [status, setStatus] = useState("");
+  const [openPaper, setOpenPaper] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,9 +119,12 @@ export function MarksVerification() {
             </thead>
             <tbody>
               {shown.map(({ p, d, state }) => (
-                <tr key={p.id}>
+                <Fragment key={p.id}>
+                <tr>
                   <td>
-                    {p.subject_name ?? "—"}
+                    <button type="button" className="btn text" onClick={() => setOpenPaper(openPaper === p.id ? null : p.id)} aria-expanded={openPaper === p.id} title="Show each student's mark">
+                      {p.subject_name ?? "—"}
+                    </button>
                     <small className="muted" style={{ display: "block" }}>{`Out of ${p.max_marks} · pass ${p.pass_marks}`}</small>
                   </td>
                   <td>{p.class_name ?? "—"}</td>
@@ -151,6 +156,14 @@ export function MarksVerification() {
                     )}
                   </td>
                 </tr>
+                {openPaper === p.id ? (
+                  <tr>
+                    <td colSpan={7}>
+                      <PaperMarks paperId={p.id} />
+                    </td>
+                  </tr>
+                ) : null}
+                </Fragment>
               ))}
             </tbody>
           </table>
@@ -161,9 +174,65 @@ export function MarksVerification() {
       </Panel>
       <div className="tip">
         <Icon name="shield" className="sm" />
-        {/* Not wired: per-student marks on screen — the school portal has no per-section marks read for whole-mark papers; the CSV above carries them. */}
-        <span>Whoever entered a paper’s marks cannot sign them off. Changing marks after sign-off removes the sign-off. Download the marks to check them student by student.</span>
+        <span>Whoever entered a paper’s marks cannot sign them off. Changing marks after sign-off removes the sign-off. Open a subject to check its marks student by student.</span>
       </div>
     </>
+  );
+}
+
+type PaperMarksView = {
+  paper_id: number;
+  max_marks: number;
+  pass_marks: number;
+  rows: {
+    student_id: number;
+    admission_no: string;
+    roll_no: number | null;
+    full_name: string;
+    section_name: string | null;
+    status: string | null;
+    marks_obtained: number | null;
+    grade: string | null;
+    is_pass: boolean | null;
+    remark: string | null;
+    marked_by_name: string | null;
+  }[];
+};
+
+/** One paper's marks, student by student (GET /school/exams/papers/{id}/marks). */
+function PaperMarks({ paperId }: { paperId: number }) {
+  const v = useApi<PaperMarksView>(`/api/v1/school/exams/papers/${paperId}/marks`);
+  if (v.error) return <ErrorNote>{v.error}</ErrorNote>;
+  const data = v.data;
+  if (!data) return <p className="muted small">Loading marks…</p>;
+  if (!data.rows.length) return <p className="muted small">No students sit this paper.</p>;
+  return (
+    <table className="data-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Section</th>
+          <th>Mark</th>
+          <th>Grade</th>
+          <th>Result</th>
+          <th>Entered by</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.rows.map((r) => (
+          <tr key={r.student_id}>
+            <td>
+              {r.full_name}
+              <small className="muted" style={{ display: "block" }}>{r.remark ? `${r.admission_no} · ${r.remark}` : r.admission_no}</small>
+            </td>
+            <td>{r.section_name ?? "—"}</td>
+            <td className="mark-total">{r.status === "scored" ? `${r.marks_obtained ?? "—"} / ${data.max_marks}` : r.status ? r.status.replace("_", " ") : "Not entered"}</td>
+            <td>{r.grade ?? "—"}</td>
+            <td>{r.is_pass === null ? "—" : r.is_pass ? "Pass" : "Fail"}</td>
+            <td>{r.marked_by_name ?? "—"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

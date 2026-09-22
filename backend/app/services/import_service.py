@@ -94,6 +94,16 @@ def _date(value: str, field: str) -> Optional[date]:
         raise ValueError(f"{field} must look like 2018-05-12")
 
 
+class _Duplicate(ValueError):
+    """A row that repeats a record already there (or earlier in the file)."""
+
+
+def _duplicates(job: ImportJob) -> str:
+    """How the school wants repeats handled: skip (default), allow or stop."""
+    mode = (job.options or {}).get("duplicates") or "skip"
+    return mode if mode in ("skip", "allow", "stop") else "skip"
+
+
 def _check_students(db: Session, job: ImportJob, rows: list[dict]) -> tuple[list[dict], list[dict]]:
     sec = db.get(Section, job.options.get("section_id"))
     if not sec or sec.school_id != job.school_id:
@@ -110,10 +120,12 @@ def _check_students(db: Session, job: ImportJob, rows: list[dict]) -> tuple[list
         try:
             if len(name) < 2:
                 raise ValueError("full_name is missing")
-            if name.lower() in seen:
-                raise ValueError("the same name appears twice in this file")
-            if name.lower() in existing:
-                raise ValueError("a child with this name is already in the section")
+            # "allow" imports a second child of the same name (twins happen,
+            # so do two Aarav Sharmas); otherwise a repeat is held back.
+            if name.lower() in seen and _duplicates(job) != "allow":
+                raise _Duplicate("the same name appears twice in this file")
+            if name.lower() in existing and _duplicates(job) != "allow":
+                raise _Duplicate("a child with this name is already in the section")
             gender = r.get("gender", "").lower()
             if gender and gender not in {g.value for g in Gender}:
                 raise ValueError(f"gender must be one of {', '.join(g.value for g in Gender)}")
@@ -121,7 +133,7 @@ def _check_students(db: Session, job: ImportJob, rows: list[dict]) -> tuple[list
             if dob and dob > date.today():
                 raise ValueError("dob is in the future")
         except ValueError as e:
-            bad.append({"row": i, "value": name or "(blank)", "error": str(e)})
+            bad.append({"row": i, "value": name or "(blank)", "error": str(e), "duplicate": isinstance(e, _Duplicate)})
             continue
         seen.add(name.lower())
         ok.append({"row": i, "data": StudentBulkRow(
@@ -146,20 +158,23 @@ def _check_staff(db: Session, job: ImportJob, rows: list[dict]) -> tuple[list[di
                 raise ValueError("full_name is missing")
             if "@" not in email or "." not in email.split("@")[-1]:
                 raise ValueError("email doesn't look like an email address")
+            # A sign-in email can belong to one person only, so "allow" can't
+            # apply here: a repeat is always held back.
             if email in emails:
-                raise ValueError("someone already uses this email")
+                raise _Duplicate("someone already uses this email")
             if email in seen_email:
-                raise ValueError("the same email appears twice in this file")
+                raise _Duplicate("the same email appears twice in this file")
             if not r.get("employee_no"):
                 raise ValueError("employee_no is missing")
             if r["employee_no"] in seen_emp:
-                raise ValueError("the same employee_no appears twice in this file")
+                raise _Duplicate("the same employee_no appears twice in this file")
             role = (r.get("role") or "teacher").lower()
             if role not in roles:
                 raise ValueError(f"role must be one of {', '.join(sorted(roles))}")
             joining = _date(r.get("joining_date", ""), "joining_date")
         except ValueError as e:
-            bad.append({"row": i, "value": email or r.get("full_name") or "(blank)", "error": str(e)})
+            bad.append({"row": i, "value": email or r.get("full_name") or "(blank)", "error": str(e),
+                        "duplicate": isinstance(e, _Duplicate)})
             continue
         seen_email.add(email)
         seen_emp.add(r["employee_no"])
@@ -325,7 +340,11 @@ def list_jobs(db: Session, school_id: int, import_type: Optional[ImportType] = N
 
 
 def create(db: Session, user: User, import_type: ImportType, options: dict, file: UploadFile) -> ImportJob:
-    """Store the file and check it straight away — nothing is written yet."""
+    """Store the file and check it straight away — nothing is written yet.
+    options["duplicates"]: "skip" (default) holds repeats back, "allow"
+    imports them anyway (students only), "stop" refuses the import."""
+    if options.get("duplicates") not in (None, "skip", "allow", "stop"):
+        raise _400("Duplicates can be skipped, allowed or stop the import")
     missing = [k for k in TEMPLATES[import_type]["needs"] if not options.get(k)]
     if missing:
         raise _400(f"Tell us the {', '.join(missing).replace('_id', '')} to import into")
@@ -346,9 +365,12 @@ def check(db: Session, job: ImportJob) -> ImportJob:
     job.total_rows, job.success_rows, job.error_rows = len(rows), len(ok), len(bad)
     job.errors = bad
     job.status = ImportStatus.checked
+    dups = sum(1 for b in bad if b.get("duplicate"))
     job.message = (
         f"{len(ok)} of {len(rows)} rows are ready to import"
         + (f"; {len(bad)} have problems" if bad else "")
+        + (f" ({dups} duplicate{'s' if dups != 1 else ''}"
+           + (": the import will stop" if _duplicates(job) == "stop" else ", skipped") + ")" if dups else "")
     )
     db.commit()
     return job
@@ -365,6 +387,9 @@ def commit(db: Session, user: User, job_id: int, skip_bad_rows: bool = True) -> 
     if job.error_rows and not skip_bad_rows:
         raise _400(f"{job.error_rows} rows have problems — fix the file or import the good rows only")
     ok, bad = CHECKERS[job.import_type](db, job, _rows(job))
+    dups = [b for b in bad if b.get("duplicate")]
+    if dups and _duplicates(job) == "stop":
+        raise _400(f"{len(dups)} row(s) repeat a record already there — the import was set to stop on duplicates")
     if not ok:
         raise _400("There isn't a single row worth importing")
     written, failures = COMMITTERS[job.import_type](db, job, ok)

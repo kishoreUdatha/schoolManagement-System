@@ -63,6 +63,8 @@ export type SchoolEvent = {
   requires_consent: boolean;
   consent_deadline: string | null;
   fee_amount: string | null;
+  coordinator: string | null;
+  capacity: number | null;
   is_published: boolean;
   published_at: string | null;
   is_cancelled: boolean;
@@ -179,6 +181,7 @@ export type PtmSlot = {
   class_label: string | null;
   parent_name: string | null;
   parent_note: string | null;
+  meeting_mode: MeetingMode | null;
   teacher_notes: string | null;
 };
 
@@ -191,8 +194,12 @@ export type ParentSlot = {
   state: "open" | "mine" | "taken";
   student_id: number | null;
   status: "booked" | "done" | "no_show" | null;
+  meeting_mode: MeetingMode | null;
   teacher_notes: string | null;
 };
+
+export type MeetingMode = "in_person" | "video" | "phone";
+export const MEETING_MODE: Record<MeetingMode, string> = { in_person: "In person", video: "Video call", phone: "Phone call" };
 export type ParentPtm = PtmSession & {
   booking_open: boolean;
   eligible_children: number[];

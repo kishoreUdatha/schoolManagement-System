@@ -213,11 +213,18 @@ export function EventDetails() {
                 </div>
               ) : null}
               <div>
+                <dt>Coordinator</dt>
+                <dd>{ev.coordinator ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>Capacity</dt>
+                <dd>{ev.capacity ? `${ev.capacity} places${ev.requires_consent ? ` · ${Math.max(ev.capacity - ev.consent_yes, 0)} left` : ""}` : "No limit"}</dd>
+              </div>
+              <div>
                 <dt>Status</dt>
                 <dd>{eventStatus(ev)}</dd>
               </div>
             </dl>
-            {/* Not wired: coordinator and capacity — the events API has neither field. */}
             <div className="gap" />
             <Link href={`${routeOf(247)}?id=${ev.id}`} className="btn">
               <Icon name="settings" className="sm" />

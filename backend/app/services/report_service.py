@@ -271,7 +271,8 @@ def _code_taken(db: Session, school_id: int, code: str, ignore_id: Optional[int]
     return db.execute(stmt.limit(1)).first() is not None
 
 
-def _validate(source: ReportSource, columns: list[str], filters: dict, sort_by: Optional[str]) -> None:
+def _validate(source: ReportSource, columns: list[str], filters: dict, sort_by: Optional[str],
+              group_by: Optional[str] = None) -> None:
     spec = SOURCES[source]
     unknown = [c for c in columns if c not in spec["columns"]]
     if unknown:
@@ -281,6 +282,8 @@ def _validate(source: ReportSource, columns: list[str], filters: dict, sort_by: 
         raise _400(f"{spec['label']} can't be filtered by {bad_filters[0]}")
     if sort_by and sort_by not in (columns or spec["columns"]):
         raise _400("Sort by one of the columns you picked")
+    if group_by and group_by not in (columns or spec["columns"]):
+        raise _400("Group by one of the columns you picked")
 
 
 def to_read(db: Session, rows: list[ReportDefinition]) -> list[dict]:
@@ -299,6 +302,7 @@ def to_read(db: Session, rows: list[ReportDefinition]) -> list[dict]:
         "filters": r.filters,
         "columns": r.columns or SOURCES[r.source]["columns"],
         "sort_by": r.sort_by,
+        "group_by": r.group_by,
         "is_active": r.is_active,
         "created_by_name": names.get(r.created_by_user_id),
         "last_run_at": r.last_run_at,
@@ -320,10 +324,11 @@ def create(db: Session, user: User, data: ReportIn) -> ReportDefinition:
     code = data.code.strip()
     if _code_taken(db, user.school_id, code):
         raise _400(f"A report with the code {code} already exists")
-    _validate(data.source, data.columns, data.filters, data.sort_by)
+    _validate(data.source, data.columns, data.filters, data.sort_by, data.group_by)
     r = ReportDefinition(tenant_id=user.tenant_id, school_id=user.school_id, name=data.name.strip(), code=code,
                          description=data.description, source=data.source, filters=data.filters,
                          columns=data.columns or SOURCES[data.source]["columns"], sort_by=data.sort_by,
+                         group_by=data.group_by,
                          created_by_user_id=user.id)
     db.add(r)
     db.commit()
@@ -339,7 +344,7 @@ def update(db: Session, user: User, report_id: int, data: ReportUpdate) -> Repor
             raise _400(f"A report with the code {code} already exists")
         fields["code"] = code
     _validate(r.source, fields.get("columns", r.columns), fields.get("filters", r.filters),
-              fields.get("sort_by", r.sort_by))
+              fields.get("sort_by", r.sort_by), fields.get("group_by", r.group_by))
     for k, v in fields.items():
         setattr(r, k, v)
     db.commit()
@@ -358,10 +363,20 @@ def delete(db: Session, user: User, report_id: int) -> None:
 def run(db: Session, school_id: int, report: ReportDefinition, extra_filters: Optional[dict] = None,
         limit: Optional[int] = None) -> dict:
     filters = {**(report.filters or {}), **(extra_filters or {})}
-    _validate(report.source, report.columns or [], filters, report.sort_by)
+    _validate(report.source, report.columns or [], filters, report.sort_by, report.group_by)
     rows = SOURCES[report.source]["query"](db, school_id, filters)
     if report.sort_by:
         rows.sort(key=lambda r: (r.get(report.sort_by) is None, r.get(report.sort_by)))
+    groups: list[dict] = []
+    if report.group_by:
+        # Stable sort: within a group the rows keep the sort order above.
+        g = report.group_by
+        rows.sort(key=lambda r: (r.get(g) is None, str(r.get(g)) if r.get(g) is not None else ""))
+        for r in rows:
+            if groups and groups[-1]["value"] == r.get(g):
+                groups[-1]["count"] += 1
+            else:
+                groups.append({"value": r.get(g), "count": 1})
     columns = report.columns or SOURCES[report.source]["columns"]
     trimmed = [{c: r.get(c) for c in columns} for r in rows]
     report.last_run_at = datetime.now(timezone.utc)
@@ -374,6 +389,8 @@ def run(db: Session, school_id: int, report: ReportDefinition, extra_filters: Op
         "row_count": len(trimmed),
         "rows": trimmed[:limit] if limit else trimmed,
         "truncated": bool(limit and len(trimmed) > limit),
+        "group_by": report.group_by,
+        "groups": groups,
     }
 
 

@@ -22,7 +22,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.enums import AttendanceStatus, UserRole
@@ -264,6 +264,7 @@ def dashboard(db: Session, student: Student) -> dict:
                 ClassSubject.class_id == section.class_id,
                 Homework.school_id == student.school_id,
                 Homework.closed_at.is_(None),
+                or_(Homework.publish_on.is_(None), Homework.publish_on <= today),
             )
             .order_by(Homework.due_date)
             .limit(10)

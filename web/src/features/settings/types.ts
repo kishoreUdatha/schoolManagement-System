@@ -96,6 +96,8 @@ export type AuditEntry = {
   user_email: string | null;
   user_role: string | null;
   request_path: string | null;
+  result: "success" | "failed";
+  scope: string | null;
   old_values: Record<string, unknown> | null;
   new_values: Record<string, unknown> | null;
   created_at: string;

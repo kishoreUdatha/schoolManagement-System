@@ -182,3 +182,9 @@ class Concession(Base, PrimaryKeyMixin, TimestampMixin, _School):
     )
     notes: Mapped[Optional[str]] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # "approved" (in force or ended), "pending" (asked for, not yet applied) or "rejected".
+    approval_status: Mapped[str] = mapped_column(String(20), default="approved", server_default="approved", nullable=False)
+    requested_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
+    apply_to_pending_on_approval: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)

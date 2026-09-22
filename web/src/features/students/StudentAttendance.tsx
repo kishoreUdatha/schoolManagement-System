@@ -41,7 +41,8 @@ function Body({ s }: { s: StudentProfile }) {
   ];
 
   const list = (r?.days ?? []).filter((d) => (!month || d.date.startsWith(month)) && (!status || d.status === status));
-  const rows: Row[] = list.map((d) => [date(d.date), dayName(d.date), label(d.status), d.remark ?? "—"]);
+  const hm = (t: string | null) => (t ? t.slice(0, 5) : "—");
+  const rows: Row[] = list.map((d) => [date(d.date), dayName(d.date), d.session ?? "—", label(d.status), hm(d.arrived_at), hm(d.left_at), d.remark ?? "—"]);
 
   return (
     <>
@@ -65,9 +66,8 @@ function Body({ s }: { s: StudentProfile }) {
       <ErrorNote>{report.error}</ErrorNote>
       <StatStrip items={stats} compact />
       <Panel title="Daily history" sub={`${m ? monthName(m.month) : "All months"}${r?.section_label ? ` · ${r.section_label}` : ""}`} flush>
-        {/* Not wired: Session, Check-in and Check-out — the register records a status per day, not times. */}
         <DataTable
-          columns={["Date", "Day", "Status", "Remark"]}
+          columns={["Date", "Day", "Session", "Status", "Check-in", "Check-out", "Remark"]}
           rows={rows}
           selectable={false}
           rowAction={false}

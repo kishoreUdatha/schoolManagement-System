@@ -69,6 +69,7 @@ class TimesIn(BaseModel):
     arrived_at: Optional[time] = None
     left_at: Optional[time] = None
     remark: Optional[str] = Field(None, max_length=300)
+    authorised_by: Optional[str] = Field(None, max_length=120)
 
 
 class CorrectionIn(BaseModel):
@@ -126,6 +127,7 @@ def set_times(payload: TimesIn, current_user: CurrentUser, db: Db):
     return svc.set_times(
         db, current_user.school_id, payload.student_id, payload.date,
         arrived_at=payload.arrived_at, left_at=payload.left_at, remark=payload.remark,
+        authorised_by=payload.authorised_by, recorded_by=current_user.id,
     )
 
 

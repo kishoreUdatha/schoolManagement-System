@@ -128,6 +128,7 @@ def hostel_to_read(db: Session, h: Hostel) -> dict:
         **{k: getattr(h, k) for k in HostelIn.model_fields},
         "id": h.id,
         "warden_name": warden.full_name if warden else None,
+        "warden_phone": warden.phone if warden else None,
         "rooms": rooms,
         "beds": beds,
         "occupied": occupied,
@@ -378,8 +379,12 @@ def residents(db: Session, hostel_id: int, user: User, on: Optional[date] = None
     rows = db.execute(_residents_q(h.id, on)).all()
     sids = [s.id for _, s, _, _ in rows]
     marks = {}
+    details: dict[int, dict] = {}
     for m in db.execute(select(HostelAttendance).where(HostelAttendance.student_id.in_(sids), HostelAttendance.date == on)).scalars():
         marks.setdefault(m.student_id, {})[m.session.value] = m.status.value
+        details.setdefault(m.student_id, {})[m.session.value] = {
+            "checked_in_at": m.checked_in_at, "is_late": m.is_late, "remark": m.remark,
+        }
     out_now = set(db.execute(
         select(HostelOuting.student_id).where(HostelOuting.student_id.in_(sids), HostelOuting.status == OutingStatus.out)
     ).scalars())
@@ -388,7 +393,7 @@ def residents(db: Session, hostel_id: int, user: User, on: Optional[date] = None
         {
             "allocation_id": a.id, "student_id": s.id, "student_name": s.full_name, "admission_no": s.admission_no,
             "section_label": labels.get(s.section_id), "room_no": r.room_no, "bed_label": b.label, "since": a.start_date,
-            "today": marks.get(s.id, {}), "out_now": s.id in out_now,
+            "today": marks.get(s.id, {}), "today_details": details.get(s.id, {}), "out_now": s.id in out_now,
         }
         for a, s, b, r in rows
     ]
@@ -414,13 +419,21 @@ def roll_call(db: Session, hostel_id: int, user: User, data: RollCallIn) -> int:
     absentees = []
     for m in data.marks:
         row = existing.get(m.student_id)
+        present = m.status == HostelAttendanceStatus.present
+        extra = dict(
+            checked_in_at=m.checked_in_at if present else None,
+            is_late=bool(m.is_late and present),
+            remark=(m.remark or "").strip() or None,
+        )
         if row:
             changed = row.status != m.status
             row.status, row.marked_by_user_id = m.status, user.id
+            for k, v in extra.items():
+                setattr(row, k, v)
         else:
             changed = True
             db.add(HostelAttendance(hostel_id=h.id, student_id=m.student_id, date=data.date,
-                                    session=data.session, status=m.status, marked_by_user_id=user.id))
+                                    session=data.session, status=m.status, marked_by_user_id=user.id, **extra))
         if changed and m.status == HostelAttendanceStatus.absent and data.date == today:
             absentees.append(m.student_id)
     db.flush()

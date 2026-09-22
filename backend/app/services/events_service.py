@@ -177,7 +177,7 @@ def events_to_read(db: Session, events: list[SchoolEvent]) -> list[dict]:
         d = {k: getattr(e, k) for k in (
             "id", "title", "kind", "start_date", "end_date", "start_time", "end_time", "venue", "description",
             "audience", "class_id", "section_id", "requires_consent", "consent_deadline", "fee_amount",
-            "is_published", "published_at", "is_cancelled",
+            "coordinator", "capacity", "is_published", "published_at", "is_cancelled",
         )}
         d.update(
             audience_label=labels[e.id],
@@ -205,8 +205,9 @@ def _apply_event(db: Session, e: SchoolEvent, data: EventIn) -> None:
     if data.requires_consent and data.audience == EventAudience.staff:
         raise _400("Consent can only be collected from parents")
     for k in ("title", "kind", "start_date", "end_date", "start_time", "end_time", "venue", "description",
-              "audience", "requires_consent", "fee_amount"):
+              "audience", "requires_consent", "fee_amount", "capacity"):
         setattr(e, k, getattr(data, k))
+    e.coordinator = (data.coordinator or "").strip() or None
     e.end_time = data.end_time if data.start_time else None
     e.consent_deadline = data.consent_deadline if data.requires_consent else None
 
@@ -396,6 +397,14 @@ def give_consent(db: Session, parent_user_id: int, event_id: int, student_id: in
     c = db.execute(
         select(EventConsent).where(EventConsent.event_id == e.id, EventConsent.student_id == student.id)
     ).scalar_one_or_none()
+    if e.capacity and response == ConsentResponse.yes and not (c and c.response == ConsentResponse.yes):
+        taken = db.execute(
+            select(func.count(EventConsent.id)).where(
+                EventConsent.event_id == e.id, EventConsent.response == ConsentResponse.yes
+            )
+        ).scalar_one()
+        if taken >= e.capacity:
+            raise _400(f"This event is full ({e.capacity} places)")
     if not c:
         c = EventConsent(tenant_id=e.tenant_id, school_id=e.school_id, event_id=e.id, student_id=student.id)
         db.add(c)
@@ -570,7 +579,8 @@ def _slot_rows(db: Session, slots: list[PtmSlot]) -> list[dict]:
             id=x.id, start_time=x.start_time, end_time=x.end_time, status=x.status,
             student_id=x.student_id, student_name=st.full_name if st else None,
             class_label=labels.get(st.section_id) if st else None,
-            parent_name=parents.get(x.parent_user_id), parent_note=x.parent_note, teacher_notes=x.teacher_notes,
+            parent_name=parents.get(x.parent_user_id), parent_note=x.parent_note,
+            meeting_mode=x.meeting_mode, teacher_notes=x.teacher_notes,
         ))
     return out
 
@@ -638,7 +648,7 @@ def admin_cancel_booking(db: Session, s: PtmSession, slot_id: int) -> None:
 
 
 def _free(x: PtmSlot) -> None:
-    x.student_id = x.parent_user_id = x.booked_at = x.parent_note = x.teacher_notes = None
+    x.student_id = x.parent_user_id = x.booked_at = x.parent_note = x.teacher_notes = x.meeting_mode = None
     x.status = PtmSlotStatus.open
 
 
@@ -712,6 +722,7 @@ def parent_sessions(db: Session, parent_user_id: int) -> list[dict]:
                 state="mine" if mine else ("taken" if x.student_id else "open"),
                 student_id=x.student_id if mine else None,
                 status=x.status if mine else None,
+                meeting_mode=x.meeting_mode if mine else None,
                 teacher_notes=x.teacher_notes if mine and x.status == PtmSlotStatus.done else None,
             ))
         teachers = [
@@ -726,7 +737,8 @@ def parent_sessions(db: Session, parent_user_id: int) -> list[dict]:
     return out
 
 
-def book_slot(db: Session, parent_user_id: int, slot_id: int, student_id: int, note: Optional[str]) -> PtmSlot:
+def book_slot(db: Session, parent_user_id: int, slot_id: int, student_id: int, note: Optional[str],
+              meeting_mode: str = "in_person") -> PtmSlot:
     student = require_linked_child(db, parent_user_id, student_id)
     x = db.execute(select(PtmSlot).where(PtmSlot.id == slot_id).with_for_update()).scalar_one_or_none()
     if not x:
@@ -755,6 +767,7 @@ def book_slot(db: Session, parent_user_id: int, slot_id: int, student_id: int, n
     if clash:
         raise _400("You already have a meeting at this time")
     x.student_id, x.parent_user_id, x.booked_at, x.parent_note = student.id, parent_user_id, _now(), note
+    x.meeting_mode = meeting_mode
     x.status = PtmSlotStatus.booked
     try:
         db.commit()

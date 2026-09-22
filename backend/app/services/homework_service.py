@@ -2,7 +2,7 @@ from datetime import date, datetime, timezone
 from typing import Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.enums import NotificationCategory
@@ -93,7 +93,25 @@ def _to_read_dict(db: Session, h: Homework, *, viewer_id: Optional[int] = None) 
         "closed_at": h.closed_at,
         "closed_by_name": closer.full_name if closer else None,
         "attachments": attachment_service.read_for(db, "homework", h.id),
+        "publish_on": h.publish_on,
+        "is_scheduled": bool(h.publish_on and h.publish_on > date.today()),
     }
+
+
+def visible_now():
+    """Homework children and parents may see: not scheduled for later."""
+    return or_(Homework.publish_on.is_(None), Homework.publish_on <= date.today())
+
+
+def _check_publish_on(publish_on: Optional[date], due: date) -> None:
+    if publish_on is None:
+        return
+    if publish_on < date.today():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="The publish date cannot be in the past")
+    if publish_on > due:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="The publish date is after the due date")
 
 
 def _validate_teacher_owns_cs(
@@ -167,7 +185,10 @@ def create(
         )
     if data.rubric_id:
         rubric_service.get(db, data.rubric_id, school_id)
+    _check_publish_on(data.publish_on, data.due_date)
+    scheduled = bool(data.publish_on and data.publish_on > date.today())
     h = Homework(
+        publish_on=data.publish_on if scheduled else None,
         tenant_id=tenant_id,
         school_id=school_id,
         class_subject_id=data.class_subject_id,
@@ -182,7 +203,9 @@ def create(
     db.commit()
     db.refresh(h)
 
-    if data.notify_parents:
+    # A notice would give away work that is not out yet, so scheduled work
+    # is not announced; it simply appears on its day.
+    if data.notify_parents and not scheduled:
         _maybe_notify_parents(db, tenant_id, school_id, h, teacher_user_id)
 
     return h
@@ -251,6 +274,12 @@ def update(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="due_date cannot be in the past",
         )
+    if "publish_on" in updates:
+        if h.publish_on is None or h.publish_on <= date.today():
+            # already out: it cannot be taken back into a schedule
+            updates.pop("publish_on")
+        else:
+            _check_publish_on(updates["publish_on"], updates.get("due_date", h.due_date))
     for field, value in updates.items():
         if field in ("title", "description") and isinstance(value, str):
             value = value.strip()
@@ -332,7 +361,7 @@ def list_for_student(db: Session, student: Student) -> list[Homework]:
 
     rows = db.execute(
         select(Homework)
-        .where(Homework.class_subject_id.in_(cs_ids))
+        .where(Homework.class_subject_id.in_(cs_ids), visible_now())
         .order_by(Homework.due_date.desc())
     ).scalars().all()
     return list(rows)
@@ -373,6 +402,8 @@ def _verify_homework_for_student(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="This homework is not for your child's class",
         )
+    if homework.publish_on and homework.publish_on > date.today():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Homework not found")
 
 
 def submission_to_dict(db: Session, sub: HomeworkSubmission) -> dict:

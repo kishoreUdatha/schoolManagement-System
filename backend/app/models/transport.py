@@ -154,6 +154,8 @@ class TransportRoute(Base, PrimaryKeyMixin, TimestampMixin, _SchoolScoped):
     )
     # Default monthly fee; a stop can override it (distance-based pricing).
     monthly_fee: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=0, nullable=False)
+    # One-way length of the route as driven (what the odometer says), in km.
+    distance_km: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 1))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 

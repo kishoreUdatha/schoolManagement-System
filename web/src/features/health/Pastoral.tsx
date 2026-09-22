@@ -303,7 +303,7 @@ export function CaseNotes() {
       return;
     }
     const f = new FormData(e.currentTarget);
-    if (await run(() => api.post(`${DISC}/counselling/cases/${c.id}/sessions`, { met_on: formText(f, "met_on"), minutes: formNum(f, "minutes"), attendees: formText(f, "attendees"), notes: formText(f, "notes"), next_session_on: formText(f, "next_session_on") }), "Session note saved.")) setFormKey((k) => k + 1);
+    if (await run(() => api.post(`${DISC}/counselling/cases/${c.id}/sessions`, { met_on: formText(f, "met_on"), minutes: formNum(f, "minutes"), attendees: formText(f, "attendees"), notes: formText(f, "notes"), support_plan: formText(f, "support_plan"), next_session_on: formText(f, "next_session_on") }), "Session note saved.")) setFormKey((k) => k + 1);
   }
 
   async function openCase(e: FormEvent<HTMLFormElement>) {
@@ -387,6 +387,9 @@ export function CaseNotes() {
                   <Field label="Observation" required full>
                     <textarea name="notes" required disabled={!writable} placeholder={writable ? "What was discussed and observed" : c ? "You cannot add notes to this case" : ""} />
                   </Field>
+                  <Field label="Support plan" full>
+                    <textarea name="support_plan" maxLength={10000} disabled={!writable} placeholder={writable ? "What was agreed: actions, who does them, by when" : ""} />
+                  </Field>
                   <Field label="Minutes">
                     <input type="number" name="minutes" min={1} max={600} disabled={!writable} />
                   </Field>
@@ -400,7 +403,6 @@ export function CaseNotes() {
                     <input value={c ? (c.is_sensitive ? "Sensitive: assigned counsellor and principal" : "Counsellor, principal and school admin") : ""} readOnly />
                   </Field>
                 </div>
-                {/* Not wired: a separate "support plan" — a session has one notes field; the plan belongs in the notes or the case outcome. */}
               </section>
             </div>
           </div>
@@ -459,6 +461,7 @@ export function CaseNotes() {
                   <div>
                     <h4>{`${date(s.met_on)}${s.minutes ? ` · ${s.minutes} min` : ""}`}</h4>
                     <p>{s.notes}</p>
+                    {s.support_plan ? <p className="small">{`Support plan: ${s.support_plan}`}</p> : null}
                     <p className="muted small">{[s.recorded_by_name, s.next_session_on ? `next ${date(s.next_session_on)}` : null].filter(Boolean).join(" · ")}</p>
                   </div>
                 </div>
@@ -989,7 +992,7 @@ export function EmergencyContacts() {
   async function addContact(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    if (await run(() => api.post(`${WELL}/emergency/${id}`, { contact_name: formText(f, "contact_name"), relationship: formText(f, "relationship"), phone: formText(f, "phone"), notes: formText(f, "notes") }), "Contact added.")) add.close();
+    if (await run(() => api.post(`${WELL}/emergency/${id}`, { contact_name: formText(f, "contact_name"), relationship: formText(f, "relationship"), phone: formText(f, "phone"), notes: formText(f, "notes"), availability: formText(f, "availability") }), "Contact added.")) add.close();
   }
 
   const links = c ? (order ? order.map((x) => c.chain.find((l) => l.id === x)!).filter(Boolean) : c.chain) : [];
@@ -1035,6 +1038,7 @@ export function EmergencyContacts() {
                       <th>Contact</th>
                       <th>Relationship</th>
                       <th>Phone</th>
+                      <th>Availability</th>
                       <th>Notes</th>
                       <th className="right">Action</th>
                     </tr>
@@ -1046,6 +1050,7 @@ export function EmergencyContacts() {
                         <td>{l.contact_name}</td>
                         <td>{l.relationship}</td>
                         <td>{l.phone}</td>
+                        <td>{l.availability ?? "—"}</td>
                         <td className="wrap">{l.notes ?? "—"}</td>
                         <td className="right">
                           <div className="row" style={{ justifyContent: "flex-end" }}>
@@ -1084,10 +1089,9 @@ export function EmergencyContacts() {
             <SearchBox value={search} onChange={setSearch} placeholder="Search emergency contacts & escalation…" />
           </div>
           <Panel title="Students with a thin escalation chain" sub={thin.data ? `${thin.data.count} student(s) · ${thin.data.none_at_all} with no contact at all` : "Loading…"} flush>
-            {/* Not wired: contact availability — the API does not track it. */}
             <DataTable
-              columns={["Student", "Class", "Contacts", "Why it matters"]}
-              rows={students.map((s) => [{ name: s.student_name, sub: s.admission_no }, s.section_label ?? "—", String(s.contacts), s.why])}
+              columns={["Student", "Class", "Contacts", "Availability", "Why it matters"]}
+              rows={students.map((s) => [{ name: s.student_name, sub: s.admission_no }, s.section_label ?? "—", String(s.contacts), s.availability ?? "—", s.why])}
               selectable={false}
               onView={(i) => router.push(`${routeOf(225)}?id=${students[i].student_id}`)}
               empty={thin.loading ? "Loading…" : "Every student has at least two contacts."}
@@ -1108,6 +1112,9 @@ export function EmergencyContacts() {
               </Field>
               <Field label="Phone" required>
                 <input name="phone" type="tel" required />
+              </Field>
+              <Field label="Availability">
+                <input name="availability" maxLength={120} placeholder="e.g. Any time, or weekdays after 6 pm" />
               </Field>
               <Field label="Notes">
                 <input name="notes" placeholder="e.g. Works nights" />

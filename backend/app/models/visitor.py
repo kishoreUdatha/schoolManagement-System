@@ -80,6 +80,31 @@ class Visit(Base, PrimaryKeyMixin, TimestampMixin, _School):
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
     host_declined_reason: Mapped[Optional[str]] = mapped_column(String(300))
+    # When the pass stops being good (None = until check-out), whether it was
+    # handed back at the gate, and who checked the visitor out.
+    valid_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    pass_returned: Mapped[Optional[bool]] = mapped_column(Boolean)
+    checked_out_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
+
+
+class StaffGateEntry(Base, PrimaryKeyMixin, TimestampMixin, _School):
+    """A member of staff through the gate outside the attendance machine:
+    in early, out for an errand, back again. Kept beside visits so the gate
+    log is the whole day's movement."""
+
+    __tablename__ = "staff_gate_entries"
+    __table_args__ = (Index("ix_staff_gate_entries_school_at", "school_id", "at"),)
+
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    direction: Mapped[str] = mapped_column(String(3), nullable=False)  # "in" or "out"
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    vehicle_no: Mapped[Optional[str]] = mapped_column(String(20))
+    note: Mapped[Optional[str]] = mapped_column(String(300))
+    recorded_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
 
 
 class GatePass(Base, PrimaryKeyMixin, TimestampMixin, _School):

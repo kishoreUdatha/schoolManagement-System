@@ -27,6 +27,7 @@ export function StockReceipt() {
   const [reference, setReference] = useState("");
   const [movedOn, setMovedOn] = useState(today());
   const [notes, setNotes] = useState("");
+  const [location, setLocation] = useState("");
   const [lines, setLines] = useState<Line[]>([blank()]);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState<Failed[]>([]);
@@ -60,6 +61,7 @@ export function StockReceipt() {
           moved_on: movedOn || null,
           supplier_id: supplierId ? Number(supplierId) : null,
           reference: orNull(reference),
+          location: orNull(location),
           notes: orNull(notes),
         });
         ok += 1;
@@ -135,7 +137,9 @@ export function StockReceipt() {
               <Field label="Receipt date" required>
                 <input type="date" required value={movedOn} onChange={(e) => setMovedOn(e.target.value)} />
               </Field>
-              {/* Not wired: the mock's "Location" — a stock move has no location; it belongs to the item. */}
+              <Field label="Location">
+                <input value={location} maxLength={80} onChange={(e) => setLocation(e.target.value)} placeholder="Where it was put away, e.g. Main store" />
+              </Field>
               <Field label="Notes">
                 <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" />
               </Field>

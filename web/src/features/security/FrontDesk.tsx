@@ -16,7 +16,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, formNum, formText, today, useDebounced, type PickedStudent } from "@/features/transport/kit";
-import { PURPOSES, VISIT_STATUS, type FrontDeskDashboard, type GatePass, type Host, type SecurityIncident, type Visit } from "./types";
+import { PURPOSES, VISIT_STATUS, type FrontDeskDashboard, type GatePass, type Host, type SecurityIncident, type StaffGateEntry, type Visit } from "./types";
 
 const FD = "/api/v1/school/front-desk";
 const clock = (iso: string | null) => (iso ? dateTime(iso).split(", ")[1] : "—");
@@ -212,6 +212,7 @@ export function VisitorCheckIn() {
         people_count: formNum(f, "people_count") ?? 1,
         vehicle_no: formText(f, "vehicle_no"),
         expected_at: expected && at ? new Date(at).toISOString() : null,
+        valid_until: formText(f, "valid_until") ? new Date(String(formText(f, "valid_until"))).toISOString() : null,
         notes: formText(f, "notes"),
       });
       notify(v.status === "checked_in" ? `${v.visitor_name} checked in${v.pass_no ? ` · pass ${v.pass_no}` : ""}.` : `${v.visitor_name} expected ${dateTime(v.expected_at)}.`);
@@ -297,6 +298,9 @@ export function VisitorCheckIn() {
                     <input type="datetime-local" name="expected_at" required />
                   </Field>
                 ) : null}
+                <Field label="Pass valid until">
+                  <input type="datetime-local" name="valid_until" />
+                </Field>
               </div>
             </section>
           </div>
@@ -634,9 +638,9 @@ export function VisitorPass() {
               ["Entry time", clock(v.check_in_at)],
               [v.check_out_at ? "Exit time" : "Date", v.check_out_at ? clock(v.check_out_at) : date(v.check_in_at)],
               ["Mobile number", v.phone],
+              ["Valid until", v.valid_until ? dateTime(v.valid_until) : "Until check-out"],
             ]}
           />
-          {/* Not wired: "valid until" — a visit has no expiry; it ends at check-out. */}
           <div className="barcode" />
           <div className="pass-code">{(v.pass_no ?? `V ${v.id}`).replace(/-/g, " ")}</div>
           <div className="gap" />
@@ -662,6 +666,7 @@ export function VisitorCheckOut() {
   const inside = useApi<Visit[]>(`${FD}/visits`, { on: today(), inside_only: true });
   const [pass, setPass] = useState("");
   const [picked, setPicked] = useState<number | null>(null);
+  const [returned, setReturned] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const list = inside.data ?? [];
@@ -677,8 +682,9 @@ export function VisitorCheckOut() {
     setSaving(true);
     setError(null);
     try {
-      const r = await api.post<Visit>(`${FD}/visits/${v.id}/check-out`);
-      notify(`${r.visitor_name} checked out${r.minutes_inside !== null ? ` after ${r.minutes_inside} min` : ""}.`);
+      const r = await api.post<Visit>(`${FD}/visits/${v.id}/check-out`, { pass_returned: returned });
+      notify(`${r.visitor_name} checked out${r.minutes_inside !== null ? ` after ${r.minutes_inside} min` : ""}${returned ? "" : " · pass not returned"}.`);
+      setReturned(true);
       setPass("");
       setPicked(null);
       inside.reload();
@@ -727,7 +733,13 @@ export function VisitorCheckOut() {
                 <Field label="Time inside">
                   <input value={mins !== null ? `${mins} min so far` : ""} readOnly />
                 </Field>
-                {/* Not wired: "pass returned" — the check-out records only the time. */}
+                <label className="field">
+                  <span>Pass returned</span>
+                  <span className="row">
+                    <input type="checkbox" checked={returned} onChange={(e) => setReturned(e.target.checked)} />
+                    The visitor handed the pass back
+                  </span>
+                </label>
               </div>
             </section>
           </div>
@@ -1006,15 +1018,60 @@ function GatePassModal({ g, saving, error, onClose, onDecide, onRelease }: { g: 
   );
 }
 
-/** SCR-232, live: GET /front-desk/visits (on, q, inside_only) as the gate log, with a vehicle filter. */
+/** SCR-232, live: GET /front-desk/visits (on, q, inside_only) and /front-desk/staff-entries (POST to log staff) as the gate log. */
 export function GateLog() {
   const [day, setDay] = useState(today());
   const [typed, setTyped] = useState("");
   const q = useDebounced(typed.trim());
   const [only, setOnly] = useState("");
   const visits = useApi<Visit[]>(`${FD}/visits`, { on: day, q, inside_only: only === "inside" || undefined });
-  const items = (visits.data ?? []).filter((v) => v.check_in_at && (only !== "vehicle" || v.vehicle_no));
-  const rows: Row[] = items.map((v) => [`${v.visitor_name} · ${v.company ?? PURPOSES[v.purpose]}`, PURPOSES[v.purpose], v.vehicle_no ?? "—", clock(v.check_in_at), v.check_out_at ? clock(v.check_out_at) : "Inside", v.host_name ? `Host: ${v.host_name}` : "Front office"]);
+  const staffIn = useApi<StaffGateEntry[]>(`${FD}/staff-entries`, { on: day });
+  const hosts = useApi<Host[]>(`${FD}/hosts`);
+  const [logging, setLogging] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const items = (visits.data ?? []).filter((v) => v.check_in_at && (only !== "vehicle" || v.vehicle_no) && only !== "staff");
+  const staffRows = (staffIn.data ?? []).filter((s) => {
+    if (only === "inside" || (only === "vehicle" && !s.vehicle_no)) return false;
+    const t = q.toLowerCase();
+    return !t || `${s.staff_name} ${s.vehicle_no ?? ""}`.toLowerCase().includes(t);
+  });
+  type Line = { at: string; row: Row };
+  const lines: Line[] = [
+    ...items.map((v) => ({
+      at: v.check_in_at ?? "",
+      row: [`${v.visitor_name} · ${v.company ?? PURPOSES[v.purpose]}`, PURPOSES[v.purpose], v.vehicle_no ?? "—", clock(v.check_in_at), v.check_out_at ? clock(v.check_out_at) : "Inside", v.host_name ? `Host: ${v.host_name}` : "Front office", v.checked_in_by_name ?? "—"] as Row,
+    })),
+    ...staffRows.map((s) => ({
+      at: s.at,
+      row: [{ name: s.staff_name, sub: s.note ?? undefined }, `Staff${s.role ? ` · ${label(s.role)}` : ""}`, s.vehicle_no ?? "—", s.direction === "in" ? clock(s.at) : "—", s.direction === "out" ? clock(s.at) : "—", "—", s.recorded_by_name ?? "—"] as Row,
+    })),
+  ].sort((a, b) => b.at.localeCompare(a.at));
+  const rows: Row[] = lines.map((l) => l.row);
+
+  async function logStaff(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    setSaving(true);
+    setError(null);
+    try {
+      const at = formText(f, "at");
+      await api.post(`${FD}/staff-entries`, {
+        user_id: formNum(f, "user_id"),
+        direction: formText(f, "direction"),
+        at: at ? new Date(at).toISOString() : null,
+        vehicle_no: formText(f, "vehicle_no"),
+        note: formText(f, "note"),
+      });
+      notify("Logged at the gate.");
+      setLogging(false);
+      staffIn.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSaving(false);
+    }
+  }
   return (
     <>
       <div className="filterbar">
@@ -1022,19 +1079,58 @@ export function GateLog() {
         <select aria-label="Filter" value={only} onChange={(e) => setOnly(e.target.value)}>
           <option value="">Everyone through the gate</option>
           <option value="vehicle">With a vehicle</option>
-          <option value="inside">Still inside</option>
+          <option value="inside">Visitors still inside</option>
+          <option value="staff">Staff only</option>
         </select>
         <input type="date" aria-label="Date" value={day} max={today()} onChange={(e) => setDay(e.target.value || today())} />
+        <button type="button" className="btn" onClick={() => setLogging(true)}>
+          <Icon name="plus" className="sm" />
+          Log staff entry
+        </button>
       </div>
       <div className="tip">
         <Icon name="shield" className="sm" />
-        <span>A visit records who someone came to see, not whether they are staff, so this is the whole gate log for the day. Staff attendance is kept under HR.</span>
+        <span>Visitors and staff logged at the gate, newest first. Staff attendance itself is kept under HR; this is only who came and went through the gate.</span>
       </div>
-      <ErrorNote>{visits.error}</ErrorNote>
-      <Panel title="Gate log" sub={`${date(day)} · ${items.length} entr(ies) · ${items.filter((v) => v.vehicle_no).length} with a vehicle`} flush>
-        {/* Not wired: staff entries and "recorded by" — the gate log only holds visits, and a visit does not name the guard who logged it. */}
-        <DataTable columns={["Person or vehicle", "Type", "Registration", "Entry time", "Exit time", "Visiting"]} rows={rows} selectable={false} rowAction={false} empty={visits.loading ? "Loading…" : "No one through the gate on this day."} />
+      <ErrorNote>{visits.error ?? staffIn.error ?? (!logging ? error : null)}</ErrorNote>
+      <Panel title="Gate log" sub={`${date(day)} · ${lines.length} entr(ies) · ${staffRows.length} staff · ${items.filter((v) => v.vehicle_no).length + staffRows.filter((s) => s.vehicle_no).length} with a vehicle`} flush>
+        <DataTable columns={["Person or vehicle", "Type", "Registration", "Entry time", "Exit time", "Visiting", "Recorded by"]} rows={rows} selectable={false} rowAction={false} empty={visits.loading ? "Loading…" : "No one through the gate on this day."} />
       </Panel>
+      {logging ? (
+        <Modal title="Log staff entry" onClose={() => setLogging(false)}>
+          <form onSubmit={logStaff}>
+            <ErrorNote>{error}</ErrorNote>
+            <div className="form-grid">
+              <Field label="Staff member" required>
+                <select name="user_id" required defaultValue="">
+                  <option value="">{hosts.loading ? "Loading staff…" : "Select staff member"}</option>
+                  {hosts.data?.map((h) => (
+                    <option key={h.user_id} value={h.user_id}>
+                      {`${h.full_name} · ${label(h.role)}`}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Direction" required>
+                <select name="direction" defaultValue="in">
+                  <option value="in">In</option>
+                  <option value="out">Out</option>
+                </select>
+              </Field>
+              <Field label="Time">
+                <input type="datetime-local" name="at" />
+              </Field>
+              <Field label="Vehicle number">
+                <input name="vehicle_no" maxLength={20} />
+              </Field>
+              <Field label="Note" full>
+                <input name="note" maxLength={300} placeholder="e.g. Out for a bank errand" />
+              </Field>
+            </div>
+            <ModalActions onClose={() => setLogging(false)} saving={saving} label="Log entry" />
+          </form>
+        </Modal>
+      ) : null}
     </>
   );
 }

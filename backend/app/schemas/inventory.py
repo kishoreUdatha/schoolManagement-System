@@ -14,6 +14,7 @@ class SupplierIn(BaseModel):
     email: Optional[str] = Field(None, max_length=255)
     gstin: Optional[str] = Field(None, pattern=r"^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z0-9]Z[A-Z0-9]$")
     address: Optional[str] = Field(None, max_length=1000)
+    category: Optional[str] = Field(None, max_length=80)
     is_active: bool = True
 
 
@@ -58,6 +59,7 @@ class StockMoveIn(BaseModel):
     supplier_id: Optional[int] = None
     reference: Optional[str] = Field(None, max_length=80)
     issued_to: Optional[str] = Field(None, max_length=160)
+    location: Optional[str] = Field(None, max_length=80)
     notes: Optional[str] = Field(None, max_length=300)
 
     @model_validator(mode="after")
@@ -81,6 +83,7 @@ class StockMoveRead(BaseModel):
     supplier_name: Optional[str] = None
     reference: Optional[str] = None
     issued_to: Optional[str] = None
+    location: Optional[str] = None
     notes: Optional[str] = None
     recorded_by_name: Optional[str] = None
     balance_after: Optional[Decimal] = None
@@ -119,6 +122,10 @@ class AssetEventIn(BaseModel):
     notes: Optional[str] = Field(None, max_length=300)
 
 
+class BulkAssetEventIn(AssetEventIn):
+    asset_ids: list[int] = Field(..., min_length=1, max_length=200)
+
+
 class AssetEventRead(BaseModel):
     id: int
     kind: AssetEventKind
@@ -147,6 +154,9 @@ class AssetRead(BaseModel):
     warranty_active: bool = False
     maintenance_cost: Decimal = Decimal("0")
     notes: Optional[str] = None
+    # the fault reported when it was last sent for repair, until it is back
+    open_issue: Optional[str] = None
+    issue_reported_on: Optional[date] = None
 
 
 class AssetDetail(AssetRead):

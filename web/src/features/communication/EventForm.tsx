@@ -73,6 +73,8 @@ export function EventForm() {
       requires_consent: audience === "staff" ? false : consent,
       consent_deadline: consent && audience !== "staff" ? text("consent_deadline") : null,
       fee_amount: text("fee_amount"),
+      coordinator: text("coordinator"),
+      capacity: text("capacity") ? Number(text("capacity")) : null,
     };
     setSaving(true);
     setError(null);
@@ -171,6 +173,8 @@ export function EventForm() {
                 {field("End time", <input type="time" name="end_time" disabled={!startTime} defaultValue={e?.end_time?.slice(0, 5) ?? ""} />)}
                 {field("Venue", <input name="venue" maxLength={200} defaultValue={e?.venue ?? ""} placeholder="Enter venue" />)}
                 {field("Cost per student", <input type="number" name="fee_amount" min={0} step="0.01" defaultValue={e?.fee_amount ?? ""} placeholder="Leave blank if free" />)}
+                {field("Coordinator", <input name="coordinator" maxLength={160} defaultValue={e?.coordinator ?? ""} placeholder="Who runs it" />)}
+                {field("Capacity", <input type="number" name="capacity" min={1} step={1} defaultValue={e?.capacity ?? ""} placeholder="Leave blank for no limit" />)}
               </div>
             </section>
             <section>

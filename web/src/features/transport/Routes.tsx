@@ -16,6 +16,9 @@ import type { Route, Vehicle } from "./types";
 
 const ROUTES = "/api/v1/school/transport/routes";
 
+/** The driven distance when recorded, else the stop-to-stop straight line. */
+const km = (r: Route) => (r.distance_km ? `${Number(r.distance_km)} km` : r.stops_distance_km !== null ? `~${r.stops_distance_km} km (straight line)` : "—");
+
 /** SCR-189, live: GET /transport/routes. */
 export function RouteList() {
   const router = useRouter();
@@ -34,6 +37,7 @@ export function RouteList() {
     `${r.code} · ${r.name}`,
     r.vehicle_label ?? "—",
     String(r.stops.length),
+    km(r),
     r.vehicle_capacity ? `${r.student_count} / ${r.vehicle_capacity}` : String(r.student_count),
     money(r.monthly_fee),
     r.is_active ? "Active" : "Inactive",
@@ -50,9 +54,8 @@ export function RouteList() {
       </div>
       <ErrorNote>{routes.error}</ErrorNote>
       <Panel title="All routes" sub={routes.data ? `${all.length} route(s) · ${all.reduce((s, r) => s + r.stops.length, 0)} stops · ${all.reduce((s, r) => s + r.student_count, 0)} student(s)` : "Loading…"} flush>
-        {/* Not wired: route distance — the API does not record it. The fee column shows the route's monthly fee instead. */}
         <DataTable
-          columns={["Route", "Vehicle", "Stops", "Students", "Fee / month", "Status"]}
+          columns={["Route", "Vehicle", "Stops", "Distance", "Students", "Fee / month", "Status"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(190)}?id=${items[i].id}`)}
           empty={routes.loading ? "Loading routes…" : all.length ? "No routes match these filters." : "No routes yet. Create the first one."}
@@ -112,6 +115,7 @@ export function RouteBuilder() {
       code: String(f.get("code")).trim(),
       vehicle_id: f.get("vehicle_id") ? Number(f.get("vehicle_id")) : null,
       monthly_fee: String(f.get("monthly_fee") || "0"),
+      distance_km: f.get("distance_km") ? String(f.get("distance_km")) : null,
       stops: stops
         .filter((s) => s.name.trim())
         .map((s) => ({
@@ -188,6 +192,17 @@ export function RouteBuilder() {
                   </Field>
                   <Field label="Monthly fee (₹)" required>
                     <input name="monthly_fee" type="number" min={0} step="0.01" required defaultValue={r?.monthly_fee ?? ""} />
+                  </Field>
+                  <Field label="Distance (km, one way)">
+                    <input
+                      name="distance_km"
+                      type="number"
+                      min={0}
+                      max={1000}
+                      step="0.1"
+                      defaultValue={r?.distance_km ?? ""}
+                      placeholder={r?.stops_distance_km ? `~${r.stops_distance_km} km between stops` : "As driven"}
+                    />
                   </Field>
                   {id ? (
                     <Field label="Status">

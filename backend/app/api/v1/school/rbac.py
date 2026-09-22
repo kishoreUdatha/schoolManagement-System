@@ -10,6 +10,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.rbac import (
     AssignIn,
+    BulkAssignIn,
     AssignmentRead,
     BranchIn,
     BranchRead,
@@ -75,6 +76,11 @@ def assignments(current_user: RoleManager, db: Db, user_id: Optional[int] = None
 def assign(payload: AssignIn, current_user: RoleManager, db: Db):
     svc.assign(db, current_user, payload.user_id, payload.role_id, payload.branch_id)
     return svc.assignments(db, current_user.school_id, payload.user_id, None)
+
+
+@router.post("/role-assignments/bulk", summary="Give one role to several people at once")
+def bulk_assign(payload: BulkAssignIn, current_user: RoleManager, db: Db):
+    return svc.bulk_assign(db, current_user, payload.user_ids, payload.role_id, payload.branch_id)
 
 
 @router.delete("/role-assignments/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -16,8 +16,9 @@ from app.services import foundation_service
 from app.models.student import Student
 from app.models.tenant import School
 from app.models.user import User
-from app.models.visitor import GatePass, SecurityIncident, Visit
+from app.models.visitor import GatePass, SecurityIncident, StaffGateEntry, Visit
 from app.schemas.visitor import (
+    StaffGateEntryIn,
     GatePassDecision,
     GatePassIn,
     IncidentIn,
@@ -130,7 +131,10 @@ def create_visit(db: Session, tenant_id: int, school_id: int, actor_id: int, dat
         status=VisitStatus.expected if data.expected_at else VisitStatus.checked_in,
         registered_by_user_id=actor_id,
         notes=data.notes,
+        valid_until=data.valid_until,
     )
+    if data.valid_until and data.valid_until <= (data.expected_at or datetime.now(timezone.utc)):
+        raise _400("The pass would expire before the visit starts")
     db.add(v)
     db.flush()
     if v.status == VisitStatus.checked_in:
@@ -217,12 +221,15 @@ def check_in(db: Session, visit_id: int, school_id: int, actor_id: int) -> Visit
     return _check_in(db, v, actor_id)
 
 
-def check_out(db: Session, visit_id: int, school_id: int) -> Visit:
+def check_out(db: Session, visit_id: int, school_id: int, actor_id: Optional[int] = None,
+              pass_returned: Optional[bool] = None) -> Visit:
     v = _visit(db, visit_id, school_id)
     if v.status != VisitStatus.checked_in:
         raise _400("Visitor isn't checked in")
     v.status = VisitStatus.checked_out
     v.check_out_at = datetime.now(timezone.utc)
+    v.checked_out_by_user_id = actor_id
+    v.pass_returned = pass_returned
     db.commit()
     db.refresh(v)
     return v
@@ -240,6 +247,51 @@ def close_visit(db: Session, visit_id: int, school_id: int, new_status: VisitSta
     return v
 
 
+def _user_name(db: Session, user_id: Optional[int]) -> Optional[str]:
+    u = db.get(User, user_id) if user_id else None
+    return u.full_name if u else None
+
+
+# --- Staff through the gate ---
+
+def add_staff_entry(db: Session, user: User, data: StaffGateEntryIn) -> StaffGateEntry:
+    staff = db.get(User, data.user_id)
+    if not staff or staff.school_id != user.school_id or staff.role in (UserRole.parent, UserRole.student):
+        raise _404("Staff member")
+    at = data.at or datetime.now(timezone.utc)
+    if at > datetime.now(timezone.utc) + timedelta(minutes=5):
+        raise _400("That time is still to come")
+    e = StaffGateEntry(tenant_id=user.tenant_id, school_id=user.school_id, user_id=staff.id,
+                       direction=data.direction, at=at,
+                       vehicle_no=data.vehicle_no.strip().upper() if data.vehicle_no else None,
+                       note=(data.note or "").strip() or None, recorded_by_user_id=user.id)
+    db.add(e)
+    db.commit()
+    db.refresh(e)
+    return e
+
+
+def list_staff_entries(db: Session, school_id: int, on: Optional[date] = None) -> list[StaffGateEntry]:
+    today, start, end = _school_today(db, school_id)
+    if on and on != today:
+        start = start + timedelta(days=(on - today).days)
+        end = start + timedelta(days=1)
+    return list(db.execute(
+        select(StaffGateEntry).where(StaffGateEntry.school_id == school_id,
+                                     StaffGateEntry.at >= start, StaffGateEntry.at < end)
+        .order_by(StaffGateEntry.at.desc())
+    ).scalars())
+
+
+def staff_entry_to_read(db: Session, e: StaffGateEntry) -> dict:
+    staff = db.get(User, e.user_id)
+    return {
+        "id": e.id, "user_id": e.user_id, "staff_name": staff.full_name if staff else "",
+        "role": staff.role.value if staff else None, "direction": e.direction, "at": e.at,
+        "vehicle_no": e.vehicle_no, "note": e.note, "recorded_by_name": _user_name(db, e.recorded_by_user_id),
+    }
+
+
 def visit_to_read(db: Session, v: Visit) -> dict:
     host = db.get(User, v.host_user_id) if v.host_user_id else None
     student = db.get(Student, v.student_id) if v.student_id else None
@@ -249,8 +301,10 @@ def visit_to_read(db: Session, v: Visit) -> dict:
             "id", "visitor_name", "phone", "id_type", "id_last4", "company", "purpose", "purpose_detail",
             "host_user_id", "student_id", "people_count", "vehicle_no", "status", "expected_at",
             "check_in_at", "check_out_at", "pass_no", "notes",
-            "host_approved_at", "host_declined_reason",
+            "host_approved_at", "host_declined_reason", "valid_until", "pass_returned",
         )},
+        "checked_in_by_name": _user_name(db, v.checked_in_by_user_id),
+        "checked_out_by_name": _user_name(db, v.checked_out_by_user_id),
         "host_name": host.full_name if host else None,
         "student_name": student.full_name if student else None,
         "minutes_inside": int((end - v.check_in_at).total_seconds() // 60) if end and v.check_in_at else None,

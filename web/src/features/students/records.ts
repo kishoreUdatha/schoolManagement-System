@@ -55,7 +55,7 @@ export type AttendanceReport = {
   half_day: number;
   percent: number | null;
   months: { month: string; present: number; absent: number; late: number; half_day: number; percent: number | null }[];
-  days: { date: string; status: string; remark: string | null }[];
+  days: { date: string; status: string; remark: string | null; session: string | null; arrived_at: string | null; left_at: string | null }[];
 };
 
 export type Ledger = {
@@ -177,10 +177,20 @@ export type TransportRoute = {
   vehicle_id: number | null;
   vehicle_label: string | null;
   student_count: number;
-  stops: { id: number; name: string; sequence: number; pickup_time: string | null; drop_time: string | null; student_count: number }[];
+  stops: { id: number; name: string; sequence: number; pickup_time: string | null; drop_time: string | null; student_count: number; lat?: number | null; lng?: number | null }[];
 };
 
-export type Vehicle = { id: number; registration_no: string; label: string | null; driver_name: string | null; driver_phone: string | null; conductor_name: string | null };
+export type Vehicle = {
+  id: number;
+  registration_no: string;
+  label: string | null;
+  driver_name: string | null;
+  driver_phone: string | null;
+  conductor_name: string | null;
+  last_lat?: number | null;
+  last_lng?: number | null;
+  last_location_at?: string | null;
+};
 
 export type Trip = { id: number; route_id: number; trip_date: string; direction: string; status: string; driver_name: string | null; expected: number; boarded: number; absent: number };
 

@@ -28,7 +28,14 @@ export type Visit = {
   notes: string | null;
   host_approved_at: string | null;
   host_declined_reason: string | null;
+  valid_until: string | null;
+  pass_returned: boolean | null;
+  checked_in_by_name: string | null;
+  checked_out_by_name: string | null;
 };
+
+/** GET /front-desk/staff-entries */
+export type StaffGateEntry = { id: number; user_id: number; staff_name: string; role: string | null; direction: "in" | "out"; at: string; vehicle_no: string | null; note: string | null; recorded_by_name: string | null };
 
 export type FrontDeskDashboard = { inside_now: number; visitors_today: number; expected_today: number; gate_passes_today: number; gate_passes_pending: number; open_incidents: number };
 

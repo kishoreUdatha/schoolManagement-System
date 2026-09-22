@@ -135,6 +135,9 @@ class CertificateIssue(Base, PrimaryKeyMixin, TimestampMixin):
         SAEnum(CertificateStatus, name="certificate_status"), nullable=False
     )
     purpose: Mapped[Optional[str]] = mapped_column(String(300))
+    # Who signs the certificate ("Principal", "Vice Principal", a name); the
+    # PDF's signature line prints it. None = "Principal".
+    signatory: Mapped[Optional[str]] = mapped_column(String(120))
     # Extra fields (TC: date_of_leaving, reason, conduct, ...).
     fields: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
 

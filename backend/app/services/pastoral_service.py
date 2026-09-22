@@ -440,7 +440,7 @@ def cases_to_read(db: Session, user: User, items: list[CounsellingCase], with_se
         for s in rows:
             sessions.setdefault(s.case_id, []).append(dict(
                 id=s.id, met_on=s.met_on, minutes=s.minutes, attendees=s.attendees, notes=s.notes,
-                next_session_on=s.next_session_on, recorded_by_name=recorders.get(s.recorded_by_user_id),
+                support_plan=s.support_plan, next_session_on=s.next_session_on, recorded_by_name=recorders.get(s.recorded_by_user_id),
             ))
     out = []
     for c in items:

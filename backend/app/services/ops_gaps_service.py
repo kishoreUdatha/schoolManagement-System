@@ -193,6 +193,7 @@ def warden_rota(db: Session, school_id: int, *, frm: date, to: date) -> dict:
             "hostel_name": hostel.name,
             "user_id": user.id,
             "warden_name": user.full_name,
+            "warden_phone": user.phone,
             "shift": duty.shift.value,
             "note": duty.note,
         })

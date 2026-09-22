@@ -36,6 +36,7 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [due, setDue] = useState(todayIso());
+  const [publishOn, setPublishOn] = useState("");
   const [attachment, setAttachment] = useState("");
   const [rubricId, setRubricId] = useState("");
   const [projectKind, setProjectKind] = useState<ProjectKind>("individual");
@@ -54,6 +55,7 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
       setTitle(h.title);
       setDescription(h.description);
       setDue(h.due_date);
+      setPublishOn(h.publish_on ?? "");
       setAttachment(h.attachment_url ?? "");
       setRubricId(h.rubric_id ? String(h.rubric_id) : "");
     } else if (!editing && classId === null && cards.length) {
@@ -105,7 +107,9 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
           attachment_url: attachment.trim() || null,
           due_date: due,
           rubric_id: rubricId ? Number(rubricId) : null,
+          ...(publishOn && publishOn > todayIso() ? { publish_on: publishOn } : {}),
         };
+        const later = Boolean(publishOn && publishOn > todayIso());
         if (editing) {
           await api.patch(`/api/v1/teacher/homework/${id}`, body);
           const failed = await uploadPending(`/api/v1/teacher/homework/${id}/files`);
@@ -113,15 +117,10 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
           router.push(`${routeOf(130)}?id=${id}`);
           return;
         }
-        const h = await api.post<Homework>("/api/v1/teacher/homework", { ...body, class_subject_id: csId, notify_parents: notifyParents });
+        const h = await api.post<Homework>("/api/v1/teacher/homework", { ...body, class_subject_id: csId, notify_parents: notifyParents && !later });
         const failed = await uploadPending(`/api/v1/teacher/homework/${h.id}/files`);
-        notify(
-          failed
-            ? `Homework published, but the files were not attached: ${failed}`
-            : notifyParents
-              ? "Homework published and parents notified."
-              : "Homework published.",
-        );
+        const done = later ? `Homework scheduled; children see it from ${date(publishOn)}.` : notifyParents ? "Homework published and parents notified." : "Homework published.";
+        notify(failed ? `${done} The files were not attached: ${failed}` : done);
         router.push(`${routeOf(130)}?id=${h.id}`);
       } else {
         const p = await api.post<{ id: number }>("/api/v1/teacher/projects", {
@@ -223,7 +222,21 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
                   </span>
                   <textarea aria-label="Instructions" placeholder="Enter instructions" required value={description} onChange={(e) => setDescription(e.target.value)} />
                 </label>
-                {/* Not wired: publish date — work is published when saved; the API has no scheduled publishing. */}
+                {isHw ? (
+                  <label className="field">
+                    <span>Publish on</span>
+                    <input
+                      type="date"
+                      aria-label="Publish on"
+                      value={publishOn}
+                      min={todayIso()}
+                      max={due || undefined}
+                      disabled={editing && !existing.data?.is_scheduled}
+                      onChange={(e) => setPublishOn(e.target.value)}
+                    />
+                    <small className="muted">{editing && !existing.data?.is_scheduled ? "Already published." : "Leave empty to publish on saving. Scheduled work is not announced to parents."}</small>
+                  </label>
+                ) : null /* Not wired: publish date for assignments — scheduled publishing exists for homework only; an assignment is published when saved. */}
               </div>
             </section>
             <section>

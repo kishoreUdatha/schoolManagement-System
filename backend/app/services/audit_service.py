@@ -24,6 +24,7 @@ def list_for_school(
     to_date: Optional[date] = None,
     limit: int = 200,
     offset: int = 0,
+    result: Optional[str] = None,
 ) -> list[AuditLog]:
     stmt = (
         select(AuditLog)
@@ -34,6 +35,8 @@ def list_for_school(
     )
     if action:
         stmt = stmt.where(AuditLog.action == action)
+    if result:
+        stmt = stmt.where(AuditLog.result == result)
     if entity_type:
         stmt = stmt.where(AuditLog.entity_type == entity_type)
     if entity_id is not None:
@@ -45,6 +48,16 @@ def list_for_school(
     if to_date is not None:
         stmt = stmt.where(AuditLog.created_at < datetime.combine(to_date, datetime.max.time()))
     return list(db.execute(stmt).scalars().all())
+
+
+def _scope(db: Session, school_id: Optional[int]) -> str:
+    """Where the change applied: the school (campus) it belongs to."""
+    from app.models.tenant import School
+
+    if not school_id:
+        return "Platform"
+    s = db.get(School, school_id)
+    return s.name if s else f"School #{school_id}"
 
 
 def to_read_dict(db: Session, a: AuditLog) -> dict:
@@ -59,6 +72,8 @@ def to_read_dict(db: Session, a: AuditLog) -> dict:
         "user_email": user.email if user else None,
         "user_role": user.role.value if user else None,
         "request_path": a.request_path,
+        "result": a.result,
+        "scope": _scope(db, a.school_id),
         "old_values": a.old_values,
         "new_values": a.new_values,
         "created_at": a.created_at,

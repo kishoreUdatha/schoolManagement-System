@@ -47,6 +47,9 @@ class Homework(Base, PrimaryKeyMixin, TimestampMixin):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     attachment_url: Mapped[Optional[str]] = mapped_column(String(500))
     due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # Scheduled publishing: children and parents see it from this day.
+    # None = published when saved.
+    publish_on: Mapped[Optional[date]] = mapped_column(Date)
 
     created_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")

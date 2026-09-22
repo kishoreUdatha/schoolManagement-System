@@ -13,7 +13,10 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, Kv, Modal, ModalActions, StudentPicker, addDays, formText, today, type PickedStudent } from "@/features/transport/kit";
 import { LIB } from "./Catalogue";
-import type { Book, Borrower, Fine, Fines, LibrarySettings, Loan, Member, Reservation, StaffOption } from "./types";
+import type { Book, Borrower, CopyLookup, Fine, Fines, LibrarySettings, Loan, Member, Reservation, StaffOption } from "./types";
+
+const CHANNELS: Record<string, string> = { in_app: "in-app notice", sms: "SMS", email: "email", whatsapp: "WhatsApp", phone: "phone call" };
+const PAY: Record<string, string> = { cash: "Cash", upi: "UPI", card: "Card", cheque: "Cheque", bank_transfer: "Bank transfer", other: "Other" };
 
 const who = (b: Borrower) => (b.borrower_type === "student" ? { borrower_type: "student" as const, student_id: b.student_id } : { borrower_type: "staff" as const, user_id: b.user_id });
 
@@ -132,7 +135,20 @@ export function IssueBook() {
   const [error, setError] = useState<string | null>(null);
   const [issued, setIssued] = useState<Loan[]>([]);
   const [formKey, setFormKey] = useState(0);
+  const [copy, setCopy] = useState<CopyLookup | null>(null);
+  const [lookupNote, setLookupNote] = useState<string | null>(null);
   const days = borrower?.borrower_type === "staff" ? settings.data?.loan_days_staff : settings.data?.loan_days_student;
+
+  async function lookup(accession: string) {
+    setCopy(null);
+    setLookupNote(null);
+    if (!accession.trim()) return;
+    try {
+      setCopy(await api.get<CopyLookup>(`${LIB}/copies/lookup`, { accession_no: accession.trim() }));
+    } catch (err) {
+      setLookupNote(errorText(err));
+    }
+  }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -144,10 +160,11 @@ export function IssueBook() {
     setSaving(true);
     setError(null);
     try {
-      const loan = await api.post<Loan>(`${LIB}/loans`, { ...who(borrower), accession_no: formText(f, "accession_no"), due_on: formText(f, "due_on") });
+      const loan = await api.post<Loan>(`${LIB}/loans`, { ...who(borrower), accession_no: formText(f, "accession_no"), due_on: formText(f, "due_on"), remarks: formText(f, "remarks") });
       notify(`Issued “${loan.title}” (${loan.accession_no}) to ${loan.borrower_name}, due ${date(loan.due_on)}.`);
       setIssued((x) => [loan, ...x]);
       setFormKey((k) => k + 1);
+      setCopy(null);
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -170,7 +187,14 @@ export function IssueBook() {
                 <div className="form-grid">
                   <BorrowerPicker value={borrower} onChange={setBorrower} />
                   <Field label="Book barcode" required>
-                    <input key={formKey} name="accession_no" required placeholder="Scan or type the accession number" autoFocus />
+                    <input key={formKey} name="accession_no" required placeholder="Scan or type the accession number" autoFocus onBlur={(e) => lookup(e.target.value)} />
+                  </Field>
+                  <Field label="Book title">
+                    <input
+                      readOnly
+                      value={copy ? `${copy.title}${copy.author ? ` · ${copy.author}` : ""}` : (lookupNote ?? "")}
+                      placeholder="Filled in from the barcode"
+                    />
                   </Field>
                   <Field label="Issue date">
                     <input type="date" value={today()} readOnly />
@@ -179,8 +203,16 @@ export function IssueBook() {
                     <input type="date" name="due_on" min={today()} placeholder="" defaultValue="" />
                   </Field>
                 </div>
+                <div className="form-grid">
+                  <Field label="Remarks" full>
+                    <input key={`r${formKey}`} name="remarks" maxLength={300} placeholder="e.g. Spine loose; for the science project" />
+                  </Field>
+                </div>
+                {copy && copy.status !== "available" ? (
+                  <p className="muted small">{copy.status === "on_hold" ? `On hold for ${copy.held_for ?? "a reservation"}.` : `This copy is ${label(copy.status)}.`}</p>
+                ) : null}
+                {copy?.is_reference ? <p className="muted small">A reference book: it stays in the library.</p> : null}
                 <p className="muted small">{days ? `Leave the due date blank for the standard ${days} days (${date(addDays(today(), days))}).` : "Leave the due date blank for the standard loan period."}</p>
-                {/* Not wired: book title lookup by barcode and remarks — the issue endpoint takes only the accession number and due date; the title comes back with the loan. */}
               </section>
             </div>
           </div>
@@ -391,7 +423,16 @@ export function RenewReserve() {
       setError("Choose a member first.");
       return;
     }
-    run(() => api.post(`${LIB}/reservations`, { ...who(borrower), book_id: Number(f.get("book_id")) }), "Reservation placed.");
+    run(
+      () =>
+        api.post(`${LIB}/reservations`, {
+          ...who(borrower),
+          book_id: Number(f.get("book_id")),
+          reserved_on: formText(f, "reserved_on"),
+          notify_channel: formText(f, "notify_channel"),
+        }),
+      "Reservation placed.",
+    );
   }
 
   async function saveHold(e: FormEvent<HTMLFormElement>) {
@@ -400,7 +441,7 @@ export function RenewReserve() {
     if (await run(() => api.patch(`${LIB}/reservations/${holding!.id}`, { hold_until: formText(f, "hold_until") }), "Hold extended.")) setHolding(null);
   }
 
-  const rrows: Row[] = (reservations.data ?? []).map((r) => [r.title, r.borrower_name, r.status === "ready" ? `Ready · ${r.held_accession_no ?? ""}` : `Waiting · #${r.queue_position ?? "—"}`, r.hold_until ? date(r.hold_until) : "—", date(r.created_at)]);
+  const rrows: Row[] = (reservations.data ?? []).map((r) => [r.title, r.borrower_name, r.status === "ready" ? `Ready · ${r.held_accession_no ?? ""}` : `Waiting · #${r.queue_position ?? "—"}`, r.hold_until ? date(r.hold_until) : "—", { name: date(r.reserved_on ?? r.created_at), sub: r.notify_channel ? `Notify by ${CHANNELS[r.notify_channel] ?? r.notify_channel}` : undefined }]);
   return (
     <>
       <div className="two-col">
@@ -483,7 +524,18 @@ export function RenewReserve() {
                   ))}
               </select>
             </Field>
-            {/* Not wired: reservation date and notification channel — the API dates the request itself and does not choose a channel. */}
+            <Field label="Reservation date">
+              <input type="date" name="reserved_on" defaultValue={today()} max={today()} />
+            </Field>
+            <Field label="Notify by">
+              <select name="notify_channel" defaultValue="in_app">
+                <option value="in_app">In-app notice</option>
+                <option value="sms">SMS</option>
+                <option value="email">Email</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="phone">Phone call</option>
+              </select>
+            </Field>
             <div className="row" style={{ alignItems: "end" }}>
               <button type="submit" className="btn primary" disabled={saving || !borrower}>
                 Save reservation
@@ -605,8 +657,15 @@ export function FineDesk() {
     if (await run(() => api.patch(`${LIB}/fines/${fine!.loan_id}`, { amount: formText(f, "amount"), note: formText(f, "note") }), "Fine corrected.")) setFine(null);
   }
 
+  const [received, setReceived] = useState("");
+  const fineAmount = fine?.amount;
+  const [method, setMethod] = useState("cash");
+  useEffect(() => {
+    if (fineAmount !== undefined) setReceived(String(Number(fineAmount)));
+  }, [fineId, fineAmount]);
   const act = async (action: "paid" | "bill" | "waived", done: string) => {
-    if (await run(() => api.post(`${LIB}/loans/${fine!.loan_id}/fine`, { action }), done)) setFine(null);
+    const body = action === "paid" ? { action, amount_received: received || null, payment_method: method } : { action };
+    if (await run(() => api.post(`${LIB}/loans/${fine!.loan_id}/fine`, body), done)) setFine(null);
   };
 
   const d = fines.data;
@@ -664,7 +723,6 @@ export function FineDesk() {
                   </Field>
                 </div>
                 <p className="muted small">A damaged book is recorded when it is returned, on the Return Book screen. Overdue fines are listed below.</p>
-                {/* Not wired: amount received and payment method — the fine action only records that a fine was paid. */}
               </section>
             </div>
           </div>
@@ -718,11 +776,26 @@ export function FineDesk() {
               ["Due / returned", `${date(fine.due_on)} / ${date(fine.returned_on)}`],
               ["Overdue", `${fine.overdue_days} day(s)`],
               ["Status", label(fine.status)],
+              ...(fine.received ? ([["Received", `${money(fine.received)}${fine.payment_method ? ` · ${PAY[fine.payment_method] ?? fine.payment_method}` : ""}`]] as [string, string][]) : []),
               ["Note", fine.note ?? "—"],
             ]}
           />
           {fine.status === "pending" ? (
             <>
+              <div className="form-grid" style={{ marginTop: 12 }}>
+                <Field label="Amount received (₹)">
+                  <input type="number" min={0} step="0.01" value={received} onChange={(e) => setReceived(e.target.value)} />
+                </Field>
+                <Field label="Payment method">
+                  <select value={method} onChange={(e) => setMethod(e.target.value)}>
+                    {Object.entries(PAY).map(([k, t]) => (
+                      <option key={k} value={k}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
               <div className="actions row" style={{ justifyContent: "flex-start" }}>
                 <button type="button" className="btn primary" disabled={saving} onClick={() => act("paid", "Fine collected.")}>
                   Collect

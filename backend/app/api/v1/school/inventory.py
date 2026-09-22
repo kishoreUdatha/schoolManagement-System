@@ -14,6 +14,7 @@ from app.schemas.inventory import (
     AssetIn,
     AssetRead,
     AssetUpdate,
+    BulkAssetEventIn,
     InventoryDashboard,
     ItemIn,
     ItemRead,
@@ -137,6 +138,12 @@ def get_asset(asset_id: int, current_user: InventoryManager, db: Db):
 @router.patch("/assets/{asset_id}", response_model=AssetDetail)
 def update_asset(asset_id: int, payload: AssetUpdate, current_user: InventoryManager, db: Db):
     return AssetDetail.model_validate(svc.asset_to_read(db, svc.update_asset(db, asset_id, current_user, payload), with_events=True))
+
+
+@router.post("/assets/bulk-events", summary="The same event for several assets (bulk assign / move / return)")
+def bulk_asset_event(payload: BulkAssetEventIn, current_user: InventoryManager, db: Db):
+    return svc.bulk_asset_event(db, current_user, payload.asset_ids,
+                                AssetEventIn(**payload.model_dump(exclude={"asset_ids"})))
 
 
 @router.post("/assets/{asset_id}/events", response_model=AssetDetail, summary="Assign, return, move, send for repair, repaired, dispose")

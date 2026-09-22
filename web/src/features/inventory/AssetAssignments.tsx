@@ -1,14 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
+import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { AssetDetailDialog } from "./AssetDialogs";
-import { ASSET_STATUS, Field, INV, Modal, useNewFlag, type Asset, type Assignment } from "./common";
+import { ASSET_STATUS, Field, INV, Modal, ModalActions, orNull, today, useNewFlag, type Asset, type Assignment, type StaffRow } from "./common";
 
 /**
  * SCR-240, live: GET /inventory/assignments (open_only) — what is out and
@@ -20,6 +22,7 @@ export function AssetAssignments() {
   const [search, setSearch] = useState("");
   const [asset, setAsset] = useState<number | null>(null);
   const [choosing, closeChoose] = useNewFlag();
+  const [bulk, setBulk] = useState(false);
 
   const list = useApi<Assignment[]>(`${INV}/assignments`, { open_only: openOnly });
   const assets = useApi<Asset[]>(`${INV}/assets`);
@@ -55,9 +58,14 @@ export function AssetAssignments() {
         </select>
       </div>
       <ErrorNote>{list.error ?? assets.error}</ErrorNote>
-      {/* Not wired: "Bulk assign" — the API records one asset event at a time. */}
       <Panel
         title="Allocation workspace"
+        action={
+          <button type="button" className="btn" onClick={() => setBulk(true)}>
+            <Icon name="plus" className="sm" />
+            Bulk assign
+          </button>
+        }
         sub={`${openOnly ? "What is out right now, and with whom" : "Every assignment ever made"} · ${stillOut} still out${list.loading ? " · Loading…" : ""}`}
         flush
       >
@@ -97,6 +105,109 @@ export function AssetAssignments() {
         </Modal>
       ) : null}
       {asset !== null ? <AssetDetailDialog assetId={asset} only={["assigned", "moved", "returned"]} onClose={() => setAsset(null)} onChanged={reload} /> : null}
+      {bulk ? (
+        <BulkAssign
+          assets={(assets.data ?? []).filter((a) => a.status === "in_store")}
+          onClose={() => setBulk(false)}
+          onDone={() => {
+            setBulk(false);
+            reload();
+          }}
+        />
+      ) : null}
     </>
+  );
+}
+
+/** Several store assets to one custodian or room at once: POST /inventory/assets/bulk-events. */
+function BulkAssign({ assets, onClose, onDone }: { assets: Asset[]; onClose: () => void; onDone: () => void }) {
+  const staff = useApi<StaffRow[]>("/api/v1/school/directory/staff");
+  const [picked, setPicked] = useState<Set<number>>(new Set());
+  const [filter, setFilter] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const q = filter.trim().toLowerCase();
+  const shown = assets.filter((a) => !q || [a.name, a.asset_tag, a.category].some((v) => v?.toLowerCase().includes(q)));
+  const toggle = (id: number) =>
+    setPicked((p) => {
+      const n = new Set(p);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    if (!picked.size) return setError("Tick the assets to assign.");
+    const toUser = orNull(f.get("to_user_id"));
+    const location = orNull(f.get("location"));
+    if (!toUser && !location) return setError("Assign them to a staff member or a location.");
+    setSaving(true);
+    setError(null);
+    try {
+      const r = await api.post<{ done: number[]; failed: { asset_id: number; error: string }[] }>(`${INV}/assets/bulk-events`, {
+        asset_ids: [...picked],
+        kind: "assigned",
+        to_user_id: toUser ? Number(toUser) : null,
+        location,
+        happened_on: orNull(f.get("happened_on")),
+        notes: orNull(f.get("notes")),
+      });
+      if (r.failed.length) {
+        const tag = (id: number) => assets.find((a) => a.id === id)?.asset_tag ?? `#${id}`;
+        setError(`${r.done.length} assigned; not assigned: ${r.failed.map((x) => `${tag(x.asset_id)} (${x.error})`).join("; ")}`);
+        if (r.done.length) notify(`${r.done.length} asset(s) assigned.`);
+        return;
+      }
+      notify(`${r.done.length} asset(s) assigned.`);
+      onDone();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title="Bulk assign" onClose={onClose} wide>
+      <form onSubmit={submit}>
+        <ErrorNote>{error}</ErrorNote>
+        <div className="form-grid">
+          <Field label="Custodian">
+            <select name="to_user_id" defaultValue="">
+              <option value="">No one (a room or place)</option>
+              {staff.data?.map((s) => (
+                <option key={s.user_id} value={s.user_id}>
+                  {s.full_name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Location">
+            <input name="location" maxLength={120} placeholder="Room 201" />
+          </Field>
+          <Field label="Date">
+            <input type="date" name="happened_on" defaultValue={today()} />
+          </Field>
+          <Field label="Notes">
+            <input name="notes" maxLength={300} />
+          </Field>
+          <Field label={`Assets in store · ${picked.size} ticked`} full>
+            <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter by name, code or category" />
+          </Field>
+        </div>
+        <div style={{ maxHeight: 260, overflowY: "auto", marginTop: 8 }}>
+          {shown.map((a) => (
+            <label className="check-item" key={a.id}>
+              <input type="checkbox" checked={picked.has(a.id)} onChange={() => toggle(a.id)} />
+              <span>{`${a.asset_tag} · ${a.name}${a.location ? ` (${a.location})` : ""}`}</span>
+            </label>
+          ))}
+          {!shown.length ? <p className="muted small">{assets.length ? "No assets match." : "Nothing is in the store to assign."}</p> : null}
+        </div>
+        <ModalActions saving={saving} label={`Assign ${picked.size || ""} asset(s)`} onCancel={onClose} />
+      </form>
+    </Modal>
   );
 }

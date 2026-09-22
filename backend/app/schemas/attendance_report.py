@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 from typing import Optional
 
 from pydantic import BaseModel
@@ -68,6 +68,9 @@ class StudentHistoryDay(BaseModel):
     date: date
     status: AttendanceStatus
     remark: Optional[str] = None
+    session: Optional[str] = None  # "Full day", "Morning", "Afternoon", "Half day"
+    arrived_at: Optional[time] = None
+    left_at: Optional[time] = None
 
 
 class StudentHistoryMonth(BaseModel):

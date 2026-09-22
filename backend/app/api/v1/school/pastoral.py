@@ -135,7 +135,7 @@ def update_case(case_id: int, payload: CaseUpdate, current_user: Staff, db: Db):
 def add_session(case_id: int, payload: SessionIn, current_user: Staff, db: Db):
     s = svc.add_session(db, current_user, case_id, payload)
     return dict(id=s.id, met_on=s.met_on, minutes=s.minutes, attendees=s.attendees, notes=s.notes,
-                next_session_on=s.next_session_on, recorded_by_name=current_user.full_name)
+                support_plan=s.support_plan, next_session_on=s.next_session_on, recorded_by_name=current_user.full_name)
 
 
 @router.post("/counselling/cases/{case_id}/inform-parents", response_model=CaseRead,

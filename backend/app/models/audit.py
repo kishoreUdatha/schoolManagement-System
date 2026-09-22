@@ -53,3 +53,6 @@ class AuditLog(Base, PrimaryKeyMixin, TimestampMixin):
 
     # Helpful breadcrumb for cross-correlating with API logs
     request_path: Mapped[Optional[str]] = mapped_column(String(255))
+    # "success" for a change that was saved; "failed" for a change a signed-in
+    # user attempted and the server refused (permission, conflict, bad input).
+    result: Mapped[str] = mapped_column(String(20), default="success", server_default="success", nullable=False)

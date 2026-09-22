@@ -62,6 +62,8 @@ export type Route = {
   vehicle_label: string | null;
   vehicle_capacity: number | null;
   monthly_fee: string;
+  distance_km: string | null;
+  stops_distance_km: number | null;
   is_active: boolean;
   stops: Stop[];
   student_count: number;

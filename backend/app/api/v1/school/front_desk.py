@@ -9,6 +9,9 @@ from app.core.deps import CurrentUser, FrontDeskUser, SchoolAdminUser
 from app.core.enums import VisitStatus
 from app.database import get_db
 from app.schemas.visitor import (
+    CheckOutIn,
+    StaffGateEntryIn,
+    StaffGateEntryRead,
     FrontDeskDashboard,
     GatePassDecision,
     GatePassIn,
@@ -99,8 +102,24 @@ def check_in(visit_id: int, current_user: FrontDeskUser, db: Db):
 
 
 @router.post("/visits/{visit_id}/check-out", response_model=VisitRead)
-def check_out(visit_id: int, current_user: FrontDeskUser, db: Db):
-    return VisitRead.model_validate(svc.visit_to_read(db, svc.check_out(db, visit_id, current_user.school_id)))
+def check_out(visit_id: int, current_user: FrontDeskUser, db: Db, payload: Optional[CheckOutIn] = None):
+    return VisitRead.model_validate(svc.visit_to_read(db, svc.check_out(
+        db, visit_id, current_user.school_id, current_user.id, payload.pass_returned if payload else None,
+    )))
+
+
+# --- Staff through the gate ---
+
+@router.get("/staff-entries", response_model=list[StaffGateEntryRead], summary="Staff logged in or out at the gate on a day")
+def staff_entries(current_user: FrontDeskUser, db: Db, on: Optional[date] = Query(None)):
+    return [StaffGateEntryRead.model_validate(svc.staff_entry_to_read(db, e))
+            for e in svc.list_staff_entries(db, current_user.school_id, on)]
+
+
+@router.post("/staff-entries", response_model=StaffGateEntryRead, status_code=status.HTTP_201_CREATED,
+             summary="Log a member of staff in or out at the gate")
+def add_staff_entry(payload: StaffGateEntryIn, current_user: FrontDeskUser, db: Db):
+    return StaffGateEntryRead.model_validate(svc.staff_entry_to_read(db, svc.add_staff_entry(db, current_user, payload)))
 
 
 @router.post("/visits/{visit_id}/deny", response_model=VisitRead)

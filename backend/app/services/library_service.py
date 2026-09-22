@@ -21,6 +21,7 @@ from app.core.enums import (
     ReservationStatus,
     UserRole,
 )
+from app.core import notify
 from app.core.scoping import get_school_student, require_linked_child, section_label
 from app.models.fee import FeeHead, StudentFee
 from app.models.library import Book, BookCopy, LibrarySettings, Loan, Reservation
@@ -371,6 +372,7 @@ def issue(db: Session, tenant_id: int, school_id: int, actor_id: int, data: Issu
         issued_on=today,
         due_on=due,
         issued_by_user_id=actor_id,
+        issue_remarks=(data.remarks or "").strip() or None,
     )
     db.add(loan)
     copy.status = CopyStatus.issued
@@ -551,8 +553,15 @@ def fine_action(db: Session, loan_id: int, school_id: int, data: FineAction) -> 
         raise _400(f"Fine is {loan.fine_status.value}")
     if data.action == "bill":
         _bill(db, loan, get_settings(db, loan.tenant_id, school_id))
+    elif data.action == "paid":
+        received = loan.fine_amount if data.amount_received is None else data.amount_received
+        if received < loan.fine_amount:
+            raise _400(f"The fine is ₹{loan.fine_amount:.2f}; collect it in full, or correct the amount first")
+        loan.fine_status = FineStatus.paid
+        loan.fine_received = received
+        loan.fine_payment_method = data.payment_method or "cash"
     else:
-        loan.fine_status = FineStatus.paid if data.action == "paid" else FineStatus.waived
+        loan.fine_status = FineStatus.waived
     if data.note:
         loan.fine_note = "; ".join(x for x in (loan.fine_note, data.note) if x)
     db.commit()
@@ -593,6 +602,7 @@ def loan_to_read(db: Session, l: Loan, cfg: Optional[LibrarySettings] = None) ->
         "accruing_fine": accruing,
         "fine_status": l.fine_status,
         "fine_note": l.fine_note,
+        "remarks": l.issue_remarks,
     }
 
 
@@ -626,6 +636,7 @@ def list_loans(
 def _promote_reservations(db: Session, book_id: int) -> None:
     """Put available copies on hold for the longest-waiting reservations."""
     changed = False
+    ready: list[Reservation] = []
     while True:
         r = db.execute(
             select(Reservation)
@@ -653,8 +664,28 @@ def _promote_reservations(db: Session, book_id: int) -> None:
         # same reservation as still waiting and loops forever.
         db.flush()
         changed = True
+        ready.append(r)
+    for r in ready:
+        _tell_ready(db, r)
     if changed:
         db.commit()
+
+
+def _tell_ready(db: Session, r: Reservation) -> None:
+    """An in-app notice that a reserved book is on hold. The member's chosen
+    channel (SMS, e-mail…) is kept on the reservation for the desk; the app
+    itself only sends in-app notices."""
+    book = db.get(Book, r.book_id)
+    title = f"Library: {book.title if book else 'your book'} is ready"
+    body = f"It is held for you until {r.hold_until:%d %b}." if r.hold_until else "It is held for you at the desk."
+    if r.student_id:
+        s = db.get(Student, r.student_id)
+        if s:
+            notify.student_parents(db, s, title, body)
+    elif r.user_id:
+        u = db.get(User, r.user_id)
+        if u and u.tenant_id and u.school_id:
+            notify.staff_users(db, tenant_id=u.tenant_id, school_id=u.school_id, user_ids=[u.id], title=title, body=body)
 
 
 def expire_holds(db: Session, school_id: int) -> int:
@@ -681,6 +712,28 @@ def expire_holds(db: Session, school_id: int) -> int:
     return len(expired)
 
 
+def lookup_copy(db: Session, school_id: int, accession_no: str) -> dict:
+    """What a barcode is before it is issued: the title, and whether it can go."""
+    copy = db.execute(
+        select(BookCopy).where(BookCopy.school_id == school_id,
+                               func.upper(BookCopy.accession_no) == accession_no.strip().upper())
+    ).scalar_one_or_none()
+    if not copy:
+        raise _404(f"Copy {accession_no}")
+    book = db.get(Book, copy.book_id)
+    held_for = None
+    if copy.status == CopyStatus.on_hold:
+        r = db.execute(select(Reservation).where(
+            Reservation.held_copy_id == copy.id, Reservation.status == ReservationStatus.ready
+        )).scalar_one_or_none()
+        held_for = _borrower_name(db, r)[0] if r else None
+    return {
+        "copy_id": copy.id, "accession_no": copy.accession_no, "book_id": book.id, "title": book.title,
+        "author": book.authors, "status": copy.status.value,
+        "is_reference": bool(book.is_reference), "held_for": held_for,
+    }
+
+
 def reserve(db: Session, school_id: int, data) -> Reservation:
     book = _book(db, data.book_id, school_id)
     _check_borrower(db, school_id, data)
@@ -704,6 +757,8 @@ def reserve(db: Session, school_id: int, data) -> Reservation:
         student_id=data.student_id if data.borrower_type == BorrowerType.student else None,
         user_id=data.user_id if data.borrower_type == BorrowerType.staff else None,
         status=ReservationStatus.waiting,
+        reserved_on=getattr(data, "reserved_on", None) or date.today(),
+        notify_channel=getattr(data, "notify_channel", None),
     )
     db.add(r)
     db.commit()
@@ -774,6 +829,8 @@ def reservation_to_read(db: Session, r: Reservation) -> dict:
         "queue_position": pos,
         "hold_until": r.hold_until,
         "held_accession_no": held.accession_no if held else None,
+        "reserved_on": r.reserved_on,
+        "notify_channel": r.notify_channel,
         "created_at": r.created_at,
     }
 
@@ -922,6 +979,8 @@ def fine_to_read(db: Session, l: Loan) -> dict:
         "amount": l.fine_amount,
         "status": l.fine_status,
         "note": l.fine_note,
+        "received": l.fine_received,
+        "payment_method": l.fine_payment_method,
     }
 
 

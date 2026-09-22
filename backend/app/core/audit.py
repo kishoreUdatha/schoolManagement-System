@@ -154,6 +154,41 @@ def _base_kwargs(actor: _Actor, inst: Any) -> dict:
     }
 
 
+_METHOD_ACTION = {"POST": "create", "PUT": "update", "PATCH": "update", "DELETE": "delete"}
+_REFUSALS = {400, 403, 404, 409}
+
+
+def record_refused_write(db: Session, exc: BaseException) -> None:
+    """Log a refused write (POST/PUT/PATCH/DELETE answered 400/403/404/409)
+    by a signed-in user as a failed attempt. Never raises: the refusal the
+    user sees matters more than the log line."""
+    status_code = getattr(exc, "status_code", None)
+    actor = db.info.get("audit_actor") or {}
+    method = actor.get("request_method")
+    if status_code not in _REFUSALS or method not in _METHOD_ACTION or not actor.get("user_id"):
+        return
+    try:
+        from app.core.enums import AuditAction
+        from app.models.audit import AuditLog
+
+        path = actor.get("request_path") or ""
+        parts = [p for p in path.split("/") if p]
+        # /api/v1/<portal>/<area>/<thing>/... -> "<area>/<thing>" (ids dropped)
+        words = [p for p in parts[3:] if not p.isdigit()][:2]
+        ids = [int(p) for p in parts[3:] if p.isdigit()]
+        detail = getattr(exc, "detail", None)
+        db.rollback()
+        db.add(AuditLog(
+            tenant_id=actor.get("tenant_id"), school_id=actor.get("school_id"), user_id=actor.get("user_id"),
+            action=AuditAction(_METHOD_ACTION[method]), entity_type=("/".join(words) or "request")[:80],
+            entity_id=ids[0] if ids else None, request_path=path[:255], result="failed",
+            new_values={"status": status_code, "detail": detail if isinstance(detail, (str, list, dict)) else str(detail)},
+        ))
+        db.commit()
+    except Exception:  # noqa: BLE001 — the log must not turn a 403 into a 500
+        db.rollback()
+
+
 # Key under which we stash the half-built audit records on the session
 _PENDING_KEY = "_audit_pending"
 

@@ -56,6 +56,12 @@ class StudentAttendance(Base, PrimaryKeyMixin, TimestampMixin):
     # disagreeing about the same child.
     arrived_at: Mapped[Optional[time]] = mapped_column(Time)
     left_at: Mapped[Optional[time]] = mapped_column(Time)
+    # Who allowed a late entry / early exit (free text: "Principal", a parent's
+    # note), and which office user logged it at the late/early desk.
+    times_authorised_by: Mapped[Optional[str]] = mapped_column(String(120))
+    times_recorded_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
     marked_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )

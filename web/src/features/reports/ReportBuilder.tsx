@@ -23,12 +23,13 @@ type Definition = {
   filters: Record<string, unknown>;
   columns: string[];
   sort_by: string | null;
+  group_by?: string | null;
   is_active: boolean;
   created_by_name?: string | null;
   last_run_at: string | null;
   run_count: number;
 };
-type Result = { report_id: number; name: string; columns: string[]; row_count: number; rows: Record<string, unknown>[]; truncated: boolean };
+type Result = { report_id: number; name: string; columns: string[]; row_count: number; rows: Record<string, unknown>[]; truncated: boolean; group_by?: string | null; groups?: { value: unknown; count: number }[] };
 type SchoolClass = { id: number; name: string; sections: { id: number; name: string }[] };
 type Exam = { id: number; name: string };
 
@@ -56,7 +57,8 @@ const show = (v: unknown) => (v === null || v === undefined || v === "" ? "—" 
  * SCR-283, live: GET /report-sources and /report-definitions to choose from;
  * Run report saves a new definition (POST /report-definitions) or reuses the
  * chosen saved one, then runs it (POST /report-definitions/{id}/run) with the
- * filters. The API has no grouping and no operators: filters are the fixed
+ * filters. Group by orders the rows by a column and counts each group; there
+ * are no operators: filters are the fixed
  * keys each source declares. A saved report opens with
  * GET /report-definitions/{id}; it can be edited (PATCH), deleted (DELETE)
  * or run to a kept CSV file (POST /report-definitions/{id}/export).
@@ -74,6 +76,7 @@ export function ReportBuilder() {
   const [source, setSource] = useState("");
   const [columns, setColumns] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("");
+  const [groupBy, setGroupBy] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
@@ -96,6 +99,7 @@ export function ReportBuilder() {
     setSource(s);
     setColumns([]);
     setSortBy("");
+    setGroupBy("");
     setFilters({});
     setSavedId(null);
     setOpened(null);
@@ -110,6 +114,7 @@ export function ReportBuilder() {
     setSource(d.source);
     setColumns(d.columns);
     setSortBy(d.sort_by ?? "");
+    setGroupBy(d.group_by ?? "");
     setActive(d.is_active);
     setFilters(Object.fromEntries(Object.entries(d.filters ?? {}).map(([k, v]) => [k, String(v ?? "")])));
   }
@@ -125,6 +130,7 @@ export function ReportBuilder() {
       setName("");
       setColumns([]);
       setSortBy("");
+      setGroupBy("");
       setFilters({});
       return;
     }
@@ -150,6 +156,7 @@ export function ReportBuilder() {
         filters: asFilters(),
         columns,
         sort_by: sortBy || null,
+        group_by: groupBy || null,
         is_active: active,
       });
       load(d);
@@ -226,6 +233,7 @@ export function ReportBuilder() {
           filters: asFilters(),
           columns,
           sort_by: sortBy || null,
+          group_by: groupBy || null,
         });
         id = created.id;
         setSavedId(id);
@@ -335,6 +343,7 @@ export function ReportBuilder() {
   const configRows: Row[] = [
     ["Data source", spec?.label ?? "—"],
     ["Columns", columns.length ? columns.map(label).join(", ") : "All columns"],
+    ["Group by", groupBy ? label(groupBy) : "No grouping"],
     ["Sort by", sortBy ? label(sortBy) : "Source order"],
     ["Filters", filterText || "None — every row the source holds"],
     ["Output", savedId ? "Runs the saved report" : "Saved, then run"],
@@ -372,7 +381,17 @@ export function ReportBuilder() {
                     true,
                   )}
                   {dateKeys.map((k) => field(label(k), <input type="date" value={filters[k] ?? ""} onChange={(e) => setFilter(k, e.target.value)} />))}
-                  {/* Not wired: "Group by" — the API sorts but does not group; sorting takes its place. */}
+                  {field(
+                    "Group by",
+                    <select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} disabled={locked}>
+                      <option value="">No grouping</option>
+                      {(columns.length ? columns : (spec?.columns ?? [])).map((c) => (
+                        <option key={c} value={c}>
+                          {label(c)}
+                        </option>
+                      ))}
+                    </select>,
+                  )}
                   {field(
                     "Sort by",
                     <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} disabled={locked}>
@@ -501,6 +520,12 @@ export function ReportBuilder() {
           }
           flush
         >
+          {result.group_by && result.groups?.length ? (
+            <div className="approval-summary">
+              <strong>{`Grouped by ${label(result.group_by)}`}</strong>
+              <span>{result.groups.map((g) => `${show(g.value)}: ${g.count}`).join(" · ")}</span>
+            </div>
+          ) : null}
           <DataTable columns={resultCols} rows={resultRows} selectable={false} rowAction={false} empty="Nothing matched those filters." />
         </Panel>
       ) : (

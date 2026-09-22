@@ -18,7 +18,8 @@ type StaffPick = { user_id: number; full_name: string; role: string };
 
 /**
  * SCR-288, live. GET /role-assignments lists who holds an extra role;
- * POST gives one (whole school, or one branch); DELETE takes it away.
+ * POST gives one (whole school, or one branch), POST /bulk gives one role to
+ * several people; DELETE takes it away.
  * Only active custom roles can be assigned: a built-in role is the portal
  * a person signs in with, which is set on their account, not here.
  */
@@ -33,6 +34,15 @@ export function RoleAssignment() {
   const [branchFilter, setBranchFilter] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bulk, setBulk] = useState(false);
+  const [picked, setPicked] = useState<Set<number>>(new Set());
+  const togglePick = (id: number) =>
+    setPicked((p) => {
+      const n = new Set(p);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
 
   const assignable = (roles.data ?? []).filter((r) => !r.is_system && r.is_active);
   const signIn = useMemo(() => new Map((people.data ?? []).map((p) => [p.user_id, p.role])), [people.data]);
@@ -54,15 +64,27 @@ export function RoleAssignment() {
     const user = String(f.get("user_id") ?? "");
     const role = String(f.get("role_id") ?? "");
     const branch = String(f.get("branch_id") ?? "");
-    if (!user || !role) {
-      setError("Choose a person and a role.");
+    if ((bulk ? !picked.size : !user) || !role) {
+      setError(bulk ? "Tick the people and choose a role." : "Choose a person and a role.");
       return;
     }
     setSaving(true);
     setError(null);
     try {
-      await api.post(ASSIGN, { user_id: Number(user), role_id: Number(role), branch_id: branch ? Number(branch) : null });
-      notify("Role assigned.");
+      if (bulk) {
+        const r = await api.post<{ assigned: number[]; skipped: { user_id: number; reason: string }[] }>(`${ASSIGN}/bulk`, {
+          user_ids: [...picked],
+          role_id: Number(role),
+          branch_id: branch ? Number(branch) : null,
+        });
+        const nameOf = (id: number) => people.data?.find((p) => p.user_id === id)?.full_name ?? `#${id}`;
+        notify(`Role given to ${r.assigned.length} ${r.assigned.length === 1 ? "person" : "people"}.`);
+        if (r.skipped.length) setError(`Not assigned: ${r.skipped.map((s) => `${nameOf(s.user_id)} (${s.reason})`).join("; ")}`);
+        setPicked(new Set());
+      } else {
+        await api.post(ASSIGN, { user_id: Number(user), role_id: Number(role), branch_id: branch ? Number(branch) : null });
+        notify("Role assigned.");
+      }
       form.reset();
       await Promise.all([list.reload(), roles.reload()]);
     } catch (err) {
@@ -118,20 +140,26 @@ export function RoleAssignment() {
             <h2>Assign a role</h2>
             <p>Give someone a custom role, for the whole school or just one branch.</p>
           </div>
+          <label className="row" style={{ gap: 6, fontSize: 13 }}>
+            <input type="checkbox" checked={bulk} onChange={(e) => setBulk(e.target.checked)} />
+            Bulk assign
+          </label>
         </div>
         <div className="panel-body">
           {assignable.length ? (
             <div className="form-grid">
-              <Field label="Person" required>
-                <select name="user_id" required defaultValue="">
-                  <option value="">{people.loading ? "Loading staff…" : "Choose a person"}</option>
-                  {people.data?.map((p) => (
-                    <option key={p.user_id} value={p.user_id}>
-                      {`${p.full_name} · ${label(p.role)}`}
-                    </option>
-                  ))}
-                </select>
-              </Field>
+              {bulk ? null : (
+                <Field label="Person" required>
+                  <select name="user_id" required defaultValue="">
+                    <option value="">{people.loading ? "Loading staff…" : "Choose a person"}</option>
+                    {people.data?.map((p) => (
+                      <option key={p.user_id} value={p.user_id}>
+                        {`${p.full_name} · ${label(p.role)}`}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              )}
               <Field label="Role" required>
                 <select name="role_id" required defaultValue="">
                   <option value="">Choose a role</option>
@@ -152,6 +180,19 @@ export function RoleAssignment() {
                   ))}
                 </select>
               </Field>
+              {bulk ? (
+                <div className="field full">
+                  <span>{`People · ${picked.size} ticked`}</span>
+                  <div className="row" style={{ flexWrap: "wrap", gap: "6px 18px", maxHeight: 220, overflowY: "auto" }}>
+                    {people.data?.map((p) => (
+                      <label key={p.user_id} className="row" style={{ gap: 6, fontSize: 13 }}>
+                        <input type="checkbox" checked={picked.has(p.user_id)} onChange={() => togglePick(p.user_id)} />
+                        {`${p.full_name} · ${label(p.role)}`}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : (
             <p className="muted">{roles.loading ? "Loading roles…" : "There is no active custom role to assign yet. Create one under Permissions first."}</p>
@@ -161,13 +202,12 @@ export function RoleAssignment() {
           <span>{`${assignable.length} custom ${assignable.length === 1 ? "role" : "roles"} can be assigned`}</span>
           <button type="submit" className="btn primary" disabled={saving || !assignable.length}>
             <Icon name="check" className="sm" />
-            {saving ? "Assigning…" : "Assign role"}
+            {saving ? "Assigning…" : bulk ? `Assign to ${picked.size || ""} ${picked.size === 1 ? "person" : "people"}` : "Assign role"}
           </button>
         </div>
       </form>
       <div className="gap" />
       <Panel title="Allocation workspace" sub={`${items.length} ${items.length === 1 ? "assignment" : "assignments"}${list.loading ? " · Loading…" : ""}`} flush>
-        {/* Not wired: Bulk assign — the API assigns one person at a time; no endpoint */}
         <div className="table-wrap">
           <table className="data-table">
             <thead>

@@ -15,26 +15,40 @@ import type { Complaint, Meal, MenuSlot, Outing, Resident, RollStatus } from "./
 
 const ROLL: Record<RollStatus, [string, string]> = { present: ["Present", "present"], absent: ["Absent", "absent"], on_leave: ["Leave", "leave"] };
 
-/** SCR-212, live: GET /hostels/{id}/residents?on= and POST /hostels/{id}/roll-call (morning or night). */
+/** SCR-212, live: GET /hostels/{id}/residents?on= and POST /hostels/{id}/roll-call (morning or night; check-in time, late and a remark per resident). */
 export function HostelAttendance() {
   const { hostels, hostel, select } = useHostel();
   const [day, setDay] = useState(today());
   const [session, setSession] = useState<"morning" | "night">(() => (new Date().getHours() < 14 ? "morning" : "night"));
   const residents = useApi<Resident[]>(hostel ? `${HOSTELS}/${hostel.id}/residents` : null, { on: day });
   const [marks, setMarks] = useState<Record<number, RollStatus>>({});
+  const [extra, setExtra] = useState<Record<number, { checked_in_at: string; is_late: boolean; remark: string }>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const list = residents.data;
 
   useEffect(() => {
-    if (list) setMarks(Object.fromEntries(list.map((r) => [r.student_id, r.today[session] ?? (r.out_now ? "on_leave" : "present")])));
+    if (list) {
+      setMarks(Object.fromEntries(list.map((r) => [r.student_id, r.today[session] ?? (r.out_now ? "on_leave" : "present")])));
+      setExtra(
+        Object.fromEntries(
+          list.map((r) => {
+            const d = r.today_details?.[session];
+            return [r.student_id, { checked_in_at: d?.checked_in_at?.slice(0, 5) ?? "", is_late: d?.is_late ?? false, remark: d?.remark ?? "" }];
+          }),
+        ),
+      );
+    }
   }, [list, session]);
+  const ex = (id: number) => extra[id] ?? { checked_in_at: "", is_late: false, remark: "" };
+  const setEx = (id: number, patch: Partial<{ checked_in_at: string; is_late: boolean; remark: string }>) => setExtra((p) => ({ ...p, [id]: { ...ex(id), ...patch } }));
 
   const counts = useMemo(() => {
     const c = { present: 0, absent: 0, on_leave: 0 };
     Object.values(marks).forEach((m) => (c[m] += 1));
     return c;
   }, [marks]);
+  const lateCount = Object.entries(extra).filter(([id, e]) => e.is_late && marks[Number(id)] === "present").length;
   const saved = list?.filter((r) => r.today[session]).length ?? 0;
 
   async function save(e: FormEvent<HTMLFormElement>) {
@@ -43,7 +57,11 @@ export function HostelAttendance() {
     setSaving(true);
     setError(null);
     try {
-      const r = await api.post<{ marked: number }>(`${HOSTELS}/${hostel.id}/roll-call`, { date: day, session, marks: list.map((x) => ({ student_id: x.student_id, status: marks[x.student_id] ?? "present" })) });
+      const r = await api.post<{ marked: number }>(`${HOSTELS}/${hostel.id}/roll-call`, { date: day, session, marks: list.map((x) => {
+          const status = marks[x.student_id] ?? "present";
+          const e = ex(x.student_id);
+          return { student_id: x.student_id, status, checked_in_at: status === "present" && e.checked_in_at ? e.checked_in_at : null, is_late: status === "present" && e.is_late, remark: e.remark.trim() || null };
+        }) });
       notify(`${label(session)} roll call saved (${r.marked ?? list.length} marked).`);
       residents.reload();
     } catch (err) {
@@ -83,7 +101,7 @@ export function HostelAttendance() {
           flush
         >
           <div className="approval-summary">
-            <strong>{`${counts.present} Present   ${counts.absent} Absent   ${counts.on_leave} Leave`}</strong>
+            <strong>{`${counts.present} Present   ${lateCount} Late   ${counts.absent} Absent   ${counts.on_leave} Leave`}</strong>
             <span>{`${list?.length ?? 0} resident(s) · ${saved} already saved for this session`}</span>
           </div>
           <div className="table-wrap">
@@ -93,6 +111,9 @@ export function HostelAttendance() {
                   <th>Student</th>
                   <th>Room / bed</th>
                   <th>Status</th>
+                  <th>Check-in</th>
+                  <th>Late</th>
+                  <th>Remarks</th>
                   <th>Out now</th>
                 </tr>
               </thead>
@@ -120,6 +141,15 @@ export function HostelAttendance() {
                           ))}
                         </select>
                       </td>
+                      <td>
+                        <input type="time" className="marks-input" style={{ width: 110, textAlign: "left" }} aria-label={`Check-in time for ${r.student_name}`} value={ex(r.student_id).checked_in_at} disabled={m !== "present"} onChange={(e) => setEx(r.student_id, { checked_in_at: e.target.value })} />
+                      </td>
+                      <td>
+                        <input type="checkbox" aria-label={`${r.student_name} was late`} checked={m === "present" && ex(r.student_id).is_late} disabled={m !== "present"} onChange={(e) => setEx(r.student_id, { is_late: e.target.checked })} />
+                      </td>
+                      <td>
+                        <input className="marks-input" style={{ width: 160, textAlign: "left" }} aria-label={`Remark for ${r.student_name}`} placeholder="Add a note" maxLength={300} value={ex(r.student_id).remark} onChange={(e) => setEx(r.student_id, { remark: e.target.value })} />
+                      </td>
                       <td>{r.out_now ? "On an outing" : "—"}</td>
                     </tr>
                   );
@@ -128,7 +158,6 @@ export function HostelAttendance() {
             </table>
           </div>
           {list && !list.length ? <div className="table-empty">No residents in this hostel.</div> : null}
-          {/* Not wired: check-in time, "Late" and per-student remarks — the roll call records only present, absent or on leave. */}
         </Panel>
       )}
       <div className="form-footer" style={{ border: "0", background: "transparent" }}>

@@ -58,6 +58,7 @@ export type Loan = {
   accruing_fine: string;
   fine_status: FineStatus;
   fine_note: string | null;
+  remarks: string | null;
 };
 
 export type Member = {
@@ -90,7 +91,12 @@ export type Fine = {
   amount: string;
   status: FineStatus;
   note: string | null;
+  received: string | null;
+  payment_method: string | null;
 };
+
+/** GET /library/copies/lookup */
+export type CopyLookup = { copy_id: number; accession_no: string; book_id: number; title: string; author: string | null; status: string; is_reference: boolean; held_for: string | null };
 
 export type Fines = { pending: number; pending_amount: string; collected_amount: string; waived_amount: string; billed_amount: string; fines: Fine[] };
 
@@ -103,6 +109,8 @@ export type Reservation = {
   queue_position: number | null;
   hold_until: string | null;
   held_accession_no: string | null;
+  reserved_on: string | null;
+  notify_channel: string | null;
   created_at: string;
 };
 

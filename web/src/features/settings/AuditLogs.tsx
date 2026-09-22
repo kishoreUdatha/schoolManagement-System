@@ -15,7 +15,14 @@ import type { AuditEntry } from "./types";
 const LIMIT = 50;
 const ACTION: Record<string, string> = { create: "Created record", update: "Updated record", delete: "Deleted record" };
 
-type Filters = { action: string; entity_type: string; from: string; to: string };
+type Filters = { action: string; entity_type: string; from: string; to: string; result: string };
+
+/** Why a refused attempt was refused, from the status the log keeps. */
+function refusal(e: AuditEntry): string | undefined {
+  const v = e.new_values ?? {};
+  const detail = typeof v.detail === "string" ? v.detail : undefined;
+  return [v.status ? `HTTP ${v.status}` : null, detail].filter(Boolean).join(" · ") || undefined;
+}
 
 /** What changed, by field name, from the old and new values the log keeps. */
 function changed(e: AuditEntry): string {
@@ -26,13 +33,13 @@ function changed(e: AuditEntry): string {
 }
 
 /**
- * SCR-294, live: GET /audit-log with action, record type and date filters,
+ * SCR-294, live: GET /audit-log with action, result, record type and date filters,
  * fifty at a time (limit/offset; the API returns no total). "Export log"
  * downloads GET /audit-log.csv with the same filters.
  */
 export function AuditLogs() {
   const [typed, setTyped] = useState("");
-  const [f, setF] = useState<Filters>({ action: "", entity_type: "", from: "", to: "" });
+  const [f, setF] = useState<Filters>({ action: "", entity_type: "", from: "", to: "", result: "" });
   const [page, setPage] = useState(1);
   useEffect(() => {
     const t = setTimeout(() => setF((x) => ({ ...x, entity_type: typed.trim() })), 400);
@@ -49,8 +56,9 @@ export function AuditLogs() {
     { name: e.user_name ?? "System", sub: e.user_role ? label(e.user_role) : (e.user_email ?? undefined) },
     ACTION[e.action] ?? label(e.action),
     `${e.entity_type}${e.entity_id ? ` #${e.entity_id}` : ""}`,
-    changed(e),
-    e.request_path ?? "—",
+    e.scope ?? "—",
+    e.result === "failed" ? { name: "Failed", sub: refusal(e) } : "Success",
+    e.result === "failed" ? (e.request_path ?? "—") : changed(e),
   ]);
 
   return (
@@ -66,14 +74,18 @@ export function AuditLogs() {
           <option value="update">Updated</option>
           <option value="delete">Deleted</option>
         </select>
+        <select aria-label="Filter by result" value={f.result} onChange={(e) => setF({ ...f, result: e.target.value })}>
+          <option value="">All results</option>
+          <option value="success">Success</option>
+          <option value="failed">Failed attempts</option>
+        </select>
         <input type="date" aria-label="From date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} />
         <input type="date" aria-label="To date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} />
       </div>
       <ErrorNote>{list.error}</ErrorNote>
       <Panel title="Activity log" sub={`Latest changes first · ${items.length} on this page${list.loading ? " · Loading…" : ""}`} action={<span className="badge">Read only</span>} flush>
-        {/* Not wired: Scope and Result columns — the log records neither a campus nor a failed attempt; replaced by the fields changed and the request */}
         <DataTable
-          columns={["Timestamp", "User", "Action", "Resource", "Changes", "Request"]}
+          columns={["Timestamp", "User", "Action", "Resource", "Scope", "Result", "Changes"]}
           rows={rows}
           selectable={false}
           rowAction={false}

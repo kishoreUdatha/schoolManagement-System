@@ -82,6 +82,10 @@ export type Dose = {
   dose: string;
   reason: string | null;
   given_by: string | null;
+  given_by_user_id: number | null;
+  recorded_by: string | null;
+  prescribed_by: string | null;
+  consent_reference: string | null;
   parent_informed: boolean;
   notes: string | null;
   corrects_id: number | null;
@@ -124,7 +128,7 @@ export type Appointment = {
   notes: string | null;
 };
 
-export type CaseSession = { id: number; met_on: string; minutes: number | null; attendees: string | null; notes: string; next_session_on: string | null; recorded_by_name: string | null };
+export type CaseSession = { id: number; met_on: string; minutes: number | null; attendees: string | null; notes: string; support_plan: string | null; next_session_on: string | null; recorded_by_name: string | null };
 
 export type CounsellingCase = {
   id: number;
@@ -200,7 +204,7 @@ export type OutstandingAction = {
   overdue: boolean;
 };
 
-export type ChainLink = { id: number; sequence: number; contact_name: string; relationship: string; phone: string; notes: string | null };
+export type ChainLink = { id: number; sequence: number; contact_name: string; relationship: string; phone: string; notes: string | null; availability: string | null };
 
 export type Chain = {
   student_id: number;
@@ -215,6 +219,6 @@ export type Chain = {
   doctor_phone: string | null;
 };
 
-export type Thin = { students: { student_id: number; student_name: string; admission_no: string; section_label: string | null; contacts: number; why: string }[]; count: number; none_at_all: number };
+export type Thin = { students: { student_id: number; student_name: string; admission_no: string; section_label: string | null; contacts: number; why: string; availability: string | null }[]; count: number; none_at_all: number };
 
 export type StaffOption = { user_id: number; full_name: string; role: string };

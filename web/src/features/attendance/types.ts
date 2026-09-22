@@ -33,6 +33,8 @@ export type DayRow = {
   full_name: string;
   status: Status | null;
   remark: string | null;
+  arrived_at: string | null;
+  left_at: string | null;
   on_leave: string | null;
   marked_at: string | null;
 };
@@ -179,6 +181,8 @@ export type TimesRow = {
   arrived_at: string | null;
   left_at: string | null;
   remark: string | null;
+  authorised_by: string | null;
+  recorded_by_name: string | null;
   times_in_window: number;
 };
 export type TimesWindow = { from_date: string; to_date: string; rows: TimesRow[]; count: number };

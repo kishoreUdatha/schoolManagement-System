@@ -48,6 +48,12 @@ class AssignIn(BaseModel):
     branch_id: Optional[int] = None
 
 
+class BulkAssignIn(BaseModel):
+    user_ids: list[int] = Field(..., min_length=1, max_length=500)
+    role_id: int
+    branch_id: Optional[int] = None
+
+
 class AssignmentRead(BaseModel):
     id: int
     user_id: int

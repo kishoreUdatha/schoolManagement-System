@@ -43,6 +43,8 @@ class Supplier(Base, PrimaryKeyMixin, TimestampMixin, _School):
     email: Mapped[Optional[str]] = mapped_column(String(255))
     gstin: Mapped[Optional[str]] = mapped_column(String(15))
     address: Mapped[Optional[str]] = mapped_column(Text)
+    # What they supply: "Stationery", "Lab equipment", "IT"
+    category: Mapped[Optional[str]] = mapped_column(String(80))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
@@ -88,6 +90,9 @@ class StockMove(Base, PrimaryKeyMixin, TimestampMixin, _School):
     )
     reference: Mapped[Optional[str]] = mapped_column(String(80))  # invoice / challan no.
     issued_to: Mapped[Optional[str]] = mapped_column(String(160))  # department, lab, person
+    # Where the stock went into (a receipt) or came out of / went to (an issue):
+    # "Main store", "Science lab shelf 2".
+    location: Mapped[Optional[str]] = mapped_column(String(80))
     store_sale_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("store_sales.id", ondelete="CASCADE")
     )

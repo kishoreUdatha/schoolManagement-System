@@ -97,6 +97,8 @@ class ExamCreate(ExamBase):
     academic_year_id: int
     term_id: Optional[int] = None
     instructions: Optional[str] = Field(None, max_length=4000)
+    class_ids: Optional[list[int]] = Field(None, max_length=100)
+    result_date: Optional[date] = None
 
 
 class ExamUpdate(BaseModel):
@@ -108,6 +110,8 @@ class ExamUpdate(BaseModel):
     exam_type_id: Optional[int] = None
     grade_scale_id: Optional[int] = None
     instructions: Optional[str] = Field(None, max_length=4000)
+    class_ids: Optional[list[int]] = Field(None, max_length=100)
+    result_date: Optional[date] = None
 
 
 class ExamRead(BaseModel):
@@ -133,6 +137,9 @@ class ExamRead(BaseModel):
     revised_at: Optional[datetime] = None
     revision_reason: Optional[str] = None
     instructions: Optional[str] = None
+    class_ids: list[int] = []
+    class_names: list[str] = []
+    result_date: Optional[date] = None
     created_at: datetime
     papers: list[ExamPaperRead] = []
     papers_count: int = 0

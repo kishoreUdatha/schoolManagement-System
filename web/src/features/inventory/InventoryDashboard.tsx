@@ -23,8 +23,8 @@ function greeting(): string {
 /**
  * SCR-234, live: GET /inventory/dashboard for the headline figures and low
  * stock, /analytics/inventory for value by category, /inventory/moves for
- * recent activity, /inventory/assignments, /inventory/assets for warranties
- * and /lab-bookings for what is coming up.
+ * recent activity, /inventory/assignments, /inventory/assets for warranties,
+ * /ops/assets/service-due for servicing and /lab-bookings for what is coming up.
  */
 export function InventoryDashboard() {
   const me = useSession()?.user;
@@ -38,6 +38,11 @@ export function InventoryDashboard() {
   const out = useApi<Assignment[]>(`${INV}/assignments`, { open_only: true });
   const assets = useApi<Asset[]>(`${INV}/assets`);
   const bookings = useApi<LabBooking[]>("/api/v1/school/lab-bookings", { from: today(), to: soonIso });
+  const service = useApi<{ count: number; overdue: number; assets: { service_due_on: string | null }[] }>("/api/v1/school/ops/assets/service-due", { within_days: 30 });
+  const serviceDue = service.data?.assets.filter((a) => {
+    const x = daysUntil(a.service_due_on);
+    return x !== null && x <= 30;
+  }).length;
 
   const d = dash.data;
   const n = (v: number | undefined) => (v === undefined ? "…" : v.toLocaleString("en-IN"));
@@ -45,8 +50,11 @@ export function InventoryDashboard() {
     { label: "Tracked items", value: n(d?.items), note: d ? `${money(Math.round(Number(d.stock_value)))} in stock` : "Store items" },
     { label: "Assets assigned", value: n(out.data?.length), note: d ? `Of ${d.assets} asset(s) on the register` : "Out with staff or rooms" },
     { label: "Low stock items", value: n(d?.low_stock.length), note: "At or below reorder level" },
-    // Not wired: "Maintenance due" — assets carry no service schedule; what is away being repaired is shown instead.
-    { label: "Under repair", value: n(d?.assets_in_repair), note: d?.warranty_expiring ? `${d.warranty_expiring} warranty(ies) ending within 30 days` : "No warranties ending soon" },
+    {
+      label: "Maintenance due",
+      value: n(serviceDue),
+      note: service.data ? `${service.data.overdue} overdue · ${d?.assets_in_repair ?? 0} under repair now` : "Service due within 30 days",
+    },
   ];
 
   const recent = (moves.data ?? []).slice(0, 4);

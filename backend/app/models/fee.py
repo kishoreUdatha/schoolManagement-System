@@ -100,6 +100,31 @@ class FeeStructure(Base, PrimaryKeyMixin, TimestampMixin):
     )
 
 
+class FeeStructureName(Base, PrimaryKeyMixin, TimestampMixin):
+    """The name a school gives one class's fee structure for a year
+    ("Grade 5 · Day scholar 2026-27"). The structure itself is still its
+    lines in fee_structures; this only labels the set."""
+
+    __tablename__ = "fee_structure_names"
+    __table_args__ = (
+        UniqueConstraint("school_id", "academic_year_id", "class_id", name="uq_fee_structure_name"),
+    )
+
+    tenant_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    school_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("schools.id", ondelete="CASCADE"), nullable=False
+    )
+    academic_year_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("academic_years.id", ondelete="CASCADE"), nullable=False
+    )
+    class_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("school_classes.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+
+
 class StudentFee(Base, PrimaryKeyMixin, TimestampMixin):
     """A single fee line item for one student for one period.
 

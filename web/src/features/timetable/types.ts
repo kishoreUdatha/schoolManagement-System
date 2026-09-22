@@ -96,6 +96,8 @@ export type GenResult = {
   entries: { class_subject_id: number; subject_name: string; day_of_week: number; period_number: number }[];
   unplaced: { class_subject_id: number; subject_name: string; still_short: number; because: string }[];
   left_empty: number;
+  room_name?: string | null;
+  without_room?: number;
   complete: boolean;
 };
 
