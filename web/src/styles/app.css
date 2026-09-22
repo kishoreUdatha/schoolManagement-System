@@ -144,8 +144,6 @@ option{background:#fff}
 .page-head h1{font-size:24px;letter-spacing:-.5px}
 
 /* Settings: the screens are tabs across the top, the form takes the width. */
-.settings-layout:has(> .settings-tabs){display:block}
-.settings-tabs{margin-bottom:18px}
 
 /* In-app confirm / question dialog (lib/dialog), instead of the browser's. */
 .bc-dialog-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(15,33,66,.42);display:grid;place-items:center;padding:16px;animation:bc-fade .12s ease-out}

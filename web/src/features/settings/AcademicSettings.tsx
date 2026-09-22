@@ -12,7 +12,6 @@ import { useApi } from "@/lib/useApi";
 import { Field, orNull } from "@/features/setup/bits";
 import type { AcademicYear, AttendanceMode, SchoolProfile, Term } from "@/features/setup/types";
 import { PROFILE, WorkingDays, readDays } from "./GeneralSettings";
-import { SettingsNav } from "./SettingsNav";
 import type { GradeScale, ReportCardSettings } from "./types";
 
 import { ask } from "@/lib/dialog";
@@ -97,8 +96,7 @@ export function AcademicSettings() {
   }
 
   return (
-    <div className="settings-layout">
-      <SettingsNav active={290} />
+    <div>
       <div>
         <form id="academic-form" key={`${r?.id}-${profile.data?.updated_at}-${def?.id}`} className="panel" onSubmit={submit}>
           <div className="panel-head">

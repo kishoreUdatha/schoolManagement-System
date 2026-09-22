@@ -8,7 +8,6 @@ import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field } from "@/features/setup/bits";
-import { SettingsNav } from "./SettingsNav";
 import type { Integration, SecurityPolicy, TwoFactorScope } from "./types";
 
 export const PROFILE = "/api/v1/school/profile";
@@ -47,8 +46,7 @@ const INTEGRATION_ICON: Record<string, IconName> = { razorpay: "money", storage:
 export function IntegrationSettings() {
   const list = useApi<Integration[]>("/api/v1/school/integrations");
   return (
-    <div className="settings-layout">
-      <SettingsNav active={292} />
+    <div>
       <div>
         <Panel title="Connected services" sub="What the school is connected to, as the server reports it">
           <ErrorNote>{list.error}</ErrorNote>
@@ -127,8 +125,7 @@ export function SecuritySettings() {
   }
 
   return (
-    <div className="settings-layout">
-      <SettingsNav active={293} />
+    <div>
       <div>
         <form id="security-form" key={JSON.stringify(p)} className="panel" onSubmit={submit}>
           <div className="panel-head">

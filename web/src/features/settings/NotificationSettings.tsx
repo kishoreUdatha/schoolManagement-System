@@ -11,7 +11,6 @@ import { useApi } from "@/lib/useApi";
 import { Field, hhmm, orNull } from "@/features/setup/bits";
 import type { SchoolProfile } from "@/features/setup/types";
 import { PROFILE } from "./GeneralSettings";
-import { SettingsNav } from "./SettingsNav";
 import type { Integration, NotificationCatalogue, NotificationTemplate, TemplatePreview } from "./types";
 
 import { ask } from "@/lib/dialog";
@@ -135,8 +134,7 @@ export function NotificationSettings() {
   }
 
   return (
-    <div className="settings-layout">
-      <SettingsNav active={291} />
+    <div>
       <div className="stack">
         <ErrorNote>{error ?? cat.error ?? templates.error}</ErrorNote>
         <div className="panel">
