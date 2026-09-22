@@ -9,8 +9,8 @@ import { MODULES, SCREENS } from "@/lib/screens";
  * Screens that are not starting points: a form opened from a list's "Add"
  * button, or a page about one record (?id=). They stay reachable from those
  * buttons and links, from search and from the catalogue, but the menu lists
- * only lists, dashboards, calendars and setup pages. While you are on one, it
- * shows in its group so you can see where you are.
+ * only lists, dashboards, calendars and setup pages. While you are on one, the
+ * list it belongs to is highlighted instead (PARENT).
  */
 const NOT_IN_MENU = new Set([
   11, 12, 23, 24, 26, 27, // add / details: organisation, school, branch
@@ -25,6 +25,17 @@ const NOT_IN_MENU = new Set([
   34, 35, 36, 37, 38, 39, 40, 41, 42, // the other roles' dashboards
   110, 114, 128, 131, 132, 134, 145, 147, // teacher / parent / student portal screens
 ]);
+
+/** The menu entry to highlight while on a screen that is not in the menu. */
+const PARENT: Record<number, number> = {
+  11: 10, 12: 10, 23: 22, 24: 22, 26: 25, 27: 25,
+  45: 44, 46: 44, 49: 48, 50: 48,
+  56: 55, 57: 55, 58: 55, 59: 55, 60: 55, 61: 55, 62: 55, 63: 55, 64: 55, 65: 55, 66: 55, 67: 55, 68: 55,
+  72: 71, 73: 71, 74: 71, 76: 71, 79: 71,
+  81: 80, 82: 80, 83: 80,
+  99: 98, 103: 102, 129: 128, 130: 128, 135: 134, 156: 155, 175: 174,
+  187: 186, 188: 186, 190: 189, 199: 198, 200: 198, 247: 246, 248: 246,
+};
 
 /**
  * One module in the menu: a heading that opens to list the module's screens.
@@ -49,7 +60,9 @@ export function ModuleGroup({
   tone: number;
   count?: number;
 }) {
-  const screens = SCREENS.filter((x) => mods.includes(MODULES.indexOf(x.module)) && (!NOT_IN_MENU.has(x.n) || x.id === currentId));
+  const screens = SCREENS.filter((x) => mods.includes(MODULES.indexOf(x.module)) && !NOT_IN_MENU.has(x.n));
+  const currentN = SCREENS.find((x) => x.id === currentId)?.n;
+  const activeN = currentN !== undefined ? (PARENT[currentN] ?? currentN) : undefined;
   const here = mods.includes(MODULES.indexOf(currentModule));
   const [open, setOpen] = useState(here);
 
@@ -70,7 +83,7 @@ export function ModuleGroup({
       {open ? (
         <div className="subnav-list">
           {screens.map((x) => (
-            <Link key={x.id} href={x.route} className={`subnav ${x.id === currentId ? "active" : ""}`} aria-current={x.id === currentId ? "page" : undefined}>
+            <Link key={x.id} href={x.route} className={`subnav ${x.n === activeN ? "active" : ""}`} aria-current={x.id === currentId ? "page" : undefined}>
               {x.name}
             </Link>
           ))}
