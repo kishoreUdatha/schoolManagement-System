@@ -123,6 +123,11 @@ for n in (35, 36):
 GLOBAL = {1, 2, 3, 4, 5, 47, 48}
 
 
+# Titles changed where the backend differs from the pack (sign-in is by email, not mobile).
+TITLE = {3: "Verify sign-in"}
+FEATURE = {2: "Sign in with the email and password the school gave the parent.", 3: "Enter the one-time code when the school asks for one."}
+
+
 def route(s: dict) -> str:
     return "/parent/" + slug(s["title"])
 
@@ -130,8 +135,8 @@ def route(s: dict) -> str:
 def write_registry(all_: list[dict]) -> None:
     rows = [
         {
-            "id": s["id"], "n": s["number"], "title": s["title"], "module": s["module"], "release": s["release"],
-            "feature": s["feature"], "erp": s.get("related_erp", []), "route": route(s),
+            "id": s["id"], "n": s["number"], "title": TITLE.get(s["number"], s["title"]), "module": s["module"], "release": s["release"],
+            "feature": FEATURE.get(s["number"], s["feature"]), "erp": s.get("related_erp", []), "route": route(s),
             "tab": TAB.get(s["number"], "more"), "global": s["number"] in GLOBAL, "public": s["number"] <= 4,
         }
         for s in all_

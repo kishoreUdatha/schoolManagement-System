@@ -15,10 +15,17 @@ export function useApi<T>(path: string | null, params?: Params) {
   const [loading, setLoading] = useState(Boolean(path));
   const key = path ? path + JSON.stringify(params ?? {}) : null;
   const seq = useRef(0);
+  const lastKey = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     if (!path) return;
     const mine = ++seq.current;
+    // A different resource (another child, another record): never show the old one meanwhile.
+    if (lastKey.current !== key) {
+      lastKey.current = key;
+      setData(null);
+      setError(null);
+    }
     setLoading(true);
     try {
       const d = await api.get<T>(path, params);
