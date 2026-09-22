@@ -159,7 +159,7 @@ ATTR = {
     "rowspan": "rowSpan", "maxlength": "maxLength", "minlength": "minLength",
     "autocomplete": "autoComplete", "readonly": "readOnly", "autofocus": "autoFocus",
     "inputmode": "inputMode", "datetime": "dateTime", "viewbox": "viewBox",
-    "preserveaspectratio": "preserveAspectRatio", "novalidate": "noValidate",
+    "preserveaspectratio": "preserveAspectRatio", "novalidate": "noValidate", "pathlength": "pathLength",
 }
 BOOLEAN = {"required", "disabled", "checked", "selected", "readonly", "multiple", "hidden", "autofocus", "novalidate", "open"}
 NUMERIC = {"minLength", "maxLength", "tabIndex", "colSpan", "rowSpan", "size", "rows", "cols"}

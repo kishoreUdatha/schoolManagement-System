@@ -36,7 +36,9 @@ export function SignInForm() {
       router.push(routeOf(7));
       return;
     }
-    router.push(next && next.startsWith("/") ? next : routeOf(HOME_SCREEN[t.user.role]));
+    // Parents use the parent app (the Parent Mobile design); everyone else the workspace.
+    const home = t.user.role === "parent" ? "/parent/home" : routeOf(HOME_SCREEN[t.user.role]);
+    router.push(next && next.startsWith("/") ? next : home);
   }
 
   async function submit(e: FormEvent<HTMLFormElement>) {

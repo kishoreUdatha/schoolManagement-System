@@ -60,6 +60,14 @@ const DEFS: Def[] = [
   [1073, "Library Settings", "library", "Librarian", "settings", "/library/library-settings"],
   [1080, "Approval Requests", "settings", "Principal", "approval", "/settings/approval-requests"],
   [1081, "Data Exports", "settings", "School Admin", "table", "/settings/data-exports"],
+  // Self-service portals: staff, teacher, student.
+  [1090, "My Attendance", "hr", "Staff", "attendancehistory", "/human-resources/my-attendance"],
+  [1091, "My Leave", "hr", "Staff", "table", "/human-resources/my-leave"],
+  [1092, "My Payslips", "hr", "Staff", "table", "/human-resources/my-payslips"],
+  [1093, "My Library Loans", "library", "Staff", "table", "/library/my-library-loans"],
+  [1094, "Behaviour Notes", "health", "Teacher", "table", "/health-wellbeing/behaviour-notes"],
+  [1095, "Weekly Progress Reports", "academics", "Teacher", "table", "/academics/weekly-progress-reports"],
+  [1096, "My Students", "students", "Teacher", "table", "/students/my-students"],
 ];
 
 export const EXTRA_SCREENS: Screen[] = DEFS.map(([n, name, mod, role, layout, route]) => ({

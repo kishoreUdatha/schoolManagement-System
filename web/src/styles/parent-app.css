@@ -1,0 +1,13 @@
+/* The parent app outside the pack's design preview: the phone frame
+   becomes the real screen. parent.css (generated, scoped under .pm) holds
+   the pack's own styles; this file only adapts them. */
+
+.pm{min-height:100vh;min-height:100dvh;display:flex;justify-content:center;background:#edf2fb}
+.pm .phone{width:100%;max-width:430px;height:100vh;height:100dvh;border-radius:0;border:0;box-shadow:0 0 0 1px #d8e1f1,0 12px 35px #243f6712}
+.pm #app-header{padding-top:max(3px,env(safe-area-inset-top))}
+.pm #bottom-nav{padding-bottom:max(0px,env(safe-area-inset-bottom))}
+.pm .student-photo.initials{display:grid;place-items:center;font-weight:800;color:#2457e6;background:#dfe9ff}
+@media (min-width:760px){
+  .pm{padding:24px 0}
+  .pm .phone{height:calc(100vh - 48px);border-radius:26px}
+}

@@ -155,3 +155,33 @@ shell, sidebar and search already know them. Only the page is missing.
 - Public pages (no sign-in, for example the online admission form) do not use
   `AppShell`. Use the `auth-page` layout of the sign-in screen
   (`src/app/(screens)/welcome/sign-in/page.tsx`).
+
+## The parent app (/parent)
+
+The parent portal follows the approved Parent Mobile pack (58 screens,
+PM-001…PM-058), not the staff workspace design. `scripts/build_parent_pages.py`
+converted the pack: each screen is `src/app/parent/<slug>/page.tsx` inside
+`<ParentShell screen={n}>`, the pack's phone frame with header, child bar, bottom tabs and
+More menu. Its styles are `src/styles/parent.css`, which is generated and scoped
+under `.pm`, so use the pack's class names (`panel`, `item`, `action`, `status`,
+`v-icon`, `identity-card` …) exactly as the converted markup does. The registry is
+`src/lib/parentScreens.ts`; `parentRoute(n)` gives a screen's route.
+
+- `useParent()` (from `@/components/parent/ParentShell`) gives `children`, the selected
+  `child` / `childId`, `setChild`, `notify` (toast), `go(n)`, `loading` and `error`.
+  Every child-scoped request must use `childId`, and pass it in the `useApi` path so
+  switching child reloads the data. Never mix siblings' records.
+- Parent endpoints are `/api/v1/parent/me/...` (children, fees, homework, leaves,
+  notices, conversations, ptm, transport…). Read the OpenAPI spec and the old frontend
+  (`frontend/src/app/parent/`) for how they are called.
+- Keep the converted markup and fill it with real data. The mock uses `data-go="n"` for
+  navigation, which `ParentShell` still honours. Replace it with `go(n)` or `<Link>` where
+  you touch an element. `data-act` and similar attributes do nothing: give those
+  elements real handlers.
+- Pages keep the header comment. When wired, add a line starting `// Wired:` so the
+  converter leaves the page alone.
+- Payments: server-created order, provider-hosted checkout, and success only once the
+  server has verified it (see `features/fees/OnlinePayment.tsx`, which already does this
+  for the staff view).
+- Parents sign in with email and password; an OTP step follows when the server asks
+  (`otp_required`). The dev parent is `sharma@dev.local` / `ParentPass123!` (no OTP).

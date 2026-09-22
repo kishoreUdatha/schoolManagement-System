@@ -1,0 +1,195 @@
+"""Turn the Parent Mobile pack (58 screens) into pages under /parent.
+
+The pack is one HTML app: the screens' markup sits in a JSON array
+(`const SCREENS=[...]`) and a script draws the phone frame around it. This
+reads that array, translates each screen's markup to JSX with the same
+emitter build_pages.py uses, and writes one page per screen inside
+<ParentShell>, the React version of the frame. It also writes the pack's
+stylesheet, scoped under `.pm` so its class names (.panel, .field,
+.avatar…) cannot collide with the staff app's, and the screen registry.
+
+    python scripts/build_parent_pages.py [path/to/Parent_Mobile_58_Screens]
+
+Pages whose header says "// Wired:" are left alone, as in build_pages.py.
+"""
+from __future__ import annotations
+
+import json
+import re
+import sys
+from pathlib import Path
+
+from bs4 import BeautifulSoup
+
+sys.argv = sys.argv[:2]
+PACK = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parents[2] / "Parent_Mobile_58_Screens (2)"
+sys.argv = sys.argv[:1]
+import build_pages as B  # noqa: E402  (the JSX emitter)
+
+WEB = B.WEB
+OUT = WEB / "src/app/parent"
+SRC_HTML = next((PACK / "screens").glob("PM-006_*.html")).read_text(encoding="utf-8")
+
+
+def slug(t: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", t.lower()).strip("-")
+
+
+def screens() -> list[dict]:
+    script = re.findall(r"<script[^>]*>(.*?)</script>", SRC_HTML, re.S)[-1]
+    a = script.index("const SCREENS=") + len("const SCREENS=")
+    b = script.index("];", a) + 1
+    return json.loads(script[a:b])
+
+
+# ------------------------------------------------------------------ styles
+
+DROP = re.compile(r"(^|[\s,>+~])(\.catalog|\.preview|\.search-label|#library-toggle|\.statusbar|\.home-indicator|#screen-code|#feature-description|#phase-label|\.preview-mode|body\.show-library)")
+
+
+def scope_selector(sel: str) -> str | None:
+    parts = []
+    for s in sel.split(","):
+        s = s.strip()
+        if not s or DROP.search(" " + s):
+            continue
+        s = s.replace("#toast", "#pm-toast")
+        if s in (":root", "body", "html"):
+            parts.append(".pm")
+        elif s == "*":
+            parts.append(".pm, .pm *")
+        elif s.startswith("body"):
+            parts.append(".pm" + s[4:])
+        else:
+            parts.append(".pm " + s)
+    return ", ".join(parts) or None
+
+
+def scope(css: str) -> str:
+    out, i = [], 0
+    while i < len(css):
+        if css.startswith("@media", i):
+            head_end = css.index("{", i)
+            head = css[i:head_end]
+            depth, j = 1, head_end + 1
+            while depth:
+                depth += {"{": 1, "}": -1}.get(css[j], 0)
+                j += 1
+            inner = scope(css[head_end + 1 : j - 1])
+            if inner.strip():
+                out.append(f"{head}{{{inner}}}")
+            i = j
+            continue
+        if css.startswith("/*", i):
+            i = css.index("*/", i) + 2
+            continue
+        brace = css.find("{", i)
+        if brace < 0:
+            break
+        end = css.index("}", brace)
+        sel, body = css[i:brace].strip(), css[brace + 1 : end]
+        if sel and not sel.startswith("@font-face"):
+            scoped = scope_selector(sel)
+            if scoped:
+                out.append(f"{scoped}{{{body}}}")
+        i = end + 1
+    return "\n".join(out)
+
+
+def write_css() -> None:
+    css = "".join(re.findall(r"<style>(.*?)</style>", SRC_HTML, re.S))
+    css = re.sub(r"@font-face\{[^}]*\}", "", css)
+    css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+    css = css.replace("Manrope,Arial,sans-serif", "var(--font-sans),Arial,sans-serif").replace("font-family:Manrope", "font-family:var(--font-sans)")
+    (WEB / "src/styles/parent.css").write_text(
+        "/* Parent Mobile pack styles, scoped under .pm by scripts/build_parent_pages.py. Do not edit;\n"
+        "   put changes in parent-app.css. */\n" + re.sub(r"(?m)^\s*:root\{", ".pm{", scope(css)) + "\n",
+        encoding="utf-8",
+    )
+
+
+# ------------------------------------------------------------------ registry
+
+TAB = {6: "home"}
+for n in [14, 15, 16, 17, 18, 19, 20, 21, 22, 55, 56, 57, 58]:
+    TAB[n] = "learn"
+for n in range(23, 29):
+    TAB[n] = "fees"
+for n in (35, 36):
+    TAB[n] = "inbox"
+GLOBAL = {1, 2, 3, 4, 5, 47, 48}
+
+
+def route(s: dict) -> str:
+    return "/parent/" + slug(s["title"])
+
+
+def write_registry(all_: list[dict]) -> None:
+    rows = [
+        {
+            "id": s["id"], "n": s["number"], "title": s["title"], "module": s["module"], "release": s["release"],
+            "feature": s["feature"], "erp": s.get("related_erp", []), "route": route(s),
+            "tab": TAB.get(s["number"], "more"), "global": s["number"] in GLOBAL, "public": s["number"] <= 4,
+        }
+        for s in all_
+    ]
+    body = ",\n".join("  " + json.dumps(r, ensure_ascii=False) for r in rows)
+    (WEB / "src/lib/parentScreens.ts").write_text(
+        "// Generated by scripts/build_parent_pages.py from the Parent Mobile pack. Do not edit.\n\n"
+        "export type ParentScreen = {\n  id: string;\n  n: number;\n  title: string;\n  module: string;\n  release: string;\n"
+        "  feature: string;\n  erp: string[];\n  route: string;\n  tab: \"home\" | \"learn\" | \"fees\" | \"inbox\" | \"more\";\n"
+        "  /** No child bar: account-level screens. */\n  global: boolean;\n  /** Reachable without signing in. */\n  public: boolean;\n};\n\n"
+        f"export const PARENT_SCREENS: ParentScreen[] = [\n{body},\n];\n\n"
+        "const BY_N = new Map(PARENT_SCREENS.map((s) => [s.n, s]));\n\n"
+        "export function parentScreen(n: number): ParentScreen {\n  const s = BY_N.get(n);\n"
+        "  if (!s) throw new Error(`Unknown parent screen ${n}`);\n  return s;\n}\n\n"
+        "export const parentRoute = (n: number) => parentScreen(n).route;\n",
+        encoding="utf-8",
+    )
+
+
+# ------------------------------------------------------------------ pages
+
+def page_source(s: dict) -> str:
+    B.CTX = B.Ctx({"id": s["id"], "layout": "parent", "module": s["module"], "name": s["title"], "labels": []})
+    soup = BeautifulSoup(f"<div>{s['body']}</div>", "html.parser")
+    for img in soup.find_all("img"):
+        span = soup.new_tag("span", attrs={"class": img.get("class", []) + ["initials"]})
+        span.string = "AR"
+        img.replace_with(span)
+    jsx = B.children_jsx(soup.div, 3)
+    imports = ['import { ParentShell } from "@/components/parent/ParentShell";']
+    if "Link" in B.CTX.imports:
+        imports.insert(0, 'import Link from "next/link";')
+    head = [
+        f"// {s['id']} · {s['title']}",
+        f"// Parent app · Module: {s['module']} · Release: {s['release']} · ERP: {' / '.join(s.get('related_erp', []))}",
+        f"// Feature: {s['feature']}",
+        f"// Mock: Parent_Mobile_58_Screens/screens/{s['id']}_{slug(s['title']).replace('-', '_')}.html",
+        "// Generated by scripts/build_parent_pages.py. Sample data only until this page is wired to the API.",
+    ]
+    return (
+        "\n".join(head) + "\n\n" + "\n".join(imports) + "\n\n"
+        f"export const metadata = {{ title: {B.js(s['id'] + ' · ' + s['title'] + ' · BrightCampus Parent')} }};\n\n"
+        "export default function Page() {\n  return (\n"
+        f"    <ParentShell screen={{{s['number']}}}>\n{jsx}    </ParentShell>\n  );\n}}\n"
+    )
+
+
+def main() -> None:
+    all_ = screens()
+    write_css()
+    write_registry(all_)
+    written = 0
+    for s in all_:
+        target = OUT / route(s).removeprefix("/parent/") / "page.tsx"
+        if target.exists() and "// Wired:" in target.read_text(encoding="utf-8")[:2000]:
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(page_source(s), encoding="utf-8")
+        written += 1
+    print(f"Wrote {written} parent pages, parent.css and parentScreens.ts.")
+
+
+if __name__ == "__main__":
+    main()
