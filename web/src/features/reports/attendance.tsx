@@ -94,7 +94,21 @@ type Chronic = {
   below: number;
   min_days: number;
   count: number;
-  students: { student_id: number; admission_no: string; student_name: string; section_label: string | null; marked_days: number; present_days: number; absent_days: number; percent: number }[];
+  students: {
+    student_id: number;
+    admission_no: string;
+    student_name: string;
+    section_label: string | null;
+    marked_days: number;
+    present_days: number;
+    absent_days: number;
+    percent: number;
+    /** the latest call home about this child (recorded on SCR-118) */
+    last_follow_up_on: string | null;
+    last_follow_up_method: string | null;
+    next_follow_up_on: string | null;
+    follow_up_due: boolean;
+  }[];
 };
 
 /** SCR-269, live: GET /api/v1/school/analytics/chronic-absence (?below&min_days&from&to). */
@@ -114,7 +128,10 @@ export function ChronicAbsence() {
     ["Below 50%", (p) => p < 50],
     [`50–${b}%`, (p) => p >= 50],
   ];
-  const rows: Row[] = kids.map((k) => [{ name: k.student_name, sub: k.admission_no }, k.section_label ?? "—", num(k.marked_days), num(k.present_days), num(k.absent_days), pct(k.percent)]);
+  const followUp = (k: Chronic["students"][number]) =>
+    k.last_follow_up_on ? `${date(k.last_follow_up_on)} · ${label(k.last_follow_up_method)}${k.follow_up_due ? " · next due" : ""}` : "None yet";
+  const rows: Row[] = kids.map((k) => [{ name: k.student_name, sub: k.admission_no }, k.section_label ?? "—", num(k.marked_days), num(k.absent_days), pct(k.percent), followUp(k)]);
+  const contacted = kids.filter((k) => k.last_follow_up_on).length;
   return (
     <ReportView
       filters={
@@ -138,7 +155,7 @@ export function ChronicAbsence() {
       stats={[
         { label: "Students below threshold", value: num(d?.count), note: "School-wide" },
         { label: "Threshold", value: d ? pct(d.below, 0) : "—", note: "Attendance below this" },
-        { label: "Minimum days", value: num(d?.min_days), note: "Days marked to count" },
+        { label: "Followed up", value: d ? `${contacted} / ${kids.length}` : "—", note: kids.length ? `${kids.filter((k) => k.follow_up_due).length} follow-up(s) due` : "Calls home recorded" },
         { label: "Window", value: d ? `${date(d.from_date).slice(0, 6)} – ${date(d.to_date).slice(0, 6)}` : "—", note: d ? `${date(d.from_date)} – ${date(d.to_date)}` : "Attendance period" },
       ]}
       chart={{ kind: "bars", title: "Students below threshold by section", sub: "Count of children under the line", bars: [...bySection].map(([l, n]) => ({ label: l, value: n, text: num(n) })), empty: "No child is below the threshold. Good news." }}
@@ -150,10 +167,10 @@ export function ChronicAbsence() {
       ]}
       summaryTitle="How far below"
       summary={kids.length ? bands.map(([l, f]) => { const n = kids.filter((k) => f(k.percent)).length; return { label: l, value: share(n, kids.length), text: `${n}` }; }) : []}
-      // Not wired: "Last follow-up" — the API does not record follow-ups on absence.
       table={{
         name: "chronic-absence",
-        columns: ["Student", "Class", "Days marked", "Present days", "Absent days", "Attendance"],
+        sub: "Last follow-up is the latest call home recorded on Chronic Absence Alerts, where a new one is recorded",
+        columns: ["Student", "Class", "Days marked", "Absent days", "Attendance", "Last follow-up"],
         rows,
         empty: "No child is below the threshold for this window.",
         onView: (i) => router.push(`${routeOf(57)}?id=${kids[i].student_id}`),

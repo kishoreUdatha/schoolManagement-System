@@ -352,7 +352,14 @@ def dashboard(db: Session, student: Student) -> dict:
             {"exam_id": e.id, "name": e.name, "end_date": e.end_date} for e in published
         ],
         "notices": _notices(db, student),
+        "learning_streak": _streak(db, student),
     }
+
+
+def _streak(db: Session, student: Student) -> dict:
+    from app.services import insight_service
+
+    return insight_service.learning_streak(db, student)
 
 
 def _notices(db: Session, student: Student, limit: int = 5) -> list[dict]:

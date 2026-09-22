@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { HeroArt } from "@/components/ui/HeroArt";
+import { Chart } from "@/components/ui/Chart";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
@@ -13,7 +14,7 @@ import { date, dateTime, money } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
-import type { Health, Renewal, Tenant, TicketList, UsageSummary } from "./types";
+import type { Health, Renewal, SchoolsByMonth, Tenant, TicketList, UsageSummary } from "./types";
 
 const n = (v: number | undefined) => (v === undefined ? "…" : v.toLocaleString("en-IN"));
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -35,6 +36,9 @@ export function PlatformDashboard() {
   const health = useApi<Health>("/api/v1/super-admin/health");
   const tickets = useApi<TicketList>("/api/v1/super-admin/tickets");
   const recent = useApi<Paginated<Tenant>>("/api/v1/super-admin/tenants", { page_size: 3 });
+  const activeByMonth = useApi<SchoolsByMonth>("/api/v1/super-admin/activity/schools-by-month", { months: 6 });
+  const trend = activeByMonth.data ?? [];
+  const peakSchools = Math.max(0, ...trend.map((m) => m.schools));
 
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -147,8 +151,8 @@ export function PlatformDashboard() {
       <div className="two-col dashboard-grid" style={{ marginBottom: "20px" }}>
         <div>
           <Panel
-            title="Platform usage"
-            sub="Totals across all organizations · messages over the last 30 days"
+            title="Platform activity"
+            sub={peakSchools ? `Active schools over the last six months · % of the ${peakSchools} school(s) on the platform` : "Active schools over the last six months"}
             action={
               h ? (
                 <Link href={routeOf(18)} className="live-indicator">
@@ -157,7 +161,20 @@ export function PlatformDashboard() {
               ) : undefined
             }
           >
-            {/* Not wired: a six-month trend of active schools — no endpoint keeps history. */}
+            {/* Active: anything recorded in the school's audit trail that month, a sign-in included. */}
+            {peakSchools ? (
+              <Chart
+                kind="line"
+                labels={trend.map((m) => MONTHS[Number(m.month.slice(5, 7)) - 1])}
+                values={trend.map((m) => Math.round((m.active / peakSchools) * 100))}
+                label="Active schools by month"
+              />
+            ) : (
+              <p className="muted">{activeByMonth.loading ? "Loading…" : (activeByMonth.error ?? "No school activity recorded yet.")}</p>
+            )}
+            {trend.length ? <p className="muted small">{trend.map((m) => `${MONTHS[Number(m.month.slice(5, 7)) - 1]} ${m.active}/${m.schools}`).join(" · ")}</p> : null}
+            <div style={{ height: 12 }} />
+            <h4 className="small strong muted">Usage · totals across all organizations, messages over the last 30 days</h4>
             {usage.length ? (
               <dl className="kv">
                 {usage.map(([k, v]) => (

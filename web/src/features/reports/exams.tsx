@@ -1,10 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Row } from "@/components/ui/DataTable";
 import { date, pct } from "@/lib/format";
-import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { num, ReportView, share } from "./kit";
 
@@ -33,15 +31,17 @@ type Analysis = {
   subjects: Subject[];
   toppers: { student_id: number; student_name: string; admission_no: string; section_label: string | null; obtained: number; max: number; percent: number }[];
   struggling: Subject[];
+  /** one row per class section, student by student */
+  classes: { section_label: string; appeared: number; passed: number; failed: number; pass_percent: number; average_percent: number; top_percent: number; needs_support: number }[];
 };
 
 /**
  * SCR-270 Academic Performance, SCR-271 Subject Performance and SCR-272 Exam
  * Result Analysis, live: GET /api/v1/school/exams, then
- * GET /api/v1/school/analytics/exams/{id}. One exam at a time, whole cohort.
+ * GET /api/v1/school/analytics/exams/{id}. One exam at a time, by subject
+ * for the whole cohort and by class section (`classes`).
  */
 export function ExamReport({ view }: { view: "academic" | "subject" | "result" }) {
-  const router = useRouter();
   const exams = useApi<Exam[]>("/api/v1/school/exams");
   const [examId, setExamId] = useState<number | null>(null);
   useEffect(() => {
@@ -78,8 +78,10 @@ export function ExamReport({ view }: { view: "academic" | "subject" | "result" }
   const gradeBars = grades.map((g) => ({ label: `Grade ${g.grade}`, value: share(g.count, gradeTotal), text: num(g.count) }));
   const subjectLine = { kind: "line" as const, key: "Average score %", labels: subjects.slice(0, 6).map((s) => s.subject_code || s.subject_name), values: subjects.slice(0, 6).map((s) => s.average_percent) };
 
+  const classes = d?.classes ?? [];
+
   if (view === "academic") {
-    const rows: Row[] = (d?.toppers ?? []).map((t) => [{ name: t.student_name, sub: t.admission_no }, t.section_label ?? "—", `${num(t.obtained)} / ${num(t.max)}`, pct(t.percent)]);
+    const rows: Row[] = classes.map((c) => [c.section_label, num(c.appeared), pct(c.average_percent), pct(c.pass_percent), pct(c.top_percent), c.needs_support ? num(c.needs_support) : "—"]);
     return (
       <ReportView
         filters={filters}
@@ -88,17 +90,14 @@ export function ExamReport({ view }: { view: "academic" | "subject" | "result" }
         stats={stats}
         chart={{ ...subjectLine, title: "Performance overview", sub: "Average score by subject, weakest first (up to six)" }}
         scope={scope}
-        summaryTitle="Grade spread"
-        summary={gradeBars}
-        // Not wired: the mock's per-class rows — the analysis covers the whole cohort, not class by class.
+        summaryTitle="Top performers"
+        summary={(d?.toppers ?? []).slice(0, 5).map((t) => ({ label: `${t.student_name}${t.section_label ? ` · ${t.section_label}` : ""}`, value: t.percent, text: pct(t.percent, 0) }))}
         table={{
-          name: "exam-toppers",
-          title: "Top performers",
-          sub: "Highest overall percentage in this exam",
-          columns: ["Student", "Class", "Marks", "Percentage"],
+          name: "academic-performance-by-class",
+          sub: "Each student's overall percentage in this exam, by class section · needs support: failed a paper or under 40%",
+          columns: ["Class", "Students", "Average", "Pass rate", "Top score", "Needs support"],
           rows,
           empty,
-          onView: (i) => router.push(`${routeOf(57)}?id=${d!.toppers[i].student_id}`),
         }}
       />
     );
@@ -121,7 +120,7 @@ export function ExamReport({ view }: { view: "academic" | "subject" | "result" }
     );
   }
 
-  const rows: Row[] = subjects.map((s) => [s.subject_name, num(s.entered), num(s.passed), num(s.absent), pct(s.pass_percent), pct(s.average_percent)]);
+  const rows: Row[] = classes.map((c) => [c.section_label, num(c.appeared), num(c.passed), num(c.failed), pct(c.pass_percent), pct(c.average_percent)]);
   return (
     <ReportView
       filters={filters}
@@ -132,8 +131,7 @@ export function ExamReport({ view }: { view: "academic" | "subject" | "result" }
       scope={scope}
       summaryTitle="Grade spread"
       summary={gradeBars}
-      // Not wired: results by class — the analysis is per subject for the whole cohort.
-      table={{ name: "exam-result-analysis", columns: ["Subject", "Entered", "Passed", "Absent", "Pass rate", "Average"], rows, empty }}
+      table={{ name: "exam-result-analysis-by-class", sub: "Students who sat the exam, by class section · passed: every paper they sat was a pass", columns: ["Class", "Appeared", "Passed", "Failed", "Pass rate", "Average"], rows, empty }}
     />
   );
 }

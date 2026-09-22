@@ -461,4 +461,47 @@ def funnel(db: Session, school_id: int, academic_year_id: Optional[int]) -> dict
         total=sum(by_status.values()),
         in_progress=sum(by_status.get(s.value, 0) for s in OPEN_STATUSES),
         admitted=by_status.get(ApplicationStatus.admitted.value, 0),
+        by_source=_by_source(db, school_id, academic_year_id),
     )
+
+
+def _by_source(db: Session, school_id: int, academic_year_id: Optional[int]) -> list[dict]:
+    """Where families heard of the school, carried through the funnel:
+    enquiries taken, applications made, places confirmed (admitted) and
+    applications still open, per source.
+
+    An application's source is its enquiry's. One made without an enquiry
+    (straight from the public form) counts under "direct". Enquiries have no
+    academic year, so with a year chosen they are the ones taken between its
+    start and end dates."""
+    enq = select(AdmissionEnquiry.source, func.count()).where(AdmissionEnquiry.school_id == school_id)
+    app = (
+        select(AdmissionEnquiry.source, AdmissionApplication.status, func.count())
+        .select_from(AdmissionApplication)
+        .join(AdmissionEnquiry, AdmissionEnquiry.id == AdmissionApplication.enquiry_id, isouter=True)
+        .where(AdmissionApplication.school_id == school_id)
+    )
+    if academic_year_id:
+        year = db.get(AcademicYear, academic_year_id)
+        if year:
+            enq = enq.where(func.date(AdmissionEnquiry.created_at).between(year.start_date, year.end_date))
+        app = app.where(AdmissionApplication.academic_year_id == academic_year_id)
+    out: dict[str, dict] = {}
+
+    def row(source) -> dict:
+        key = source.value if source is not None else "direct"
+        return out.setdefault(key, {"source": key, "enquiries": 0, "applications": 0, "confirmed": 0, "pending": 0})
+
+    for source, n in db.execute(enq.group_by(AdmissionEnquiry.source)).all():
+        row(source)["enquiries"] += n
+    for source, st, n in db.execute(app.group_by(AdmissionEnquiry.source, AdmissionApplication.status)).all():
+        r = row(source)
+        r["applications"] += n
+        if st == ApplicationStatus.admitted:
+            r["confirmed"] += n
+        elif st in OPEN_STATUSES:
+            r["pending"] += n
+    for r in out.values():
+        base = r["enquiries"] or r["applications"]
+        r["conversion"] = round(r["confirmed"] / base * 100, 1) if base else 0.0
+    return sorted(out.values(), key=lambda r: (-r["enquiries"], -r["applications"], r["source"]))

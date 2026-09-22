@@ -7,13 +7,17 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
-import { date, money, pct } from "@/lib/format";
+import { date, dateTime, money, pct } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
-import { BarList, monthLabel, num } from "./kit";
+import { TodaySchedulePanel } from "../dashboards/parts";
+import type { ActivityItem } from "../dashboards/types";
+import { monthLabel, num } from "./kit";
 
 type Overview = {
+  academic_average: number | null;
+  academic_average_exams: number;
   students: number;
   staff: number;
   attendance_this_month: number;
@@ -24,24 +28,30 @@ type Overview = {
 };
 type Holiday = { id: number; name: string; type: string; start_date: string; end_date: string; days: number; description: string | null };
 
-const REPORTS: [number, string, string, IconName][] = [
-  [266, "Student strength", "Class and section rolls against capacity", "users"],
-  [268, "Attendance analytics", "Class percentages for any period", "check"],
-  [272, "Exam result analysis", "Pass rate, grades and weak subjects", "chart"],
-  [273, "Fee collection", "What came in, by head, class and mode", "money"],
-  [274, "Outstanding dues", "How old the unpaid money is", "file"],
-];
+/** An icon for an activity line, by what was touched. */
+function activityIcon(entity: string): IconName {
+  if (/Fee|Payment|Refund|Cheque|Expense|Payroll|Salary|Concession|Income/.test(entity)) return "money";
+  if (/Attendance|Absence/.test(entity)) return "check";
+  if (/Notice|Message|Announcement/.test(entity)) return "message";
+  if (/Student|Guardian|Admission|Enquiry|Application/.test(entity)) return "users";
+  if (/Exam|Mark|Result|Homework|Syllabus|Lesson/.test(entity)) return "book";
+  return "file";
+}
 
 function greeting() {
   const h = new Date().getHours();
   return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
 
-/** SCR-264, live: GET /api/v1/school/analytics/overview (?months=6) and GET /api/v1/school/holidays (?upcoming). */
+/**
+ * SCR-264, live: GET /api/v1/school/analytics/overview (?months=6), GET /api/v1/school/holidays (?upcoming),
+ * GET /api/v1/school/insights/schedule/today and GET /api/v1/school/insights/activity.
+ */
 export function ExecutiveDashboard() {
   const sess = useSession();
   const res = useApi<Overview>("/api/v1/school/analytics/overview", { months: 6 });
   const holidays = useApi<Holiday[]>("/api/v1/school/holidays", { upcoming: true, limit: 3 });
+  const activity = useApi<ActivityItem[]>("/api/v1/school/insights/activity", { limit: 3 });
   const d = res.data;
   const first = sess?.user.full_name.split(/\s+/)[0];
   const now = new Date();
@@ -68,11 +78,14 @@ export function ExecutiveDashboard() {
         items={[
           { label: "Students", value: num(d?.students), note: `${num(d?.staff)} staff` },
           { label: "Attendance", value: d ? pct(d.attendance_this_month) : "—", note: "This month · all classes" },
-          { label: "Collected this month", value: money(d?.collected_this_month), note: thisMonth ? `${money(thisMonth.raised)} raised this month` : "Fees received" },
-          { label: "Outstanding dues", value: money(d?.outstanding), note: "Unpaid fees, all time" },
+          {
+            label: "Academic average",
+            value: !d ? "—" : d.academic_average === null ? "—" : pct(d.academic_average),
+            note: !d ? "Published exams" : d.academic_average === null ? "No published marks this year" : `${d.academic_average_exams} published exam(s) this year`,
+          },
+          { label: "Collected this month", value: money(d?.collected_this_month), note: thisMonth ? `${money(thisMonth.raised)} raised · ${money(d?.outstanding)} outstanding` : "Fees received" },
         ]}
       />
-      {/* Not wired: "Academic average" — no school-wide average score endpoint; replaced by money figures above. */}
       <div className="dashboard-actions">
         <span className="small strong muted">Quick actions</span>
         <div className="quick-row">
@@ -109,32 +122,28 @@ export function ExecutiveDashboard() {
           </Panel>
         </div>
         <aside>
-          {/* Not wired: "Today's schedule" — there is no school-wide timetable feed; the money trend takes its place. */}
-          <Panel title="Fees collected by month" action={<Link href={routeOf(273)} className="btn text">View all</Link>}>
-            <BarList
-              bars={(d?.money_by_month ?? []).map((m) => ({ label: monthLabel(m.month), value: Number(m.collected), text: money(m.collected) }))}
-              empty={res.loading ? "Loading…" : "Nothing collected yet."}
-            />
-          </Panel>
+          <TodaySchedulePanel />
         </aside>
       </div>
       <div className="two-col dashboard-grid">
         <div>
-          {/* Not wired: "Recent activity" — no activity feed endpoint; the report index takes its place. */}
-          <Panel title="Reports">
-            {REPORTS.map(([n, t, p, icon]) => (
-              <div className="timeline-item" key={n}>
-                <span className="timeline-dot">
-                  <Icon name={icon} />
-                </span>
-                <div>
-                  <h4>
-                    <Link href={routeOf(n)}>{t}</Link>
-                  </h4>
-                  <p>{p}</p>
+          <Panel title="Recent activity" action={sess?.user.role === "school_admin" ? <Link href={routeOf(294)} className="btn text">Audit log</Link> : undefined}>
+            {activity.data?.length ? (
+              activity.data.map((a) => (
+                <div className="timeline-item" key={a.id}>
+                  <span className="timeline-dot">
+                    <Icon name={activityIcon(a.entity_type)} />
+                  </span>
+                  <div>
+                    <h4>{a.title}</h4>
+                    <p>{[a.detail, a.user_name ?? "System"].filter(Boolean).join(" · ")}</p>
+                  </div>
+                  <time>{dateTime(a.created_at)}</time>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="muted">{activity.loading ? "Loading…" : (activity.error ?? "Nothing has happened yet.")}</p>
+            )}
           </Panel>
         </div>
         <aside>

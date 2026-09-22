@@ -22,17 +22,15 @@ import type { Child, ClassSubject, Entry, ExamRoom, Period, SectionTimetable } f
  * Edit: GET /school/sections/{id}/timetable, PUT/DELETE a slot, copy from
  * another section, publish / unpublish, and the school-wide teacher clash
  * report (GET /school/sections/clashes). View: the same GET for the office,
- * GET /parent/me/children/{id}/timetable for a parent. ?section= preselects.
+ * GET /parent/me/children/{id}/timetable for a parent, GET /student/timetable
+ * for a student. ?section= preselects.
  */
 export function SectionWeek({ mode }: { mode: "edit" | "view" }) {
   const hydrated = useHydrated();
   const role = useSession()?.user.role;
   if (!hydrated) return <Loading what="Loading the timetable…" />;
   if (mode === "view" && role === "parent") return <ChildWeek />;
-  if (mode === "view" && role === "student") {
-    // Not wired: a student's own timetable — the student portal has no timetable endpoint.
-    return <ErrorNote>Your class timetable is not available in the student portal yet. Ask your class teacher or see it through the parent portal.</ErrorNote>;
-  }
+  if (mode === "view" && role === "student") return <StudentWeek />;
   if (mode === "view" && role === "teacher") {
     return (
       <section className="panel">
@@ -409,6 +407,43 @@ function CopyModal({ sectionId, others, onClose, onDone }: { sectionId: number; 
         </form>
       )}
     </Modal>
+  );
+}
+
+/** A student's own class week: GET /student/timetable (published timetables only). */
+function StudentWeek() {
+  const tt = useApi<SectionTimetable>("/api/v1/student/timetable");
+  const data = tt.data;
+  const byPeriod = new Map<number, Entry>();
+  data?.entries.forEach((e) => byPeriod.set(e.period_id, e));
+  const unpublished = tt.error === "Timetable is not published yet";
+  const noClass = tt.error === "You are not in a class yet";
+  return (
+    <>
+      <ErrorNote>{unpublished || noClass ? null : tt.error}</ErrorNote>
+      <Panel title={weekLabel()} sub={data ? `Your class · ${data.section_label}` : "Your class"} action={data ? <span className="badge blue">Published</span> : undefined} flush>
+        <div className="table-wrap">
+          {unpublished ? (
+            <div className="panel-pad muted">The school hasn&apos;t published your class timetable yet. Check back soon.</div>
+          ) : noClass ? (
+            <div className="panel-pad muted">You haven&apos;t been placed in a class yet. Ask the school office.</div>
+          ) : !data ? (
+            <div className="panel-pad muted">{tt.loading ? "Loading the timetable…" : "No timetable to show."}</div>
+          ) : (
+            <WeekGrid
+              slots={data.periods}
+              empty="No periods have been set up yet."
+              cell={(_, p) => {
+                if (!p) return null;
+                if (p.is_break) return <Lesson tone="peach" title={p.label ?? "Break"} lines={[span(p.start_time, p.end_time)]} />;
+                const e = byPeriod.get(p.id);
+                return e ? <Lesson tone={toneOf(e.subject_code)} title={e.subject_name} lines={[e.teacher_name]} /> : null;
+              }}
+            />
+          )}
+        </div>
+      </Panel>
+    </>
   );
 }
 

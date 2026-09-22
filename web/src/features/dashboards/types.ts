@@ -54,11 +54,17 @@ export type OfficeDashboard = {
     note: string | null;
   };
   notifications?: { since: string; sent_count: number; total_recipients: number };
+  /** lessons sat in on (classroom observations) */
+  observations?: { this_month: number; this_year: number; last_observed_on: string | null } | null;
   generated_at: string;
 };
 
 /** GET /api/v1/school/analytics/overview */
 export type AnalyticsOverview = {
+  /** mean score over the current year's published exams; null before any */
+  academic_average: number | null;
+  academic_average_marks: number;
+  academic_average_exams: number;
   students: number;
   staff: number;
   attendance_this_month: number;
@@ -147,6 +153,8 @@ export type StudentDashboardData = {
   attendance: { marked_days: number; present: number; absent: number; half_day: number; percent: number };
   recent_exams: { exam_id: number; name: string; end_date: string }[];
   notices: { notice_id: number; title: string; body: string | null; created_at: string }[];
+  /** homework handed in on time, in a row, counting back from the latest */
+  learning_streak: { count: number; since: string | null; on_time: number; set: number } | null;
 };
 
 /** GET /api/v1/student/exams/{id} (the parts the dashboard reads) */
@@ -229,7 +237,31 @@ export type StaffDashboardData = {
     href: string | null;
     stats: { label: string; value: string | number; tone?: string | null }[];
     todo: string | null;
+    /** six months of the job's workload count */
+    trend: { label: string; months: { month: string; value: number }[] } | null;
   }[];
   jobs: string[];
   nothing_assigned: boolean;
+};
+
+/** GET /api/v1/school/insights/schedule/today */
+export type TodaySchedule = {
+  date: string;
+  /** school: the whole timetable (admin, principal); personal: this person's own day */
+  scope: "school" | "personal";
+  holiday: string | null;
+  items: { start_time: string | null; end_time: string | null; title: string; sub: string; kind: string }[];
+};
+
+/** GET /api/v1/school/insights/activity (and /super-admin/tenants/{id}/activity) */
+export type ActivityItem = {
+  id: number;
+  action: string;
+  entity_type: string;
+  entity_id: number | null;
+  title: string;
+  detail: string | null;
+  user_name: string | null;
+  user_role: string | null;
+  created_at: string;
 };

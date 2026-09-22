@@ -172,7 +172,31 @@ export type Plan = {
   modules: PlanModule[];
 };
 
-export type HealthCheck = { name: string; state: string; detail: string; monitored: boolean };
+export type HealthCheck = { name: string; state: string; detail: string; monitored: boolean; latency_ms?: number | null };
+
+/** GET /api/v1/super-admin/health/history (?days) — from the kept probes, one every five minutes */
+export type HealthHistory = {
+  days: number;
+  since: string;
+  samples: number;
+  first_sample_at: string | null;
+  services: {
+    service: string;
+    samples: number;
+    up: number;
+    availability: number | null;
+    avg_latency_ms: number | null;
+    p95_latency_ms: number | null;
+    last_state: string | null;
+    last_checked_at: string | null;
+    last_down_at: string | null;
+  }[];
+  /** the last 24 hours in six four-hour blocks */
+  response_time: { from: string; to: string; avg_latency_ms: number | null; samples: number }[];
+};
+
+/** GET /api/v1/super-admin/activity/schools-by-month */
+export type SchoolsByMonth = { month: string; schools: number; active: number }[];
 
 export type Health = {
   checked_at: string;

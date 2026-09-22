@@ -6,7 +6,7 @@ import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { dateTime, date, label, money, pct } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
-import { count, DateRow, Empty, Hero, lastMonths, monthLabel, QuickActions, TimelineRow } from "./parts";
+import { count, DateRow, Empty, Hero, lastMonths, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel } from "./parts";
 import type { AnalyticsOverview, Approval, OfficeDashboard } from "./types";
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -87,7 +87,7 @@ function attendanceStat(d: OfficeDashboard | null): Stat {
   return { label: "Attendance today", value: pct(a.attendance_pct), note: `${a.marked} of ${d.counts.students_active} students marked` };
 }
 
-/** SCR-033, live: GET /api/v1/school/dashboard and /api/v1/school/analytics/overview. */
+/** SCR-033, live: GET /api/v1/school/dashboard, /api/v1/school/analytics/overview and /api/v1/school/insights/schedule/today. */
 export function SchoolAdminDashboard() {
   const dash = useApi<OfficeDashboard>("/api/v1/school/dashboard");
   const overview = useApi<AnalyticsOverview>("/api/v1/school/analytics/overview", { months: 6 });
@@ -125,27 +125,7 @@ export function SchoolAdminDashboard() {
           <AttendanceTrend overview={o} loading={overview.loading} />
         </div>
         <aside>
-          {/* Not wired: the mock's "Today's schedule" (a school-wide timetable for the day) — no endpoint; this month's figures stand in its place. */}
-          <Panel title="This month">
-            <dl className="kv">
-              <div>
-                <dt>New admissions</dt>
-                <dd>{count(d?.admissions.this_month_count)}</dd>
-              </div>
-              <div>
-                <dt>Fees outstanding (all time)</dt>
-                <dd>{d ? money(d.fees.pending_outstanding) : "…"}</dd>
-              </div>
-              <div>
-                <dt>Homework handed in</dt>
-                <dd>{d?.homework.available ? pct(d.homework.submission_rate_pct) : "—"}</dd>
-              </div>
-              <div>
-                <dt>Notices sent</dt>
-                <dd>{count(d?.notifications?.sent_count)}</dd>
-              </div>
-            </dl>
-          </Panel>
+          <TodaySchedulePanel />
         </aside>
       </div>
       <div className="two-col dashboard-grid">
@@ -167,7 +147,7 @@ const APPROVAL_LABEL: Record<Approval["kind"], string> = {
   result_publishing: "Result publishing",
 };
 
-/** SCR-034, live: GET /api/v1/principal/dashboard, /api/v1/principal/approvals and the analytics overview. */
+/** SCR-034, live: GET /api/v1/principal/dashboard, /api/v1/principal/approvals, the analytics overview and today's schedule. */
 export function PrincipalDashboard() {
   const dash = useApi<OfficeDashboard>("/api/v1/principal/dashboard");
   const approvals = useApi<Approval[]>("/api/v1/principal/approvals", { status: "pending", limit: 500 });
@@ -184,11 +164,10 @@ export function PrincipalDashboard() {
       note: exam?.exam_name ? `${exam.exam_name}${exam.marks_count ? ` · pass rate ${pct(exam.pass_rate_pct)}` : " · no marks yet"}` : "Latest exam",
     },
     { label: "Open approvals", value: open ? (open.length >= 500 ? "500+" : String(open.length)) : "…", note: "Waiting for your decision" },
-    // Not wired: the mock's "Classes observed" — no endpoint; homework hand-in rate shown instead.
     {
-      label: "Homework handed in",
-      value: !d ? "…" : d.homework.available ? pct(d.homework.submission_rate_pct) : "—",
-      note: d?.homework.available ? `${d.homework.total_homework ?? 0} homework set this month` : (d?.homework.note ?? "This month"),
+      label: "Classes observed",
+      value: !d ? "…" : count(d.observations?.this_month ?? 0),
+      note: d?.observations?.last_observed_on ? `This month · last on ${date(d.observations.last_observed_on)}` : thisMonth(),
     },
   ];
 
@@ -216,16 +195,11 @@ export function PrincipalDashboard() {
           <AttendanceTrend overview={overview.data} loading={overview.loading} />
         </div>
         <aside>
-          {/* Not wired: the mock's "Today's schedule" — no endpoint; the approvals queue stands in its place. */}
-          <Panel title="Waiting for approval" sub="Marks, attendance, leave and results">
-            {open?.length ? (
-              open.slice(0, 3).map((a) => (
-                <TimelineRow key={a.id} icon="file" title={APPROVAL_LABEL[a.kind]} sub={`${a.requested_by_name ?? "—"}${a.reason ? ` · ${a.reason}` : ""}`} time={dateTime(a.created_at)} />
-              ))
-            ) : (
-              <Empty>{open ? "Nothing is waiting for approval." : "Loading…"}</Empty>
-            )}
-          </Panel>
+          {/* The approvals waiting follow the day's timed items, as the mock's schedule lists its reviews. */}
+          <TodaySchedulePanel
+            limit={3}
+            todo={(open ?? []).slice(0, 2).map((a) => ({ title: APPROVAL_LABEL[a.kind], sub: `${a.requested_by_name ?? "—"}${a.reason ? ` · ${a.reason}` : ""}`, badge: "Approval" }))}
+          />
         </aside>
       </div>
       <div className="two-col dashboard-grid">

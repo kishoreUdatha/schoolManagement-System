@@ -681,6 +681,7 @@ def health(db: Session) -> dict:
             "state": "up",
             "detail": f"Answered a query in {ms} ms.",
             "monitored": True,
+            "latency_ms": ms,
         })
     except Exception as e:
         checks.append({

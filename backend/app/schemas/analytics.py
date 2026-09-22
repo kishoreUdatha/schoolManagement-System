@@ -42,6 +42,10 @@ class MonthMoney(BaseModel):
 
 
 class Overview(BaseModel):
+    # mean score over the current year's published exams; None before any
+    academic_average: Optional[float] = None
+    academic_average_marks: int = 0
+    academic_average_exams: int = 0
     students: int
     staff: int
     attendance_this_month: float
@@ -120,6 +124,11 @@ class ChronicAbsenceRow(BaseModel):
     present_days: int
     absent_days: int
     percent: float
+    # the latest call home about this child, if any (SCR-118)
+    last_follow_up_on: Optional[date] = None
+    last_follow_up_method: Optional[str] = None
+    next_follow_up_on: Optional[date] = None
+    follow_up_due: bool = False
 
 
 class ChronicAbsence(BaseModel):
@@ -164,6 +173,18 @@ class GradeCount(BaseModel):
     count: int
 
 
+class ExamClassRow(BaseModel):
+    """One class section's result in the exam, student by student."""
+    section_label: str
+    appeared: int
+    passed: int
+    failed: int
+    pass_percent: float
+    average_percent: float
+    top_percent: float
+    needs_support: int
+
+
 class ExamAnalysis(BaseModel):
     exam_id: int
     exam_name: str
@@ -174,6 +195,7 @@ class ExamAnalysis(BaseModel):
     subjects: list[ExamSubjectRow]
     toppers: list[ExamTopper]
     struggling: list[ExamSubjectRow]
+    classes: list[ExamClassRow] = []
 
 
 # ---------- teachers ----------
@@ -207,6 +229,18 @@ class MonthAmount(BaseModel):
     amount: Decimal
 
 
+class HeadBilled(BaseModel):
+    """One fee head: billed (falling due in the window) against paid."""
+    label: str
+    expected: Decimal
+    paid: Decimal
+    outstanding: Decimal
+    collection_rate: float
+    bills: int
+    # receipts recorded against this head in the window
+    receipts: int = 0
+
+
 class FeeCollectionReport(BaseModel):
     from_date: date
     to_date: date
@@ -216,6 +250,7 @@ class FeeCollectionReport(BaseModel):
     by_class: list[LabelAmount]
     by_mode: list[LabelAmount]
     by_month: list[MonthAmount]
+    billed_by_head: list[HeadBilled] = []
 
 
 class DefaulterRow(BaseModel):
@@ -271,6 +306,11 @@ class RouteUtilisation(BaseModel):
     free_seats: int
     utilisation: float
     over_capacity: bool
+    # today's morning run: None when no trip sheet was opened today
+    boarded_today: Optional[int] = None
+    trip_status_today: Optional[str] = None
+    # from logged odometer readings, else stop-to-stop map distance
+    distance_km: Optional[float] = None
 
 
 class TransportUtilisation(BaseModel):
@@ -293,6 +333,15 @@ class LibraryTitle(BaseModel):
     times: int
 
 
+class LibraryCategory(BaseModel):
+    category: str
+    members: int
+    issues: int
+    returns: int
+    overdue: int
+    most_borrowed: Optional[str] = None
+
+
 class LibraryUsage(BaseModel):
     from_date: date
     to_date: date
@@ -303,6 +352,10 @@ class LibraryUsage(BaseModel):
     shelf_in_use: float
     by_month: list[LibraryMonth]
     top_titles: list[LibraryTitle]
+    # distinct borrowers in the window, and loans out past their due date now
+    members: int = 0
+    overdue_now: int = 0
+    by_category: list[LibraryCategory] = []
 
 
 class CategoryValue(BaseModel):
@@ -335,6 +388,22 @@ class InventoryValuation(BaseModel):
     low_stock: list[LowStockRow]
 
 
+class DepartmentPay(BaseModel):
+    department: str
+    staff: int
+    gross: Decimal
+    deductions: Decimal
+    net: Decimal
+    employer_cost: Decimal
+
+
+class PayrollByDepartment(BaseModel):
+    run_id: Optional[int] = None
+    period: Optional[str] = None
+    status: Optional[str] = None
+    departments: list[DepartmentPay]
+
+
 class ChannelRow(BaseModel):
     """One delivery channel, counted by what became of each message. Skipped
     is not a failure — it is the parent with no mobile number on file."""
@@ -345,6 +414,8 @@ class ChannelRow(BaseModel):
     delivered: int = 0
     failed: int = 0
     skipped: int = 0
+    # opened by the recipient (only the in-app inbox records reading)
+    read: int = 0
 
 
 class MonthCount(BaseModel):

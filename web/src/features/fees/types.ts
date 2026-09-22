@@ -286,6 +286,8 @@ export type FinanceReport = {
   income_by_mode: { label: string; amount: number }[];
   spend_by_category: { label: string; amount: number }[];
   by_month: { month: string; received: number; spent: number; net: number }[];
+  /** per fee head: bills falling due in the window against what has been paid on them */
+  billed_by_head: { label: string; expected: number; paid: number; outstanding: number; collection_rate: number; bills: number; receipts: number }[];
 };
 
 export type Supplier = {

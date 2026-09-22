@@ -221,4 +221,34 @@ def delete_setting(key: str, _: SuperAdminUser, db: Db):
 
 @router.get("/health", summary="What is checked, and what is not monitored")
 def health(_: SuperAdminUser, db: Db):
-    return platform_service.health(db)
+    from app.services import insight_service
+
+    data = platform_service.health(db)
+    # Each look is also a sample for the history (at most one a minute).
+    try:
+        insight_service.record_health(db, data["checks"])
+    except Exception:  # noqa: BLE001 — the history must never break the probe
+        db.rollback()
+    return data
+
+
+@router.get("/health/history", summary="Availability and response time from the kept probes")
+def health_history(_: SuperAdminUser, db: Db, days: int = Query(7, ge=1, le=90)):
+    from app.services import insight_service
+
+    return insight_service.health_history(db, days)
+
+
+@router.get("/activity/schools-by-month",
+            summary="Schools on the platform, and schools in use, month by month")
+def schools_by_month(_: SuperAdminUser, db: Db, months: int = Query(6, ge=1, le=24)):
+    from app.services import insight_service
+
+    return insight_service.active_schools_by_month(db, months)
+
+
+@router.get("/tenants/{tenant_id}/activity", summary="Recent activity in one organisation")
+def tenant_activity(tenant_id: int, _: SuperAdminUser, db: Db, limit: int = Query(8, ge=1, le=50)):
+    from app.services import insight_service
+
+    return insight_service.activity_feed(db, tenant_id=tenant_id, limit=limit)

@@ -32,6 +32,7 @@ from app.schemas.analytics import (
     LibraryUsage,
     NotificationReport,
     Overview,
+    PayrollByDepartment,
     StaffAttendanceSummary,
     Strength,
     TeacherActivity,
@@ -184,6 +185,13 @@ def fee_collection_csv(
     rows += [["Class", r["label"], r["amount"]] for r in data["by_class"]]
     rows += [["Mode", r["label"], r["amount"]] for r in data["by_mode"]]
     return _csv("fee-collection.csv", ["Grouping", "Name", "Amount"], rows)
+
+
+@router.get("/payroll-by-department", response_model=PayrollByDepartment,
+            summary="One payroll run (the latest by default), by department")
+def payroll_by_department(user: SchoolAdminOrAccountant, db: Annotated[Session, Depends(get_db)],
+                          run_id: Optional[int] = None):
+    return analytics_service.payroll_by_department(db, user.school_id, run_id)
 
 
 @router.get("/dues-ageing", response_model=DuesAgeing)

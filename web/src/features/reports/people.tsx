@@ -8,7 +8,14 @@ import { num, ReportView, share, today, useYear } from "./kit";
 
 // ---------------------------------------------------------------- SCR-265
 
-type Funnel = { by_status: Record<string, number>; total: number; in_progress: number; admitted: number };
+type Funnel = {
+  by_status: Record<string, number>;
+  total: number;
+  in_progress: number;
+  admitted: number;
+  /** enquiry source ("direct": applied without an enquiry) through to confirmed */
+  by_source: { source: string; enquiries: number; applications: number; confirmed: number; pending: number; conversion: number }[];
+};
 
 /** SCR-265, live: GET /api/v1/school/admissions/applications/funnel (?academic_year_id). */
 export function AdmissionReport() {
@@ -18,7 +25,7 @@ export function AdmissionReport() {
   const total = d?.total ?? 0;
   const stages = Object.entries(d?.by_status ?? {}).sort((a, b) => b[1] - a[1]);
   const closed = d ? Math.max(0, d.total - d.in_progress - d.admitted) : 0;
-  const rows: Row[] = stages.map(([s, n]) => [label(s), num(n), pct(share(n, total))]);
+  const rows: Row[] = (d?.by_source ?? []).map((s) => [s.source === "direct" ? "Direct application" : label(s.source), num(s.enquiries), num(s.applications), num(s.confirmed), pct(s.conversion), num(s.pending)]);
   return (
     <ReportView
       filters={y.picker}
@@ -34,7 +41,7 @@ export function AdmissionReport() {
       scope={[
         ["Academic year", y.year?.name ?? "—"],
         ["As of", today()],
-        ["Group by", "Application stage"],
+        ["Group by", "Enquiry source"],
       ]}
       summary={
         total
@@ -45,8 +52,13 @@ export function AdmissionReport() {
             ]
           : []
       }
-      // Not wired: the mock's per-source columns (enquiries, confirmed by source) — the funnel is by stage only.
-      table={{ name: "admission-funnel", columns: ["Stage", "Applications", "Share"], rows, empty: "No applications in this academic year yet." }}
+      table={{
+        name: "admission-funnel-by-source",
+        sub: "Enquiries taken in the academic year and applications for it, by where the family heard of the school · conversion: confirmed ÷ enquiries",
+        columns: ["Source", "Enquiries", "Applications", "Confirmed", "Conversion", "Pending"],
+        rows,
+        empty: "No enquiries or applications in this academic year yet.",
+      }}
     />
   );
 }

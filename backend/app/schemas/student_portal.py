@@ -59,6 +59,14 @@ class RecentExam(BaseModel):
     end_date: date
 
 
+class LearningStreak(BaseModel):
+    """Homework handed in on time, in a row, counting back from the latest."""
+    count: int
+    since: Optional[date] = None
+    on_time: int
+    set: int
+
+
 class StudentDashboard(StudentProfile):
     homework: list[HomeworkDue]
     homework_due: int
@@ -67,6 +75,7 @@ class StudentDashboard(StudentProfile):
     attendance: AttendanceSummary
     recent_exams: list[RecentExam]
     notices: list[NoticeItem]
+    learning_streak: Optional[LearningStreak] = None
 
 
 # ---------- homework ----------

@@ -28,12 +28,24 @@ class Stat(BaseModel):
     tone: str | None = None
 
 
+class TrendMonth(BaseModel):
+    month: str
+    value: int
+
+
+class Trend(BaseModel):
+    """Six months of the one count that shows the job's workload."""
+    label: str
+    months: list[TrendMonth]
+
+
 class Panel(BaseModel):
     key: str
     title: str
-    href: str
+    href: str | None = None
     stats: list[Stat]
     todo: str | None = None
+    trend: Trend | None = None
 
 
 class StaffDashboard(BaseModel):

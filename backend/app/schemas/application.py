@@ -174,11 +174,23 @@ class ApplicationRead(BaseModel):
     history: list[HistoryRow] = []
 
 
+class SourceFunnelRow(BaseModel):
+    # an admission_source value, or "direct" for applications with no enquiry
+    source: str
+    enquiries: int
+    applications: int
+    confirmed: int
+    pending: int
+    # confirmed ÷ enquiries (÷ applications when a source has no enquiries)
+    conversion: float
+
+
 class ApplicationFunnel(BaseModel):
     by_status: dict[str, int]
     total: int
     in_progress: int
     admitted: int
+    by_source: list[SourceFunnelRow] = []
 
 
 class PublicApplicationAck(BaseModel):
