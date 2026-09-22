@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
+import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { Field, orNull } from "@/features/setup/bits";
 import type { AcademicYear, AttendanceMode, SchoolProfile, Term } from "@/features/setup/types";
@@ -78,6 +80,21 @@ export function AcademicSettings() {
 
   const termList = terms.data ?? [];
 
+  // Choosing a year makes it the school's current year at once (as on School profile).
+  async function makeCurrent(id: number) {
+    const y = years.data?.find((x) => x.id === id);
+    if (!y || y.is_current) return;
+    if (!window.confirm(`Make ${y.name} the current academic year? Classes, attendance and fees switch to it.`)) return;
+    setError(null);
+    try {
+      await api.post(`/api/v1/school/academic-years/${id}/set-current`);
+      notify(`${y.name} is now the current academic year.`);
+      await years.reload();
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }
+
   return (
     <div className="settings-layout">
       <SettingsNav active={290} />
@@ -92,35 +109,59 @@ export function AcademicSettings() {
           <div className="panel-body">
             <ErrorNote>{error ?? rc.error ?? scales.error ?? years.error}</ErrorNote>
             <div className="form-grid">
-              <Field label="Academic year">
-                <select aria-label="Academic year" value={current?.id ?? ""} disabled>
-                  {!current ? <option value="">None is current</option> : null}
-                  {years.data?.map((y) => (
-                    <option key={y.id} value={y.id}>
-                      {`${y.name}${y.is_current ? " (current)" : ""}`}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Term structure">
-                <select aria-label="Term structure" disabled>
-                  {!termList.length ? <option>{terms.loading ? "Loading terms…" : "No terms set up"}</option> : null}
-                  {termList.map((t) => (
-                    <option key={t.id}>{`${t.name} · ${date(t.start_date)} – ${date(t.end_date)}`}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Default grading scale">
-                <select name="scale" aria-label="Default grading scale" defaultValue={def?.id ?? ""}>
-                  {!def ? <option value="">{scales.loading ? "Loading…" : scales.data?.length ? "No default yet" : "No grade scales set up"}</option> : null}
-                  {scales.data
-                    ?.filter((s) => s.is_active)
-                    .map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {`${s.name} · ${s.bands.length} grades`}
+              <Field label="Current academic year">
+                {years.data && !years.data.length ? (
+                  <Link href={routeOf(28)} className="btn" style={{ justifyContent: "center" }}>
+                    <Icon name="plus" className="sm" />
+                    Create the first academic year
+                  </Link>
+                ) : (
+                  <select aria-label="Current academic year" value={current?.id ?? ""} onChange={(e) => e.target.value && makeCurrent(Number(e.target.value))} disabled={!years.data}>
+                    {!current ? <option value="">Choose the current year</option> : null}
+                    {years.data?.map((y) => (
+                      <option key={y.id} value={y.id}>
+                        {`${y.name}${y.is_current ? " (current)" : ""}`}
                       </option>
                     ))}
-                </select>
+                  </select>
+                )}
+              </Field>
+              <Field label={current ? `Terms of ${current.name}` : "Terms"}>
+                {/* A list, not a choice: terms are added and changed on Terms / Semesters. */}
+                {!current ? (
+                  <p className="muted small" style={{ margin: "10px 0" }}>Terms belong to the current academic year; choose or create one first.</p>
+                ) : termList.length ? (
+                  <div className="stack" style={{ gap: 4, marginTop: 4 }}>
+                    {termList.map((t) => (
+                      <span key={t.id} className="small">{`${t.name} · ${date(t.start_date)} – ${date(t.end_date)}`}</span>
+                    ))}
+                    <Link href={routeOf(93)} className="blue small">Manage terms</Link>
+                  </div>
+                ) : (
+                  <Link href={routeOf(93)} className="btn" style={{ justifyContent: "center" }}>
+                    <Icon name="plus" className="sm" />
+                    {terms.loading ? "Loading terms…" : "Add terms"}
+                  </Link>
+                )}
+              </Field>
+              <Field label="Default grading scale">
+                {scales.data && !scales.data.some((s) => s.is_active) ? (
+                  <Link href={routeOf(149)} className="btn" style={{ justifyContent: "center" }}>
+                    <Icon name="plus" className="sm" />
+                    Create a grade scale
+                  </Link>
+                ) : (
+                  <select name="scale" aria-label="Default grading scale" defaultValue={def?.id ?? ""}>
+                    {!def ? <option value="">{scales.loading ? "Loading…" : "Choose the default scale"}</option> : null}
+                    {scales.data
+                      ?.filter((s) => s.is_active)
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {`${s.name} · ${s.bands.length} grades`}
+                        </option>
+                      ))}
+                  </select>
+                )}
               </Field>
               <Field label="Attendance mode">
                 <select name="attendance_mode" aria-label="Attendance mode" defaultValue={profile.data?.attendance_mode ?? "daily"}>

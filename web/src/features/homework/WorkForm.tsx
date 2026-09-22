@@ -211,9 +211,7 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
                 <label className="field">
                   <span>Section</span>
                   {/* Work is set for the class-subject; there is no per-section target in the API. */}
-                  <select aria-label="Section" disabled value="all">
-                    <option value="all">{card ? `All sections (${card.sections.map((s) => s.section_name).join(", ")})` : "All sections"}</option>
-                  </select>
+                  <input aria-label="Section" readOnly value={card ? `All sections (${card.sections.map((s) => s.section_name).join(", ")})` : "All sections"} />
                 </label>
                 <label className="field full">
                   <span>

@@ -109,9 +109,7 @@ export function BookPtm() {
       </label>
       <label className="field">
         Date
-        <select value={session.id} disabled>
-          <option value={session.id}>{`${longDate(session.meeting_date)}${session.venue ? ` · ${session.venue}` : ""}`}</option>
-        </select>
+        <input readOnly value={`${longDate(session.meeting_date)}${session.venue ? ` · ${session.venue}` : ""}`} />
       </label>
       {session.notes ? <p className="micro">{session.notes}</p> : null}
       {!session.booking_open ? (

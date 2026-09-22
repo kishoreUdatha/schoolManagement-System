@@ -139,9 +139,7 @@ export function BranchForm() {
                   <input type="text" name="code" required placeholder="Enter branch code" defaultValue={branch?.code ?? ""} />
                 </Field>
                 <Field label="School" required>
-                  <select aria-label="School" disabled>
-                    <option>{school.data?.name ?? "This school"}</option>
-                  </select>
+                  <input aria-label="School" readOnly value={school.data?.name ?? "This school"} />
                 </Field>
                 <Field label="Coordinator">
                   <select name="head_user_id" aria-label="Coordinator" defaultValue={branch?.head_user_id ?? ""}>
