@@ -135,9 +135,8 @@ function Sidebar({ s, viewer }: { s: Screen; viewer: Viewer }) {
         {roleNav ? (
           <>
             <div className="nav-label">{`${role.toUpperCase()} WORKSPACE`}</div>
-            {roleNav.map(([n, label, icon]) => (
+            {roleNav.map(([n, label]) => (
               <Link key={n + label} className={`nav ${n === s.n ? "active" : ""}`} href={routeOf(n)}>
-                <Icon name={icon} />
                 <span>{label}</span>
               </Link>
             ))}

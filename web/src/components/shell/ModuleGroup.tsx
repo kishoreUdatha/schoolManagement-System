@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Icon, type IconName } from "@/components/ui/Icon";
+import { type IconName } from "@/components/ui/Icon";
 import { MODULES, SCREENS } from "@/lib/screens";
 
 /**
@@ -48,7 +48,6 @@ const PARENT: Record<number, number> = {
  */
 export function ModuleGroup({
   label,
-  icon,
   mods,
   currentId,
   currentModule,
@@ -98,7 +97,6 @@ export function ModuleGroup({
   return (
     <div className={`nav-group tone-${tone % 6} ${open ? "open" : ""}`}>
       <button type="button" className={`nav ${here ? "active" : ""}`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <Icon name={icon} />
         <span>{label}</span>
         {count ? <span className="count">{count}</span> : null}
         <svg className="caret" viewBox="0 0 24 24" aria-hidden="true">
