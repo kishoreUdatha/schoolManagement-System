@@ -1,7 +1,7 @@
 "use client";
 
 /*
- * NEW-084 · Setup guide. A step-by-step wizard for everything a new school
+ * Setup wizard (on SCR-289 School Settings). A step-by-step wizard for everything a new school
  * has to set up, one step at a time with Back / Next. Each step ticks itself
  * off from the school's real data and is finished right here: school
  * details, the year and its terms, classes with sections, subjects for
@@ -26,7 +26,7 @@ import { useApi } from "@/lib/useApi";
 
 type Year = { id: number; name: string; is_current: boolean; start_date: string; end_date: string };
 type Klass = { id: number; name: string; sections: { id: number; name: string }[] };
-type Profile = { name: string; principal_name: string | null; board: string | null; address: string | null; phone_primary: string | null; email: string | null; working_days: string; logo_url: string | null };
+type Profile = { name: string; code: string; timezone: string; principal_name: string | null; board: string | null; address: string | null; phone_primary: string | null; email: string | null; working_days: string; logo_url: string | null; school_start_time: string | null; school_end_time: string | null };
 type Paged = { total: number };
 
 export type SetupStep = { key: string; short: string; title: string; why: string; done: boolean; optional?: boolean; detail?: string };
@@ -93,7 +93,7 @@ export function SetupProgressStrip() {
         <strong>{`Finish setting up your school · ${s.done} of ${s.total} done`}</strong>
         {next ? <span>{`Next: ${next.title}`}</span> : null}
       </div>
-      <Link href={routeOf(1084)} className="btn primary">
+      <Link href={routeOf(289)} className="btn primary">
         <Icon name="arrow" className="sm" />
         Continue setup
       </Link>
@@ -371,6 +371,9 @@ function ProfileStep({ s, busy, run }: StepProps) {
     phone_primary: p?.phone_primary ?? "",
     email: p?.email ?? "",
     board: p?.board ?? "",
+    timezone: p?.timezone ?? "Asia/Kolkata",
+    school_start_time: p?.school_start_time?.slice(0, 5) ?? "",
+    school_end_time: p?.school_end_time?.slice(0, 5) ?? "",
   });
   const [days, setDays] = useState<string[]>(() => (p?.working_days || "MON,TUE,WED,THU,FRI,SAT").split(",").map((x) => x.trim().toUpperCase()));
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((x) => ({ ...x, [k]: e.target.value }));
@@ -407,6 +410,22 @@ function ProfileStep({ s, busy, run }: StepProps) {
             ))}
           </select>
         </label>
+        <label className="field">
+          <span>School code</span>
+          <input value={p?.code ?? ""} readOnly />
+        </label>
+        <label className="field">
+          <span>Timezone</span>
+          <input value={f.timezone} onChange={set("timezone")} placeholder="Asia/Kolkata" />
+        </label>
+        <label className="field">
+          <span>School starts</span>
+          <input type="time" value={f.school_start_time} onChange={set("school_start_time")} />
+        </label>
+        <label className="field">
+          <span>School ends</span>
+          <input type="time" value={f.school_end_time} onChange={set("school_end_time")} />
+        </label>
       </div>
       <p className="muted small" style={{ margin: "12px 0 6px" }}>Working days</p>
       <div className="setup-chips">
@@ -418,7 +437,6 @@ function ProfileStep({ s, busy, run }: StepProps) {
         ))}
       </div>
       <div className="wizard-actions">
-        <GoTo n={289} label="Logo and more settings" primary={false} />
         <button
           type="button"
           className="btn primary"
@@ -432,6 +450,9 @@ function ProfileStep({ s, busy, run }: StepProps) {
                 phone_primary: f.phone_primary.trim(),
                 email: f.email.trim(),
                 board: f.board || null,
+                timezone: f.timezone.trim() || "Asia/Kolkata",
+                school_start_time: f.school_start_time || null,
+                school_end_time: f.school_end_time || null,
                 working_days: days.join(","),
               });
             })

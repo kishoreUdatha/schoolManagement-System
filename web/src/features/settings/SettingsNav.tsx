@@ -2,7 +2,7 @@ import Link from "next/link";
 import { routeOf } from "@/lib/screens";
 
 const LINKS: [number, string][] = [
-  [289, "School profile"],
+  [289, "School setup"],
   [290, "Academic settings"],
   [291, "Notifications"],
   [292, "Integrations"],

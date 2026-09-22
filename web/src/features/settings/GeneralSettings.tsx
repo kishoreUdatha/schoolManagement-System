@@ -1,21 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
-import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { BoardSelect, Field, orNull } from "@/features/setup/bits";
-import type { SchoolProfile } from "@/features/setup/types";
+import { Field } from "@/features/setup/bits";
 import { SettingsNav } from "./SettingsNav";
 import type { Integration, SecurityPolicy, TwoFactorScope } from "./types";
 
-import { ask } from "@/lib/dialog";
 export const PROFILE = "/api/v1/school/profile";
 export const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const DAY_LABEL: Record<string, string> = { MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri", SAT: "Sat", SUN: "Sun" };
@@ -40,148 +35,6 @@ export function readDays(f: FormData): string | null {
   const picked = new Set(f.getAll("working_days").map(String));
   const days = DAYS.filter((d) => picked.has(d));
   return days.length ? days.join(",") : null;
-}
-
-const hhmm = (t: string | null) => (t ? t.slice(0, 5) : "");
-
-/** SCR-289, live. General configuration is the school profile (PATCH /profile). */
-export function SchoolSettings() {
-  const profile = useApi<SchoolProfile>(PROFILE);
-  const years = useApi<{ id: number; name: string; is_current: boolean }[]>("/api/v1/school/academic-years");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  if (profile.loading && !profile.data) return <Loading what="Loading settings…" />;
-  const s = profile.data;
-  const current = years.data?.find((y) => y.is_current);
-
-  // Choosing a year here makes it the school's current year at once
-  // (POST /academic-years/{id}/set-current); the rest of the form saves with the button.
-  async function makeCurrent(id: number) {
-    const y = years.data?.find((x) => x.id === id);
-    if (!y || y.is_current) return;
-    if (!(await ask(`Make ${y.name} the current academic year? Classes, attendance and fees switch to it.`))) return;
-    setError(null);
-    try {
-      await api.post(`/api/v1/school/academic-years/${id}/set-current`);
-      notify(`${y.name} is now the current academic year.`);
-      await years.reload();
-    } catch (err) {
-      setError(errorText(err));
-    }
-  }
-
-  async function submit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const days = readDays(f);
-    if (!days) {
-      setError("Tick at least one working day.");
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      await api.patch(PROFILE, {
-        name: String(f.get("name") ?? "").trim(),
-        board: orNull(f.get("board")),
-        timezone: String(f.get("timezone") ?? "").trim() || s!.timezone,
-        working_days: days,
-        email: orNull(f.get("email")),
-        phone_primary: orNull(f.get("phone_primary")),
-        school_start_time: orNull(f.get("school_start_time")),
-        school_end_time: orNull(f.get("school_end_time")),
-      });
-      notify("Settings saved.");
-      await profile.reload();
-    } catch (err) {
-      setError(errorText(err));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="settings-layout">
-      <SettingsNav active={289} />
-      <div className="stack">
-        <form id="settings-form" key={s?.updated_at} className="panel" onSubmit={submit}>
-          <div className="panel-head">
-            <div>
-              <h2>General configuration</h2>
-              <p>{`${s?.name ?? "This school"} · Changes apply after saving`}</p>
-            </div>
-          </div>
-          <div className="panel-body">
-            <ErrorNote>{error ?? profile.error}</ErrorNote>
-            {s ? (
-              <div className="form-grid">
-                <Field label="School name" required>
-                  <input type="text" name="name" required minLength={2} defaultValue={s.name} />
-                </Field>
-                <Field label="School code">
-                  <input type="text" value={s.code} readOnly aria-label="School code" />
-                </Field>
-                <Field label="Board">
-                  <BoardSelect value={s.board} />
-                </Field>
-                <Field label="Current academic year">
-                  {years.data && !years.data.length ? (
-                    <Link href={routeOf(28)} className="btn" style={{ justifyContent: "center" }}>
-                      <Icon name="plus" className="sm" />
-                      Create the first academic year
-                    </Link>
-                  ) : (
-                    <select aria-label="Current academic year" value={current?.id ?? ""} onChange={(e) => e.target.value && makeCurrent(Number(e.target.value))} disabled={!years.data}>
-                      {!current ? <option value="">Choose the current year</option> : null}
-                      {years.data?.map((y) => (
-                        <option key={y.id} value={y.id}>
-                          {`${y.name}${y.is_current ? " (current)" : ""}`}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </Field>
-                <Field label="Timezone">
-                  <input type="text" name="timezone" defaultValue={s.timezone} placeholder="Asia/Kolkata" />
-                </Field>
-                <Field label="Support email">
-                  <input type="email" name="email" defaultValue={s.email ?? ""} placeholder="Enter support email" />
-                </Field>
-                <Field label="Phone">
-                  <input type="tel" name="phone_primary" defaultValue={s.phone_primary ?? ""} placeholder="Enter phone" />
-                </Field>
-                <Field label="School starts">
-                  <input type="time" name="school_start_time" defaultValue={hhmm(s.school_start_time)} />
-                </Field>
-                <Field label="School ends">
-                  <input type="time" name="school_end_time" defaultValue={hhmm(s.school_end_time)} />
-                </Field>
-                <Field label="Working days" full>
-                  <WorkingDays value={s.working_days} />
-                </Field>
-              </div>
-            ) : null}
-            <div className="gap" />
-            <div className="tip">
-              <Icon name="shield" className="sm" />
-              <span>
-                {"Choosing a year above makes it current straight away. Years and their terms are added under "}
-                <Link href={routeOf(28)} className="blue">Academic Year Setup</Link>.
-              </span>
-            </div>
-          </div>
-          <div className="form-footer">
-            <span>{s ? `Last updated ${date(s.updated_at)}` : ""}</span>
-            <button type="submit" className="btn primary" disabled={saving || !s}>
-              <Icon name="check" className="sm" />
-              {saving ? "Saving…" : "Save settings"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
 }
 
 const INTEGRATION_ICON: Record<string, IconName> = { razorpay: "money", storage: "folder", notifications: "message" };
