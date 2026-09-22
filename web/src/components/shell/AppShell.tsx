@@ -44,7 +44,8 @@ const ROLE_NAV: Record<string, NavLink[]> = {
 };
 
 /** Modules without a place in the main menu, listed under "More modules". */
-const SIDE_MODULES: [number, IconName][] = [[1, "building"], [17, "building"], [18, "heart"], [19, "shield"], [20, "folder"], [22, "file"]];
+// Platform (module 1) is the super admin's, reached through their own menu; a school never sees it.
+const SIDE_MODULES: [number, IconName][] = [[17, "building"], [18, "heart"], [19, "shield"], [20, "folder"], [22, "file"]];
 const MOD_LABEL = (i: number) => SCREENS.find((x) => x.module === MODULES[i])!.moduleShort;
 
 export function viewerFor(n: number): { who: string; role: string } {

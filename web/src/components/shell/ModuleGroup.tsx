@@ -24,6 +24,7 @@ const NOT_IN_MENU = new Set([
   // its own through its menu.
   34, 35, 36, 37, 38, 39, 40, 41, 42, // the other roles' dashboards
   110, 114, 128, 131, 132, 134, 145, 147, // teacher / parent / student portal screens
+  21, 22, 23, // organisation profile, schools list, add school: the platform's, not a school's
 ]);
 
 /** The menu entry to highlight while on a screen that is not in the menu. */
