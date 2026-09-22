@@ -19,6 +19,8 @@ export type StaffMember = {
   phone: string | null;
   role: string;
   is_active: boolean;
+  reporting_manager_id?: number | null;
+  reporting_manager_name?: string | null;
 };
 
 // ----- recruitment -----
@@ -93,6 +95,10 @@ export type Offer = {
   sent_at: string | null;
   responded_at: string | null;
   response_note: string | null;
+  department_id: number | null;
+  department_name: string | null;
+  reporting_manager_id: number | null;
+  reporting_manager_name: string | null;
 };
 
 export type Stage = "applied" | "screening" | "shortlisted" | "interview" | "offered" | "hired" | "rejected" | "withdrawn";
@@ -161,7 +167,16 @@ export type OnboardingTask = {
   note: string | null;
 };
 
-export type Checklist = Omit<Starter, "percent"> & { tasks: OnboardingTask[]; started: boolean; percent: number };
+export type Checklist = Omit<Starter, "percent"> & {
+  tasks: OnboardingTask[];
+  started: boolean;
+  percent: number;
+  reporting_manager_name: string | null;
+  /** Set when somebody signed the finished checklist off. */
+  completed_at: string | null;
+  completed_by: string | null;
+  can_complete: boolean;
+};
 
 // ----- attendance and leave -----
 
@@ -200,6 +215,10 @@ export type StaffLeave = {
   decision_remark: string | null;
   decided_at: string | null;
   created_at: string;
+  /** Set when the office filed it for them. */
+  filed_by_name?: string | null;
+  /** The approver the leave type names, if any. */
+  approver_name?: string | null;
 };
 
 export type LeaveType = {
@@ -212,6 +231,8 @@ export type LeaveType = {
   carry_forward_max: string;
   document_after_days: number | null;
   is_active: boolean;
+  approver_user_id: number | null;
+  approver_name: string | null;
 };
 
 // ----- payroll -----

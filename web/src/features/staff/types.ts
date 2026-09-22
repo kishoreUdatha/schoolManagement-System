@@ -2,6 +2,32 @@
 
 export type StaffRole = "teacher" | "staff" | "principal" | "accountant";
 
+export type EmploymentType = "full_time" | "part_time" | "contract" | "temporary";
+
+export const EMPLOYMENT_LABEL: Record<EmploymentType, string> = {
+  full_time: "Full time",
+  part_time: "Part time",
+  contract: "Contract",
+  temporary: "Temporary",
+};
+
+/** Record fields beyond name, role and department (GET /staff/{id}, the profile and workload rows). */
+export type StaffExtra = {
+  qualification_summary: string | null;
+  experience_years: string | null;
+  address: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  emergency_contact_relation: string | null;
+  employment_type: EmploymentType | null;
+  reporting_manager_id: number | null;
+  reporting_manager_name: string | null;
+  /** Periods a week the school says this person can take; null = not set. */
+  max_periods_per_week: number | null;
+  other_duty_periods: number | null;
+  other_duties: string | null;
+};
+
 export const ROLE_LABEL: Record<StaffRole, string> = {
   teacher: "Teacher",
   staff: "Non-teaching staff",
@@ -25,7 +51,7 @@ export type Staff = {
   role: StaffRole;
   is_active: boolean;
   last_login_at: string | null;
-};
+} & StaffExtra;
 
 export type Department = { id: number; name: string; code?: string | null; is_active?: boolean };
 
@@ -37,6 +63,14 @@ export type Workload = {
   subjects: { class_subject_id: number; subject_name: string; class_name: string | null }[];
   homework_set: number;
   marks_entered: number;
+  /** Cover taken this week, from the substitution register. */
+  substitutions_this_week: number;
+  other_duty_periods: number;
+  other_duties: string | null;
+  /** Teaching + substitutions + other duties. */
+  total_periods: number;
+  capacity: number | null;
+  over_capacity: boolean;
 };
 
 export type Qualification = {
@@ -72,6 +106,10 @@ export type Observation = {
   strengths: string | null;
   next_steps: string | null;
   follow_up_on?: string | null;
+  lesson_preparation?: number | null;
+  student_engagement?: number | null;
+  subject_knowledge?: number | null;
+  average_score?: number | null;
   shared_with_staff: boolean;
 };
 
@@ -89,13 +127,14 @@ export type StaffProfile = {
   department_name: string | null;
   is_active: boolean;
   last_login_at: string | null;
+  department_id: number | null;
   workload: Workload;
   qualifications: Qualification[];
   documents: StaffDocument[];
   recent_observations: Observation[];
   exit_clearance_id: number | null;
   exit_status: string | null;
-};
+} & StaffExtra;
 
 /** GET /staff-ops/{id}/qualifications. */
 export type QualificationsPage = {
@@ -126,6 +165,9 @@ export type WorkloadReport = {
   median_periods: number | null;
   total_periods: number;
   without_timetable: number;
+  /** Rows whose total is over the capacity set on their record. */
+  over_capacity: number;
+  without_capacity: number;
 };
 
 /** GET /staff-ops/attendance-summary. */
@@ -207,6 +249,10 @@ export type ClassSubject = {
   teacher_user_id: number | null;
   is_optional: boolean;
   display_order: number;
+  /** Periods a week the subject wants in each section (0 = not set). */
+  periods_per_week?: number;
+  room_id?: number | null;
+  room_name?: string | null;
   subject: { id: number; name: string; code: string | null; kind: string };
 };
 

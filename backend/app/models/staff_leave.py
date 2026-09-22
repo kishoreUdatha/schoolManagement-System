@@ -60,6 +60,11 @@ class StaffLeave(Base, PrimaryKeyMixin, TimestampMixin):
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
     decision_remark: Mapped[Optional[str]] = mapped_column(Text)
+    # Set when the office filed this on the applicant's behalf (a phone call,
+    # a note on the desk); empty when the applicant applied themselves.
+    filed_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
     decided_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True)
     )

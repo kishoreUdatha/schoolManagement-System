@@ -327,10 +327,7 @@ def applications_to_read(db: Session, items: list[CandidateApplication], with_de
             applied_on=a.applied_on, stage=a.stage, rating=a.rating, notes=a.notes,
             rejected_reason=a.rejected_reason, hired_staff_id=a.hired_staff_id,
             interviews=interviews.get(a.id, []),
-            offer=dict(id=off.id, role_title=off.role_title, annual_salary=off.annual_salary,
-                       joining_date=off.joining_date, valid_till=off.valid_till, status=off.status,
-                       terms=off.terms, sent_at=off.sent_at, responded_at=off.responded_at,
-                       response_note=off.response_note) if off else None,
+            offer=offer_to_dict(db, off) if off else None,
         ))
     return out
 
@@ -391,6 +388,18 @@ def cancel_interview(db: Session, user: User, interview_id: int) -> None:
 # ---------- offers ----------
 
 
+def offer_to_dict(db: Session, off: Offer) -> dict:
+    dept = db.get(Department, off.department_id) if off.department_id else None
+    manager = db.get(Staff, off.reporting_manager_id) if off.reporting_manager_id else None
+    return dict(id=off.id, role_title=off.role_title, annual_salary=off.annual_salary,
+                joining_date=off.joining_date, valid_till=off.valid_till, status=off.status,
+                terms=off.terms, sent_at=off.sent_at, responded_at=off.responded_at,
+                response_note=off.response_note,
+                department_id=off.department_id, department_name=dept.name if dept else None,
+                reporting_manager_id=off.reporting_manager_id,
+                reporting_manager_name=manager.user.full_name if manager else None)
+
+
 def create_offer(db: Session, user: User, application_id: int, data: OfferIn) -> Offer:
     a = get_application(db, application_id, user.school_id)
     if a.stage in (ApplicationStage.rejected, ApplicationStage.withdrawn, ApplicationStage.hired):
@@ -402,6 +411,14 @@ def create_offer(db: Session, user: User, application_id: int, data: OfferIn) ->
         raise _400("There's already an open offer for this candidate")
     if data.valid_till and data.valid_till < school_today(db, user.school_id):
         raise _400("The offer expires in the past")
+    if data.department_id is not None:
+        from app.services import foundation_service
+
+        foundation_service.check_department(db, user.school_id, data.department_id)
+    if data.reporting_manager_id is not None:
+        from app.services import staff_service
+
+        staff_service.check_reporting_manager(db, user.school_id, data.reporting_manager_id)
     o = Offer(tenant_id=a.tenant_id, school_id=a.school_id, application_id=a.id, created_by_user_id=user.id,
               **data.model_dump())
     db.add(o)
@@ -471,7 +488,9 @@ def hire(db: Session, user: User, offer_id: int, employee_no: str, role: str) ->
     staff, password = staff_service.create_staff(db, user.tenant_id, user.school_id, StaffCreate(
         full_name=c.full_name, email=c.email, phone=c.phone, role=role, employee_no=employee_no,
         designation=o.role_title, joining_date=o.joining_date,
-        department_id=db.get(JobOpening, a.opening_id).department_id,
+        department_id=o.department_id or db.get(JobOpening, a.opening_id).department_id,
+        reporting_manager_id=o.reporting_manager_id,
+        employment_type=db.get(JobOpening, a.opening_id).employment_type,
     ))
     a.stage, a.hired_staff_id = ApplicationStage.hired, staff.id
     db.flush()  # count the new hire below
@@ -511,7 +530,19 @@ def list_leave_types(db: Session, school_id: int) -> list[LeaveType]:
     ).scalars())
 
 
+def _check_approver(db: Session, school_id: int, approver_user_id: Optional[int]) -> None:
+    """The approver has to be somebody who can decide leave at all."""
+    if approver_user_id is None:
+        return
+    u = db.get(User, approver_user_id)
+    if not u or u.school_id != school_id or not u.is_active:
+        raise _400("Unknown approver")
+    if u.role not in (UserRole.school_admin, UserRole.principal):
+        raise _400("Only the principal or a school admin can approve leave")
+
+
 def create_leave_type(db: Session, user: User, data: LeaveTypeIn) -> LeaveType:
+    _check_approver(db, user.school_id, data.approver_user_id)
     t = LeaveType(tenant_id=user.tenant_id, school_id=user.school_id, **data.model_dump())
     db.add(t)
     try:
@@ -527,6 +558,7 @@ def update_leave_type(db: Session, user: User, type_id: int, data: LeaveTypeIn) 
     t = db.get(LeaveType, type_id)
     if not t or t.school_id != user.school_id:
         raise _404("Leave type")
+    _check_approver(db, user.school_id, data.approver_user_id)
     for k, v in data.model_dump().items():
         setattr(t, k, v)
     try:
@@ -664,3 +696,141 @@ def consume(db: Session, leave: StaffLeave, sign: int = 1) -> None:
 
 def my_balances(db: Session, user: User, year: int) -> list[dict]:
     return balances(db, user.school_id, year, user.id)
+
+
+# ---------- offer letter ----------
+
+
+def offer_letter_pdf(db: Session, school_id: int, offer_id: int) -> tuple[bytes, str]:
+    """The offer as a letter to post or email, rendered the way certificates
+    and receipts are (reportlab). It is printed while the offer is a draft
+    (that is when the letter goes out); a withdrawn, declined or expired
+    offer still prints, stamped, so a file copy says what became of it."""
+    import io
+    from html import escape
+
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    from app.models.tenant import School
+
+    o = _get_offer(db, offer_id, school_id)
+    a = db.get(CandidateApplication, o.application_id)
+    c = db.get(Candidate, a.candidate_id) if a else None
+    opening = db.get(JobOpening, a.opening_id) if a else None
+    school = db.get(School, school_id)
+    info = offer_to_dict(db, o)
+    signer = db.get(User, o.created_by_user_id) if o.created_by_user_id else None
+
+    styles = getSampleStyleSheet()
+    center = ParagraphStyle("c", parent=styles["Normal"], alignment=TA_CENTER, fontSize=10)
+    body = ParagraphStyle("b", parent=styles["Normal"], fontSize=11, leading=17)
+    title = ParagraphStyle("t", parent=styles["Title"], fontSize=15, spaceBefore=4)
+
+    stamp = {
+        OfferStatus.withdrawn: "WITHDRAWN",
+        OfferStatus.declined: "DECLINED",
+        OfferStatus.expired: "EXPIRED",
+    }.get(o.status)
+
+    def watermark(canvas, _doc):
+        if stamp:
+            canvas.saveState()
+            canvas.setFont("Helvetica-Bold", 70)
+            canvas.setFillColor(colors.Color(0.6, 0.6, 0.6, alpha=0.18))
+            canvas.translate(A4[0] / 2, A4[1] / 2)
+            canvas.rotate(35)
+            canvas.drawCentredString(0, 0, stamp)
+            canvas.restoreState()
+
+    def e(v) -> str:
+        return escape(str(v)) if v is not None else ""
+
+    def fmt(d) -> str:
+        return d.strftime("%d %B %Y") if d else "—"
+
+    issued = o.sent_at.date() if o.sent_at else school_today(db, school_id)
+    name = c.full_name if c else "Candidate"
+    school_name = school.name if school else "the school"
+    contact = " · ".join(x for x in [getattr(school, "phone_primary", None), getattr(school, "email", None)] if x)
+
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=2.2 * cm, rightMargin=2.2 * cm,
+                            topMargin=1.5 * cm, bottomMargin=1.5 * cm)
+    els = [
+        Paragraph(f"<b>{e(school_name.upper())}</b>", ParagraphStyle("h", parent=styles["Title"], fontSize=20)),
+        Paragraph(e(getattr(school, "address", None) or ""), center),
+        Paragraph(e(contact), center),
+        Spacer(1, 0.3 * cm),
+        HRFlowable(width="100%", thickness=1.2, color=colors.black),
+        Spacer(1, 0.4 * cm),
+        Paragraph(f"Ref. OFFER/{o.id}", body),
+        Paragraph(f"Date: {fmt(issued)}", body),
+        Spacer(1, 0.4 * cm),
+        Paragraph(f"To<br/><b>{e(name)}</b><br/>{e(c.email if c else '')}", body),
+        Spacer(1, 0.4 * cm),
+        Paragraph("<u>Offer of Appointment</u>", title),
+        Spacer(1, 0.3 * cm),
+        Paragraph(f"Dear {e(name)},", body),
+        Spacer(1, 0.2 * cm),
+        Paragraph(
+            f"We are pleased to offer you the position of <b>{e(o.role_title)}</b> at "
+            f"{e(school_name)}, on the terms set out below.",
+            body,
+        ),
+        Spacer(1, 0.35 * cm),
+    ]
+    kind = opening.employment_type.value.replace("_", " ").capitalize() if opening else "—"
+    rows = [
+        ["Position", o.role_title],
+        ["Department", info["department_name"] or "—"],
+        ["Reporting to", info["reporting_manager_name"] or "—"],
+        ["Employment type", kind],
+        ["Annual salary", f"Rs. {o.annual_salary:,.2f}"],
+        ["Date of joining", fmt(o.joining_date)],
+        ["Please reply by", fmt(o.valid_till)],
+    ]
+    table = Table(rows, colWidths=[5 * cm, 11.6 * cm])
+    table.setStyle(TableStyle([
+        ("FONTSIZE", (0, 0), (-1, -1), 10.5),
+        ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.grey),
+        ("BACKGROUND", (0, 0), (0, -1), colors.Color(0.95, 0.96, 0.98)),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    els += [table, Spacer(1, 0.45 * cm)]
+    if o.terms:
+        els.append(Paragraph("<b>Terms and conditions</b>", body))
+        for para in o.terms.split("\n\n"):
+            els.append(Paragraph(e(para).replace("\n", "<br/>"), body))
+            els.append(Spacer(1, 0.2 * cm))
+        els.append(Spacer(1, 0.25 * cm))
+    body_small = ParagraphStyle("bs", parent=body, fontSize=10.5, leading=15)
+    reply = (
+        f"Please confirm your acceptance by signing and returning a copy of this letter on or before {fmt(o.valid_till)}."
+        if o.valid_till
+        else "Please confirm your acceptance by signing and returning a copy of this letter."
+    )
+    els += [
+        Paragraph(reply, body),
+        Spacer(1, 0.9 * cm),
+        Paragraph("Yours sincerely,", body),
+        Spacer(1, 0.8 * cm),
+        Paragraph(f"<b>{e(signer.full_name if signer else '')}</b><br/>For {e(school_name)}", body),
+        Spacer(1, 0.6 * cm),
+        HRFlowable(width="100%", thickness=0.5, color=colors.grey),
+        Spacer(1, 0.3 * cm),
+        Paragraph(
+            f"I accept this offer.<br/><br/>Signature: ____________________ &nbsp;&nbsp; Date: ____________<br/>{e(name)}",
+            body_small,
+        ),
+    ]
+    doc.build(els, onFirstPage=watermark, onLaterPages=watermark)
+    safe = "".join(ch if ch.isalnum() else "_" for ch in name).strip("_") or "candidate"
+    return buf.getvalue(), f"offer_letter_{safe}.pdf"

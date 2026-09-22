@@ -191,6 +191,14 @@ class TeacherActivityRow(BaseModel):
     marks_entered: int
     homework_set: int
     days_attendance_marked: int
+    staff_id: Optional[int] = None
+    department_name: Optional[str] = None
+    observations: int = 0
+    # Mean of the optional 1-5 observation ratings in the period.
+    observation_score: Optional[float] = None
+    last_observed_on: Optional[date] = None
+    # not_observed | follow_up_due | feedback_pending | reviewed
+    review_status: str = "not_observed"
 
 
 class TeacherActivity(BaseModel):

@@ -40,7 +40,9 @@ from app.models.inventory import Asset, InventoryItem, StockMove
 from app.models.library import Book, BookCopy, Loan
 from app.models.mark import Mark
 from app.models.notice import Notice, NoticeRecipient
+from app.models.staff import Staff
 from app.models.staff_attendance import StaffAttendance
+from app.models.staff_ops import ClassroomObservation
 from app.models.student import Student
 from app.models.subject import ClassSubject, Subject
 from app.models.syllabus import SyllabusChapter, SyllabusTopic, TopicCoverage
@@ -383,6 +385,8 @@ def teacher_activity(db: Session, school_id: int, *, days: int = 90) -> dict:
     read alongside what they know about a person; a single ranked number would
     be used as an appraisal it cannot support.
     """
+    from app.services.staff_ops_service import observation_average
+
     since = date.today() - timedelta(days=days)
     teachers = list(db.execute(
         select(User).where(
@@ -424,8 +428,34 @@ def teacher_activity(db: Session, school_id: int, *, days: int = 90) -> dict:
             )
         ).scalar_one()
 
+        staff = db.execute(select(Staff).where(Staff.user_id == t.id)).scalar_one_or_none()
+        obs = list(db.execute(
+            select(ClassroomObservation).where(
+                ClassroomObservation.staff_id == staff.id,
+                ClassroomObservation.observed_on >= since,
+            ).order_by(ClassroomObservation.observed_on.desc())
+        ).scalars()) if staff else []
+        averages = [a for a in (observation_average(o) for o in obs) if a is not None]
+        latest = obs[0] if obs else None
+        if latest is None:
+            review_status = "not_observed"
+        elif latest.follow_up_on and latest.follow_up_on <= date.today():
+            review_status = "follow_up_due"
+        elif not latest.shared_with_staff:
+            review_status = "feedback_pending"
+        else:
+            review_status = "reviewed"
+
         out.append({
             "user_id": t.id, "name": t.full_name, "role": t.role.value,
+            "staff_id": staff.id if staff else None,
+            "department_name": staff.department.name if staff and staff.department_id and staff.department else None,
+            "observations": len(obs),
+            # The mean of the 1-5 ratings given in the period, shown next to
+            # the counts; it is not used to order anybody.
+            "observation_score": round(sum(averages) / len(averages), 1) if averages else None,
+            "last_observed_on": latest.observed_on if latest else None,
+            "review_status": review_status,
             "subjects": len(subjects), "class_teacher_of": sections,
             "syllabus_topics": topics_total, "syllabus_covered": topics_done,
             "syllabus_percent": _pct(topics_done, topics_total),

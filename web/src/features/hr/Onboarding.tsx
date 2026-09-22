@@ -19,7 +19,8 @@ const AREAS = ["hr", "it", "payroll", "workspace", "induction", "safeguarding", 
  * starters with work left, GET /onboarding/{staff_id} for one checklist,
  * POST /onboarding/{staff_id} to start the standard list (nothing assumed
  * done), POST /onboarding/{staff_id}/tasks to add one, POST
- * /onboarding/tasks/{id} to tick or untick.
+ * /onboarding/tasks/{id} to tick or untick, POST /onboarding/{staff_id}/complete
+ * to sign a fully ticked list off.
  */
 export function Onboarding() {
   const router = useRouter();
@@ -172,6 +173,23 @@ export function Onboarding() {
                 <small>{c?.started ? `${c.done} of ${c.total} completed` : "Not started"}</small>
               </div>
             </div>
+            {c?.completed_at ? (
+              <p className="muted small">{`Onboarding signed off ${dateTime(c.completed_at)}${c.completed_by ? ` by ${c.completed_by}` : ""}.`}</p>
+            ) : c?.started ? (
+              <>
+                <div className="gap" />
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={busy || !c.can_complete}
+                  title={c.can_complete ? "Sign the checklist off" : "Tick every task first"}
+                  onClick={() => window.confirm(`Sign off ${c.full_name ?? "this"}'s onboarding as complete?`) && run(() => api.post(`${BASE}/${c.staff_id}/complete`), "Onboarding complete.")}
+                >
+                  Complete onboarding
+                </button>
+                {!c.can_complete ? <p className="muted small">{`Tick the ${c.outstanding} remaining task(s) to sign the checklist off.`}</p> : null}
+              </>
+            ) : null}
           </Panel>
           <Panel title="Employee details">
             <KV
@@ -179,8 +197,8 @@ export function Onboarding() {
                 ["Department", member?.department_name ?? "—"],
                 ["Designation", c?.designation ?? member?.designation ?? "—"],
                 ["Joining date", date(c?.joining_date ?? member?.joining_date)],
+                ["Reporting manager", c?.reporting_manager_name ?? member?.reporting_manager_name ?? "—"],
                 ["Overdue tasks", c?.started ? String(c.overdue) : "—"],
-                // Not wired: Reporting manager — the staff record has no manager field.
               ]}
             />
           </Panel>

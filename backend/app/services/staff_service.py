@@ -71,6 +71,61 @@ def _get_staff(db: Session, staff_id: int, school_id: int) -> Staff:
     return s
 
 
+_EXTRA_FIELDS = (
+    "qualification_summary",
+    "experience_years",
+    "address",
+    "emergency_contact_name",
+    "emergency_contact_phone",
+    "emergency_contact_relation",
+    "employment_type",
+    "reporting_manager_id",
+    "max_periods_per_week",
+    "other_duty_periods",
+    "other_duties",
+)
+
+
+def check_reporting_manager(
+    db: Session, school_id: int, manager_id: Optional[int], staff_id: Optional[int] = None
+) -> None:
+    """A manager must be staff at the same school, and not somebody who
+    (directly or up the chain) reports to this person."""
+    if manager_id is None:
+        return
+    m = db.get(Staff, manager_id)
+    if not m or m.school_id != school_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Unknown reporting manager"
+        )
+    if staff_id is None:
+        return
+    seen: set[int] = set()
+    cur: Optional[Staff] = m
+    while cur is not None and cur.id not in seen:
+        if cur.id == staff_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Somebody cannot report to themselves, directly or through others",
+            )
+        seen.add(cur.id)
+        cur = db.get(Staff, cur.reporting_manager_id) if cur.reporting_manager_id else None
+
+
+def _clean(value):
+    return (value.strip() or None) if isinstance(value, str) else value
+
+
+def extra_to_dict(db: Session, s: Staff) -> dict:
+    """The record fields beyond name, role and department, with the
+    manager's name resolved."""
+    manager = db.get(Staff, s.reporting_manager_id) if s.reporting_manager_id else None
+    out = {f: getattr(s, f) for f in _EXTRA_FIELDS}
+    out["employment_type"] = s.employment_type.value if s.employment_type else None
+    out["reporting_manager_name"] = manager.user.full_name if manager else None
+    return out
+
+
 _STAFF_ROLE_MAP = {
     "teacher": UserRole.teacher,
     "staff": UserRole.staff,
@@ -108,6 +163,7 @@ def create_staff(
         )
 
     foundation_service.check_department(db, school_id, data.department_id)
+    check_reporting_manager(db, school_id, data.reporting_manager_id)
     staff = Staff(
         tenant_id=tenant_id,
         school_id=school_id,
@@ -116,6 +172,7 @@ def create_staff(
         designation=data.designation.strip() if data.designation else None,
         joining_date=data.joining_date,
         department_id=data.department_id,
+        **{f: _clean(getattr(data, f)) for f in _EXTRA_FIELDS},
     )
     db.add(staff)
     try:
@@ -189,11 +246,15 @@ def update_staff(
 
     if updates.get("department_id") is not None:
         foundation_service.check_department(db, staff.school_id, updates["department_id"])
+    if "reporting_manager_id" in updates:
+        check_reporting_manager(db, staff.school_id, updates["reporting_manager_id"], staff.id)
     for field, value in updates.items():
         if field == "designation" and isinstance(value, str):
             value = value.strip()
         if field == "employee_no" and isinstance(value, str):
             value = value.strip()
+        if field in _EXTRA_FIELDS:
+            value = _clean(value)
         setattr(staff, field, value)
 
     try:
@@ -266,8 +327,11 @@ def validate_teacher_for_school(
 
 def staff_to_read_dict(s: Staff) -> dict:
     """Flatten Staff + User into the StaffRead shape."""
+    from sqlalchemy.orm import object_session
+
     u = s.user
     return {
+        **extra_to_dict(object_session(s), s),
         "id": s.id,
         "user_id": s.user_id,
         "employee_no": s.employee_no,

@@ -184,6 +184,16 @@ def send_offer(offer_id: int, current_user: HrManager, db: Db):
     return svc.send_offer(db, current_user, offer_id)
 
 
+@router.get("/offers/{offer_id}/letter", summary="The offer letter as a PDF")
+def offer_letter(offer_id: int, current_user: HrManager, db: Db):
+    content, filename = svc.offer_letter_pdf(db, current_user.school_id, offer_id)
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
+
+
 @router.post("/offers/{offer_id}/respond", response_model=OfferRead, summary="Record the candidate's answer")
 def respond(offer_id: int, payload: OfferRespondIn, current_user: HrManager, db: Db):
     return svc.respond_to_offer(db, current_user, offer_id, payload)

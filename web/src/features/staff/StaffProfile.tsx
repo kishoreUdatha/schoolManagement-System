@@ -8,7 +8,7 @@ import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { date, dateTime, initials, label } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { ROLE_LABEL, type StaffProfile as Profile } from "./types";
+import { EMPLOYMENT_LABEL, ROLE_LABEL, type StaffProfile as Profile } from "./types";
 
 /** The staff profile tabs, each carrying ?id= on to the next screen. */
 export function StaffTabs({ id, active }: { id: string; active: number }) {
@@ -104,16 +104,25 @@ export function StaffProfile() {
               ["Designation", p.designation ?? "—"],
               ["Role", ROLE_LABEL[p.role] ?? label(p.role)],
               ["Joining date", date(p.joining_date)],
+              ["Employment type", p.employment_type ? EMPLOYMENT_LABEL[p.employment_type] : "—"],
+              ["Reporting manager", p.reporting_manager_name ?? "—"],
+              ["Qualification", p.qualification_summary ?? "—"],
+              ["Experience", p.experience_years ? `${Number(p.experience_years)} years` : "—"],
               ["Last sign-in", dateTime(p.last_login_at)],
             ])}
-            {/* Not wired: employment type and reporting manager — the staff record has no such fields. */}
           </Panel>
           <Panel title="Contact information">
             {kv([
               ["Email address", p.email ?? "—"],
               ["Mobile number", p.phone ?? "—"],
+              ["Address", p.address ?? "—"],
+              [
+                "Emergency contact",
+                p.emergency_contact_name || p.emergency_contact_phone
+                  ? [p.emergency_contact_name, p.emergency_contact_relation ? `(${p.emergency_contact_relation})` : null, p.emergency_contact_phone].filter(Boolean).join(" ")
+                  : "—",
+              ],
             ])}
-            {/* Not wired: address and emergency contact — no endpoint stores them for staff. */}
           </Panel>
           <Panel title="Teaching" sub={`${w.subjects_taught} subjects · ${w.sections_taught} sections`}>
             {w.subjects.length || w.class_teacher_of.length ? (

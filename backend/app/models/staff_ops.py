@@ -2,10 +2,11 @@
 what they are qualified to do, what was seen when somebody sat in on a lesson,
 and what has to be handed back when they leave.
 
-Workload is deliberately absent from this file. It is not a fact anybody
-records — it is the timetable, counted — so storing it would mean a second
-number to keep in step with the first, and the two would disagree the day
-somebody moves a lesson.
+Teaching workload is deliberately absent from this file. It is not a fact
+anybody records — it is the timetable, counted — so storing it would mean a
+second number to keep in step with the first, and the two would disagree the
+day somebody moves a lesson. (A person's capacity and other duties are
+recorded, on the staff record: those are decisions, not counts.)
 """
 from datetime import date as date_type, datetime
 from typing import Optional
@@ -80,15 +81,15 @@ class StaffQualification(Base, _School, PrimaryKeyMixin, TimestampMixin):
 class ClassroomObservation(Base, _School, PrimaryKeyMixin, TimestampMixin):
     """What somebody saw when they sat in on a lesson.
 
-    There is no score here, and there should not be. This codebase already
-    refuses to reduce a teacher to a number — see teacher_activity in
-    analytics_service — for the reason that a single ranked figure gets used
-    as an appraisal it cannot support, by people who were not in the room.
+    The heart of an observation is three sentences: what was being looked
+    at, what was strong, and what to try next. Those are what a teacher can
+    act on and a head can defend, and the service still refuses an
+    observation that has neither a strength nor a next step.
 
-    So an observation holds three things instead: what was being looked at,
-    what was strong, and what to try next. Those are the sentences a teacher
-    can act on, and the ones a head can defend. A five-point scale would be
-    easier to sort and worth nothing to either of them.
+    Alongside them the observer may give three optional 1-5 ratings (lesson
+    preparation, student engagement, subject knowledge), because schools are
+    asked to report them. They sit next to the words, never instead of them,
+    and nothing here ranks one teacher against another.
 
     `shared_with_staff` is false by default: a note written during a lesson is
     a draft until the observer has spoken to the person about it.
@@ -118,6 +119,9 @@ class ClassroomObservation(Base, _School, PrimaryKeyMixin, TimestampMixin):
     strengths: Mapped[Optional[str]] = mapped_column(Text)
     next_steps: Mapped[Optional[str]] = mapped_column(Text)
     follow_up_on: Mapped[Optional[date_type]] = mapped_column(Date)
+    lesson_preparation: Mapped[Optional[int]] = mapped_column(SmallInteger)
+    student_engagement: Mapped[Optional[int]] = mapped_column(SmallInteger)
+    subject_knowledge: Mapped[Optional[int]] = mapped_column(SmallInteger)
     shared_with_staff: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )

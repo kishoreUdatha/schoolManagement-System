@@ -2,7 +2,7 @@
 // Module: HR / Leave / Payroll · Role: HR · Release: Phase 2 · Stories: US-0355 / US-0356
 // Mock: screens/SCR-178_Employee_Onboarding_Checklist.html
 // Backend: the old frontend served this at /school/staff/onboarding — Standard tasks laid out, none assumed done
-// Wired: GET /api/v1/school/hr-ops/onboarding/outstanding, GET/POST /hr-ops/onboarding/{staff_id} (?id=), POST …/{staff_id}/tasks, POST /hr-ops/onboarding/tasks/{id}; GET /staff. Hand-maintained.
+// Wired: GET /api/v1/school/hr-ops/onboarding/outstanding, GET/POST /hr-ops/onboarding/{staff_id} (?id=), POST …/{staff_id}/tasks, POST /hr-ops/onboarding/tasks/{id}, POST …/{staff_id}/complete ("Complete onboarding", in the Completion panel); GET /staff. Hand-maintained.
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
@@ -13,7 +13,6 @@ export const metadata = { title: "SCR-178 · Employee Onboarding Checklist · Br
 
 export default function Page() {
   return (
-    // Not wired: "Complete onboarding" — there is no endpoint to close a checklist; it is complete when every task is ticked.
     <AppShell screen="SCR-178" actions={<PageAction>Add task</PageAction>}>
       <Suspense>
         <Onboarding />

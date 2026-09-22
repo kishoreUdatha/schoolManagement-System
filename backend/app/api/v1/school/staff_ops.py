@@ -45,7 +45,11 @@ class ObservationIn(BaseModel):
     next_steps: Optional[str] = Field(None, max_length=4000)
     follow_up_on: Optional[date] = None
     shared_with_staff: bool = False
-    # Deliberately no score, rating or grade. See the model docstring.
+    # Optional 1-5 ratings that sit beside the words, never instead of them.
+    # See the model docstring.
+    lesson_preparation: Optional[int] = Field(None, ge=1, le=5)
+    student_engagement: Optional[int] = Field(None, ge=1, le=5)
+    subject_knowledge: Optional[int] = Field(None, ge=1, le=5)
 
 
 class ShareIn(BaseModel):
@@ -91,7 +95,7 @@ def list_observations(user: SchoolAdminOrPrincipal, db: Db,
 
 
 @router.post("/observations", status_code=status.HTTP_201_CREATED,
-             summary="Record what was seen in a lesson — no score, by design")
+             summary="Record what was seen in a lesson, with optional 1-5 ratings")
 def add_observation(payload: ObservationIn, user: SchoolAdminOrPrincipal, db: Db):
     return svc.add_observation(
         db, user.school_id, user.tenant_id, user.id, payload.model_dump()

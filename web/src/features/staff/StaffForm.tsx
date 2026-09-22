@@ -9,7 +9,7 @@ import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { ROLE_LABEL, type Department, type Staff, type StaffRole } from "./types";
+import { EMPLOYMENT_LABEL, ROLE_LABEL, type Department, type EmploymentType, type Staff, type StaffRole } from "./types";
 
 /** The form id the page-head button submits. */
 export const STAFF_FORM = "staff-form";
@@ -28,6 +28,7 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
 
   const existing = useApi<Staff>(editing && id ? `/api/v1/school/staff/${id}` : null);
   const departments = useApi<Department[]>("/api/v1/school/departments");
+  const colleagues = useApi<Staff[]>("/api/v1/school/staff", { status: "active" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Created | null>(null);
@@ -70,6 +71,7 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
     const f = new FormData(e.currentTarget);
     const text = (k: string) => String(f.get(k) ?? "").trim() || null;
     const dept = text("department_id");
+    const int = (k: string) => (text(k) === null ? null : Number(text(k)));
     const common = {
       full_name: text("full_name"),
       phone: text("phone"),
@@ -77,6 +79,17 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
       designation: text("designation"),
       joining_date: text("joining_date"),
       department_id: dept ? Number(dept) : null,
+      qualification_summary: text("qualification_summary"),
+      experience_years: text("experience_years"),
+      employment_type: text("employment_type"),
+      reporting_manager_id: int("reporting_manager_id"),
+      address: text("address"),
+      emergency_contact_name: text("emergency_contact_name"),
+      emergency_contact_phone: text("emergency_contact_phone"),
+      emergency_contact_relation: text("emergency_contact_relation"),
+      max_periods_per_week: int("max_periods_per_week"),
+      other_duty_periods: int("other_duty_periods"),
+      other_duties: text("other_duties"),
     };
     setSaving(true);
     setError(null);
@@ -169,7 +182,48 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
                 {editing
                   ? field("Email address", <input value={s?.email ?? ""} readOnly />)
                   : field("Email address", <input type="email" name="email" required minLength={3} maxLength={255} placeholder="Used to sign in" />, true)}
-                {/* Not wired: qualification, experience, address and reporting manager — the staff record has no such fields. Qualifications are recorded on SCR-087. */}
+                {field("Qualification", <input name="qualification_summary" maxLength={200} defaultValue={s?.qualification_summary ?? ""} placeholder="e.g. M.Sc. Mathematics, B.Ed." />)}
+                {field("Experience (years)", <input type="number" name="experience_years" min={0} max={70} step="0.5" defaultValue={s?.experience_years ?? ""} placeholder="e.g. 6" />)}
+                {field(
+                  "Employment type",
+                  <select name="employment_type" defaultValue={s?.employment_type ?? ""}>
+                    <option value="">Not set</option>
+                    {(Object.keys(EMPLOYMENT_LABEL) as EmploymentType[]).map((k) => (
+                      <option key={k} value={k}>
+                        {EMPLOYMENT_LABEL[k]}
+                      </option>
+                    ))}
+                  </select>,
+                )}
+                {field(
+                  "Reporting manager",
+                  <select name="reporting_manager_id" defaultValue={s?.reporting_manager_id ?? ""} key={colleagues.data ? "loaded" : "loading"}>
+                    <option value="">{colleagues.loading ? "Loading staff…" : "Not set"}</option>
+                    {colleagues.data
+                      ?.filter((c) => !s || c.id !== s.id)
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {`${c.full_name}${c.designation ? ` · ${c.designation}` : ""}`}
+                        </option>
+                      ))}
+                  </select>,
+                )}
+                {field("Address", <textarea name="address" rows={2} maxLength={2000} defaultValue={s?.address ?? ""} placeholder="Home address" />, false, true)}
+                {field("Emergency contact", <input name="emergency_contact_name" maxLength={160} defaultValue={s?.emergency_contact_name ?? ""} placeholder="Name" />)}
+                {field("Emergency phone", <input type="tel" name="emergency_contact_phone" maxLength={20} defaultValue={s?.emergency_contact_phone ?? ""} placeholder="Phone number" />)}
+                {field("Relationship", <input name="emergency_contact_relation" maxLength={60} defaultValue={s?.emergency_contact_relation ?? ""} placeholder="e.g. Spouse" />)}
+              </div>
+              <p className="muted small">Each degree or certificate, with its evidence and verification, is recorded on the Qualifications screen (SCR-087); the line above is the summary shown on the profile.</p>
+            </section>
+            <section>
+              <div className="form-section-title">
+                <span className="number">03</span>
+                <h3>Workload</h3>
+              </div>
+              <div className="form-grid">
+                {field("Capacity (periods a week)", <input type="number" name="max_periods_per_week" min={0} max={80} defaultValue={s?.max_periods_per_week ?? ""} placeholder="Not set" />)}
+                {field("Other duty periods a week", <input type="number" name="other_duty_periods" min={0} max={80} defaultValue={s?.other_duty_periods ?? ""} placeholder="0" />)}
+                {field("Other duties", <input name="other_duties" maxLength={300} defaultValue={s?.other_duties ?? ""} placeholder="e.g. Exam cell, bus duty" />, false, true)}
               </div>
               {editing ? <p className="muted small">Email and role cannot be changed after creation. To change either, deactivate this account and create a new one.</p> : null}
             </section>
@@ -195,7 +249,7 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
             {[
               ["Basic details", "Name, employee no. and role"],
               ["Work details", "Department, designation and joining date"],
-              ["Contact information", editing ? "Mobile number" : "Email becomes the sign-in"],
+              ["Contact information", editing ? "Mobile, address and emergency contact" : "Email becomes the sign-in"],
               ["Review & save", editing ? "Check the information" : "A temporary password is shown once"],
             ].map(([t, p], i) => (
               <div key={t} className={`stepper-row ${i === 0 ? "done" : ""}`}>
