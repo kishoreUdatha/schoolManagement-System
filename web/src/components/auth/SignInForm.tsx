@@ -54,7 +54,13 @@ export function SignInForm() {
       if ("otp_required" in res && res.otp_required) setOtp(res);
       else finish(res as Token);
     } catch (err) {
-      setError(errorText(err));
+      // Each workspace has its own login and treats other workspaces' accounts
+      // as unknown, so say which workspace this was and how to change it.
+      setError(
+        (err as { status?: number }).status === 401 && !student
+          ? `Email or password not recognised for the ${ROLE_LABEL[role]} workspace. If you are not ${role === "school_admin" ? "a" : "the"} ${ROLE_LABEL[role]}, choose your workspace using "Change workspace" above.`
+          : errorText(err),
+      );
     } finally {
       setBusy(false);
     }
