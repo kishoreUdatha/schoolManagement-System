@@ -1,0 +1,149 @@
+"use client";
+
+/*
+ * PM-045 · New request. There is no parent help-desk endpoint, so a request
+ * goes where the API can take it:
+ *  - to one of the child's teachers, as a conversation about this child
+ *    (POST /parent/me/conversations), with the category and subject as its
+ *    first line; or
+ *  - for a hostel resident, to the warden as a hostel complaint
+ *    (POST …/hostel/complaints).
+ */
+
+import { useRouter } from "next/navigation";
+import { useState, type FormEvent } from "react";
+import { useParent } from "@/components/parent/ParentShell";
+import { api, errorText } from "@/lib/api";
+import { label } from "@/lib/format";
+import { parentRoute } from "@/lib/parentScreens";
+import { useApi } from "@/lib/useApi";
+import { ChildGate, PmError, useChildPath } from "./pm";
+import type { Conversation, TeacherContact } from "./types";
+
+const CATEGORIES = ["General enquiry", "Attendance", "Fees & payment", "Transport", "Student details", "Health record", "App access"];
+const HOSTEL = "Hostel (to the warden)";
+const HOSTEL_KINDS = ["maintenance", "food", "cleanliness", "security", "roommate", "other"];
+
+export function NewRequest() {
+  return (
+    <ChildGate>
+      <Form />
+    </ChildGate>
+  );
+}
+
+function Form() {
+  const { childId, notify, go } = useParent();
+  const router = useRouter();
+  const base = useChildPath();
+  const teachers = useApi<TeacherContact[]>(base && `${base}/teacher-contacts`);
+  const hostel = useApi<{ hostel_name: string } | null>(base && `${base}/hostel`);
+  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [teacher, setTeacher] = useState("");
+  const [hostelKind, setHostelKind] = useState("maintenance");
+  const [subject, setSubject] = useState("");
+  const [description, setDescription] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const toHostel = category === HOSTEL;
+  const contacts = teachers.data ?? [];
+  const teacherId = contacts.some((t) => String(t.teacher_user_id) === teacher) ? teacher : contacts[0] ? String(contacts[0].teacher_user_id) : "";
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!base || !childId) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      if (toHostel) {
+        const text = subject.trim() ? `${subject.trim()}\n\n${description.trim()}` : description.trim();
+        await api.post(`${base}/hostel/complaints`, { category: hostelKind, description: text });
+        notify("Sent to the hostel warden.");
+        go(52);
+      } else {
+        if (!teacherId) throw new Error("Choose who should receive the request.");
+        const head = `${category}${subject.trim() ? `: ${subject.trim()}` : ""}`;
+        const c = await api.post<Conversation>(`/api/v1/parent/me/conversations`, {
+          teacher_user_id: Number(teacherId),
+          student_id: childId,
+          body: `${head}\n\n${description.trim()}`,
+        });
+        notify("Request sent.");
+        router.push(`${parentRoute(46)}?id=${c.id}`);
+      }
+    } catch (e2) {
+      setErr(errorText(e2));
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <PmError>{err || teachers.error}</PmError>
+      <label className="field">
+        Category
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          {CATEGORIES.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+          {hostel.data ? <option>{HOSTEL}</option> : null}
+        </select>
+      </label>
+      {toHostel ? (
+        <label className="field">
+          Hostel issue
+          <select value={hostelKind} onChange={(e) => setHostelKind(e.target.value)}>
+            {HOSTEL_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {label(k)}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <label className="field">
+          Send to
+          <select value={teacherId} onChange={(e) => setTeacher(e.target.value)} required>
+            {contacts.length === 0 ? <option value="">{teachers.loading ? "Loading…" : "No teachers available"}</option> : null}
+            {contacts.map((t) => (
+              <option key={t.teacher_user_id} value={t.teacher_user_id}>
+                {t.teacher_name}
+                {t.subjects.length ? ` · ${t.subjects.join(", ")}` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {category === "Health record" ? (
+        <p className="micro">
+          You can update allergies, medication and emergency contacts yourself on{" "}
+          <button type="button" className="text-button" onClick={() => go(43)}>
+            Health & emergency
+          </button>
+          .
+        </p>
+      ) : null}
+      <label className="field">
+        Subject
+        <input type="text" placeholder="Briefly describe the issue" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={150} />
+      </label>
+      <label className="field">
+        Description
+        <textarea
+          rows={3}
+          placeholder="Share the details the school needs"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+          minLength={5}
+          maxLength={1800}
+        />
+      </label>
+      {/* Not wired: attachment — the request APIs take no file upload. */}
+      <button className="action" type="submit" disabled={busy || (!toHostel && !teacherId)}>
+        {busy ? "Sending…" : "Send request"}
+      </button>
+    </form>
+  );
+}
