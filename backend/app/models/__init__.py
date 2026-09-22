@@ -194,6 +194,7 @@ from app.models.transport import (
     VehicleLog,
 )
 from app.models.usage import TenantUsage
+from app.models.health_sample import HealthSample
 from app.models.wellbeing import (
     CounsellingAppointment,
     EmergencyEscalation,

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Chart } from "@/components/ui/Chart";
 import { type IconName } from "@/components/ui/Icon";
 import { StatStrip, type Stat } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
@@ -8,15 +9,16 @@ import { ErrorNote } from "@/components/ui/states";
 import { dateTime, label } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { Empty, Hero, QuickActions, TimelineRow } from "./parts";
+import { Empty, Hero, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel } from "./parts";
 import type { InboxItem, StaffDashboardData } from "./types";
 
 /*
  * HR, admissions, transport and library are not separate logins: they are
  * jobs (hr.manage, admissions.manage …) handed to a staff member, and
- * GET /api/v1/staff/dashboard returns one panel per job held. Each of these
- * dashboards shows its own panel, the day's to-do lines across every job the
- * person holds, and their inbox.
+ * GET /api/v1/staff/dashboard returns one panel per job held, each with six
+ * months of its workload. Each of these dashboards shows its own panel and
+ * trend, today's schedule (GET /api/v1/school/insights/schedule/today) with
+ * the to-do lines of every job the person holds, and their inbox.
  */
 
 type Config = {
@@ -35,7 +37,8 @@ function StaffRoleDashboard({ panel: key, permission, job, cta, actions }: Confi
   const me = useApi<StaffToday>("/api/v1/staff/attendance/today");
   const d = dash.data;
   const panel = d?.panels.find((p) => p.key === key);
-  const others = d?.panels.filter((p) => p.key !== key) ?? [];
+  const trend = panel?.trend;
+  const peak = trend ? Math.max(0, ...trend.months.map((m) => m.value)) : 0;
 
   const stats: Stat[] = panel
     ? panel.stats.slice(0, 4).map((s) => ({ label: s.label, value: typeof s.value === "number" ? s.value.toLocaleString("en-IN") : String(s.value), note: panel.title }))
@@ -57,31 +60,30 @@ function StaffRoleDashboard({ panel: key, permission, job, cta, actions }: Confi
       <QuickActions items={actions} />
       <div className="two-col dashboard-grid" style={{ marginBottom: "20px" }}>
         <div>
-          {/* Not wired: the mock's trend chart — the staff portal sends today's counts only, no history. */}
-          <Panel title="Today" sub="What your jobs need doing">
-            {d?.jobs.length ? (
-              d.jobs.map((j) => <TimelineRow key={j} icon="check" title={j[0].toUpperCase() + j.slice(1)} sub="To do today" />)
+          <Panel
+            title={`${job} overview`}
+            sub={trend ? `Last six months · ${trend.label.toLowerCase()}${peak ? ` · % of the busiest month (${peak.toLocaleString("en-IN")})` : ""}` : "Last six months"}
+            action={
+              trend ? (
+                <div className="chart-key">
+                  <span>{trend.label}</span>
+                </div>
+              ) : undefined
+            }
+          >
+            {trend && peak > 0 ? (
+              <Chart kind="line" labels={trend.months.map((m) => monthLabel(m.month))} values={trend.months.map((m) => Math.round((m.value / peak) * 100))} />
             ) : (
-              <Empty>{d ? (d.nothing_assigned ? "Nothing has been assigned to this account yet." : "Nothing needs doing right now.") : "Loading…"}</Empty>
+              <Empty>{!d ? "Loading…" : !panel ? `Needs the ${permission} permission.` : `No ${(trend?.label ?? "activity").toLowerCase()} in the last six months.`}</Empty>
             )}
           </Panel>
         </div>
         <aside>
-          {/* Not wired: the mock's timed schedule — no endpoint; the other jobs this person holds stand in its place. */}
-          <Panel title="Your other jobs">
-            {others.length ? (
-              <dl className="kv">
-                {others.map((p) => (
-                  <div key={p.key}>
-                    <dt>{p.title}</dt>
-                    <dd>{p.stats[0] ? `${p.stats[0].value} ${p.stats[0].label.toLowerCase()}` : "—"}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : (
-              <Empty>{d ? "No other jobs on this account." : "Loading…"}</Empty>
-            )}
-          </Panel>
+          <TodaySchedulePanel
+            href={cta.href}
+            limit={3}
+            todo={(d?.jobs ?? []).map((j) => ({ title: j[0].toUpperCase() + j.slice(1), sub: "To do today" }))}
+          />
         </aside>
       </div>
       <div className="two-col dashboard-grid">

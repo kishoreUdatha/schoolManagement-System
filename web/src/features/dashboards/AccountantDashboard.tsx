@@ -1,22 +1,37 @@
 "use client";
 
-import Link from "next/link";
 import { Chart } from "@/components/ui/Chart";
 import { StatStrip, type Stat } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { dateTime, label, money } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
-import { count, Empty, Hero, lastMonths, monthLabel, QuickActions, TimelineRow } from "./parts";
-import type { AccountantDashboardData, Refund } from "./types";
+import { DateRow, Empty, Hero, lastMonths, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel, todayIso } from "./parts";
+import type { AccountantDashboardData, CalendarItem, Refund } from "./types";
 
-/** SCR-038, live: GET /api/v1/accountant/dashboard and GET /api/v1/school/fees/refunds. */
+function inDays(n: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return todayIso(d);
+}
+
+/**
+ * SCR-038, live: GET /api/v1/accountant/dashboard, GET /api/v1/school/fees/refunds,
+ * GET /api/v1/school/insights/schedule/today and GET /api/v1/school/calendar (next 60 days).
+ */
 export function AccountantDashboard() {
   const dash = useApi<AccountantDashboardData>("/api/v1/accountant/dashboard");
   const refunds = useApi<Refund[]>("/api/v1/school/fees/refunds");
+  const calendar = useApi<CalendarItem[]>("/api/v1/school/calendar", { start: todayIso(), end: inDays(60) });
   const d = dash.data;
   const all = refunds.data;
   const waiting = all?.filter((r) => r.status === "requested");
+  const events = (calendar.data ?? []).filter((c) => !c.is_cancelled && !c.is_draft).slice(0, 3);
+  // The day's money jobs, after whatever is timed on the calendar.
+  const todo = [
+    ...(waiting?.length ? [{ title: "Refund review", sub: `${waiting.length} request(s) awaiting approval` }] : []),
+    ...(d && Number(d.overdue) > 0 ? [{ title: "Overdue fees", sub: `${money(d.overdue)} past its due date · ${d.families_owing} student(s) owing` }] : []),
+  ];
 
   const stats: Stat[] = [
     { label: "Collected today", value: d ? money(d.collected_today) : "…", note: d ? `${d.receipts_today} receipt(s)` : "Today" },
@@ -67,27 +82,7 @@ export function AccountantDashboard() {
           </Panel>
         </div>
         <aside>
-          {/* Not wired: the mock's timed "Today's schedule" (collection review, vendor payment) — no endpoint; today's money figures stand in its place. */}
-          <Panel title="Today" action={<Link href="/fees-finance/outstanding-dues" className="btn text">View all</Link>}>
-            <dl className="kv">
-              <div>
-                <dt>Collected today</dt>
-                <dd>{d ? money(d.collected_today) : "…"}</dd>
-              </div>
-              <div>
-                <dt>Receipts today</dt>
-                <dd>{count(d?.receipts_today)}</dd>
-              </div>
-              <div>
-                <dt>Overdue</dt>
-                <dd>{d ? money(d.overdue) : "…"}</dd>
-              </div>
-              <div>
-                <dt>Refunds to approve</dt>
-                <dd>{waiting ? String(waiting.length) : "…"}</dd>
-              </div>
-            </dl>
-          </Panel>
+          <TodaySchedulePanel href="/fees-finance/outstanding-dues" todo={todo} />
         </aside>
       </div>
       <div className="two-col dashboard-grid">
@@ -109,22 +104,12 @@ export function AccountantDashboard() {
           </Panel>
         </div>
         <aside>
-          {/* Not wired: the mock's "Coming up" events — the accountant portal has no calendar; what is owed stands in its place. */}
-          <Panel title="Money owed">
-            <dl className="kv">
-              <div>
-                <dt>Outstanding</dt>
-                <dd>{d ? money(d.outstanding) : "…"}</dd>
-              </div>
-              <div>
-                <dt>Of which overdue</dt>
-                <dd>{d ? money(d.overdue) : "…"}</dd>
-              </div>
-              <div>
-                <dt>Students owing</dt>
-                <dd>{count(d?.families_owing)}</dd>
-              </div>
-            </dl>
+          <Panel title="Coming up">
+            {events.length ? (
+              events.map((c) => <DateRow key={`${c.type}${c.id}`} day={c.start_date} title={c.title} sub={[label(c.type), c.start_time?.slice(0, 5), c.detail].filter(Boolean).join(" · ")} />)
+            ) : (
+              <Empty>{calendar.loading ? "Loading…" : (calendar.error ?? "Nothing on the school calendar in the next 60 days.")}</Empty>
+            )}
           </Panel>
         </aside>
       </div>

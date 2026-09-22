@@ -21,6 +21,8 @@ type Collection = {
   by_class: { label: string; amount: string }[];
   by_mode: { label: string; amount: string }[];
   by_month: { month: string; amount: string }[];
+  /** per fee head: bills falling due in the period against what has been paid on them */
+  billed_by_head: { label: string; expected: string; paid: string; outstanding: string; collection_rate: number; bills: number; receipts: number }[];
 };
 
 /** SCR-273, live: GET /api/v1/school/analytics/fee-collection (?from&to). */
@@ -38,7 +40,18 @@ export function FeeCollectionReport() {
     month: { name: "Month", items: (d?.by_month ?? []).map((m) => ({ label: monthLabel(m.month), amount: m.amount })) },
   };
   const g = groups[by];
-  const rows: Row[] = g.items.map((x) => [x.label, money(x.amount), pct(share(n(x.amount), total))]);
+  // By fee head, the mock's columns: what was billed, what came in on it, what is still owed.
+  const billed = d?.billed_by_head ?? [];
+  const received = new Map((d?.by_head ?? []).map((h) => [h.label, h]));
+  const heads = [...billed.map((b) => b.label), ...[...received.keys()].filter((k) => !billed.some((b) => b.label === k))];
+  const headRows: Row[] = heads.map((h) => {
+    const b = billed.find((x) => x.label === h);
+    return [h, b ? money(b.expected) : "—", b ? money(b.paid) : "—", b ? money(b.outstanding) : "—", b ? pct(b.collection_rate) : "—", num(b?.receipts ?? 0)];
+  });
+  const byHead = by === "head";
+  const rows: Row[] = byHead ? headRows : g.items.map((x) => [x.label, money(x.amount), pct(share(n(x.amount), total))]);
+  const expected = billed.reduce((s, b) => s + n(b.expected), 0);
+  const paid = billed.reduce((s, b) => s + n(b.paid), 0);
   const range = d ? `${date(d.from_date)} – ${date(d.to_date)}` : "—";
   return (
     <ReportView
@@ -60,7 +73,7 @@ export function FeeCollectionReport() {
         { label: "Collected", value: money(d?.total), note: "Received in period" },
         { label: "Receipts", value: num(d?.receipts), note: range },
         { label: "Average receipt", value: d?.receipts ? money(Math.round(total / d.receipts)) : "—", note: "Collected ÷ receipts" },
-        { label: "Fee heads", value: num(d?.by_head.length), note: "With money received" },
+        { label: "Collection rate", value: expected ? pct(share(paid, expected)) : "—", note: d ? `${money(paid)} of ${money(expected)} billed in period` : "Paid ÷ billed" },
       ]}
       chart={{ kind: "bars", title: "Collection by month", sub: "Money received each month", bars: (d?.by_month ?? []).map((m) => ({ label: monthLabel(m.month), value: n(m.amount), text: money(m.amount) })), empty: "Nothing was collected in this period." }}
       scope={[
@@ -70,8 +83,17 @@ export function FeeCollectionReport() {
       ]}
       summaryTitle="By payment mode"
       summary={(d?.by_mode ?? []).map((m) => ({ label: label(m.label), value: share(n(m.amount), total), text: pct(share(n(m.amount), total), 0) }))}
-      // Not wired: expected fees and collection rate per head — the report counts money received only.
-      table={{ name: `fee-collection-by-${by}`, columns: [g.name, "Collected", "Share"], rows, empty: "Nothing was collected in this period." }}
+      table={
+        byHead
+          ? {
+              name: "fee-collection-by-head",
+              sub: "Bills falling due in the period, what has been paid on them, and receipts taken per head",
+              columns: ["Fee head", "Expected", "Collected", "Outstanding", "Collection rate", "Transactions"],
+              rows,
+              empty: "Nothing was billed or collected in this period.",
+            }
+          : { name: `fee-collection-by-${by}`, columns: [g.name, "Collected", "Share"], rows, empty: "Nothing was collected in this period." }
+      }
     />
   );
 }
@@ -253,27 +275,55 @@ type Run = {
   paid_on: string | null;
 };
 
-/** SCR-277, live: GET /api/v1/school/payroll/runs. */
+type DeptPay = {
+  run_id: number | null;
+  period: string | null;
+  status: string | null;
+  departments: { department: string; staff: number; gross: string; deductions: string; net: string; employer_cost: string }[];
+};
+
+/** SCR-277, live: GET /api/v1/school/payroll/runs, and GET /api/v1/school/analytics/payroll-by-department (?run_id) for the table. */
 export function PayrollSummary() {
   const [status, setStatus] = useState("");
+  const [runId, setRunId] = useState("");
+  const [by, setBy] = useState<"department" | "run">("department");
   const res = useApi<Run[]>("/api/v1/school/payroll/runs");
+  const dept = useApi<DeptPay>("/api/v1/school/analytics/payroll-by-department", { run_id: runId });
   const all = res.data ?? [];
   const runs = status ? all.filter((r) => r.status === status) : all;
   const latest = all[0];
   const recent = [...all].slice(0, 6).reverse();
   const counts = ["draft", "finalized", "paid"].map((s) => [s, all.filter((r) => r.status === s).length] as const);
-  const rows: Row[] = runs.map((r) => [monthLabel(r.period), num(r.staff_count), money(r.total_gross), money(r.total_deductions), money(r.total_net), label(r.status)]);
+  const runRows: Row[] = runs.map((r) => [monthLabel(r.period), num(r.staff_count), money(r.total_gross), money(r.total_deductions), money(r.total_net), label(r.status)]);
+  const dp = dept.data;
+  const deptRows: Row[] = (dp?.departments ?? []).map((x) => [x.department, num(x.staff), money(x.gross), money(x.deductions), money(x.net), dp?.status ? label(dp.status) : "—"]);
+  const byDept = by === "department";
   return (
     <ReportView
       filters={
-        <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">All statuses</option>
-          <option value="draft">Draft</option>
-          <option value="finalized">Finalized</option>
-          <option value="paid">Paid</option>
-        </select>
+        <>
+          <select aria-label="Group by" value={by} onChange={(e) => setBy(e.target.value as typeof by)}>
+            <option value="department">By department</option>
+            <option value="run">By payroll run</option>
+          </select>
+          {byDept ? (
+            <select aria-label="Payroll run" value={runId} onChange={(e) => setRunId(e.target.value)}>
+              <option value="">Latest run</option>
+              {all.map((r) => (
+                <option key={r.id} value={r.id}>{`${monthLabel(r.period)} · ${label(r.status)}`}</option>
+              ))}
+            </select>
+          ) : (
+            <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All statuses</option>
+              <option value="draft">Draft</option>
+              <option value="finalized">Finalized</option>
+              <option value="paid">Paid</option>
+            </select>
+          )}
+        </>
       }
-      error={res.error}
+      error={res.error ?? (byDept ? dept.error : null)}
       loading={res.loading}
       stats={[
         { label: "Latest run", value: latest ? monthLabel(latest.period) : "—", note: latest ? label(latest.status) : "No payroll run yet" },
@@ -285,12 +335,21 @@ export function PayrollSummary() {
       scope={[
         ["Runs", num(all.length)],
         ["Latest", latest ? monthLabel(latest.period) : "—"],
-        ["Group by", "Payroll run (month)"],
+        ["Group by", byDept ? `Department · ${dp?.period ? monthLabel(dp.period) : "latest run"}` : "Payroll run (month)"],
       ]}
       summaryTitle="Runs by status"
       summary={all.length ? counts.map(([s, c]) => ({ label: label(s), value: share(c, all.length), text: `${c}` })) : []}
-      // Not wired: pay by department — runs are totalled for the whole school.
-      table={{ name: "payroll-summary", columns: ["Period", "Staff", "Gross pay", "Deductions", "Net pay", "Status"], rows, empty: "No payroll runs match." }}
+      table={
+        byDept
+          ? {
+              name: "payroll-by-department",
+              sub: dp?.period ? `${monthLabel(dp.period)} payroll run, by the department each person belongs to` : "The latest payroll run, by department",
+              columns: ["Department", "Staff", "Gross pay", "Deductions", "Net pay", "Status"],
+              rows: deptRows,
+              empty: dept.loading ? "Loading…" : "No payroll has been run yet.",
+            }
+          : { name: "payroll-summary", columns: ["Period", "Staff", "Gross pay", "Deductions", "Net pay", "Status"], rows: runRows, empty: "No payroll runs match." }
+      }
     />
   );
 }

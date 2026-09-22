@@ -81,6 +81,13 @@ class ExamPerformanceSummary(BaseModel):
     note: Optional[str] = None
 
 
+class ObservationsSummary(BaseModel):
+    """Lessons sat in on (classroom observations)."""
+    this_month: int = 0
+    this_year: int = 0
+    last_observed_on: Optional[date] = None
+
+
 class NotificationsSummary(BaseModel):
     since: datetime
     sent_count: int
@@ -100,4 +107,5 @@ class DashboardRead(BaseModel):
     homework: HomeworkSummary
     exam_performance: ExamPerformanceSummary
     notifications: NotificationsSummary
+    observations: Optional[ObservationsSummary] = None
     generated_at: datetime

@@ -93,7 +93,21 @@ export function TeacherActivity() {
 // ---------------------------------------------------------------- SCR-279
 
 type Transport = {
-  routes: { route_id: number; route_name: string; vehicle: string | null; capacity: number; riders: number; free_seats: number; utilisation: number; over_capacity: boolean }[];
+  routes: {
+    route_id: number;
+    route_name: string;
+    vehicle: string | null;
+    capacity: number;
+    riders: number;
+    free_seats: number;
+    utilisation: number;
+    over_capacity: boolean;
+    /** today's morning trip sheet; null when none was opened today */
+    boarded_today: number | null;
+    trip_status_today: string | null;
+    /** logged odometer average, else stop-to-stop map distance */
+    distance_km: number | null;
+  }[];
   total_capacity: number;
   total_riders: number;
   utilisation: number;
@@ -105,7 +119,17 @@ export function TransportReport() {
   const res = useApi<Transport>("/api/v1/school/analytics/transport");
   const d = res.data;
   const routes = d?.routes ?? [];
-  const rows: Row[] = routes.map((r) => [r.route_name, r.vehicle ?? "—", num(r.capacity), num(r.riders), num(r.free_seats), pct(r.utilisation), r.over_capacity ? "Over capacity" : "Within capacity"]);
+  const rows: Row[] = routes.map((r) => [
+    { name: r.route_name, sub: r.vehicle ?? undefined },
+    num(r.capacity),
+    num(r.riders),
+    r.boarded_today === null ? "No trip today" : `${num(r.boarded_today)} of ${num(r.riders)}`,
+    r.distance_km === null ? "—" : `${r.distance_km.toLocaleString("en-IN")} km`,
+    pct(r.utilisation),
+    r.over_capacity ? "Over capacity" : "Within capacity",
+  ]);
+  const boardedToday = routes.reduce((s, r) => s + (r.boarded_today ?? 0), 0);
+  const runningToday = routes.filter((r) => r.boarded_today !== null).length;
   const bands: [string, (u: number) => boolean][] = [
     ["Over 90%", (u) => u > 90],
     ["50–90%", (u) => u >= 50 && u <= 90],
@@ -118,7 +142,7 @@ export function TransportReport() {
       stats={[
         { label: "Routes", value: num(routes.length), note: `${num(d?.over_capacity.length)} over capacity` },
         { label: "Seats", value: num(d?.total_capacity), note: "Across route vehicles" },
-        { label: "Riders", value: num(d?.total_riders), note: "Students assigned" },
+        { label: "Riders", value: num(d?.total_riders), note: d ? `${num(boardedToday)} boarded today on ${runningToday} route(s)` : "Students assigned" },
         { label: "Utilization", value: d ? pct(d.utilisation) : "—", note: "Riders ÷ seats" },
       ]}
       chart={{ kind: "bars", title: "Utilization by route", sub: "Riders against seats", percent: true, bars: routes.map((r) => ({ label: r.route_name, value: r.utilisation, text: pct(r.utilisation, 0) })), empty: "No routes set up yet." }}
@@ -129,8 +153,13 @@ export function TransportReport() {
       ]}
       summaryTitle="Routes by load"
       summary={routes.length ? bands.map(([l, f]) => { const c = routes.filter((r) => f(r.utilisation)).length; return { label: l, value: share(c, routes.length), text: `${c}` }; }) : []}
-      // Not wired: boarded today and route distance — no endpoint reports them.
-      table={{ name: "transport-utilization", columns: ["Route", "Vehicle", "Capacity", "Riders", "Free seats", "Utilization", "Status"], rows, empty: "No routes set up yet." }}
+      table={{
+        name: "transport-utilization",
+        sub: "Boarded: today's morning trip sheet · distance: logged odometer readings, else the stops' map points",
+        columns: ["Route", "Capacity", "Assigned", "Boarded today", "Distance", "Utilization", "Status"],
+        rows,
+        empty: "No routes set up yet.",
+      }}
     />
   );
 }
@@ -147,6 +176,11 @@ type Library = {
   shelf_in_use: number;
   by_month: { month: string; issued: number; returned: number }[];
   top_titles: { book_id: number; title: string; times: number }[];
+  /** distinct borrowers in the period */
+  members: number;
+  /** loans out past their due date now */
+  overdue_now: number;
+  by_category: { category: string; members: number; issues: number; returns: number; overdue: number; most_borrowed: string | null }[];
 };
 
 /** SCR-280, live: GET /api/v1/school/analytics/library (?from&to). */
@@ -155,7 +189,7 @@ export function LibraryReport() {
   const [to, setTo] = useState("");
   const res = useApi<Library>("/api/v1/school/analytics/library", { from, to });
   const d = res.data;
-  const rows: Row[] = (d?.top_titles ?? []).map((b, i) => [`${i + 1}`, b.title, num(b.times)]);
+  const rows: Row[] = (d?.by_category ?? []).map((c) => [c.category, num(c.members), num(c.issues), num(c.returns), num(c.overdue), c.most_borrowed ?? "—"]);
   const months = d?.by_month ?? [];
   const range = d ? `${date(d.from_date)} – ${date(d.to_date)}` : "—";
   return (
@@ -170,20 +204,25 @@ export function LibraryReport() {
       loading={res.loading}
       stats={[
         { label: "Issued", value: num(d?.issued), note: range },
-        { label: "Returned", value: num(d?.returned), note: "In the same period" },
+        { label: "Members", value: num(d?.members), note: `Borrowed in the period · ${num(d?.returned)} returned` },
         { label: "Out now", value: num(d?.out_now), note: `Of ${num(d?.copies)} copies` },
-        { label: "Shelf in use", value: d ? pct(d.shelf_in_use) : "—", note: "Copies out ÷ copies" },
+        { label: "Overdue", value: num(d?.overdue_now), note: d ? `Out past due · ${pct(d.shelf_in_use)} of the shelf out` : "Out past the due date" },
       ]}
       chart={{ kind: "bars", title: "Issues by month", sub: "Books issued each month", bars: months.map((m) => ({ label: monthLabel(m.month), value: m.issued, text: num(m.issued) })), empty: "Nothing was issued in this period." }}
       scope={[
         ["Date range", range],
         ["Copies", num(d?.copies)],
-        ["Group by", "Title"],
+        ["Group by", "Category"],
       ]}
       summaryTitle="Returns by month"
       summary={months.map((m) => ({ label: monthLabel(m.month), value: share(m.returned, m.issued), text: `${m.returned}/${m.issued}` }))}
-      // Not wired: members, overdue and borrowing by category — the report gives totals and top titles only.
-      table={{ name: "library-top-titles", title: "Most borrowed titles", sub: "In the selected period", columns: ["Rank", "Title", "Times borrowed"], rows, empty: "Nothing was borrowed in this period." }}
+      table={{
+        name: "library-by-category",
+        sub: "Borrowing in the selected period by book category · overdue is out past its due date now",
+        columns: ["Category", "Members", "Issues", "Returns", "Overdue", "Most borrowed"],
+        rows,
+        empty: "Nothing was borrowed in this period.",
+      }}
     />
   );
 }
@@ -252,7 +291,8 @@ type Notices = {
   recipients: number;
   by_audience: { label: string; count: number }[];
   by_month: { month: string; count: number }[];
-  channels: { channel: string; total: number; queued: number; sent: number; delivered: number; failed: number; skipped: number }[];
+  /** read: opened by the recipient — only the in-app inbox records reading */
+  channels: { channel: string; total: number; queued: number; sent: number; delivered: number; failed: number; skipped: number; read: number }[];
 };
 
 /** SCR-282, live: GET /api/v1/school/analytics/notifications (?from&to). */
@@ -267,7 +307,7 @@ export function NotificationReport() {
   const skipped = ch.reduce((s, c) => s + c.skipped, 0);
   const audience = d?.by_audience ?? [];
   const aTotal = audience.reduce((s, a) => s + a.count, 0);
-  const rows: Row[] = ch.map((c) => [label(c.channel), num(c.total), num(c.sent), num(c.delivered), num(c.queued), num(c.skipped), num(c.failed)]);
+  const rows: Row[] = ch.map((c) => [label(c.channel), num(c.total), num(c.sent), num(c.delivered), c.channel === "in_app" ? num(c.read) : "—", num(c.queued + c.skipped), num(c.failed)]);
   const range = d ? `${date(d.from_date)} – ${date(d.to_date)}` : "—";
   return (
     <ReportView
@@ -293,8 +333,13 @@ export function NotificationReport() {
       ]}
       summaryTitle="Audience share"
       summary={audience.map((a) => ({ label: label(a.label), value: share(a.count, aTotal), text: pct(share(a.count, aTotal), 0) }))}
-      // Not wired: "Read" — message reads are not reported per channel.
-      table={{ name: "notification-channels", columns: ["Channel", "Messages", "Sent", "Delivered", "Queued", "Skipped", "Failed"], rows, empty: "No messages in this period." }}
+      table={{
+        name: "notification-channels",
+        sub: "Read is counted for the in-app inbox, the only channel that knows when a message is opened",
+        columns: ["Channel", "Messages", "Sent", "Delivered", "Read", "Queued / skipped", "Failed"],
+        rows,
+        empty: "No messages in this period.",
+      }}
     />
   );
 }

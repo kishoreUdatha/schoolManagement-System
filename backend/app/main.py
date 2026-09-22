@@ -29,6 +29,7 @@ from app.api.v1.school import (
     attendance_ops as school_attendance_ops,
     attendance_reports as school_attendance_reports,
     audit_log as school_audit_log,
+    insights as school_insights,
     auth as school_auth,
     certificates as school_certificates,
     class_subjects as school_class_subjects,
@@ -201,19 +202,42 @@ async def _fee_reminder_loop():
         await asyncio.sleep(interval)
 
 
+async def _health_sample_loop():
+    """Probe the monitored services every five minutes and keep the result,
+    so availability and response time have a history (SCR-018)."""
+    import asyncio
+    import logging
+
+    from app.database import SessionLocal
+    from app.services import insight_service, platform_service
+
+    log = logging.getLogger("health_samples")
+    while True:
+        try:
+            db = SessionLocal()
+            try:
+                insight_service.record_health(db, platform_service.health(db)["checks"])
+            finally:
+                db.close()
+        except Exception:  # noqa: BLE001
+            log.exception("Health sample failed; will retry next tick")
+        await asyncio.sleep(300)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import asyncio
 
-    task = asyncio.create_task(_fee_reminder_loop())
+    tasks = [asyncio.create_task(_fee_reminder_loop()), asyncio.create_task(_health_sample_loop())]
     try:
         yield
     finally:
-        task.cancel()
-        try:
-            await task
-        except (asyncio.CancelledError, Exception):  # noqa: BLE001
-            pass
+        for task in tasks:
+            task.cancel()
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):  # noqa: BLE001
+                pass
 
 
 app = FastAPI(
@@ -613,6 +637,11 @@ app.include_router(
     school_audit_log.router,
     prefix="/api/v1/school/audit-log",
     tags=["school / audit log"],
+)
+app.include_router(
+    school_insights.router,
+    prefix="/api/v1/school/insights",
+    tags=["school / dashboard feeds"],
 )
 app.include_router(
     school_fee_reminders.router,

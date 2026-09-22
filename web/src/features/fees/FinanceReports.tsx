@@ -41,9 +41,19 @@ export function FinanceReports() {
   const months = (r?.by_month ?? []).slice(-6);
   const received = Number(r?.received ?? 0);
   const spent = Number(r?.spent ?? 0);
+  // Income rows are fee heads: billed in the period (expected), received in the period, still owed on those bills.
+  const billed = new Map((r?.billed_by_head ?? []).map((b) => [b.label, b]));
+  const incomeHeads = [...new Set([...(r?.billed_by_head ?? []).map((b) => b.label), ...(r?.income_by_head ?? []).map((x) => x.label)])];
+  const receivedBy = new Map((r?.income_by_head ?? []).map((x) => [x.label, Number(x.amount)]));
   const rows: Row[] = [
-    ...(view === "spend" ? [] : (r?.income_by_head ?? []).map((x) => [x.label, "Income", money(x.amount), received ? pct((Number(x.amount) / received) * 100) : "—"])),
-    ...(view === "income" ? [] : (r?.spend_by_category ?? []).map((x) => [x.label, "Expenditure", money(x.amount), spent ? pct((Number(x.amount) / spent) * 100) : "—"])),
+    ...(view === "spend"
+      ? []
+      : incomeHeads.map((h) => {
+          const b = billed.get(h);
+          const got = receivedBy.get(h) ?? 0;
+          return [h, "Income", b ? money(b.expected) : "—", money(got), b ? money(b.outstanding) : "—", b ? pct(b.collection_rate) : "—"];
+        })),
+    ...(view === "income" ? [] : (r?.spend_by_category ?? []).map((x) => [x.label, "Expenditure", "—", money(x.amount), "—", spent ? `${pct((Number(x.amount) / spent) * 100)} of spend` : "—"])),
   ];
 
   return (
@@ -118,8 +128,8 @@ export function FinanceReports() {
         }
         flush
       >
-        {/* Not wired: "Expected" and "Outstanding" per fee head — the report gives money received, not what was billed per head. Dues are on SCR-162. */}
-        <DataTable columns={["Fee head / category", "Type", "Amount", "Share"]} rows={rows} selectable={false} rowAction={false} empty={rep.loading ? "Loading…" : "Nothing in this period."} />
+        {/* Expected and outstanding are the bills falling due in the period; the collection rate is paid ÷ billed on those bills. */}
+        <DataTable columns={["Fee head / category", "Type", "Expected", "Received", "Outstanding", "Collection rate"]} rows={rows} selectable={false} rowAction={false} empty={rep.loading ? "Loading…" : "Nothing in this period."} />
       </Panel>
     </>
   );

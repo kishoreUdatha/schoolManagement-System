@@ -24,6 +24,8 @@ from sqlalchemy.orm import Session
 from app.core.enums import (
     AssetStatus,
     AttendanceStatus,
+    BoardingStatus,
+    TripDirection,
     FeeStatus,
     MarkStatus,
     StaffAttendanceStatus,
@@ -46,7 +48,14 @@ from app.models.staff_ops import ClassroomObservation
 from app.models.student import Student
 from app.models.subject import ClassSubject, Subject
 from app.models.syllabus import SyllabusChapter, SyllabusTopic, TopicCoverage
-from app.models.transport import TransportAssignment, TransportRoute, Vehicle
+from app.models.transport import (
+    TransportAssignment,
+    TransportRoute,
+    TransportStop,
+    Trip,
+    TripBoarding,
+    Vehicle,
+)
 from app.models.user import User
 
 ZERO = Decimal("0")
@@ -138,6 +147,7 @@ def overview(db: Session, school_id: int, months: int = 6) -> dict:
 
     this_month = window[-1]
     return {
+        **academic_average(db, school_id),
         "students": students,
         "staff": staff,
         "attendance_this_month": att[this_month]["percent"],
@@ -145,6 +155,38 @@ def overview(db: Session, school_id: int, months: int = 6) -> dict:
         "outstanding": Decimal(outstanding),
         "attendance_by_month": [att[m] for m in window],
         "money_by_month": money,
+    }
+
+
+def academic_average(db: Session, school_id: int) -> dict:
+    """The school's average score: every mark scored in the published exams
+    of the current academic year, each paper as a percentage of its maximum.
+    None when nothing is published yet — a zero would read as a result."""
+    year_ids = select(AcademicYear.id).where(
+        AcademicYear.school_id == school_id, AcademicYear.is_current.is_(True)
+    )
+    row = db.execute(
+        select(
+            func.avg(cast(Mark.marks_obtained, Numeric) * 100 / ExamSubject.max_marks),
+            func.count(Mark.id),
+            func.count(func.distinct(Exam.id)),
+        )
+        .join(ExamSubject, ExamSubject.id == Mark.exam_subject_id)
+        .join(Exam, Exam.id == ExamSubject.exam_id)
+        .where(
+            Exam.school_id == school_id,
+            Exam.is_published.is_(True),
+            Exam.academic_year_id.in_(year_ids),
+            Mark.status == MarkStatus.scored,
+            Mark.marks_obtained.is_not(None),
+            ExamSubject.max_marks > 0,
+        )
+    ).one()
+    avg, marks, exams = row
+    return {
+        "academic_average": round(float(avg), 1) if avg is not None else None,
+        "academic_average_marks": marks,
+        "academic_average_exams": exams,
     }
 
 
@@ -294,6 +336,26 @@ def chronic_absence(db: Session, school_id: int, *, below: float = 75.0,
                 "absent_days": n_marked - n_present - n_half, "percent": pct,
             })
     out.sort(key=lambda r: r["percent"])
+
+    # When somebody last rang home about each child (recorded on SCR-118).
+    from app.models.attendance_ops import AbsenceContact
+
+    last: dict[int, AbsenceContact] = {}
+    ids = [r["student_id"] for r in out]
+    if ids:
+        for c in db.execute(
+            select(AbsenceContact)
+            .where(AbsenceContact.school_id == school_id, AbsenceContact.student_id.in_(ids))
+            .order_by(AbsenceContact.contacted_on.desc(), AbsenceContact.id.desc())
+        ).scalars():
+            last.setdefault(c.student_id, c)
+    today = date.today()
+    for r in out:
+        c = last.get(r["student_id"])
+        r["last_follow_up_on"] = c.contacted_on if c else None
+        r["last_follow_up_method"] = c.method.value if c else None
+        r["next_follow_up_on"] = c.follow_up_on if c else None
+        r["follow_up_due"] = bool(c and c.follow_up_on and c.follow_up_on <= today)
     return {
         "from_date": frm, "to_date": to, "below": below, "min_days": min_days,
         "students": out, "count": len(out),
@@ -323,6 +385,7 @@ def exam_analysis(db: Session, school_id: int, exam_id: int) -> dict:
     grades: dict[str, int] = {}
     per_subject: dict[int, dict] = {}
     per_student: dict[int, dict] = {}
+    failed_any: set[int] = set()
     scored = 0
     passed = 0
     for mark, paper, subject, student, cname, sname in rows:
@@ -352,6 +415,8 @@ def exam_analysis(db: Session, school_id: int, exam_id: int) -> dict:
             })
             st["obtained"] += mark.marks_obtained
             st["max"] += paper.max_marks
+            if mark.is_pass is False:
+                failed_any.add(student.id)
 
     subjects = []
     for s in per_subject.values():
@@ -367,6 +432,27 @@ def exam_analysis(db: Session, school_id: int, exam_id: int) -> dict:
     for t in toppers:
         t["percent"] = _pct(t["obtained"], t["max"])
 
+    # Class by class: a student passes when every paper they sat was a pass,
+    # and "needs support" is anyone who failed a paper or scored under 40%.
+    per_class: dict[str, dict] = {}
+    for sid, t in per_student.items():
+        label = t["section_label"] or "No section"
+        c = per_class.setdefault(label, {"section_label": label, "appeared": 0, "passed": 0, "failed": 0,
+                                         "pct_sum": 0.0, "top_percent": 0.0, "needs_support": 0})
+        c["appeared"] += 1
+        failed = sid in failed_any
+        c["failed" if failed else "passed"] += 1
+        c["pct_sum"] += t["percent"]
+        c["top_percent"] = max(c["top_percent"], t["percent"])
+        if failed or t["percent"] < 40:
+            c["needs_support"] += 1
+    classes = []
+    for c in per_class.values():
+        c["average_percent"] = round(c.pop("pct_sum") / c["appeared"], 1) if c["appeared"] else 0.0
+        c["pass_percent"] = _pct(c["passed"], c["appeared"])
+        classes.append(c)
+    classes.sort(key=lambda c: c["section_label"])
+
     return {
         "exam_id": exam.id, "exam_name": exam.name, "is_published": exam.is_published,
         "marks_entered": scored, "pass_percent": _pct(passed, scored),
@@ -374,6 +460,7 @@ def exam_analysis(db: Session, school_id: int, exam_id: int) -> dict:
         "subjects": subjects,
         "toppers": toppers[:10],
         "struggling": [s for s in subjects if s["pass_percent"] < 60][:5],
+        "classes": classes,
     }
 
 
@@ -508,11 +595,58 @@ def fee_collection(db: Session, school_id: int, *, frm: Optional[date] = None,
     def rows_of(d: dict) -> list[dict]:
         return [{"label": k, "amount": v} for k, v in sorted(d.items(), key=lambda kv: -kv[1])]
 
+    receipts_by_head: dict[str, int] = {}
+    for c, sf, head, student, class_name in rows:
+        name = head.name if head else "Other"
+        receipts_by_head[name] = receipts_by_head.get(name, 0) + 1
+
     return {
         "from_date": frm, "to_date": to, "receipts": len(rows), "total": total,
         "by_head": rows_of(by_head), "by_class": rows_of(by_class), "by_mode": rows_of(by_mode),
         "by_month": [{"month": m, "amount": a} for m, a in sorted(by_month.items())],
+        "billed_by_head": billed_by_head(db, school_id, frm=frm, to=to, receipts=receipts_by_head),
     }
+
+
+def billed_by_head(db: Session, school_id: int, *, frm: date, to: date,
+                   receipts: Optional[dict[str, int]] = None) -> list[dict]:
+    """What was billed per fee head against what has come in for it.
+
+    The bills counted are the ones falling due in the window; waived bills
+    are left out, since nobody expects that money. "Paid" is what has been
+    paid against those same bills, whenever it arrived, so the collection
+    rate compares like with like.
+    """
+    rows = db.execute(
+        select(
+            func.coalesce(FeeHead.name, "Other"),
+            func.coalesce(func.sum(StudentFee.amount_due), 0),
+            func.coalesce(func.sum(StudentFee.amount_paid), 0),
+            func.count(StudentFee.id),
+        )
+        .join(FeeHead, FeeHead.id == StudentFee.fee_head_id, isouter=True)
+        .where(
+            StudentFee.school_id == school_id,
+            StudentFee.due_date >= frm,
+            StudentFee.due_date <= to,
+            StudentFee.status != FeeStatus.waived,
+        )
+        .group_by(FeeHead.name)
+    ).all()
+    out = []
+    for name, due, paid, bills in rows:
+        due, paid = Decimal(due), Decimal(paid)
+        out.append({
+            "label": name,
+            "expected": due,
+            "paid": paid,
+            "outstanding": max(due - paid, ZERO),
+            "collection_rate": _pct(float(paid), float(due)) if due else 0.0,
+            "bills": bills,
+            "receipts": (receipts or {}).get(name, 0),
+        })
+    out.sort(key=lambda r: -r["expected"])
+    return out
 
 
 def dues_ageing(db: Session, school_id: int) -> dict:
@@ -630,15 +764,36 @@ def transport_utilisation(db: Session, school_id: int) -> dict:
         .order_by(TransportRoute.name)
     ).all()
 
+    today = date.today()
+    route_ids = [r[0].id for r in rows] or [-1]
+    # Today's morning run, per route: how many were marked on the bus.
+    trips_today = {
+        t.route_id: t for t in db.execute(
+            select(Trip).where(Trip.route_id.in_(route_ids), Trip.trip_date == today,
+                               Trip.direction == TripDirection.pickup)
+        ).scalars()
+    }
+    boarded = dict(db.execute(
+        select(Trip.route_id, func.count(TripBoarding.id))
+        .join(TripBoarding, TripBoarding.trip_id == Trip.id)
+        .where(Trip.route_id.in_(route_ids), Trip.trip_date == today, Trip.direction == TripDirection.pickup,
+               TripBoarding.status == BoardingStatus.boarded)
+        .group_by(Trip.route_id)
+    ).all())
+
     routes = []
     for route, capacity, reg, riders in rows:
         cap = capacity or 0
+        trip = trips_today.get(route.id)
         routes.append({
             "route_id": route.id, "route_name": route.name, "vehicle": reg,
             "capacity": cap, "riders": riders,
             "free_seats": max(cap - riders, 0),
             "utilisation": _pct(riders, cap) if cap else 0.0,
             "over_capacity": cap > 0 and riders > cap,
+            "boarded_today": boarded.get(route.id, 0) if trip else None,
+            "trip_status_today": trip.status.value if trip else None,
+            "distance_km": _route_distance(db, route.id),
         })
     total_cap = sum(r["capacity"] for r in routes)
     total_riders = sum(r["riders"] for r in routes)
@@ -648,6 +803,76 @@ def transport_utilisation(db: Session, school_id: int) -> dict:
         "total_riders": total_riders,
         "utilisation": _pct(total_riders, total_cap) if total_cap else 0.0,
         "over_capacity": [r for r in routes if r["over_capacity"]],
+    }
+
+
+def _route_distance(db: Session, route_id: int) -> Optional[float]:
+    """How long the route is, in km.
+
+    From the odometer when trips have been logged with readings (the average
+    of the last ten), otherwise from the stops' map points, stop to stop in a
+    straight line — an underestimate, but an honest one. None when neither
+    is recorded."""
+    from math import asin, cos, radians, sin, sqrt
+
+    runs = [
+        e - s for s, e in db.execute(
+            select(Trip.start_odometer_km, Trip.end_odometer_km)
+            .where(Trip.route_id == route_id, Trip.start_odometer_km.is_not(None),
+                   Trip.end_odometer_km.is_not(None))
+            .order_by(Trip.trip_date.desc()).limit(10)
+        ).all() if e is not None and s is not None and e >= s
+    ]
+    if runs:
+        return round(sum(runs) / len(runs), 1)
+    pts = [(a, b) for a, b in db.execute(
+        select(TransportStop.lat, TransportStop.lng)
+        .where(TransportStop.route_id == route_id).order_by(TransportStop.sequence)
+    ).all()]
+    if len(pts) < 2 or any(a is None or b is None for a, b in pts):
+        return None
+    km = 0.0
+    for (a1, b1), (a2, b2) in zip(pts, pts[1:]):
+        p1, p2 = radians(a1), radians(a2)
+        d = sin((p2 - p1) / 2) ** 2 + cos(p1) * cos(p2) * sin(radians(b2 - b1) / 2) ** 2
+        km += 2 * 6371 * asin(sqrt(d))
+    return round(km, 1)
+
+
+def payroll_by_department(db: Session, school_id: int, run_id: Optional[int] = None) -> dict:
+    """One payroll run, totalled by the department each person belongs to.
+    The latest run when none is named."""
+    from app.models.foundation import Department
+    from app.models.payroll import PayrollRun, Payslip
+    from app.models.staff import Staff
+
+    stmt = select(PayrollRun).where(PayrollRun.school_id == school_id)
+    run = (db.execute(stmt.where(PayrollRun.id == run_id)).scalar_one_or_none() if run_id
+           else db.execute(stmt.order_by(PayrollRun.period.desc()).limit(1)).scalar_one_or_none())
+    if run_id and not run:
+        raise _404("Payroll run")
+    if not run:
+        return {"run_id": None, "period": None, "status": None, "departments": []}
+    rows = db.execute(
+        select(Payslip, Department.name)
+        .join(Staff, Staff.id == Payslip.staff_id, isouter=True)
+        .join(Department, Department.id == Staff.department_id, isouter=True)
+        .where(Payslip.run_id == run.id)
+    ).all()
+    depts: dict[str, dict] = {}
+    for slip, dept in rows:
+        name = dept or "No department"
+        d = depts.setdefault(name, {"department": name, "staff": 0, "gross": ZERO, "deductions": ZERO,
+                                    "net": ZERO, "employer_cost": ZERO})
+        d["staff"] += 1
+        d["gross"] += Decimal(slip.gross or 0)
+        d["deductions"] += Decimal(slip.total_deductions or 0)
+        d["net"] += Decimal(slip.net_pay or 0)
+        d["employer_cost"] += (Decimal(slip.gross or 0) + Decimal(slip.pf_employer or 0)
+                               + Decimal(slip.esi_employer or 0))
+    return {
+        "run_id": run.id, "period": run.period, "status": run.status.value,
+        "departments": sorted(depts.values(), key=lambda d: -d["net"]),
     }
 
 
@@ -685,6 +910,52 @@ def library_usage(db: Session, school_id: int, *, frm: Optional[date] = None,
         )
     ).scalar_one()
 
+    # By category. Members are the distinct borrowers in the window; overdue
+    # is what is out past its due date right now.
+    today = date.today()
+    overdue_now = list(db.execute(
+        select(Loan).where(
+            Loan.school_id == school_id, Loan.returned_on.is_(None), Loan.lost_on.is_(None),
+            Loan.due_on < today,
+        )
+    ).scalars())
+    book_of: dict[int, Optional[Book]] = {}
+
+    def book_for(loan: Loan) -> Optional[Book]:
+        if loan.copy_id not in book_of:
+            copy = db.get(BookCopy, loan.copy_id)
+            book_of[loan.copy_id] = db.get(Book, copy.book_id) if copy else None
+        return book_of[loan.copy_id]
+
+    def who(loan: Loan) -> tuple:
+        return (loan.borrower_type.value, loan.student_id or loan.user_id)
+
+    cats: dict[str, dict] = {}
+
+    def cat(book: Optional[Book]) -> dict:
+        name = (book.category or "").strip() if book else ""
+        name = name or "Uncategorised"
+        return cats.setdefault(name, {"category": name, "members": set(), "issues": 0, "returns": 0,
+                                      "overdue": 0, "titles": {}})
+
+    for l in loans:
+        book = book_for(l)
+        c = cat(book)
+        c["issues"] += 1
+        c["members"].add(who(l))
+        if l.returned_on:
+            c["returns"] += 1
+        if book:
+            c["titles"][book.title] = c["titles"].get(book.title, 0) + 1
+    for l in overdue_now:
+        cat(book_for(l))["overdue"] += 1
+    by_category = []
+    for c in cats.values():
+        top = max(c["titles"].items(), key=lambda kv: kv[1])[0] if c["titles"] else None
+        by_category.append({"category": c["category"], "members": len(c["members"]), "issues": c["issues"],
+                            "returns": c["returns"], "overdue": c["overdue"], "most_borrowed": top})
+    by_category.sort(key=lambda c: (-c["issues"], c["category"]))
+
     return {
         "from_date": frm, "to_date": to,
         "issued": len(loans),
@@ -694,6 +965,9 @@ def library_usage(db: Session, school_id: int, *, frm: Optional[date] = None,
         "shelf_in_use": _pct(out_now, total_copies) if total_copies else 0.0,
         "by_month": [by_month[k] for k in sorted(by_month)],
         "top_titles": sorted(titles.values(), key=lambda t: -t["times"])[:10],
+        "members": len({who(l) for l in loans}),
+        "overdue_now": len(overdue_now),
+        "by_category": by_category,
     }
 
 
@@ -774,15 +1048,21 @@ def notification_report(db: Session, school_id: int, *, frm: Optional[date] = No
         by_month[key] = by_month.get(key, 0) + 1
 
     channel_rows = db.execute(
-        select(NoticeRecipient.channel, NoticeRecipient.status, func.count(NoticeRecipient.id))
+        select(NoticeRecipient.channel, NoticeRecipient.status, func.count(NoticeRecipient.id),
+               func.count(NoticeRecipient.read_at))
         .join(Notice, Notice.id == NoticeRecipient.notice_id)
-        .where(Notice.school_id == school_id, func.date(Notice.created_at) >= frm)
+        .where(
+            Notice.school_id == school_id,
+            func.date(Notice.created_at) >= frm,
+            func.date(Notice.created_at) <= to,
+        )
         .group_by(NoticeRecipient.channel, NoticeRecipient.status)
     ).all()
     channels: dict[str, dict] = {}
-    for channel, st, n in channel_rows:
-        c = channels.setdefault(channel.value, {"channel": channel.value, "total": 0})
+    for channel, st, n, read in channel_rows:
+        c = channels.setdefault(channel.value, {"channel": channel.value, "total": 0, "read": 0})
         c["total"] += n
+        c["read"] += read
         c[st.value] = c.get(st.value, 0) + n
 
     return {

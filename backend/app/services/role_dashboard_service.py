@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.core.enums import (
     ApplicationStatus,
+    BoardingStatus,
     FeeStatus,
     UserRole,
 )
@@ -260,6 +261,41 @@ PANELS = {
 }
 
 
+# ---------- six months of each job, for the dashboard chart ----------
+
+
+def _trend(db: Session, key: str, school_id: int) -> Optional[dict]:
+    """The one monthly count that best shows each job's workload."""
+    from app.models.application import AdmissionApplication
+    from app.models.hostel import HostelAllocation
+    from app.models.staff_leave import StaffLeave
+    from app.models.transport import Trip, TripBoarding
+    from app.models.visitor import Visit
+    from app.services.insight_service import monthly_counts
+
+    if key == "library":
+        return {"label": "Books issued", "months": monthly_counts(db, Loan.issued_on, Loan.school_id == school_id)}
+    if key == "transport":
+        return {"label": "Students boarded", "months": monthly_counts(
+            db, TripBoarding.marked_at,
+            TripBoarding.trip_id.in_(select(Trip.id).where(Trip.school_id == school_id)),
+            TripBoarding.status == BoardingStatus.boarded,
+        )}
+    if key == "store":
+        return {"label": "Stock movements", "months": monthly_counts(db, StockMove.moved_on, StockMove.school_id == school_id)}
+    if key == "admissions":
+        return {"label": "Applications received", "months": monthly_counts(
+            db, AdmissionApplication.created_at, AdmissionApplication.school_id == school_id)}
+    if key == "hr":
+        return {"label": "Leave requests", "months": monthly_counts(db, StaffLeave.created_at, StaffLeave.school_id == school_id)}
+    if key == "hostel":
+        return {"label": "Hostel admissions", "months": monthly_counts(
+            db, HostelAllocation.start_date, HostelAllocation.school_id == school_id)}
+    if key == "front_desk":
+        return {"label": "Visitors", "months": monthly_counts(db, Visit.check_in_at, Visit.school_id == school_id)}
+    return None
+
+
 def staff_dashboard(db: Session, user: User) -> dict:
     """Whichever panels this person's permissions entitle them to.
 
@@ -272,11 +308,17 @@ def staff_dashboard(db: Session, user: User) -> dict:
     for code, build in PANELS.items():
         if code in held:
             try:
-                panels.append(build(db, user.school_id, user))
+                panel = build(db, user.school_id, user)
             except Exception:
                 # A panel whose module has no data yet must not take the whole
                 # screen down with it.
                 continue
+            try:
+                panel["trend"] = _trend(db, panel["key"], user.school_id)
+            except Exception:
+                db.rollback()
+                panel["trend"] = None
+            panels.append(panel)
     return {
         "name": user.full_name,
         "role": user.role.value,

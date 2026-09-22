@@ -8,12 +8,13 @@ import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, initials, label } from "@/lib/format";
+import { date, dateTime, initials, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { BoardSelect, Field, KV, SectionTitle, count, orNull } from "./bits";
+import type { ActivityItem } from "../dashboards/types";
 import type { Plan, Tenant, TenantCreated, TenantDetail, TenantSchool, TenantUsage } from "./types";
 
 const TENANTS = "/api/v1/super-admin/tenants";
@@ -135,6 +136,7 @@ export function OrganizationProfile() {
   const org = useApi<TenantDetail>(platform && id ? `${TENANTS}/${id}` : null);
   const usage = useApi<TenantUsage>(platform && id ? `${TENANTS}/${id}/usage` : null);
   const plans = useApi<{ items: Plan[] }>(platform && id ? "/api/v1/super-admin/plans" : null);
+  const activity = useApi<ActivityItem[]>(platform && id ? `${TENANTS}/${id}/activity` : null, { limit: 5 });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -305,7 +307,24 @@ export function OrganizationProfile() {
               ) : null}
             </div>
           </Panel>
-          {/* Not wired: Recent activity — the platform has no audit feed per organisation; no endpoint */}
+          <Panel title="Recent activity" sub="From this organisation's audit trail">
+            {activity.data?.length ? (
+              activity.data.map((a) => (
+                <div className="timeline-item" key={a.id}>
+                  <span className="timeline-dot">
+                    <Icon name="file" />
+                  </span>
+                  <div>
+                    <h4>{a.title}</h4>
+                    <p>{[a.detail, a.user_name ?? "System"].filter(Boolean).join(" · ")}</p>
+                  </div>
+                  <time>{dateTime(a.created_at)}</time>
+                </div>
+              ))
+            ) : (
+              <p className="muted">{activity.loading ? "Loading…" : (activity.error ?? "Nothing recorded for this organisation yet.")}</p>
+            )}
+          </Panel>
         </aside>
       </div>
     </>

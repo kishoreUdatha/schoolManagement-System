@@ -159,6 +159,26 @@ def _exam_performance(db: Session, school_id: int) -> dict:
     }
 
 
+def _observations(db: Session, school_id: int, today: date) -> dict:
+    """How many lessons have been observed this month and this academic year."""
+    from app.models.academic import AcademicYear
+    from app.models.staff_ops import ClassroomObservation as Obs
+
+    year = db.execute(
+        select(AcademicYear).where(AcademicYear.school_id == school_id, AcademicYear.is_current.is_(True))
+    ).scalars().first()
+    base = select(func.count(Obs.id)).where(Obs.school_id == school_id)
+    return {
+        "this_month": db.execute(base.where(Obs.observed_on >= today.replace(day=1), Obs.observed_on <= today)).scalar_one(),
+        "this_year": db.execute(
+            base.where(Obs.observed_on.between(year.start_date, year.end_date)) if year else base
+        ).scalar_one(),
+        "last_observed_on": db.execute(
+            select(func.max(Obs.observed_on)).where(Obs.school_id == school_id)
+        ).scalar_one(),
+    }
+
+
 def _notifications_summary(
     db: Session, school_id: int, since: datetime
 ) -> dict:
@@ -372,5 +392,6 @@ def build_dashboard(db: Session, school_id: int) -> dict:
         "homework": _homework_completion(db, school_id, month_start_dt),
         "exam_performance": _exam_performance(db, school_id),
         "notifications": _notifications_summary(db, school_id, month_start_dt),
+        "observations": _observations(db, school_id, today),
         "generated_at": datetime.now(timezone.utc),
     }

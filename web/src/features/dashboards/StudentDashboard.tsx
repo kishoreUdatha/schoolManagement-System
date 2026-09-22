@@ -6,17 +6,25 @@ import { Icon } from "@/components/ui/Icon";
 import { StatStrip, type Stat } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
-import { date, pct } from "@/lib/format";
+import { date, label, pct } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
-import { DateRow, Empty, Hero, nowStatus, QuickActions, TimeRow } from "./parts";
-import type { StudentDashboardData, StudentExamResult } from "./types";
+import { DateRow, Empty, Hero, nowStatus, QuickActions, TimeRow, todayIso } from "./parts";
+import type { CalendarItem, StudentDashboardData, StudentExamResult } from "./types";
 
 const BAR_COLOURS = ["#2563eb", "#4e9f8d", "#8b75c6", "#e0915a", "#2563eb", "#4e9f8d"];
 const AVATAR_TONES = ["", "mint", "lilac"];
 
-/** SCR-036, live: GET /api/v1/student/dashboard and GET /api/v1/student/exams/{id} for the latest exam. */
+function inDays(n: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return todayIso(d);
+}
+
+/** SCR-036, live: GET /api/v1/student/dashboard, GET /api/v1/student/exams/{id} for the latest exam, and GET /api/v1/student/calendar. */
 export function StudentDashboard() {
   const dash = useApi<StudentDashboardData>("/api/v1/student/dashboard");
+  const calendar = useApi<CalendarItem[]>("/api/v1/student/calendar", { start: todayIso(), end: inDays(60) });
+  const events = (calendar.data ?? []).filter((c) => !c.is_cancelled && !c.is_draft).slice(0, 3);
   const d = dash.data;
   const latest = d?.recent_exams[0];
   const result = useApi<StudentExamResult>(latest ? `/api/v1/student/exams/${latest.exam_id}` : null);
@@ -27,8 +35,14 @@ export function StudentDashboard() {
     { label: "Attendance", value: d ? (d.attendance.marked_days ? pct(d.attendance.percent) : "—") : "…", note: d ? `${d.attendance.present} of ${d.attendance.marked_days} days present` : "This academic year" },
     { label: "Learning average", value: !d ? "…" : r && subjects.length ? pct(r.summary.percentage) : "—", note: latest ? latest.name : "No exam results yet" },
     { label: "Assignments due", value: d ? String(d.homework_due) : "…", note: d?.homework_overdue ? `${d.homework_overdue} overdue` : "Nothing overdue" },
-    // Not wired: the mock's "Learning streak" — no endpoint; the latest result's grade stands in its place.
-    { label: "Latest grade", value: !d ? "…" : r && subjects.length ? r.summary.overall_grade : "—", note: r ? (r.summary.is_pass ? "Passed" : "Needs another try") : "From your latest exam" },
+    (() => {
+      const s = d?.learning_streak;
+      return {
+        label: "Learning streak",
+        value: !d ? "…" : s ? `${s.count} in a row` : "—",
+        note: !s || !s.set ? "Homework handed in on time, in a row" : s.count ? `Homework on time since ${date(s.since)}` : `${s.on_time} of ${s.set} handed in on time`,
+      };
+    })(),
   ];
 
   const teaching = d?.timetable.filter((p) => !p.is_break) ?? [];
@@ -115,19 +129,13 @@ export function StudentDashboard() {
           </Panel>
         </div>
         <aside>
-          {/* Not wired: the mock's "Coming up" events — the student portal has no calendar feed; its notices and recent exams stand in their place. */}
-          <Panel title="From school">
-            {d && (d.recent_exams.length || d.notices.length) ? (
-              <>
-                {d.notices.slice(0, 2).map((n) => (
-                  <DateRow key={`n${n.notice_id}`} day={n.created_at} title={n.title} sub="School notice" />
-                ))}
-                {d.recent_exams.slice(0, 2).map((e) => (
-                  <DateRow key={`e${e.exam_id}`} day={e.end_date} title={e.name} sub="Exam · results" href="/examinations/student-result" />
-                ))}
-              </>
+          <Panel title="Coming up">
+            {events.length ? (
+              events.map((c) => (
+                <DateRow key={`${c.type}${c.id}`} day={c.start_date} title={c.title} sub={[label(c.type), c.start_time?.slice(0, 5), c.detail].filter(Boolean).join(" · ")} />
+              ))
             ) : (
-              <Empty>{d ? "Nothing new from school." : "Loading…"}</Empty>
+              <Empty>{calendar.loading ? "Loading…" : (calendar.error ?? "Nothing on the school calendar in the next 60 days.")}</Empty>
             )}
           </Panel>
         </aside>

@@ -713,6 +713,8 @@ def finance_report(
         "spent": spent,
         "net": received - spent,
         "income_by_head": income["by_head"],
+        # billed per head (bills falling due in the window) against paid
+        "billed_by_head": income["billed_by_head"],
         "income_by_mode": income["by_mode"],
         "spend_by_category": [
             {"label": k, "amount": v}
