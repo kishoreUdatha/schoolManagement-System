@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Avatar, Person } from "@/components/ui/primitives";
-import { ModuleGroup, NOT_IN_MENU, PARENT } from "./ModuleGroup";
+import { ModuleGroup, PARENT } from "./ModuleGroup";
 import { heldJobs, usePermissions } from "@/lib/jobs";
 import { MODULES, SCREENS, screen, routeOf, type Screen } from "@/lib/screens";
 import { HOME_SCREEN, ROLE_LABEL, session } from "@/lib/session";
@@ -77,11 +77,6 @@ function useHome(): string {
   return routeOf(sess ? HOME_SCREEN[sess.user.role] : 33);
 }
 
-/** A module's first screen that appears in the menu: where its breadcrumb link goes. */
-function moduleHome(module: string): string {
-  return (SCREENS.find((x) => x.module === module && !NOT_IN_MENU.has(x.n)) ?? SCREENS.find((x) => x.module === module))!.route;
-}
-
 const SCROLL_KEY = "bc_nav_scroll";
 
 function signOut() {
@@ -89,7 +84,7 @@ function signOut() {
   window.location.href = routeOf(3);
 }
 
-function Sidebar({ s, viewer }: { s: Screen; viewer: Viewer }) {
+function Sidebar({ s, viewer, school }: { s: Screen; viewer: Viewer; school: Branding | null }) {
   const { who, role } = viewer;
   const roleNav = ROLE_NAV[role];
   const home = useHome();
@@ -121,12 +116,24 @@ function Sidebar({ s, viewer }: { s: Screen; viewer: Viewer }) {
 
   return (
     <aside className="sidebar">
-      <Link href={home} className="brand">
-        <span className="brand-mark">
-          <Icon name="book" />
-        </span>
-        <span>
-          BrightCampus<small>SCHOOL ERP</small>
+      {/* The school you are working in heads the menu; the platform console
+          (and the moment before the school loads) shows BrightCampus. */}
+      <Link href={home} className={`brand ${school ? "school-brand" : ""}`} title={school?.name}>
+        {school ? (
+          school.logo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="brand-logo" src={school.logo_url} alt="" />
+          ) : (
+            <span className="brand-mark school">{initials(school.name)}</span>
+          )
+        ) : (
+          <span className="brand-mark">
+            <Icon name="book" />
+          </span>
+        )}
+        <span className="brand-text">
+          {school ? school.name : "BrightCampus"}
+          <small>{school ? "SCHOOL ERP" : role === "Super Admin" ? "PLATFORM" : "SCHOOL ERP"}</small>
         </span>
       </Link>
       <div
@@ -200,24 +207,6 @@ function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
 
-function TenantSwitch({ role, school }: { role: string; school: Branding | null }) {
-  const platform = role === "Super Admin";
-  const name = platform ? "BrightCampus Platform" : (school?.name ?? "Bright International");
-  // One short line under the name: the school code, not the full address
-  // (a long address squeezed the search box out of the top bar).
-  const sub = platform ? "All organizations" : school ? (school.code ? `School code ${school.code}` : "") : "Main Campus, Hyderabad";
-  return (
-    <button type="button" className="tenant-switch" aria-label="Switch school">
-      <span className="avatar">{platform ? "BC" : initials(name)}</span>
-      <span className="tenant-name">
-        {name}
-        <small>{sub}</small>
-      </span>
-      <Icon name="down" className="sm" />
-    </button>
-  );
-}
-
 function Topbar({ who, role, school }: { who: string; role: string; school: Branding | null }) {
   return (
     <header className="topbar">
@@ -225,7 +214,6 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
         <button type="button" className="btn mobile-menu " aria-label="Open navigation" data-toggle-nav="">
           <Icon name="menu" className="sm" />
         </button>
-        <TenantSwitch role={role} school={school} />
         <div className="topsearch">
           <Icon name="search" className="sm" />
           <input aria-label="Find screen" placeholder="Search people, classes, pages…" id="global-search" autoComplete="off" />
@@ -272,24 +260,22 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
   const home = useHome();
   return (
     <div className="app">
-      <Sidebar s={s} viewer={viewer} />
+      <Sidebar s={s} viewer={viewer} school={school ?? null} />
       <button className="offcanvas-backdrop" aria-label="Close navigation" data-toggle-nav="" />
       <div className="workspace">
         <Topbar who={viewer.who} role={viewer.role} school={school} />
         <main className="main">
-          <div className="crumb">
-            <Link href={home}>{schoolName}</Link>
-            <span>/</span>
-            <Link href={moduleHome(s.module)}>{s.moduleShort}</Link>
-            <span>/</span>
-            {` ${s.layout.includes("dashboard") ? "Overview" : "Workspace"}`}
-          </div>
-          <div className="page-head">
-            <div>
-              <h1>{s.name}</h1>
+          {/* No breadcrumb: the menu shows where you are. Dashboards open
+              straight on their greeting; other screens keep a compact title
+              row, which also carries their buttons (Save, Add …). */}
+          {s.layout.includes("dashboard") ? null : (
+            <div className="page-head">
+              <div>
+                <h1>{s.name}</h1>
+              </div>
+              <div className="actions">{actions}</div>
             </div>
-            <div className="actions">{actions}</div>
-          </div>
+          )}
           {children}
           <footer className="screen-note">
             <span>{`BrightCampus · ${schoolName}`}</span>
