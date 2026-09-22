@@ -120,6 +120,37 @@ export function StudentPromotion() {
     }
   }
 
+  // Promotion needs next year's classes. When the school has no other year,
+  // offer to create it: same classes and sections, dates a year on, not current.
+  const from = years.data?.find((y) => y.id === fromYear) ?? null;
+  const noNextYear = Boolean(years.data && fromYear && !years.data.some((y) => y.id !== fromYear));
+  const plusYear = (d: string) => `${Number(d.slice(0, 4)) + 1}${d.slice(4)}`;
+  const nextName = from
+    ? from.name.replace(/(\d{4})(\D+)(\d{2,4})/, (_m, a: string, sep: string, b: string) => `${Number(a) + 1}${sep}${String(Number(b) + 1).padStart(b.length, "0")}`)
+    : "";
+  async function createNextYear() {
+    if (!from || !srcClasses.data) return;
+    const cls = srcClasses.data;
+    if (!(await ask(`Create ${nextName} (${plusYear(from.start_date)} to ${plusYear(from.end_date)}) with the same ${cls.length} classes and their sections? It will not become the current year until you switch to it.`, { confirmLabel: `Create ${nextName}` })))
+      return;
+    setBusy(true);
+    setError(null);
+    try {
+      const y = await api.post<{ id: number }>("/api/v1/school/academic-years", { name: nextName, start_date: plusYear(from.start_date), end_date: plusYear(from.end_date), is_current: false });
+      for (const c of cls) {
+        const made = await api.post<{ id: number }>("/api/v1/school/classes", { academic_year_id: y.id, name: c.name, display_order: c.display_order, code: c.code, school_level: c.school_level });
+        for (const x of c.sections) await api.post(`/api/v1/school/classes/${made.id}/sections`, { name: x.name, capacity: x.capacity });
+      }
+      notify(`${nextName} created with ${cls.length} classes. Add its terms under Academic years when you're ready.`);
+      years.reload();
+      setToYear(y.id);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const pickYear = (value: number | null, set: (v: number) => void, reset: () => void, aria: string, exclude?: number | null) => (
     <select
       aria-label={aria}
@@ -129,6 +160,7 @@ export function StudentPromotion() {
         reset();
       }}
     >
+      {value === null ? <option value="">{years.data?.some((y) => y.id !== exclude) ? "Choose year…" : "No next year yet"}</option> : null}
       {years.data
         ?.filter((y) => y.id !== exclude)
         .map((y) => (
@@ -142,6 +174,16 @@ export function StudentPromotion() {
   return (
     <>
       <StatStrip items={stats} compact />
+      {noNextYear ? (
+        <div className="tip warn" style={{ marginBottom: 14, alignItems: "center" }}>
+          <Icon name="calendar" className="sm" />
+          <span style={{ flex: 1 }}>{`Students are promoted into next academic year, and ${from?.name ?? "this year"} is the only one so far. Create ${nextName} first; its classes and sections are copied from this year.`}</span>
+          <button type="button" className="btn primary sm" disabled={busy || !srcClasses.data} onClick={createNextYear}>
+            <Icon name="plus" className="sm" />
+            {busy ? "Creating…" : `Create ${nextName}`}
+          </button>
+        </div>
+      ) : null}
       <div className="filterbar">
         {pickYear(fromYear, setFromYear, () => (setFromClass(null), setFromSection(null)), "From academic year")}
         <select aria-label="From class" value={fromClass ?? ""} onChange={(e) => (setFromClass(Number(e.target.value) || null), setFromSection(null), setToClass(null), setToSection(null))}>
@@ -162,7 +204,7 @@ export function StudentPromotion() {
         </select>
         <span className="muted">to</span>
         {pickYear(toYear, setToYear, () => (setToClass(null), setToSection(null)), "To academic year", fromYear)}
-        <select aria-label="To class" value={toClass ?? ""} onChange={(e) => (setToClass(Number(e.target.value) || null), setToSection(null))}>
+        <select aria-label="To class" value={toClass ?? ""} disabled={!toYear} onChange={(e) => (setToClass(Number(e.target.value) || null), setToSection(null))}>
           <option value="">Next class…</option>
           {tgtClasses.data?.map((c) => (
             <option key={c.id} value={c.id}>
