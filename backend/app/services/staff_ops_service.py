@@ -9,7 +9,7 @@ moves a lesson.
 """
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from statistics import median
 from typing import Optional
 
@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.core.enums import ClearanceArea, ExitClearanceStatus, UserRole
 from app.models.academic import SchoolClass, Section
+from app.models.cover import Substitution
 from app.models.document import Document
 from app.models.homework import Homework
 from app.models.mark import Mark
@@ -32,6 +33,7 @@ from app.models.staff_ops import (
 from app.models.subject import ClassSubject, Subject
 from app.models.timetable import Period, TimetableEntry
 from app.models.user import User
+from app.services import staff_service
 
 
 def _404(what: str) -> HTTPException:
@@ -61,9 +63,11 @@ def _label(db: Session, s: Staff) -> dict:
         "role": u.role.value,
         "designation": s.designation,
         "joining_date": s.joining_date,
+        "department_id": s.department_id,
         "department_name": s.department.name if s.department_id and s.department else None,
         "is_active": u.is_active,
         "last_login_at": u.last_login_at,
+        **staff_service.extra_to_dict(db, s),
     }
 
 
@@ -285,6 +289,20 @@ def _workload_for(db: Session, school_id: int, s: Staff) -> dict:
         )
     ).scalar_one()
 
+    # Cover taken this week (Monday to Sunday), from the substitution register.
+    week_start = date.today() - timedelta(days=date.today().weekday())
+    substitutions = db.execute(
+        select(func.count(Substitution.id)).where(
+            Substitution.school_id == school_id,
+            Substitution.substitute_user_id == user_id,
+            Substitution.sub_date >= week_start,
+            Substitution.sub_date < week_start + timedelta(days=7),
+        )
+    ).scalar_one()
+    other = s.other_duty_periods or 0
+    total = periods_per_week + substitutions + other
+    capacity = s.max_periods_per_week
+
     return {
         "periods_per_week": periods_per_week,
         "subjects_taught": len(subject_ids),
@@ -296,16 +314,24 @@ def _workload_for(db: Session, school_id: int, s: Staff) -> dict:
         "subjects": subjects,
         "homework_set": homework_set,
         "marks_entered": marks_entered,
+        "substitutions_this_week": substitutions,
+        "other_duty_periods": other,
+        "other_duties": s.other_duties,
+        "total_periods": total,
+        # Only the school's own figure; no default is invented.
+        "capacity": capacity,
+        "over_capacity": bool(capacity) and total > capacity,
     }
 
 
 def workload(db: Session, school_id: int) -> dict:
     """Every teacher's load side by side.
 
-    Nobody is flagged as overloaded. A threshold would be a number this code
-    invented about somebody else's school — twenty-four periods is punishing
-    in one place and light in another. The median is shown instead, because
-    it is a fact about this staff room rather than a target imported into it.
+    Nobody is flagged as overloaded against a threshold this code invented —
+    twenty-four periods is punishing in one place and light in another. A
+    person is over capacity only against the capacity the school itself set
+    on their record; without one, the median is the comparison, because it is
+    a fact about this staff room rather than a target imported into it.
     """
     staff_rows = list(db.execute(
         select(Staff)
@@ -333,6 +359,8 @@ def workload(db: Session, school_id: int) -> dict:
         "median_periods": round(median(teaching), 1) if teaching else 0,
         "total_periods": sum(r["periods_per_week"] for r in rows),
         "without_timetable": sum(1 for r in rows if r["periods_per_week"] == 0),
+        "over_capacity": sum(1 for r in rows if r["over_capacity"]),
+        "without_capacity": sum(1 for r in rows if not r["capacity"]),
     }
 
 
@@ -358,9 +386,22 @@ def _obs_to_dict(db: Session, o: ClassroomObservation) -> dict:
         "strengths": o.strengths,
         "next_steps": o.next_steps,
         "follow_up_on": o.follow_up_on,
+        "lesson_preparation": o.lesson_preparation,
+        "student_engagement": o.student_engagement,
+        "subject_knowledge": o.subject_knowledge,
+        "average_score": observation_average(o),
         "shared_with_staff": o.shared_with_staff,
         "created_at": o.created_at,
     }
+
+
+SCORE_FIELDS = ("lesson_preparation", "student_engagement", "subject_knowledge")
+
+
+def observation_average(o: ClassroomObservation) -> Optional[float]:
+    """Mean of the ratings the observer gave, or None if they gave none."""
+    vals = [getattr(o, f) for f in SCORE_FIELDS if getattr(o, f) is not None]
+    return round(sum(vals) / len(vals), 1) if vals else None
 
 
 def list_observations(db: Session, school_id: int, *,
@@ -404,6 +445,7 @@ def add_observation(db: Session, school_id: int, tenant_id: int, user_id: int,
         next_steps=(data.get("next_steps") or None),
         follow_up_on=data.get("follow_up_on"),
         shared_with_staff=bool(data.get("shared_with_staff", False)),
+        **{f: data.get(f) for f in SCORE_FIELDS},
     )
     db.add(row)
     db.commit()

@@ -165,6 +165,8 @@ class OfferIn(BaseModel):
     joining_date: date
     valid_till: Optional[date] = None
     terms: Optional[str] = Field(None, max_length=10000)
+    department_id: Optional[int] = None
+    reporting_manager_id: Optional[int] = Field(None, description="Staff id of the manager they will report to")
 
 
 class OfferRespondIn(BaseModel):
@@ -183,6 +185,10 @@ class OfferRead(BaseModel):
     sent_at: Optional[datetime]
     responded_at: Optional[datetime]
     response_note: Optional[str]
+    department_id: Optional[int] = None
+    department_name: Optional[str] = None
+    reporting_manager_id: Optional[int] = None
+    reporting_manager_name: Optional[str] = None
 
 
 class HireIn(BaseModel):
@@ -238,10 +244,14 @@ class LeaveTypeIn(BaseModel):
     carry_forward_max: Decimal = Field(0, ge=0, le=365)
     document_after_days: Optional[int] = Field(None, ge=1, le=365)
     is_active: bool = True
+    approver_user_id: Optional[int] = Field(
+        None, description="Principal or school admin who decides this kind of leave; null for anyone who can"
+    )
 
 
 class LeaveTypeRead(LeaveTypeIn):
     id: int
+    approver_name: Optional[str] = None
 
 
 class BalanceAdjustIn(BaseModel):

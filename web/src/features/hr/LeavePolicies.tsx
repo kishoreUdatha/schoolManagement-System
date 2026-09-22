@@ -8,7 +8,7 @@ import { api, errorText } from "@/lib/api";
 import { label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
-import type { LeaveType } from "./types";
+import type { DirectoryPerson, LeaveType } from "./types";
 import { Field } from "./ui";
 
 const BASE = "/api/v1/school/hr";
@@ -16,7 +16,8 @@ const KINDS = ["casual", "sick", "earned", "unpaid", "other"];
 
 /**
  * SCR-180, live: GET/POST /api/v1/school/hr/leave-types, PUT/DELETE
- * /leave-types/{id}; POST /hr/leave-balances/allot gives every member of
+ * /leave-types/{id} (with an optional approver: only they, or a school
+ * admin, can then decide that kind of leave); POST /hr/leave-balances/allot gives every member of
  * staff this year's days. The side list is the school's leave types;
  * ?id= picks one, no id means a new one.
  */
@@ -25,6 +26,9 @@ export function LeavePolicies() {
   const path = usePathname();
   const id = useSearchParams().get("id");
   const types = useApi<LeaveType[]>(`${BASE}/leave-types`);
+  // Only the people who can decide leave at all: the principal and school admins.
+  const people = useApi<DirectoryPerson[]>("/api/v1/school/directory/staff");
+  const approvers = (people.data ?? []).filter((p) => p.role === "principal" || p.role === "school_admin");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const year = new Date().getFullYear();
@@ -44,6 +48,7 @@ export function LeavePolicies() {
       document_after_days: text("document_after_days") ? Number(text("document_after_days")) : null,
       is_paid: f.get("is_paid") === "on",
       is_active: f.get("is_active") === "on",
+      approver_user_id: text("approver_user_id") ? Number(text("approver_user_id")) : null,
     };
     setBusy(true);
     setErr(null);
@@ -112,7 +117,7 @@ export function LeavePolicies() {
       </nav>
       <div>
         <ErrorNote>{err ?? types.error}</ErrorNote>
-        <form id="leave-policy" className="panel" onSubmit={save} key={t?.id ?? "new"}>
+        <form id="leave-policy" className="panel" onSubmit={save} key={`${t?.id ?? "new"}-${people.data ? "p" : ""}`}>
           <div className="panel-head">
             <div>
               <h2>{t ? t.name : "New leave type"}</h2>
@@ -158,7 +163,17 @@ export function LeavePolicies() {
                   <input type="checkbox" name="is_active" defaultChecked={t?.is_active ?? true} /> Staff can apply for it
                 </span>
               </label>
-              {/* Not wired: Approval manager — leave is decided by the school admin on Leave Approval; there is no per-policy approver. */}
+              <Field label="Approval manager">
+                <select name="approver_user_id" defaultValue={t?.approver_user_id ?? ""}>
+                  <option value="">Principal or any school admin</option>
+                  {approvers.map((p) => (
+                    <option key={p.user_id} value={p.user_id}>
+                      {`${p.full_name} · ${label(p.role)}`}
+                    </option>
+                  ))}
+                  {t?.approver_user_id && !approvers.some((p) => p.user_id === t.approver_user_id) ? <option value={t.approver_user_id}>{t.approver_name ?? "Current approver"}</option> : null}
+                </select>
+              </Field>
             </div>
             <div className="gap" />
             <div className="tip">

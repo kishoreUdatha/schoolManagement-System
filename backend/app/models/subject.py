@@ -94,7 +94,17 @@ class ClassSubject(Base, PrimaryKeyMixin, TimestampMixin):
     periods_per_week: Mapped[int] = mapped_column(
         SmallInteger, nullable=False, server_default="0", default=0
     )
+    # The room this subject is usually taught in (a lab, the art studio).
+    # A timetable entry can still name a different room for one lesson.
+    room_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("rooms.id", ondelete="SET NULL")
+    )
     is_optional: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     subject: Mapped[Subject] = relationship()
+    room = relationship("Room", foreign_keys=[room_id])
+
+    @property
+    def room_name(self) -> Optional[str]:
+        return self.room.name if self.room_id and self.room else None

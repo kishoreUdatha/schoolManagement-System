@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
@@ -11,23 +11,61 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { CandidateTabs, useApplication } from "./CandidateDetails";
-import type { Application } from "./types";
+import type { Application, Department, StaffMember } from "./types";
 import { Dialog, Field, KV } from "./ui";
 
 const BASE = "/api/v1/school/hr";
 const ROLES = ["teacher", "staff", "principal", "accountant"];
+/** Fired when the offer changes, so the page-head letter button refreshes. */
+const CHANGED = "offer:changed";
+
+/**
+ * The page-head button: "Generate letter" opens the offer letter PDF
+ * (GET /hr/offers/{id}/letter) once an offer exists; before that it saves
+ * the offer form.
+ */
+export function OfferLetterAction() {
+  const { data: a, reload } = useApplication();
+  useEffect(() => {
+    window.addEventListener(CHANGED, reload);
+    return () => window.removeEventListener(CHANGED, reload);
+  }, [reload]);
+  const offer = a?.offer ?? null;
+  if (!offer) {
+    return (
+      <button type="submit" form="offer-form" className="btn primary">
+        <Icon name="check" className="sm" />
+        Save offer
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className="btn primary"
+      title="Open the offer letter as a PDF"
+      onClick={() => api.open(`${BASE}/offers/${offer.id}/letter`).catch((e) => window.alert(errorText(e)))}
+    >
+      <Icon name="download" className="sm" />
+      Generate letter
+    </button>
+  );
+}
 
 /**
  * SCR-177, live: POST /api/v1/school/hr/applications/{id}/offer drafts the
  * offer; POST /hr/offers/{id}/send, /respond, /withdraw and /hire move it on.
- * Hiring creates the staff record and returns a temporary password, shown
- * once.
+ * Hiring creates the staff record (with the offer's department and
+ * reporting manager) and returns a temporary password, shown once. The
+ * letter is GET /hr/offers/{id}/letter.
  */
 export function OfferAppointment() {
   const router = useRouter();
   const path = usePathname();
   const { id, data: a, error, loading, reload } = useApplication();
   const apps = useApi<Application[]>(`${BASE}/applications`);
+  const departments = useApi<Department[]>("/api/v1/school/departments");
+  const staff = useApi<StaffMember[]>("/api/v1/school/staff", { status: "active" });
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [responding, setResponding] = useState<boolean | null>(null);
@@ -42,6 +80,7 @@ export function OfferAppointment() {
       notify(done);
       reload();
       apps.reload();
+      window.dispatchEvent(new Event(CHANGED));
       return r;
     } catch (e) {
       setErr(errorText(e));
@@ -71,6 +110,8 @@ export function OfferAppointment() {
           joining_date: text("joining_date"),
           valid_till: text("valid_till") || null,
           terms: text("terms") || null,
+          department_id: text("department_id") ? Number(text("department_id")) : null,
+          reporting_manager_id: text("reporting_manager_id") ? Number(text("reporting_manager_id")) : null,
         }),
       "Offer drafted. Mark it sent once the letter has gone out.",
     );
@@ -142,7 +183,26 @@ export function OfferAppointment() {
                     <Field label="Reply by">
                       <input name="valid_till" disabled={locked} type="date" defaultValue={offer?.valid_till ?? ""} />
                     </Field>
-                    {/* Not wired: Department and Reporting manager — the offer API carries neither (OfferIn has role, salary, dates and terms). */}
+                    <Field label="Department">
+                      <select name="department_id" disabled={locked} defaultValue={offer?.department_id ?? ""}>
+                        <option value="">{departments.data?.length ? "No department" : "No departments set up yet"}</option>
+                        {departments.data?.map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Reporting manager">
+                      <select name="reporting_manager_id" disabled={locked} defaultValue={offer?.reporting_manager_id ?? ""}>
+                        <option value="">{staff.loading ? "Loading staff…" : "Not set"}</option>
+                        {staff.data?.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {`${m.full_name}${m.designation ? ` · ${m.designation}` : ""}`}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
                     <Field label="Terms" full>
                       <textarea name="terms" disabled={locked} rows={3} maxLength={10000} defaultValue={offer?.terms ?? ""} />
                     </Field>
@@ -173,6 +233,8 @@ export function OfferAppointment() {
                 ["Candidate", a?.candidate_name ?? "—"],
                 ["Stage", a ? label(a.stage) : "—"],
                 ["Offer", offer ? <Badge>{label(offer.status)}</Badge> : "Not drafted"],
+                ["Department", offer?.department_name ?? "—"],
+                ["Reporting to", offer?.reporting_manager_name ?? "—"],
                 ["Salary", offer ? `${money(offer.annual_salary)} a year` : "—"],
                 ["Joining", offer ? date(offer.joining_date) : "—"],
                 ["Sent", offer?.sent_at ? dateTime(offer.sent_at) : "—"],
@@ -184,6 +246,10 @@ export function OfferAppointment() {
             {!a ? <p>Choose a candidate to draft an offer.</p> : null}
             {offer ? (
               <div className="stack">
+                <button type="button" className="btn" onClick={() => api.open(`${BASE}/offers/${offer.id}/letter`).catch((e) => setErr(errorText(e)))}>
+                  <Icon name="download" className="sm" />
+                  Offer letter (PDF)
+                </button>
                 {offer.status === "draft" ? (
                   <button type="button" className="btn primary" disabled={busy} onClick={() => window.confirm("Mark this offer as sent to the candidate?") && run(() => api.post(`${BASE}/offers/${offer.id}/send`), "Offer marked as sent.")}>
                     Mark as sent

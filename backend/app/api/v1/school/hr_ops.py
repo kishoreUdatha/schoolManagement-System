@@ -114,6 +114,12 @@ def start(staff_id: int, payload: StartChecklistIn, user: HrManager, db: Db):
     return svc.start_checklist(db, user.school_id, staff_id, due_on=payload.due_on)
 
 
+@router.post("/onboarding/{staff_id}/complete",
+             summary="Sign the checklist off (every task must be ticked)")
+def complete(staff_id: int, user: HrManager, db: Db):
+    return svc.complete_checklist(db, user.school_id, staff_id, user.id)
+
+
 @router.post("/onboarding/{staff_id}/tasks", summary="Add something to the list")
 def add_task(staff_id: int, payload: TaskIn, user: HrManager, db: Db):
     return svc.add_task(db, user.school_id, staff_id, payload.model_dump())

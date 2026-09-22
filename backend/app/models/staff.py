@@ -1,16 +1,23 @@
-from datetime import date
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
     Date,
+    DateTime,
+    Enum as SAEnum,
     ForeignKey,
     Index,
+    Numeric,
+    SmallInteger,
     String,
+    Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.enums import EmploymentType
 from app.database import Base
 from app.models.base import PrimaryKeyMixin, TimestampMixin
 from app.models.user import User
@@ -54,4 +61,32 @@ class Staff(Base, PrimaryKeyMixin, TimestampMixin):
     )
     department = relationship("Department", lazy="joined")
 
-    user: Mapped[User] = relationship()
+    # A one-line summary for the record; the evidence (each degree, its
+    # certificate, who verified it) stays in staff_qualifications.
+    qualification_summary: Mapped[Optional[str]] = mapped_column(String(200))
+    experience_years: Mapped[Optional[Decimal]] = mapped_column(Numeric(4, 1))
+    address: Mapped[Optional[str]] = mapped_column(Text)
+    emergency_contact_name: Mapped[Optional[str]] = mapped_column(String(160))
+    emergency_contact_phone: Mapped[Optional[str]] = mapped_column(String(20))
+    emergency_contact_relation: Mapped[Optional[str]] = mapped_column(String(60))
+    employment_type: Mapped[Optional[EmploymentType]] = mapped_column(
+        SAEnum(EmploymentType, name="employment_type")
+    )
+    reporting_manager_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("staff.id", ondelete="SET NULL")
+    )
+
+    # Workload limits the school sets for this person. Capacity is a number
+    # the school chose, not one this code invents; teaching periods are still
+    # counted off the timetable and never stored.
+    max_periods_per_week: Mapped[Optional[int]] = mapped_column(SmallInteger)
+    other_duty_periods: Mapped[Optional[int]] = mapped_column(SmallInteger)
+    other_duties: Mapped[Optional[str]] = mapped_column(String(300))
+
+    # Somebody signing the onboarding checklist off, once every task is ticked.
+    onboarding_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    onboarding_completed_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
+
+    user: Mapped[User] = relationship(foreign_keys=[user_id])

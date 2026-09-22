@@ -1,20 +1,24 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
+import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import type { LeaveType, StaffLeave } from "./types";
+import type { LeaveType, StaffLeave, StaffMember } from "./types";
+import { Dialog, Field, today, useNewFlag } from "./ui";
 
 /**
  * SCR-181, live: GET /api/v1/school/staff-leaves (status filter) with the
  * leave types for names. Every request across staff; "View" opens it on
- * Leave Approval.
+ * Leave Approval. "Request leave" (page head, ?new=1) files one on a staff
+ * member's behalf with POST /staff-leaves; it stays pending until decided.
  */
 export function LeaveRequests() {
   const router = useRouter();
@@ -23,6 +27,36 @@ export function LeaveRequests() {
   const [typed, setTyped] = useState("");
   const list = useApi<StaffLeave[]>("/api/v1/school/staff-leaves", { status });
   const types = useApi<LeaveType[]>("/api/v1/school/hr/leave-types");
+  const [filing, closeFiling] = useNewFlag();
+  const staff = useApi<StaffMember[]>(filing ? "/api/v1/school/staff" : null, { status: "active" });
+  const [busy, setBusy] = useState(false);
+  const [fileErr, setFileErr] = useState<string | null>(null);
+
+  async function fileLeave(e: FormEvent<HTMLFormElement>) {
+    const f = new FormData(e.currentTarget);
+    const text = (k: string) => String(f.get(k) ?? "").trim();
+    const typeId = text("leave_type_id");
+    setBusy(true);
+    setFileErr(null);
+    try {
+      await api.post("/api/v1/school/staff-leaves", {
+        applicant_user_id: Number(text("applicant_user_id")),
+        leave_type_id: typeId ? Number(typeId) : null,
+        kind: typeId ? undefined : "other",
+        from_date: text("from_date"),
+        to_date: text("to_date") || text("from_date"),
+        reason: text("reason") || null,
+      });
+      notify("Leave filed. It is pending until it is decided on Leave Approval.");
+      closeFiling();
+      list.reload();
+    } catch (x) {
+      setFileErr(errorText(x));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const typeName = (l: StaffLeave) => types.data?.find((t) => t.id === l.leave_type_id)?.name ?? `${label(l.kind)} leave`;
 
   const roles = Array.from(new Set((list.data ?? []).map((l) => l.applicant_role).filter(Boolean))) as string[];
@@ -32,7 +66,7 @@ export function LeaveRequests() {
   }, [list.data, role, typed]);
 
   const rows: Row[] = items.map((l) => [
-    { name: l.applicant_name ?? "—", sub: label(l.applicant_role) },
+    { name: l.applicant_name ?? "—", sub: l.filed_by_name ? `${label(l.applicant_role)} · filed by ${l.filed_by_name}` : label(l.applicant_role) },
     typeName(l),
     date(l.from_date),
     date(l.to_date),
@@ -73,6 +107,45 @@ export function LeaveRequests() {
           empty={list.loading ? "Loading leave requests…" : typed || role || status ? "No request matches these filters." : "No leave has been requested yet."}
         />
       </Panel>
+
+      {filing ? (
+        <Dialog title="Request leave for a member of staff" onClose={closeFiling} onSubmit={fileLeave} submit="File leave" busy={busy} error={fileErr}>
+          <div className="form-grid">
+            <Field label="Employee" required full>
+              <select name="applicant_user_id" required defaultValue="">
+                <option value="">{staff.loading ? "Loading staff…" : "Choose a member of staff"}</option>
+                {staff.data?.map((m) => (
+                  <option key={m.user_id} value={m.user_id}>
+                    {`${m.full_name} · ${m.employee_no}`}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Leave type">
+              <select name="leave_type_id" defaultValue="">
+                <option value="">Other (no balance used)</option>
+                {types.data
+                  ?.filter((t) => t.is_active)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+              </select>
+            </Field>
+            <Field label="From" required>
+              <input name="from_date" type="date" required defaultValue={today()} />
+            </Field>
+            <Field label="To">
+              <input name="to_date" type="date" />
+            </Field>
+            <Field label="Reason" full>
+              <textarea name="reason" rows={3} maxLength={2000} placeholder="e.g. Phoned in unwell" />
+            </Field>
+          </div>
+          <p className="muted small">The request is recorded as filed by you and waits on Leave Approval like any other.</p>
+        </Dialog>
+      ) : null}
     </>
   );
 }

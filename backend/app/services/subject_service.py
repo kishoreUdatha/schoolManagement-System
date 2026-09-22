@@ -248,6 +248,14 @@ def update_class_subject(
         staff_service.validate_teacher_for_school(
             db, updates["teacher_user_id"], school_id
         )
+    if updates.get("room_id") is not None:
+        from app.models.facility import Room
+
+        room = db.get(Room, updates["room_id"])
+        if not room or room.school_id != school_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found")
+    if "periods_per_week" in updates and updates["periods_per_week"] is None:
+        updates.pop("periods_per_week")  # the column is not nullable; 0 means unset
     for field, value in updates.items():
         setattr(cs, field, value)
     db.commit()

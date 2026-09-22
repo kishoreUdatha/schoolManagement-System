@@ -13,7 +13,8 @@ import type { ClassSubject, Staff, Subject } from "./types";
 /**
  * SCR-085, live: the subjects a class takes and who teaches each
  * (GET /classes/{id}/subjects; POST to add a subject, PATCH
- * /class-subjects/{id} for the teacher and optional flag, DELETE to remove).
+ * /class-subjects/{id} for the teacher, periods a week, usual room and
+ * optional flag, DELETE to remove). Rooms come from GET /rooms.
  */
 export function SubjectAssignment() {
   const [yearId, setYearId] = useState<number | null>(null);
@@ -35,6 +36,7 @@ export function SubjectAssignment() {
   const current = useApi<ClassSubject[]>(classId ? `/api/v1/school/classes/${classId}/subjects` : null);
   const subjects = useApi<Subject[]>("/api/v1/school/subjects", { active_only: true });
   const teachers = useApi<Staff[]>("/api/v1/school/staff", { role: "teacher", status: "active" });
+  const rooms = useApi<{ id: number; name: string; code: string; is_active: boolean }[]>("/api/v1/school/rooms");
 
   const klass = classes.data?.find((c) => c.id === classId);
   const q = typed.trim().toLowerCase();
@@ -116,6 +118,8 @@ export function SubjectAssignment() {
                 <th>Section</th>
                 <th>Subject</th>
                 <th>Teacher</th>
+                <th>Periods per week</th>
+                <th>Room</th>
                 <th>Type</th>
                 <th className="right">Action</th>
               </tr>
@@ -147,6 +151,45 @@ export function SubjectAssignment() {
                     </select>
                   </td>
                   <td>
+                    <input
+                      type="number"
+                      min={0}
+                      max={40}
+                      style={{ width: 72 }}
+                      aria-label={`Periods a week for ${cs.subject.name}`}
+                      title="Periods a week in each section; 0 means not set"
+                      key={`p${cs.id}-${cs.periods_per_week ?? 0}`}
+                      defaultValue={cs.periods_per_week ?? 0}
+                      disabled={busy}
+                      onBlur={(e) => {
+                        const v = Math.max(0, Math.min(40, Math.round(Number(e.target.value) || 0)));
+                        if (v !== (cs.periods_per_week ?? 0)) run(() => api.patch(`/api/v1/school/class-subjects/${cs.id}`, { periods_per_week: v }), `${cs.subject.name}: ${v} periods a week.`);
+                      }}
+                    />
+                  </td>
+                  <td>
+                    <select
+                      aria-label={`Room for ${cs.subject.name}`}
+                      value={cs.room_id ?? ""}
+                      disabled={busy}
+                      onChange={(e) =>
+                        run(
+                          () => api.patch(`/api/v1/school/class-subjects/${cs.id}`, { room_id: e.target.value ? Number(e.target.value) : null }),
+                          e.target.value ? "Room set." : "Room cleared.",
+                        )
+                      }
+                    >
+                      <option value="">{rooms.data?.length ? "Class's own room" : "No rooms set up"}</option>
+                      {rooms.data
+                        ?.filter((r) => r.is_active || r.id === cs.room_id)
+                        .map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.name}
+                          </option>
+                        ))}
+                    </select>
+                  </td>
+                  <td>
                     <button
                       type="button"
                       className="btn"
@@ -175,11 +218,10 @@ export function SubjectAssignment() {
         <div className="table-empty" hidden={rows.length > 0}>
           {current.loading ? "Loading subjects…" : q ? "No subjects match." : "This class has no subjects yet. Add one above."}
         </div>
-        {/* Not wired: periods per week and room per class subject — the timetable holds periods per section, not per class subject. */}
       </Panel>
       <div className="tip">
         <Icon name="shield" className="sm" />
-        <span>Subjects are set for the whole class, so every section of the class shares them and their teacher.</span>
+        <span>Subjects are set for the whole class, so every section shares them, their teacher, their periods a week (the timetable generator aims for this in each section) and their usual room.</span>
       </div>
     </>
   );

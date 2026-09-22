@@ -30,6 +30,12 @@ class StaffLeaveCreate(BaseModel):
         return self
 
 
+class StaffLeaveFileFor(StaffLeaveCreate):
+    """The office filing leave on somebody's behalf."""
+
+    applicant_user_id: int
+
+
 class StaffLeaveDecide(BaseModel):
     status: StaffLeaveStatus
     decision_remark: Optional[str] = Field(None, max_length=2000)
@@ -54,3 +60,7 @@ class StaffLeaveRead(BaseModel):
     decision_remark: Optional[str] = None
     decided_at: Optional[datetime] = None
     created_at: datetime
+    filed_by_user_id: Optional[int] = None
+    filed_by_name: Optional[str] = None
+    approver_user_id: Optional[int] = None
+    approver_name: Optional[str] = None

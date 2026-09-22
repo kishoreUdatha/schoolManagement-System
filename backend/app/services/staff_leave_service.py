@@ -31,6 +31,8 @@ from app.services import hr_service
 def to_read_dict(db: Session, l: StaffLeave) -> dict:
     applicant = db.get(User, l.applicant_user_id) if l.applicant_user_id else None
     decider = db.get(User, l.decided_by_user_id) if l.decided_by_user_id else None
+    filer = db.get(User, l.filed_by_user_id) if l.filed_by_user_id else None
+    approver = _approver(db, l)
     return {
         "id": l.id,
         "applicant_user_id": l.applicant_user_id,
@@ -48,7 +50,21 @@ def to_read_dict(db: Session, l: StaffLeave) -> dict:
         "decision_remark": l.decision_remark,
         "decided_at": l.decided_at,
         "created_at": l.created_at,
+        "filed_by_user_id": l.filed_by_user_id,
+        "filed_by_name": filer.full_name if filer else None,
+        "approver_user_id": approver.id if approver else None,
+        "approver_name": approver.full_name if approver else None,
     }
+
+
+def _approver(db: Session, l: StaffLeave) -> Optional[User]:
+    """The person the leave type names as its approver, if it names one."""
+    if not l.leave_type_id:
+        return None
+    from app.models.hr import LeaveType
+
+    t = db.get(LeaveType, l.leave_type_id)
+    return db.get(User, t.approver_user_id) if t and t.approver_user_id else None
 
 
 def can_apply(user: User) -> bool:
@@ -73,6 +89,8 @@ def apply_leave(
     school_id: int,
     applicant_user_id: int,
     data: StaffLeaveCreate,
+    *,
+    filed_by_user_id: Optional[int] = None,
 ) -> StaffLeave:
     # Reject self-overlap with an already-pending/approved leave to avoid
     # confusing duplicates.
@@ -90,7 +108,7 @@ def apply_leave(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
-                f"You already have a {overlap.status.value} leave overlapping "
+                f"{'They' if filed_by_user_id else 'You'} already have a {overlap.status.value} leave overlapping "
                 f"{data.from_date} – {data.to_date}"
             ),
         )
@@ -105,6 +123,7 @@ def apply_leave(
         to_date=data.to_date,
         reason=(data.reason or "").strip() or None,
         status=StaffLeaveStatus.pending,
+        filed_by_user_id=filed_by_user_id,
     )
     if data.leave_type_id:
         from app.models.hr import LeaveType
@@ -118,6 +137,32 @@ def apply_leave(
     db.commit()
     db.refresh(l)
     return l
+
+
+def file_for(
+    db: Session,
+    tenant_id: int,
+    school_id: int,
+    filed_by_user_id: int,
+    applicant_user_id: int,
+    data: StaffLeaveCreate,
+) -> StaffLeave:
+    """The office files leave for somebody (they phoned in, or left a note).
+
+    It is the same application they would have made themselves, pending
+    until it is decided, with a note of who filed it."""
+    applicant = db.get(User, applicant_user_id)
+    if not applicant or applicant.school_id != school_id or not can_apply(applicant):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Staff member not found"
+        )
+    if not applicant.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="That account is deactivated"
+        )
+    return apply_leave(
+        db, tenant_id, school_id, applicant_user_id, data, filed_by_user_id=filed_by_user_id
+    )
 
 
 def list_for_user(
@@ -255,6 +300,19 @@ def decide(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Leave is already {l.status.value}",
+        )
+    approver = _approver(db, l)
+    reviewer = db.get(User, reviewer_user_id)
+    if (
+        approver is not None
+        and approver.id != reviewer_user_id
+        and (reviewer is None or reviewer.role != UserRole.school_admin)
+    ):
+        # A school admin can always step in (the approver may be away);
+        # anyone else defers to the approver the leave type names.
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"{approver.full_name} decides this kind of leave",
         )
     if data.status not in (StaffLeaveStatus.approved, StaffLeaveStatus.rejected):
         raise HTTPException(

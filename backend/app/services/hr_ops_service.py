@@ -18,6 +18,7 @@ from app.models.foundation import Department
 from app.models.hr_ops import OnboardingTask, Requisition
 from app.models.staff import Staff
 from app.models.user import User
+from app.services import staff_service
 
 
 def _404(what: str) -> HTTPException:
@@ -181,6 +182,10 @@ def task_to_dict(db: Session, t: OnboardingTask) -> dict:
 def checklist(db: Session, school_id: int, staff_id: int) -> dict:
     staff = _staff(db, school_id, staff_id)
     user = db.get(User, staff.user_id)
+    closer = (
+        db.get(User, staff.onboarding_completed_by_user_id)
+        if staff.onboarding_completed_by_user_id else None
+    )
     rows = list(db.execute(
         select(OnboardingTask)
         .where(OnboardingTask.staff_id == staff_id)
@@ -203,7 +208,36 @@ def checklist(db: Session, school_id: int, staff_id: int) -> dict:
         ),
         "started": bool(rows),
         "percent": round(done / len(rows) * 100, 1) if rows else 0.0,
+        "reporting_manager_name": staff_service.extra_to_dict(db, staff)["reporting_manager_name"],
+        "completed_at": staff.onboarding_completed_at,
+        "completed_by": closer.full_name if closer else None,
+        "can_complete": bool(rows) and done == len(rows) and staff.onboarding_completed_at is None,
     }
+
+
+def complete_checklist(db: Session, school_id: int, staff_id: int, user_id: int) -> dict:
+    """Sign the checklist off. Every task has to be ticked first — closing a
+    list with things still on it is how "nobody set up their email" gets lost.
+    Adding a task or unticking one afterwards reopens it."""
+    staff = _staff(db, school_id, staff_id)
+    rows = list(db.execute(
+        select(OnboardingTask).where(OnboardingTask.staff_id == staff_id)
+    ).scalars())
+    if not rows:
+        raise _400("Start the checklist first.")
+    left = [t.title for t in rows if not t.is_done]
+    if left:
+        raise _400(f"{len(left)} task(s) still open: " + "; ".join(left[:3]) + ("…" if len(left) > 3 else ""))
+    if staff.onboarding_completed_at is None:
+        staff.onboarding_completed_at = datetime.now(timezone.utc)
+        staff.onboarding_completed_by_user_id = user_id
+        db.commit()
+    return checklist(db, school_id, staff_id)
+
+
+def _reopen(staff: Staff) -> None:
+    staff.onboarding_completed_at = None
+    staff.onboarding_completed_by_user_id = None
 
 
 def start_checklist(db: Session, school_id: int, staff_id: int, *,
@@ -237,6 +271,7 @@ def add_task(db: Session, school_id: int, staff_id: int, data: dict) -> dict:
         area=OnboardingArea(data.get("area") or OnboardingArea.hr.value),
         due_on=data.get("due_on"), note=data.get("note"),
     ))
+    _reopen(staff)
     db.commit()
     return checklist(db, school_id, staff_id)
 
@@ -247,6 +282,10 @@ def set_task(db: Session, school_id: int, task_id: int, user_id: int, *,
     if not t or t.school_id != school_id:
         raise _404("Task")
     t.is_done = is_done
+    if not is_done:
+        s = db.get(Staff, t.staff_id)
+        if s:
+            _reopen(s)
     t.done_by_user_id = user_id if is_done else None
     t.done_at = datetime.now(timezone.utc) if is_done else None
     if note is not None:

@@ -16,10 +16,17 @@ import { todayIso } from "./util";
 /** The form id the page-head button submits. */
 export const OBSERVATION_FORM = "observation-form";
 
+const SCORES: [string, string][] = [
+  ["lesson_preparation", "Lesson preparation"],
+  ["student_engagement", "Student engagement"],
+  ["subject_knowledge", "Subject knowledge"],
+];
+
 /**
  * SCR-090, live: POST /staff-ops/observations, with the teacher's earlier
  * observations (GET /staff-ops/observations?staff_id=) and share toggles.
- * There is no score field, so the mock's 1–5 ratings are not offered.
+ * The three 1–5 ratings are optional and sit beside the written strengths
+ * and next steps, which the API still requires.
  */
 export function ClassroomObservation() {
   const router = useRouter();
@@ -67,6 +74,7 @@ export function ClassroomObservation() {
         next_steps: text("next_steps"),
         follow_up_on: text("follow_up_on"),
         shared_with_staff: f.get("shared_with_staff") === "on",
+        ...Object.fromEntries(SCORES.map(([k]) => [k, num(k)])),
       });
       notify("Observation saved.");
       form.reset();
@@ -160,7 +168,19 @@ export function ClassroomObservation() {
                   <span>Focus</span>
                   <input type="text" name="focus" maxLength={200} placeholder="e.g. Questioning, group work" />
                 </label>
-                {/* Not wired: lesson preparation, student engagement and subject knowledge scores — observations have no score fields. */}
+                {SCORES.map(([k, t]) => (
+                  <label className="field" key={k}>
+                    <span>{t}</span>
+                    <select name={k} aria-label={t} defaultValue="">
+                      <option value="">Not rated</option>
+                      {[5, 4, 3, 2, 1].map((n) => (
+                        <option key={n} value={n}>
+                          {`${n} / 5`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
                 <label className="field full">
                   <span>Strengths</span>
                   <textarea name="strengths" maxLength={4000} placeholder="What went well" />
@@ -226,7 +246,7 @@ export function ClassroomObservation() {
                 </span>
                 <div>
                   <h4>{o.focus ?? o.subject_name ?? "Observation"}</h4>
-                  <p>{[date(o.observed_on), o.section_label, o.observer_name].filter(Boolean).join(" · ")}</p>
+                  <p>{[date(o.observed_on), o.section_label, o.observer_name, o.average_score != null ? `${o.average_score} / 5` : null].filter(Boolean).join(" · ")}</p>
                   <button type="button" className="btn" style={{ marginTop: 6 }} onClick={() => share(o.id, !o.shared_with_staff)}>
                     {o.shared_with_staff ? "Stop sharing" : "Share with teacher"}
                   </button>

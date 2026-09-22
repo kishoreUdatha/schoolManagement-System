@@ -19,7 +19,7 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import (
     ApplicationStage,
@@ -171,6 +171,12 @@ class Offer(Base, PrimaryKeyMixin, TimestampMixin, _School):
         SAEnum(OfferStatus, name="offer_status"), default=OfferStatus.draft, nullable=False
     )
     terms: Mapped[Optional[str]] = mapped_column(Text)
+    department_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("departments.id", ondelete="SET NULL")
+    )
+    reporting_manager_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("staff.id", ondelete="SET NULL")
+    )
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     responded_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     response_note: Mapped[Optional[str]] = mapped_column(String(500))
@@ -198,6 +204,16 @@ class LeaveType(Base, PrimaryKeyMixin, TimestampMixin, _School):
     # ask for a medical note / proof beyond this many days in one request
     document_after_days: Mapped[Optional[int]] = mapped_column(Integer)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Who decides this kind of leave. Empty means the usual deciders (school
+    # admin or principal); set, only that person or a school admin can.
+    approver_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
+    approver = relationship("User", foreign_keys=[approver_user_id])
+
+    @property
+    def approver_name(self) -> Optional[str]:
+        return self.approver.full_name if self.approver_user_id and self.approver else None
 
 
 class LeaveBalance(Base, PrimaryKeyMixin, TimestampMixin, _School):

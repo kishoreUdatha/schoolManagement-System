@@ -25,10 +25,23 @@ type Activity = {
     marks_entered: number;
     homework_set: number;
     days_attendance_marked: number;
+    department_name: string | null;
+    observations: number;
+    /** Mean of the optional 1–5 observation ratings in the period. */
+    observation_score: number | null;
+    last_observed_on: string | null;
+    review_status: "not_observed" | "follow_up_due" | "feedback_pending" | "reviewed";
   }[];
 };
 
-/** SCR-278, live: GET /api/v1/school/analytics/teacher-activity (?days). Counts of work done, not a ranking. */
+const REVIEW_LABEL: Record<Activity["teachers"][number]["review_status"], string> = {
+  not_observed: "Not observed",
+  follow_up_due: "Follow-up due",
+  feedback_pending: "Feedback pending",
+  reviewed: "Reviewed",
+};
+
+/** SCR-278, live: GET /api/v1/school/analytics/teacher-activity (?days). Counts of work done plus observation ratings and review status, not a ranking. */
 export function TeacherActivity() {
   const [days, setDays] = useState("90");
   const res = useApi<Activity>("/api/v1/school/analytics/teacher-activity", { days });
@@ -38,11 +51,13 @@ export function TeacherActivity() {
   const covered = t.reduce((s, x) => s + x.syllabus_covered, 0);
   const rows: Row[] = t.map((x) => [
     { name: x.name, sub: label(x.role) },
-    num(x.subjects),
+    x.department_name ?? "—",
     num(x.days_attendance_marked),
     num(x.homework_set),
     num(x.marks_entered),
+    x.observation_score !== null ? `${x.observation_score.toFixed(1)} / 5` : x.observations ? "Not rated" : "—",
     x.syllabus_topics ? pct(x.syllabus_percent) : "—",
+    REVIEW_LABEL[x.review_status] ?? label(x.review_status),
   ]);
   const withSyllabus = t.filter((x) => x.syllabus_topics);
   return (
@@ -70,8 +85,7 @@ export function TeacherActivity() {
       ]}
       summaryTitle="Syllabus progress"
       summary={withSyllabus.map((x) => ({ label: x.name, value: x.syllabus_percent, text: pct(x.syllabus_percent, 0) }))}
-      // Not wired: department, observation score and review status — the API has no appraisal records.
-      table={{ name: "teacher-activity", title: "Work done by person", sub: "Counts for the period; not a performance ranking", columns: ["Teacher", "Subjects", "Attendance days", "Homework set", "Marks entered", "Syllabus progress"], rows, empty: "No teaching staff yet." }}
+      table={{ name: "teacher-activity", title: "Work done by person", sub: "Counts for the period, with lesson-observation ratings (mean of 1–5) and where the latest observation stands; not a performance ranking", columns: ["Teacher", "Department", "Attendance days", "Homework set", "Marks entered", "Observation score", "Syllabus progress", "Review status"], rows, empty: "No teaching staff yet." }}
     />
   );
 }

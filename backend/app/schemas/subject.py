@@ -66,6 +66,8 @@ class ClassSubjectUpdate(BaseModel):
     teacher_user_id: Optional[int] = Field(
         None, description="User id of a teacher; null to unassign"
     )
+    periods_per_week: Optional[int] = Field(None, ge=0, le=40)
+    room_id: Optional[int] = Field(None, description="Usual room; null to clear")
 
 
 class ClassSubjectRead(BaseModel):
@@ -76,4 +78,7 @@ class ClassSubjectRead(BaseModel):
     teacher_user_id: Optional[int] = None
     is_optional: bool
     display_order: int
+    periods_per_week: int = 0
+    room_id: Optional[int] = None
+    room_name: Optional[str] = None
     subject: SubjectRead
