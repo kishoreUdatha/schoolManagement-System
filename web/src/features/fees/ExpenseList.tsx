@@ -260,8 +260,9 @@ function NewExpense({ cats, suppliers, expense, onClose, onSaved }: { cats: Expe
               ))}
             </select>
           </Field>
-          <Field label="Payee">
-            <input value={f.payee} onChange={set("payee")} maxLength={160} placeholder={f.supplier_id ? "The supplier" : "Who was paid"} />
+          {/* The API needs one of the two: a supplier, or the name of whoever was paid. */}
+          <Field label="Payee" required={!f.supplier_id}>
+            <input value={f.payee} onChange={set("payee")} maxLength={160} required={!f.supplier_id} placeholder={f.supplier_id ? "The supplier" : "Who was paid"} />
           </Field>
           <Field label="Amount (₹)" required>
             <input type="number" min={0.01} step="0.01" value={f.amount} onChange={set("amount")} required />

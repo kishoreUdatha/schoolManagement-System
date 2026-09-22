@@ -77,3 +77,6 @@ httpswww.myclassboard reference.txt
 
 # Agent worktrees
 .claude/worktrees/
+
+# Local database snapshots
+db_backups/
