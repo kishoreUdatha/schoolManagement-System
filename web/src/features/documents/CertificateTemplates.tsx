@@ -180,7 +180,7 @@ function TemplateEditor({
               Serial prefix
               <span className="req">*</span>
             </span>
-            <input value={form.serial_prefix} onChange={set("serial_prefix")} placeholder="BON" required />
+            <input value={form.serial_prefix} onChange={set("serial_prefix")} placeholder="BON" required maxLength={12} />
           </label>
           <label className="field">
             <span>
