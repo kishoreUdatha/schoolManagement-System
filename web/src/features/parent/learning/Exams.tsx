@@ -1,17 +1,27 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { useParent } from "@/components/parent/ParentShell";
+import { api, errorText } from "@/lib/api";
 import { parentRoute } from "@/lib/parentScreens";
 import { useApi } from "@/lib/useApi";
-import { ActionLink, childPath, ChildScoped, dateRange, longDate, PmEmpty, PmError, PmLoading, shortDate, todayIso } from "../home/parts";
-import type { CalendarItem, ExamListItem, ExamResult } from "./types";
+import { ActionLink, childPath, ChildScoped, clock, dateRange, PmEmpty, PmError, PmLoading, shortDate, todayIso } from "../home/parts";
+import type { CalendarItem, ExamListItem, ExamSchedule as Schedule } from "./types";
 
-/** Upcoming exams: the parent calendar's exam entries for the next year (the widest window it allows is 400 days). */
-function useUpcomingExams() {
+/**
+ * Upcoming exams: the child's datesheets (exams with papers for the child's
+ * class), plus calendar exams the school has not listed papers for yet.
+ */
+function useUpcomingExams(childId: number) {
+  const sheets = useApi<Schedule[]>(childPath(childId, "/exam-schedule"));
   const cal = useApi<CalendarItem[]>("/api/v1/parent/me/calendar", { start: todayIso(), end: todayIso(365) });
-  const exams = (cal.data ?? []).filter((i) => i.type === "exam" && !i.is_cancelled).sort((a, b) => a.start_date.localeCompare(b.start_date));
-  return { exams, loading: cal.loading && !cal.data, error: cal.error };
+  const listed = new Set((sheets.data ?? []).map((s) => s.exam_id));
+  const exams = [
+    ...(sheets.data ?? []).map((s) => ({ id: s.exam_id, title: s.exam_name, start_date: s.start_date, end_date: s.end_date, papers: s.papers.length })),
+    ...(cal.data ?? []).filter((i) => i.type === "exam" && !i.is_cancelled && !listed.has(i.id)).map((i) => ({ id: i.id, title: i.title, start_date: i.start_date, end_date: i.end_date, papers: 0 })),
+  ].sort((a, b) => a.start_date.localeCompare(b.start_date));
+  return { exams, loading: (sheets.loading && !sheets.data) || (cal.loading && !cal.data), error: sheets.error ?? cal.error };
 }
 
 /** PM-019. The next exam, and the child's published exams with a link to each result. */
@@ -22,7 +32,7 @@ export function Exams() {
 function ExamsFor({ childId }: { childId: number }) {
   const router = useRouter();
   const { go } = useParent();
-  const upcoming = useUpcomingExams();
+  const upcoming = useUpcomingExams(childId);
   const results = useApi<ExamListItem[]>(childPath(childId, "/exams"));
   const next = upcoming.exams[0];
 
@@ -53,7 +63,7 @@ function ExamsFor({ childId }: { childId: number }) {
       ))}
       <PmError>{results.error}</PmError>
       {(results.data ?? []).map((x) => (
-        <button key={x.exam_id} className="item" onClick={() => router.push(`${parentRoute(21)}?id=${x.exam_id}`)}>
+        <button key={x.exam_id} className="item" onClick={() => router.push(`${parentRoute(21)}?exam=${x.exam_id}`)}>
           <span>
             <strong>{x.exam_name}</strong>
             <small>{`Results published · ${shortDate(x.published_at ?? x.end_date)}`}</small>
@@ -73,10 +83,9 @@ function ExamsFor({ childId }: { childId: number }) {
 }
 
 /**
- * PM-020. Paper-by-paper dates for an exam (?id=). The parent API gives
- * papers only for published exams (GET …/exams/{id}); for an exam still to
- * come it gives the calendar's name and dates.
- * Not wired: paper-wise schedule for unpublished (upcoming) exams, syllabus per paper, exam-day instructions and admit card — no parent endpoint.
+ * PM-020. Paper-by-paper datesheet for an exam (?id=, else the next one):
+ * date and time, the portion each paper covers, the school's instructions,
+ * and the admit card while the exam is still to come.
  */
 export function ExamSchedule() {
   const id = Number(useSearchParams().get("id")) || 0;
@@ -84,13 +93,14 @@ export function ExamSchedule() {
 }
 
 function ScheduleFor({ childId, id, section }: { childId: number; id: number; section: string | null }) {
-  const upcoming = useUpcomingExams();
-  const published = useApi<ExamListItem[]>(childPath(childId, "/exams"));
-  const isPublished = Boolean(published.data?.some((x) => x.exam_id === id));
-  const detail = useApi<ExamResult>(isPublished ? childPath(childId, `/exams/${id}`) : null);
-
-  if (upcoming.loading || (!published.data && !published.error)) return <PmLoading />;
+  const { notify } = useParent();
+  const router = useRouter();
+  const upcoming = useUpcomingExams(childId);
   const target = id || upcoming.exams[0]?.id || 0;
+  const sheet = useApi<Schedule>(target ? childPath(childId, `/exam-schedule/${target}`) : null);
+  const [busy, setBusy] = useState(false);
+
+  if (!id && upcoming.loading) return <PmLoading />;
   if (!target) {
     return (
       <>
@@ -101,55 +111,68 @@ function ScheduleFor({ childId, id, section }: { childId: number; id: number; se
       </>
     );
   }
+  if (sheet.loading && !sheet.data) return <PmLoading />;
 
-  if (isPublished) {
-    if (detail.error) return <PmError>{detail.error}</PmError>;
-    if (!detail.data) return <PmLoading />;
-    const d = detail.data;
-    const papers = [...d.subjects].sort((a, b) => a.exam_date.localeCompare(b.exam_date));
+  if (!sheet.data) {
+    // 404: no papers listed for this child's class yet — show what the calendar knows.
+    const exam = upcoming.exams.find((x) => x.id === target);
+    if (!exam) return upcoming.loading ? <PmLoading /> : <PmEmpty title="Exam not found">{sheet.error ?? "This exam has no papers for your child’s class."}</PmEmpty>;
     return (
       <>
-        <p className="lead">{[d.exam_name, [d.class_name, d.section_name].filter(Boolean).join(" ")].filter(Boolean).join(" · ")}</p>
-        {papers.length ? (
-          papers.map((p) => (
-            <div key={p.exam_paper_id} className="item">
-              <span>
-                <strong>{p.subject_name}</strong>
-                <small>{longDate(p.exam_date)}</small>
-              </span>
-              <span className="value">{`Max ${p.max_marks}`}</span>
-            </div>
-          ))
-        ) : (
-          <PmEmpty title="No papers listed">The school has not listed papers for this exam.</PmEmpty>
-        )}
-        <div className="panel">
-          <h3>{`${dateRange(d.start_date, d.end_date)}`}</h3>
-          <p>Results for this exam are published.</p>
+        <p className="lead">{[exam.title, section].filter(Boolean).join(" · ")}</p>
+        <div className="panel soft">
+          <span className="eyebrow">EXAM DATES</span>
+          <h2>{dateRange(exam.start_date, exam.end_date)}</h2>
+          <p>The school has not listed the papers for this class yet.</p>
         </div>
       </>
     );
   }
 
-  const exam = upcoming.exams.find((x) => x.id === target);
-  if (!exam) {
-    return (
-      <>
-        <PmEmpty title="Exam not found">This exam is not in the school calendar for the coming year.</PmEmpty>
-        <ActionLink secondary href={parentRoute(19)}>
-          Go to exams
-        </ActionLink>
-      </>
-    );
+  const d = sheet.data;
+  const over = d.end_date < todayIso();
+  async function admitCard() {
+    setBusy(true);
+    try {
+      await api.download(childPath(childId, `/exam-schedule/${d.exam_id}/admit-card.pdf`), `admit-card-${d.exam_name.replace(/\s+/g, "_")}.pdf`);
+    } catch (e) {
+      notify(errorText(e));
+    } finally {
+      setBusy(false);
+    }
   }
+
   return (
     <>
-      <p className="lead">{[exam.title, section].filter(Boolean).join(" · ")}</p>
-      <div className="panel soft">
-        <span className="eyebrow">EXAM DATES</span>
-        <h2>{dateRange(exam.start_date, exam.end_date)}</h2>
-        <p>The paper-by-paper timetable is not shared in the parent app yet. Please check with the class teacher for paper dates.</p>
-      </div>
+      <p className="lead">{[d.exam_name, [d.class_name, d.section_name].filter(Boolean).join(" ")].filter(Boolean).join(" · ")}</p>
+      {d.papers.map((p) => {
+        const time = p.start_time ? (p.end_time ? `${clock(p.start_time, true)}–${clock(p.end_time)}` : clock(p.start_time)) : null;
+        return (
+          <div key={p.paper_id} className="item">
+            <span>
+              <strong>{p.subject_name}</strong>
+              <small>{[shortDate(p.exam_date), time, p.room_name ? `Room ${p.room_name}` : null].filter(Boolean).join(" · ")}</small>
+            </span>
+            <span className="value">{p.syllabus ?? `Max ${p.max_marks}`}</span>
+          </div>
+        );
+      })}
+      {d.instructions ? (
+        <div className="panel">
+          <h3>Before the exam</h3>
+          <p style={{ whiteSpace: "pre-wrap" }}>{d.instructions}</p>
+        </div>
+      ) : null}
+      {d.is_published ? (
+        <button className="action" onClick={() => router.push(`${parentRoute(21)}?exam=${d.exam_id}`)}>
+          View results
+        </button>
+      ) : null}
+      {!over && d.admit_card_available ? (
+        <button className="action secondary" disabled={busy} onClick={admitCard}>
+          {busy ? "Preparing admit card…" : "View admit card"}
+        </button>
+      ) : null}
     </>
   );
 }

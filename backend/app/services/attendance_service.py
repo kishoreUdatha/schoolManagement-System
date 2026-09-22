@@ -304,7 +304,7 @@ def _send_absence_notices(
     if not newly_absent_student_ids:
         return 0
 
-    from app.core.enums import NoticeAudience, NoticeChannel
+    from app.core.enums import NoticeAudience, NoticeChannel, NotificationCategory
     from app.schemas.notice import NoticeCreate
     from app.services import notice_service
 
@@ -324,6 +324,8 @@ def _send_absence_notices(
             audience=NoticeAudience.single_parent,
             audience_student_id=student_id,
             channels=[NoticeChannel.in_app],
+            category=NotificationCategory.attendance,
+            link=f"/parent/attendance-detail?date={on_date.isoformat()}",
         )
         try:
             n = notice_service.create(

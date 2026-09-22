@@ -2,8 +2,7 @@
 // Parent app · Module: Attendance & leave · Release: MVP · ERP: SCR-060 / SCR-117
 // Feature: View attendance calendar and monthly totals.
 // Mock: Parent_Mobile_58_Screens/screens/PM-009_attendance.html
-// Wired: GET /api/v1/parent/me/children/{id}/profile (attendance summary). Hand-maintained.
-// Not wired: the month calendar of present / absent days — the parent API returns totals only, no daily records.
+// Wired: GET /api/v1/parent/me/children/{id}/attendance/month (?month), …/profile (year totals). Hand-maintained.
 
 import { ParentShell } from "@/components/parent/ParentShell";
 import { Attendance } from "@/features/parent/attendance/Attendance";

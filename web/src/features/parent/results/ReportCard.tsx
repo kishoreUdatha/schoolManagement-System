@@ -2,12 +2,14 @@
 
 /*
  * PM-022 · Report card for one published exam (?exam=), with the school's
- * remarks and the school-generated PDF.
+ * name and logo, its remarks, the school-generated PDF, and the parent's
+ * acknowledgement.
  */
 
 import { useState } from "react";
 import { initialsOf, useParent } from "@/components/parent/ParentShell";
 import { api, errorText } from "@/lib/api";
+import { dateTime } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { PmEmpty, PmError, PmLoading, useGoTo, useQueryId } from "../comms/ui";
 import type { ExamListItem, ExamResult } from "./types";
@@ -23,6 +25,21 @@ export function ReportCard() {
   const res = useApi<ExamResult>(base && examId ? `${base}/exams/${examId}` : null);
   const r = res.data && res.data.student_id === childId && res.data.exam_id === examId ? res.data : null;
   const [busy, setBusy] = useState(false);
+  const [acking, setAcking] = useState(false);
+
+  async function acknowledge() {
+    if (!base || !r) return;
+    setAcking(true);
+    try {
+      await api.post(`${base}/exams/${r.exam_id}/acknowledge`);
+      notify("Thank you — the school can see you have read this report.");
+      res.reload();
+    } catch (e) {
+      notify(errorText(e));
+    } finally {
+      setAcking(false);
+    }
+  }
 
   async function download() {
     if (!base || !r) return;
@@ -44,10 +61,16 @@ export function ReportCard() {
   return (
     <>
       <div className="report">
-        {/* Not wired: school name and logo — not in the parent result response. */}
-        <div className="report-logo">{initialsOf(child?.full_name ?? r.student_name)}</div>
-        <h3>REPORT CARD</h3>
-        <p>{`${r.exam_name} · ${r.exam_kind.replace(/_/g, " ")}`}</p>
+        <div className="report-logo">
+          {r.school_logo_url && /^(https?:\/\/|\/)/i.test(r.school_logo_url) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={r.school_logo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "inherit" }} />
+          ) : (
+            initialsOf(r.school_name ?? child?.full_name ?? r.student_name)
+          )}
+        </div>
+        <h3>{(r.school_name ?? "Report card").toUpperCase()}</h3>
+        <p>{`${r.exam_name} · Report card`}</p>
         <hr />
         <h2 className="child-name">{r.student_name}</h2>
         <p className="child-class">{cls || `Admission no. ${r.student_admission_no}`}</p>
@@ -78,7 +101,13 @@ export function ReportCard() {
       <button className="action" disabled={busy} onClick={download}>
         {busy ? "Preparing PDF…" : "Download report card"}
       </button>
-      {/* Not wired: "Acknowledge report" — no endpoint records a parent's acknowledgement. */}
+      {r.acknowledged_at ? (
+        <p className="micro">{`You acknowledged this report on ${dateTime(r.acknowledged_at)}.`}</p>
+      ) : (
+        <button className="action secondary" disabled={acking} onClick={acknowledge}>
+          {acking ? "Saving…" : "Acknowledge report"}
+        </button>
+      )}
       <button className="action secondary" onClick={() => goTo(21, { exam: r.exam_id })}>
         View subject marks
       </button>

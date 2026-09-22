@@ -117,6 +117,7 @@ from app.api.v1.parent import (
     holidays as parent_holidays,
     homework as parent_homework,
     hostel as parent_hostel,
+    learning as parent_learning,
     library as parent_library,
     messages as parent_messages,
     notices as parent_notices,
@@ -402,6 +403,11 @@ app.include_router(
     parent_exams.router,
     prefix="/api/v1/parent/me/children",
     tags=["parent / exams"],
+)
+app.include_router(
+    parent_learning.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / school day"],
 )
 app.include_router(
     parent_videos.router,

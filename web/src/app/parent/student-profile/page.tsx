@@ -2,8 +2,7 @@
 // Parent app · Module: Home & profile · Release: MVP · ERP: SCR-057 / SCR-059
 // Feature: View verified student details and request corrections.
 // Mock: Parent_Mobile_58_Screens/screens/PM-008_student_profile.html
-// Wired: GET /api/v1/parent/me/children/{id}/profile, GET /api/v1/branding/me. Hand-maintained.
-// Not wired: class teacher — not in the profile response.
+// Wired: GET /api/v1/parent/me/children/{id}/profile (incl. class teacher), GET /api/v1/branding/me. Hand-maintained.
 
 import { ParentShell } from "@/components/parent/ParentShell";
 import { StudentProfile } from "@/features/parent/home/StudentProfile";

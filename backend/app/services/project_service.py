@@ -8,6 +8,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.enums import NotificationCategory
 from app.core.enums import (
     NoticeAudience,
     NoticeChannel,
@@ -159,6 +160,8 @@ def _notify_parents(
         body=f"{p.title}\nDeadline: {p.deadline.isoformat()}\n\n{p.description[:500]}",
         audience=NoticeAudience.class_parents,
         audience_class_id=cs.class_id,
+        category=NotificationCategory.homework,
+        link="/parent/projects-activities",
         channels=[NoticeChannel.in_app.value],
         attachment_url=p.attachment_url,
         status=NoticeStatus.draft,

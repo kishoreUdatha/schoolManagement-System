@@ -9,6 +9,7 @@ from app.core.enums import (
     NoticeAudience,
     NoticeChannel,
     NoticeStatus,
+    NotificationCategory,
     RecipientStatus,
     UserRole,
 )
@@ -106,6 +107,12 @@ def create(
         channels=[c.value for c in data.channels],
         attachment_url=data.attachment_url,
         scheduled_at=data.scheduled_at,
+        category=data.category,
+        link=data.link,
+        event_date=data.event_date,
+        event_start_time=data.event_start_time,
+        event_end_time=data.event_end_time,
+        event_venue=data.event_venue,
         status=NoticeStatus.scheduled if data.scheduled_at else NoticeStatus.draft,
         created_by_user_id=created_by_user_id,
     )
@@ -327,6 +334,12 @@ def to_read_dict(db: Session, n: Notice) -> dict:
         "channels": [NoticeChannel(c) for c in n.channels],
         "attachment_url": n.attachment_url,
         "scheduled_at": n.scheduled_at,
+        "category": n.category,
+        "link": n.link,
+        "event_date": n.event_date,
+        "event_start_time": n.event_start_time,
+        "event_end_time": n.event_end_time,
+        "event_venue": n.event_venue,
         "sent_at": n.sent_at,
         "status": n.status,
         "created_by_user_id": n.created_by_user_id,
@@ -368,6 +381,8 @@ def update(
             detail="Cannot edit a notice that has already been sent",
         )
     updates = data.model_dump(exclude_unset=True)
+    if "category" in updates and updates["category"] is None:
+        updates.pop("category")  # the column always has a category
     if "channels" in updates:
         updates["channels"] = [c.value for c in data.channels or []]
     if (
@@ -403,7 +418,12 @@ def delete(db: Session, notice_id: int, school_id: int) -> None:
 # --- Inbox (in-app for any logged-in user) ---
 
 def list_inbox(
-    db: Session, user_id: int, *, unread_only: bool = False, limit: int = 50
+    db: Session,
+    user_id: int,
+    *,
+    unread_only: bool = False,
+    limit: int = 50,
+    category: Optional[NotificationCategory] = None,
 ) -> list[dict]:
     stmt = (
         select(NoticeRecipient, Notice)
@@ -417,6 +437,8 @@ def list_inbox(
     )
     if unread_only:
         stmt = stmt.where(NoticeRecipient.read_at.is_(None))
+    if category is not None:
+        stmt = stmt.where(Notice.category == category)
     rows = db.execute(stmt).all()
     out = []
     for rec, n in rows:
@@ -427,6 +449,13 @@ def list_inbox(
                 "title": n.title,
                 "body": n.body,
                 "attachment_url": n.attachment_url,
+                "category": n.category,
+                "link": n.link,
+                "student_id": n.audience_student_id,
+                "event_date": n.event_date,
+                "event_start_time": n.event_start_time,
+                "event_end_time": n.event_end_time,
+                "event_venue": n.event_venue,
                 "sent_at": rec.sent_at,
                 "read_at": rec.read_at,
                 "status": rec.status,

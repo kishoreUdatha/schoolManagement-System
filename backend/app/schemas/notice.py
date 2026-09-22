@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime, time
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -7,6 +7,7 @@ from app.core.enums import (
     NoticeAudience,
     NoticeChannel,
     NoticeStatus,
+    NotificationCategory,
     RecipientStatus,
 )
 
@@ -21,6 +22,13 @@ class NoticeBase(BaseModel):
     channels: list[NoticeChannel] = Field(default_factory=lambda: [NoticeChannel.in_app])
     attachment_url: Optional[str] = Field(None, max_length=500)
     scheduled_at: Optional[datetime] = None
+    category: NotificationCategory = NotificationCategory.general
+    # in-app path the parent app opens, e.g. "/parent/fees"
+    link: Optional[str] = Field(None, max_length=300, pattern=r"^/")
+    event_date: Optional[date] = None
+    event_start_time: Optional[time] = None
+    event_end_time: Optional[time] = None
+    event_venue: Optional[str] = Field(None, max_length=200)
 
     @model_validator(mode="after")
     def _check_audience(self):
@@ -49,6 +57,12 @@ class NoticeUpdate(BaseModel):
     channels: Optional[list[NoticeChannel]] = None
     attachment_url: Optional[str] = Field(None, max_length=500)
     scheduled_at: Optional[datetime] = None
+    category: Optional[NotificationCategory] = None
+    link: Optional[str] = Field(None, max_length=300, pattern=r"^/")
+    event_date: Optional[date] = None
+    event_start_time: Optional[time] = None
+    event_end_time: Optional[time] = None
+    event_venue: Optional[str] = Field(None, max_length=200)
 
 
 class ChannelBreakdown(BaseModel):
@@ -76,6 +90,12 @@ class NoticeRead(BaseModel):
     channels: list[NoticeChannel]
     attachment_url: Optional[str] = None
     scheduled_at: Optional[datetime] = None
+    category: NotificationCategory = NotificationCategory.general
+    link: Optional[str] = None
+    event_date: Optional[date] = None
+    event_start_time: Optional[time] = None
+    event_end_time: Optional[time] = None
+    event_venue: Optional[str] = None
     sent_at: Optional[datetime] = None
     status: NoticeStatus
     created_by_user_id: Optional[int] = None
@@ -94,6 +114,15 @@ class InboxNotice(BaseModel):
     title: str
     body: str
     attachment_url: Optional[str] = None
+    category: NotificationCategory = NotificationCategory.general
+    # in-app path to the record the notice is about (e.g. "/parent/fees")
+    link: Optional[str] = None
+    # the child it is about, when it is about one child
+    student_id: Optional[int] = None
+    event_date: Optional[date] = None
+    event_start_time: Optional[time] = None
+    event_end_time: Optional[time] = None
+    event_venue: Optional[str] = None
     sent_at: Optional[datetime] = None
     read_at: Optional[datetime] = None
     status: RecipientStatus

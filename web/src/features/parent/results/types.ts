@@ -39,6 +39,8 @@ export type SubjectResult = {
   grade: string | null;
   is_pass: boolean | null;
   remark: string | null;
+  /** Who teaches this subject to the class. */
+  teacher_name: string | null;
 };
 
 export type ExamResult = {
@@ -66,4 +68,8 @@ export type ExamResult = {
   attendance_percent: number | null;
   teacher_remark: string | null;
   principal_remark: string | null;
+  school_name: string | null;
+  school_logo_url: string | null;
+  /** When the signed-in parent acknowledged this card; null until they do (or after a re-issue). */
+  acknowledged_at: string | null;
 };

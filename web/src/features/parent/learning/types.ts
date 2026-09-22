@@ -42,6 +42,55 @@ export type Period = { id: number; day_of_week: number; period_number: number; s
 export type TimetableEntry = { id: number; period_id: number; subject_name: string; subject_code: string; teacher_name: string | null; room_name: string | null };
 export type SectionTimetable = { section_id: number; section_label: string | null; timetable_published_at: string | null; periods: Period[]; entries: TimetableEntry[] };
 
+/** GET …/children/{id}/timetable/day — one dated day, with cover. */
+export type TimetableDay = {
+  date: string;
+  day_of_week: number;
+  section_label: string | null;
+  holiday_name: string | null;
+  slots: {
+    period_id: number;
+    period_number: number;
+    label: string | null;
+    start_time: string;
+    end_time: string;
+    is_break: boolean;
+    subject_name: string | null;
+    subject_code: string | null;
+    teacher_name: string | null;
+    room_name: string | null;
+    is_substituted: boolean;
+    substitute_teacher_name: string | null;
+    cover_note: string | null;
+  }[];
+};
+
+/** GET …/children/{id}/exam-schedule(/{exam_id}) — a datesheet for the child's class. */
+export type ExamSchedule = {
+  exam_id: number;
+  exam_name: string;
+  exam_kind: string;
+  start_date: string;
+  end_date: string;
+  is_published: boolean;
+  instructions: string | null;
+  class_name: string | null;
+  section_name: string | null;
+  papers: {
+    paper_id: number;
+    subject_name: string;
+    subject_code: string | null;
+    exam_date: string;
+    start_time: string | null;
+    end_time: string | null;
+    duration_minutes: number | null;
+    max_marks: number;
+    syllabus: string | null;
+    room_name: string | null;
+  }[];
+  admit_card_available: boolean;
+};
+
 export type ResultSummary = { total_max: number; total_obtained: number; percentage: number; overall_grade: string; is_pass: boolean; subjects_total: number };
 export type ExamListItem = {
   exam_id: number;

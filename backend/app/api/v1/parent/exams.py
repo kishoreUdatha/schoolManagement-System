@@ -46,6 +46,23 @@ def get_for_child(
     return ExamResultRead.model_validate(data)
 
 
+@router.post(
+    "/{student_id}/exams/{exam_id}/acknowledge",
+    response_model=ExamResultRead,
+    summary="Record that the parent has seen this report card",
+)
+def acknowledge(
+    student_id: int,
+    exam_id: int,
+    current_user: ParentUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    data = result_service.acknowledge_report_card(
+        db, current_user.id, student_id, exam_id
+    )
+    return ExamResultRead.model_validate(data)
+
+
 @router.get(
     "/{student_id}/exams/{exam_id}/report-card.pdf",
     summary="Download report card PDF for a linked child",

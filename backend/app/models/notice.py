@@ -1,14 +1,16 @@
-from datetime import datetime
+from datetime import date, datetime, time
 from typing import Optional
 
 from sqlalchemy import (
     BigInteger,
+    Date,
     DateTime,
     Enum as SAEnum,
     ForeignKey,
     Index,
     String,
     Text,
+    Time,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -70,6 +72,15 @@ class Notice(Base, PrimaryKeyMixin, TimestampMixin):
     channels: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
 
     attachment_url: Mapped[Optional[str]] = mapped_column(String(500))
+    # Where tapping the notice in the parent app should take them, as an
+    # in-app path ("/parent/fees", "/parent/homework-detail?id=12").
+    link: Mapped[Optional[str]] = mapped_column(String(300))
+    # A notice about something happening: when and where, as fields the app
+    # can show instead of prose.
+    event_date: Mapped[Optional[date]] = mapped_column(Date)
+    event_start_time: Mapped[Optional[time]] = mapped_column(Time)
+    event_end_time: Mapped[Optional[time]] = mapped_column(Time)
+    event_venue: Mapped[Optional[str]] = mapped_column(String(200))
     scheduled_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 

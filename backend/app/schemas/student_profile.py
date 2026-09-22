@@ -78,6 +78,7 @@ class StudentProfileRead(BaseModel):
     class_name: Optional[str] = None
     academic_year_id: int
     academic_year_name: Optional[str] = None
+    class_teacher_name: Optional[str] = None
 
     # Cross-module roll-up
     parents: list[ParentContact] = []

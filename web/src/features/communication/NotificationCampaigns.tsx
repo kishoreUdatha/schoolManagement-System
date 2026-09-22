@@ -122,6 +122,12 @@ function Compose({ teacher }: { teacher: boolean }) {
     if (!teacher) {
       body.channels = Array.from(channels);
       body.scheduled_at = day ? new Date(`${day}T${time ?? "09:00"}`).toISOString() : null;
+      // What it is about, and when/where for an event — shown as fields in the parent app.
+      body.category = text("category") ?? "general";
+      body.event_date = text("event_date");
+      body.event_start_time = text("event_start_time");
+      body.event_end_time = text("event_end_time");
+      body.event_venue = text("event_venue");
     }
     if (send && !window.confirm(`Send "${body.title}" now?`)) return;
     setSaving(true);
@@ -287,6 +293,21 @@ function Compose({ teacher }: { teacher: boolean }) {
                   <>
                     {field("Schedule date", <input type="date" name="schedule_date" defaultValue={scheduled ? `${scheduled.getFullYear()}-${p(scheduled.getMonth() + 1)}-${p(scheduled.getDate())}` : ""} />)}
                     {field("Schedule time", <input type="time" name="schedule_time" defaultValue={scheduled ? `${p(scheduled.getHours())}:${p(scheduled.getMinutes())}` : ""} />)}
+                    {field(
+                      "Category",
+                      <select name="category" defaultValue={n?.category ?? "general"}>
+                        <option value="general">School updates</option>
+                        <option value="events">Events</option>
+                        <option value="exams">Exams</option>
+                        <option value="homework">Homework</option>
+                        <option value="attendance">Attendance</option>
+                        <option value="fees">Fees</option>
+                      </select>,
+                    )}
+                    {field("Event date", <input type="date" name="event_date" defaultValue={n?.event_date ?? ""} />)}
+                    {field("Event starts", <input type="time" name="event_start_time" defaultValue={n?.event_start_time?.slice(0, 5) ?? ""} />)}
+                    {field("Event ends", <input type="time" name="event_end_time" defaultValue={n?.event_end_time?.slice(0, 5) ?? ""} />)}
+                    {field("Event venue", <input name="event_venue" maxLength={200} defaultValue={n?.event_venue ?? ""} placeholder="e.g. School auditorium" />)}
                   </>
                 ) : null}
                 {field("Attachment link", <input type="url" name="attachment_url" maxLength={500} defaultValue={n?.attachment_url ?? ""} placeholder="https://…" />, false, true)}
