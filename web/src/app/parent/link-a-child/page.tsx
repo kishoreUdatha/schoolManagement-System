@@ -2,8 +2,8 @@
 // Parent app · Module: Access · Release: MVP · ERP: SCR-074
 // Feature: Request a verified relationship to an existing student.
 // Mock: Parent_Mobile_58_Screens/screens/PM-004_link_a_child.html
-// Wired: GET /api/v1/parent/me/children (via useParent, "Check again"). Hand-maintained.
-// Not wired: the link request form — no self-linking endpoint; the school links children, so the pack's pending-verification state is shown.
+// Wired: POST /api/v1/parent/me/requests/link-child, GET /parent/me/requests?kind=link_child, POST /requests/{id}/cancel,
+// GET /api/v1/parent/me/children (via useParent, "Check again"). The school approves on SCR-074 Link Children. Hand-maintained.
 
 import { ParentShell } from "@/components/parent/ParentShell";
 import { LinkChild } from "@/features/parent/access/LinkChild";

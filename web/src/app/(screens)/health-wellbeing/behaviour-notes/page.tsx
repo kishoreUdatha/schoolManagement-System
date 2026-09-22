@@ -2,7 +2,7 @@
 // Module: Health / Counselling / Discipline · Role: Teacher · Release: Extension
 // New screen (no mock)
 // Backend: the old frontend served this at /teacher/behaviour
-// Wired: GET /api/v1/teacher/my-classes, GET /teacher/behaviour/section/{section_id} (?period_kind=&period_key=), GET /teacher/behaviour/student/{student_id}, POST /teacher/behaviour, POST /teacher/behaviour/ai-suggest (suggestion only). Hand-maintained.
+// Wired: GET /api/v1/teacher/my-classes, GET /teacher/behaviour/section/{section_id} (?period_kind=&period_key=), GET /teacher/behaviour/student/{student_id}, POST /teacher/behaviour, POST /teacher/behaviour/ai-suggest (suggestion only); achievements GET/POST /api/v1/school/parent-services/achievements, PATCH/DELETE /achievements/{id}. Hand-maintained.
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";

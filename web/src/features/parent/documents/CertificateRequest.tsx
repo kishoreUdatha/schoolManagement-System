@@ -2,7 +2,8 @@
 
 /*
  * PM-042 · Certificate request. The certificates this school lets parents
- * request, the request form, and the status of earlier requests (issued ones
+ * request, the request form (with how the parent wants it: a digital copy or
+ * collected at the office), and the status of earlier requests (issued ones
  * open as PDF).
  */
 
@@ -13,6 +14,8 @@ import { date, label } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { ChildGate, PmEmpty, PmError, PmLoading, useChildPath, valueClass, type Tone } from "../support/pm";
 import type { Certificate, CertificateTemplate } from "./types";
+
+const DELIVERY: Record<string, string> = { digital: "Digital copy", collect: "Collect from office" };
 
 const tone: Record<Certificate["status"], Tone> = { requested: "warning", issued: "good", rejected: "bad", cancelled: "" };
 
@@ -31,6 +34,7 @@ function Request() {
   const mine = useApi<Certificate[]>(base && `${base}/certificates`);
   const [templateId, setTemplateId] = useState("");
   const [purpose, setPurpose] = useState("");
+  const [delivery, setDelivery] = useState<"digital" | "collect">("digital");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -43,7 +47,7 @@ function Request() {
     setBusy(true);
     setErr(null);
     try {
-      await api.post(`${base}/certificates`, { template_id: Number(chosen), purpose: purpose.trim() });
+      await api.post(`${base}/certificates`, { template_id: Number(chosen), purpose: purpose.trim(), delivery_preference: delivery });
       notify("Request sent. The school office will review it.");
       setPurpose("");
       mine.reload();
@@ -85,7 +89,13 @@ function Request() {
               maxLength={300}
             />
           </label>
-          {/* Not wired: delivery preference (digital copy / collect from school) — no field in the request API. */}
+          <label className="field">
+            Delivery
+            <select value={delivery} onChange={(e) => setDelivery(e.target.value as "digital" | "collect")}>
+              <option value="digital">Digital copy in the app</option>
+              <option value="collect">Collect from the school office</option>
+            </select>
+          </label>
           <div className="panel soft">
             <p>Requests are reviewed by the school office. Transfer certificates may require additional approvals.</p>
           </div>
@@ -105,6 +115,7 @@ function Request() {
                 <strong>{c.template_name ?? label(c.kind)}</strong>
                 <small>
                   {c.purpose ?? "—"} · Requested {date(c.created_at)}
+                  {c.delivery_preference ? ` · ${DELIVERY[c.delivery_preference] ?? c.delivery_preference}` : ""}
                   {c.remarks ? ` · ${c.remarks}` : ""}
                 </small>
               </span>

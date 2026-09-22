@@ -1,9 +1,9 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.deps import ParentUser
@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models.online_payment import FeePaymentOrder
 from app.schemas.online_payment import CheckoutRead, OrderRead, PayRequest, VerifyRequest
 from app.services import online_payment_service as svc
+from app.services.parent_services_service import year_range
 
 
 router = APIRouter()
@@ -50,13 +51,19 @@ def report_failure(
 
 
 @router.get("/{student_id}/payments", response_model=list[OrderRead])
-def payment_history(student_id: int, current_user: ParentUser, db: Db):
-    require_linked_child(db, current_user.id, student_id)
-    orders = db.execute(
-        select(FeePaymentOrder)
-        .where(FeePaymentOrder.student_id == student_id)
-        .order_by(FeePaymentOrder.created_at.desc())
-    ).scalars()
+def payment_history(
+    student_id: int, current_user: ParentUser, db: Db, academic_year_id: Optional[int] = None
+):
+    student = require_linked_child(db, current_user.id, student_id)
+    stmt = select(FeePaymentOrder).where(FeePaymentOrder.student_id == student_id)
+    # An academic year filters by when the payment was started.
+    rng = year_range(db, student.school_id, academic_year_id)
+    if rng:
+        stmt = stmt.where(
+            func.date(FeePaymentOrder.created_at) >= rng[0],
+            func.date(FeePaymentOrder.created_at) <= rng[1],
+        )
+    orders = db.execute(stmt.order_by(FeePaymentOrder.created_at.desc())).scalars()
     return [OrderRead.model_validate(svc.order_to_read(db, o)) for o in orders]
 
 

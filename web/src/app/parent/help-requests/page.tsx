@@ -2,7 +2,7 @@
 // Parent app · Module: Support · Release: MVP · ERP: SCR-017 / SCR-253
 // Feature: Track parent queries with category, ownership and replies.
 // Mock: Parent_Mobile_58_Screens/screens/PM-044_help_requests.html
-// Wired: GET /api/v1/parent/me/conversations (this child's). Hand-maintained.
+// Wired: GET /api/v1/parent/me/help-tickets (?student_id=), GET /api/v1/parent/me/conversations (this child's), GET /api/v1/parent/me/school-contact. Hand-maintained.
 
 import { ParentShell } from "@/components/parent/ParentShell";
 import { HelpRequests } from "@/features/parent/support/HelpRequests";

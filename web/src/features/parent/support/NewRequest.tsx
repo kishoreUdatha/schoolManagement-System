@@ -1,9 +1,10 @@
 "use client";
 
 /*
- * PM-045 · New request. There is no parent help-desk endpoint, so a request
- * goes where the API can take it:
- *  - to one of the child's teachers, as a conversation about this child
+ * PM-045 · New request. A request goes to:
+ *  - the school office's help desk (POST /parent/me/help-tickets), the
+ *    default, owned and answered by the office; or
+ *  - one of the child's teachers, as a conversation about this child
  *    (POST /parent/me/conversations), with the category and subject as its
  *    first line, and any attachment on that first message
  *    (POST …/conversations/{id}/files); or
@@ -20,11 +21,13 @@ import { label } from "@/lib/format";
 import { parentRoute } from "@/lib/parentScreens";
 import { useApi } from "@/lib/useApi";
 import { ChildGate, PmError, useChildPath } from "./pm";
+import { ME, type Ticket } from "./services";
 import type { Conversation, TeacherContact } from "./types";
 
 const CATEGORIES = ["General enquiry", "Attendance", "Fees & payment", "Transport", "Student details", "Health record", "App access"];
 const HOSTEL = "Hostel (to the warden)";
 const HOSTEL_KINDS = ["maintenance", "food", "cleanliness", "security", "roommate", "other"];
+const OFFICE = "office";
 
 export function NewRequest() {
   return (
@@ -41,7 +44,7 @@ function Form() {
   const teachers = useApi<TeacherContact[]>(base && `${base}/teacher-contacts`);
   const hostel = useApi<{ hostel_name: string } | null>(base && `${base}/hostel`);
   const [category, setCategory] = useState(CATEGORIES[0]);
-  const [teacher, setTeacher] = useState("");
+  const [teacher, setTeacher] = useState(OFFICE);
   const [hostelKind, setHostelKind] = useState("maintenance");
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
@@ -51,6 +54,7 @@ function Form() {
 
   const toHostel = category === HOSTEL;
   const contacts = teachers.data ?? [];
+  const toOffice = teacher === OFFICE;
   const teacherId = contacts.some((t) => String(t.teacher_user_id) === teacher) ? teacher : contacts[0] ? String(contacts[0].teacher_user_id) : "";
 
   async function submit(e: FormEvent) {
@@ -64,6 +68,15 @@ function Form() {
         await api.post(`${base}/hostel/complaints`, { category: hostelKind, description: text });
         notify("Sent to the hostel warden.");
         go(52);
+      } else if (toOffice) {
+        const t = await api.post<Ticket>(`${ME}/help-tickets`, {
+          student_id: childId,
+          category,
+          subject: subject.trim() || category,
+          description: description.trim(),
+        });
+        notify("Sent to the school office.");
+        router.push(`${parentRoute(46)}?ticket=${t.id}`);
       } else {
         if (!teacherId) throw new Error("Choose who should receive the request.");
         const head = `${category}${subject.trim() ? `: ${subject.trim()}` : ""}`;
@@ -116,8 +129,9 @@ function Form() {
       ) : (
         <label className="field">
           Send to
-          <select value={teacherId} onChange={(e) => setTeacher(e.target.value)} required>
-            {contacts.length === 0 ? <option value="">{teachers.loading ? "Loading…" : "No teachers available"}</option> : null}
+          <select value={toOffice ? OFFICE : teacherId} onChange={(e) => setTeacher(e.target.value)} required>
+            <option value={OFFICE}>School office (help desk)</option>
+            {contacts.length === 0 && teachers.loading ? <option value="" disabled>Loading teachers…</option> : null}
             {contacts.map((t) => (
               <option key={t.teacher_user_id} value={t.teacher_user_id}>
                 {t.teacher_name}
@@ -152,14 +166,15 @@ function Form() {
           maxLength={1800}
         />
       </label>
-      {toHostel ? null : (
+      {/* Files go with a message to a teacher; office tickets and hostel complaints take none. */}
+      {toHostel || toOffice ? null : (
         <label className="field">
           Attachment (optional)
           <input type="file" multiple accept={ATTACH_ACCEPT} onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
           <small className="micro">{ATTACH_RULES}</small>
         </label>
       )}
-      <button className="action" type="submit" disabled={busy || (!toHostel && !teacherId)}>
+      <button className="action" type="submit" disabled={busy || (!toHostel && !toOffice && !teacherId)}>
         {busy ? "Sending…" : "Send request"}
       </button>
     </form>

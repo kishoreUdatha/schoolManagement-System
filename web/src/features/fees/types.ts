@@ -49,6 +49,12 @@ export type StudentFee = {
   payment_ref: string | null;
   payment_mode: string | null;
   notes: string | null;
+  /** 'late_fee' for a fine raised on an overdue fee (source_id is that fee). */
+  source?: string | null;
+  source_id?: number | null;
+  is_late_fee?: boolean;
+  /** One invoice per student per fee period. */
+  invoice_no?: string | null;
 };
 
 export type FinanceDashboard = {

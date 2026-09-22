@@ -12,6 +12,7 @@ import { dateTime } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, Note, isoDay } from "@/features/self/kit";
+import { AchievementsDialog } from "./AchievementsDialog";
 import type { MyClasses, PeriodKind, Rating, SectionView, Suggestion } from "./types";
 
 const BASE = "/api/v1/teacher/behaviour";
@@ -69,6 +70,7 @@ export function BehaviourNotes() {
   const [search, setSearch] = useState("");
   const [rating, setRating] = useState<Target | null>(null);
   const [history, setHistory] = useState<Target | null>(null);
+  const [awards, setAwards] = useState<Target | null>(null);
 
   useEffect(() => {
     if (sectionId === null && sections.length) setSectionId((sections.find((s) => s.is_current_year) ?? sections[0]).section_id);
@@ -158,6 +160,9 @@ export function BehaviourNotes() {
                 <button type="button" className="btn" onClick={() => setHistory(t)}>
                   History
                 </button>
+                <button type="button" className="btn" onClick={() => setAwards(t)}>
+                  Achievements
+                </button>
                 <button type="button" className={`btn ${r.rating ? "" : "primary"}`} onClick={() => setRating(t)}>
                   {r.rating ? "Edit" : "Rate"}
                 </button>
@@ -170,6 +175,7 @@ export function BehaviourNotes() {
 
       {rating ? <RateDialog target={rating} kind={kind} periodKey={view.data?.period_key ?? key} period={period} onClose={() => setRating(null)} onSaved={saved} /> : null}
       {history ? <HistoryDialog target={history} onClose={() => setHistory(null)} /> : null}
+      {awards ? <AchievementsDialog student={awards} onClose={() => setAwards(null)} /> : null}
     </>
   );
 }

@@ -1003,6 +1003,22 @@ app.include_router(
     tags=["parent / study material"],
 )
 
+# Parent services area: parents' requests, help desk, surveys, achievements…
+from app.api.v1.parent import parent_services as parent_parent_services  # noqa: E402
+from app.api.v1.school import parent_services as school_parent_services  # noqa: E402
+
+app.include_router(
+    parent_parent_services.router,
+    prefix="/api/v1/parent/me",
+    tags=["parent / requests, help desk, surveys"],
+)
+
+app.include_router(
+    school_parent_services.router,
+    prefix="/api/v1/school/parent-services",
+    tags=["school / parent requests, help desk, surveys"],
+)
+
 
 @app.get("/")
 def root():

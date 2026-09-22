@@ -2,7 +2,7 @@
 // Parent app · Module: Progress & resources · Release: Phase 2 · ERP: SCR-270 / SCR-271
 // Feature: Summarize teacher-published learning progress, strengths and support needs.
 // Mock: Parent_Mobile_58_Screens/screens/PM-055_weekly_progress.html
-// Wired: GET /api/v1/parent/me/children/{id}/weekly-reports. Hand-maintained.
+// Wired: GET /api/v1/parent/me/children/{id}/weekly-reports, GET /api/v1/parent/me/children/{id}/weekly-reports/{report}/subjects. Hand-maintained.
 
 import { ParentShell } from "@/components/parent/ParentShell";
 import { WeeklyProgress } from "@/features/parent/progress/WeeklyProgress";

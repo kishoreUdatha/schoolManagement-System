@@ -3,7 +3,9 @@
 /*
  * PM-055 · Weekly progress. Weekly reports the class teacher has shared
  * with parents (GET …/weekly-reports, latest first): the teacher's note,
- * attendance, homework, marks and behaviour for the chosen week.
+ * attendance, homework, marks and behaviour for the chosen week, and each
+ * subject's topics, homework and tests that week with an "On track" /
+ * "Practice" label (GET /parent/me/children/{id}/weekly-reports/{rid}/subjects).
  */
 
 import { useState } from "react";
@@ -31,6 +33,21 @@ type Report = {
   shared_at: string | null;
 };
 
+type SubjectWeek = {
+  subject_name: string;
+  topics: string[];
+  homework_total: number;
+  homework_submitted: number;
+  marks_pct: number | null;
+  label: "on_track" | "practice" | "no_activity";
+};
+
+const SUBJECT_LABEL: Record<SubjectWeek["label"], [string, string]> = {
+  on_track: ["On track", "value good"],
+  practice: ["Practice", "value warning"],
+  no_activity: ["—", "value"],
+};
+
 export function WeeklyProgress() {
   return (
     <ChildGate>
@@ -40,9 +57,11 @@ export function WeeklyProgress() {
 }
 
 function Weekly() {
-  const { go } = useParent();
+  const { go, childId } = useParent();
   const reports = useApi<Report[]>(useChildPath("/weekly-reports"), { limit: 12 });
   const [pick, setPick] = useState<number | null>(null);
+  const shownId = (reports.data ?? []).filter((x) => x.shared_at).find((x) => x.id === pick)?.id ?? reports.data?.find((x) => x.shared_at)?.id;
+  const subjects = useApi<SubjectWeek[]>(childId && shownId ? `/api/v1/parent/me/children/${childId}/weekly-reports/${shownId}/subjects` : null);
 
   if (reports.loading && !reports.data) return <PmLoading />;
   if (!reports.data) return <PmError>{reports.error}</PmError>;
@@ -116,7 +135,33 @@ function Weekly() {
           <span className="value">{r.behaviour_avg.toFixed(1)} / 5</span>
         </button>
       ) : null}
-      {/* Not wired: per-subject topics and "On track / Practice" labels — the weekly report has no subject breakdown. */}
+      {subjects.data && subjects.data.some((s) => s.label !== "no_activity") ? (
+        <section className="section">
+          <h3>Subjects this week</h3>
+          {subjects.data
+            .filter((s) => s.label !== "no_activity")
+            .map((s) => (
+              <div key={s.subject_name} className="item">
+                <span>
+                  <strong>{s.subject_name}</strong>
+                  <small>
+                    {[
+                      s.topics.length ? s.topics.join(", ") : null,
+                      s.homework_total ? `${s.homework_submitted}/${s.homework_total} homework` : null,
+                      s.marks_pct !== null ? `tests ${pct(s.marks_pct, 0)}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </small>
+                </span>
+                <span className={SUBJECT_LABEL[s.label][1]}>{SUBJECT_LABEL[s.label][0]}</span>
+              </div>
+            ))}
+        </section>
+      ) : subjects.data ? (
+        <p className="micro">No topics, homework or tests were recorded by subject this week.</p>
+      ) : null}
+      <PmError>{subjects.error}</PmError>
       <button className="action secondary" onClick={() => go(45)}>
         Message class teacher
       </button>

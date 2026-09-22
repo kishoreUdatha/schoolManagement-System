@@ -589,7 +589,16 @@ def _to_read_dict(
         "payment_ref": sf.payment_ref,
         "payment_mode": sf.payment_mode,
         "notes": sf.notes,
+        "source": sf.source,
+        "source_id": sf.source_id,
+        "is_late_fee": sf.source == "late_fee",
+        "invoice_no": invoice_no(student, sf.period),
     }
+
+
+def invoice_no(student: Student, period: str) -> str:
+    """One invoice per student per fee period: INV-<period>-<admission no>."""
+    return f"INV-{period.replace('-', '')}-{student.admission_no}"
 
 
 def get_student_fee(db: Session, fee_id: int, school_id: int) -> dict:

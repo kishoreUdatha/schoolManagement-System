@@ -4,7 +4,8 @@
  * PM-035 · Inbox and PM-036 · Conversation. Conversations are per parent and
  * per child; these screens show only the selected child's. A new
  * conversation starts with one of the child's teachers
- * (GET …/teacher-contacts), created by the first message.
+ * (GET …/teacher-contacts), created by the first message. The school's
+ * communication hours come from GET /parent/me/school-contact.
  */
 
 import { useRouter } from "next/navigation";
@@ -15,6 +16,7 @@ import { api, errorText } from "@/lib/api";
 import { date, dateTime } from "@/lib/format";
 import { parentRoute } from "@/lib/parentScreens";
 import { useApi } from "@/lib/useApi";
+import { ME, type SchoolContact } from "../support/services";
 import { PmEmpty, PmError, PmLoading, useEvery, useGoTo, useQueryId } from "./ui";
 
 export type Conversation = {
@@ -69,6 +71,7 @@ export function Inbox() {
   const goTo = useGoTo();
   const convs = useApi<Conversation[]>(CONVS);
   const teachers = useApi<TeacherContact[]>(childId ? `/api/v1/parent/me/children/${childId}/teacher-contacts` : null);
+  const contact = useApi<SchoolContact>(`${ME}/school-contact`);
 
   if (!childId || (convs.loading && !convs.data)) return <PmLoading />;
   const mine = (convs.data ?? []).filter((c) => c.student_id === childId);
@@ -120,7 +123,15 @@ export function Inbox() {
           </div>
         </>
       ) : null}
-      {/* Not wired: school communication hours — no endpoint provides them. */}
+      {contact.data?.communication_hours ? (
+        <p className="office-hours">
+          <span>
+            <b>School communication hours</b>
+            <br />
+            {contact.data.communication_hours}. Messages sent outside these hours are answered on the next school day.
+          </span>
+        </p>
+      ) : null}
       <button className="action secondary" onClick={() => goTo(45)}>
         Contact school office
       </button>

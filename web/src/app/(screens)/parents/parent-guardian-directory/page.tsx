@@ -2,12 +2,14 @@
 // Module: Parents & Guardians · Role: School Admin · Release: MVP · Stories: US-0141 / US-0142
 // Mock: screens/SCR-071_Parent_Guardian_Directory.html
 // Backend: the old frontend served this at /school/parents — Search, status filter, linked children
-// Wired: GET /api/v1/school/parents (status, search), /academic-years, /classes. Hand-maintained.
+// Wired: GET /api/v1/school/parents (status, search), /academic-years, /classes;
+// contact-detail changes parents asked for: GET /api/v1/school/parent-services/requests?kind=contact_change, POST /requests/{id}/decide. Hand-maintained.
 
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { AppShell } from "@/components/shell/AppShell";
 import { ParentDirectory } from "@/features/parents/ParentDirectory";
+import { ParentRequestsPanel } from "@/features/parents/ParentRequestsPanel";
 
 export const metadata = { title: "SCR-071 · Parent / Guardian Directory · BrightCampus" };
 
@@ -24,6 +26,12 @@ export default function Page() {
         </Link>
       </>}>
       <ParentDirectory />
+      <ParentRequestsPanel
+        title="Contact detail changes"
+        sub="New mobile numbers and email addresses parents asked for in the app. Approving updates their sign-in details."
+        list="/api/v1/school/parent-services/requests"
+        kind="contact_change"
+      />
     </AppShell>
   );
 }

@@ -377,3 +377,15 @@ __all__ = [
     "WeeklyReport",
     "Attachment",
 ]
+
+from app.models.parent_services import (  # noqa: E402,F401  parent services area
+    CanteenMenu,
+    HelpTicket,
+    HelpTicketReply,
+    ParentRequest,
+    ParentServiceSettings,
+    ProjectMilestone,
+    StudentAchievement,
+    Survey,
+    SurveyResponse,
+)

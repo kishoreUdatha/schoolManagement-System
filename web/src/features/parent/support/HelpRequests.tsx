@@ -1,11 +1,11 @@
 "use client";
 
 /*
- * PM-044 · Help & requests. The API has no parent help-desk tickets, so a
- * "request" here is a conversation this parent opened with one of the
- * child's teachers about this child (GET /parent/me/conversations, filtered
- * to the selected child): who owns it, the latest reply and whether it is
- * closed.
+ * PM-044 · Help & requests. Two kinds of request about the selected child:
+ * questions to the school office's help desk (GET /parent/me/help-tickets,
+ * owned by the office, with status) and conversations with one of the
+ * child's teachers (GET /parent/me/conversations). "Contact school" shows
+ * the office hours and contacts (GET /parent/me/school-contact).
  */
 
 import Link from "next/link";
@@ -14,6 +14,7 @@ import { dateTime } from "@/lib/format";
 import { parentRoute } from "@/lib/parentScreens";
 import { useApi } from "@/lib/useApi";
 import { ChildGate, PmEmpty, PmError, PmLoading } from "./pm";
+import { ME, TICKET_STATUS, type SchoolContact, type Ticket } from "./services";
 import type { Conversation } from "./types";
 
 export function HelpRequests() {
@@ -22,6 +23,12 @@ export function HelpRequests() {
       <Requests />
     </ChildGate>
   );
+}
+
+export function ticketStatus(t: Ticket): [text: string, cls: string] {
+  if (t.status === "resolved") return ["Resolved", "value good"];
+  if (t.parent_unread > 0) return ["New reply", "value warning"];
+  return [TICKET_STATUS[t.status], "value"];
 }
 
 export function requestStatus(c: Conversation): [text: string, cls: string] {
@@ -33,12 +40,31 @@ export function requestStatus(c: Conversation): [text: string, cls: string] {
 function Requests() {
   const { childId, go } = useParent();
   const all = useApi<Conversation[]>(`/api/v1/parent/me/conversations`);
+  const tickets = useApi<Ticket[]>(`${ME}/help-tickets`, { student_id: childId });
+  const contact = useApi<SchoolContact>(`${ME}/school-contact`);
   const mine = (all.data ?? []).filter((c) => c.student_id === childId);
+  const office = tickets.data ?? [];
+  const c = contact.data;
 
   return (
     <>
-      <PmError>{all.error}</PmError>
-      {all.loading && !all.data ? <PmLoading /> : null}
+      <PmError>{all.error || tickets.error}</PmError>
+      {(all.loading && !all.data) || (tickets.loading && !tickets.data) ? <PmLoading /> : null}
+      {office.map((t) => {
+        const [text, cls] = ticketStatus(t);
+        return (
+          <Link key={`t${t.id}`} className="item" href={`${parentRoute(46)}?ticket=${t.id}`}>
+            <span>
+              <strong>{t.subject}</strong>
+              <small>
+                School office · {t.category}
+                {t.last_reply ? ` · ${t.last_reply.slice(0, 50)}${t.last_reply.length > 50 ? "…" : ""}` : ""} · Updated {dateTime(t.last_activity_at ?? t.created_at)}
+              </small>
+            </span>
+            <span className={cls}>{text}</span>
+          </Link>
+        );
+      })}
       {mine.map((c) => {
         const [text, cls] = requestStatus(c);
         return (
@@ -54,15 +80,28 @@ function Requests() {
           </Link>
         );
       })}
-      {all.data && mine.length === 0 ? (
-        <PmEmpty title="No requests yet">Questions you send to your child’s teachers will appear here with their replies.</PmEmpty>
+      {all.data && tickets.data && mine.length === 0 && office.length === 0 ? (
+        <PmEmpty title="No requests yet">Questions you send to the school office or your child’s teachers will appear here with their replies.</PmEmpty>
       ) : null}
       <button className="action" onClick={() => go(45)}>
         Create a request
       </button>
       <section className="section">
         <h3>Contact school</h3>
-        {/* Not wired: school-office help desk (hours, office-owned tickets) — no parent endpoint. */}
+        {c && (c.office_hours || c.office_phone || c.office_email) ? (
+          <div className="panel soft">
+            <span className="eyebrow">SCHOOL OFFICE HELP DESK</span>
+            {c.office_hours ? <p>Open {c.office_hours}</p> : null}
+            {c.office_phone || c.office_email ? (
+              <p>
+                {c.office_phone ? <a href={`tel:${c.office_phone.replace(/\s/g, "")}`}>{c.office_phone}</a> : null}
+                {c.office_phone && c.office_email ? " · " : ""}
+                {c.office_email ? <a href={`mailto:${c.office_email}`}>{c.office_email}</a> : null}
+              </p>
+            ) : null}
+            {c.help_desk_note ? <small>{c.help_desk_note}</small> : null}
+          </div>
+        ) : null}
         <button className="item" onClick={() => go(43)}>
           <span>
             <strong>Health & emergency details</strong>

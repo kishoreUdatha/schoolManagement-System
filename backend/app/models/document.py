@@ -150,6 +150,9 @@ class CertificateIssue(Base, PrimaryKeyMixin, TimestampMixin):
     )
     remarks: Mapped[Optional[str]] = mapped_column(String(500))
     print_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # How the parent wants a requested certificate: "digital" (download from
+    # the app) or "collect" (from the school office). Null for office-issued ones.
+    delivery_preference: Mapped[Optional[str]] = mapped_column(String(20))
 
 
 class CertificateSequence(Base, PrimaryKeyMixin):

@@ -1,7 +1,7 @@
 """Story 17.2 — Parent-side messaging endpoints."""
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import ParentUser
@@ -152,6 +152,25 @@ def mark_read(
     db: Annotated[Session, Depends(get_db)],
 ):
     c = messaging_service.mark_read(db, conversation_id, current_user.id)
+    return ConversationRead.model_validate(
+        messaging_service._conversation_read_dict(db, c, viewer_role="parent")
+    )
+
+
+@router.post(
+    "/conversations/{conversation_id}/resolve",
+    response_model=ConversationRead,
+    summary="Mark my conversation resolved (a new message reopens it)",
+)
+def resolve(
+    conversation_id: int,
+    current_user: ParentUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    c = messaging_service.get_conversation_for_viewer(db, conversation_id, current_user.id)
+    if c.parent_user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your conversation")
+    c = messaging_service.set_closed(db, conversation_id, current_user, True)
     return ConversationRead.model_validate(
         messaging_service._conversation_read_dict(db, c, viewer_role="parent")
     )

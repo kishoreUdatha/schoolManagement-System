@@ -2,7 +2,7 @@
 // Parent app · Module: Transport · Release: Phase 2 · ERP: SCR-189 / SCR-191
 // Feature: View assigned route, designated stop and timing.
 // Mock: Parent_Mobile_58_Screens/screens/PM-031_route_stops.html
-// Wired: GET /api/v1/parent/me/children/{id}/transport. Hand-maintained.
+// Wired: GET /api/v1/parent/me/children/{id}/transport, GET /api/v1/parent/me/children/{id}/transport/stops. Hand-maintained.
 
 import { Suspense } from "react";
 import { ParentShell } from "@/components/parent/ParentShell";

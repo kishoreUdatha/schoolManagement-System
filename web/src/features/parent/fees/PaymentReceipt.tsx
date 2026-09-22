@@ -1,6 +1,10 @@
 "use client";
 
-/* PM-028 · Payment receipt for a server-verified online payment (?order=), with the school's PDF. */
+/*
+ * PM-028 · Payment receipt for a server-verified online payment (?order=),
+ * with the school's PDF. The school's name and logo come from the caller's
+ * branding (GET /api/v1/branding/me).
+ */
 
 import { useState } from "react";
 import { initialsOf, useParent } from "@/components/parent/ParentShell";
@@ -8,6 +12,7 @@ import { api, errorText } from "@/lib/api";
 import { dateTime, money } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { PmEmpty, PmLoading, PmError, useGoTo, useQueryId } from "../comms/ui";
+import { BRANDING_PATH, type Branding } from "../home/parts";
 import { periodLabel, paymentsPath, type OnlineOrder } from "./common";
 
 export function PaymentReceipt() {
@@ -15,6 +20,7 @@ export function PaymentReceipt() {
   const goTo = useGoTo();
   const orderId = useQueryId("order");
   const orders = useApi<OnlineOrder[]>(childId ? paymentsPath(childId) : null);
+  const school = useApi<Branding>(BRANDING_PATH);
   const [busy, setBusy] = useState<"open" | "download" | null>(null);
 
   if (!childId || orders.loading) return <PmLoading />;
@@ -48,8 +54,8 @@ export function PaymentReceipt() {
   return (
     <>
       <div className="report">
-        {/* Not wired: school name and logo on screen — not in the order response (the PDF carries them). */}
-        <div className="report-logo">{initialsOf(o.student_name)}</div>
+        <SchoolMark school={school.data} />
+        {school.data ? <p>{school.data.name}</p> : null}
         <h3>PAYMENT RECEIPT</h3>
         <p>Online fee payment</p>
         <hr />
@@ -96,4 +102,15 @@ export function PaymentReceipt() {
       </button>
     </>
   );
+}
+
+/** The school's logo, or its initials when it has none. */
+export function SchoolMark({ school }: { school: Branding | null }) {
+  if (school?.logo_url) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img className="report-logo" src={school.logo_url} alt={school.name} style={{ objectFit: "contain", background: "white" }} />
+    );
+  }
+  return <div className="report-logo">{school ? initialsOf(school.name) : "…"}</div>;
 }

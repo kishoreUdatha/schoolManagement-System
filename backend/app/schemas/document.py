@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -113,6 +113,8 @@ class CertificateIssueCreate(BaseModel):
 class CertificateRequestCreate(BaseModel):
     template_id: int
     purpose: str = Field(..., min_length=3, max_length=300)
+    # digital: download from the parent app once issued; collect: at the office.
+    delivery_preference: Literal["digital", "collect"] = "digital"
 
 
 class CertificateDecision(BaseModel):
@@ -146,6 +148,7 @@ class CertificateRead(BaseModel):
     requested_by_name: Optional[str] = None
     remarks: Optional[str] = None
     print_count: int
+    delivery_preference: Optional[str] = None
     created_at: datetime
 
 
