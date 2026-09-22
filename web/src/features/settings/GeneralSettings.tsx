@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
@@ -7,6 +8,7 @@ import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
+import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { BoardSelect, Field, orNull } from "@/features/setup/bits";
 import type { SchoolProfile } from "@/features/setup/types";
@@ -51,6 +53,22 @@ export function SchoolSettings() {
   if (profile.loading && !profile.data) return <Loading what="Loading settings…" />;
   const s = profile.data;
   const current = years.data?.find((y) => y.is_current);
+
+  // Choosing a year here makes it the school's current year at once
+  // (POST /academic-years/{id}/set-current); the rest of the form saves with the button.
+  async function makeCurrent(id: number) {
+    const y = years.data?.find((x) => x.id === id);
+    if (!y || y.is_current) return;
+    if (!window.confirm(`Make ${y.name} the current academic year? Classes, attendance and fees switch to it.`)) return;
+    setError(null);
+    try {
+      await api.post(`/api/v1/school/academic-years/${id}/set-current`);
+      notify(`${y.name} is now the current academic year.`);
+      await years.reload();
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -106,15 +124,22 @@ export function SchoolSettings() {
                 <Field label="Board">
                   <BoardSelect value={s.board} />
                 </Field>
-                <Field label="Academic year">
-                  <select aria-label="Academic year" value={current?.id ?? ""} disabled>
-                    {!current ? <option value="">None is current</option> : null}
-                    {years.data?.map((y) => (
-                      <option key={y.id} value={y.id}>
-                        {`${y.name}${y.is_current ? " (current)" : ""}`}
-                      </option>
-                    ))}
-                  </select>
+                <Field label="Current academic year">
+                  {years.data && !years.data.length ? (
+                    <Link href={routeOf(28)} className="btn" style={{ justifyContent: "center" }}>
+                      <Icon name="plus" className="sm" />
+                      Create the first academic year
+                    </Link>
+                  ) : (
+                    <select aria-label="Current academic year" value={current?.id ?? ""} onChange={(e) => e.target.value && makeCurrent(Number(e.target.value))} disabled={!years.data}>
+                      {!current ? <option value="">Choose the current year</option> : null}
+                      {years.data?.map((y) => (
+                        <option key={y.id} value={y.id}>
+                          {`${y.name}${y.is_current ? " (current)" : ""}`}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </Field>
                 <Field label="Timezone">
                   <input type="text" name="timezone" defaultValue={s.timezone} placeholder="Asia/Kolkata" />
@@ -139,7 +164,10 @@ export function SchoolSettings() {
             <div className="gap" />
             <div className="tip">
               <Icon name="shield" className="sm" />
-              <span>The current academic year is changed under School setup · Academic Year Setup.</span>
+              <span>
+                {"Choosing a year above makes it current straight away. Years and their terms are added under "}
+                <Link href={routeOf(28)} className="blue">Academic Year Setup</Link>.
+              </span>
             </div>
           </div>
           <div className="form-footer">

@@ -7,6 +7,8 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { Avatar, Person } from "@/components/ui/primitives";
 import { ModuleGroup, PARENT } from "./ModuleGroup";
 import { heldJobs, usePermissions } from "@/lib/jobs";
+import { api, errorText } from "@/lib/api";
+import { notify } from "@/lib/notify";
 import { MODULES, SCREENS, screen, routeOf, type Screen } from "@/lib/screens";
 import { HOME_SCREEN, ROLE_LABEL, session } from "@/lib/session";
 import { useApi } from "@/lib/useApi";
@@ -207,6 +209,45 @@ function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
 
+/**
+ * The school's academic years, with the current one shown. A school admin can
+ * make another year current from here (POST /academic-years/{id}/set-current);
+ * everyone else sees which year is current. Hidden where the list can't be read.
+ */
+function YearSelect({ admin }: { admin: boolean }) {
+  const years = useApi<{ id: number; name: string; is_current: boolean }[]>("/api/v1/school/academic-years");
+  if (!years.data) return null;
+  const current = years.data.find((y) => y.is_current);
+  async function change(id: number) {
+    const y = years.data?.find((x) => x.id === id);
+    if (!y || y.is_current) return;
+    if (!window.confirm(`Make ${y.name} the current academic year for the whole school?`)) return;
+    try {
+      await api.post(`/api/v1/school/academic-years/${id}/set-current`);
+      window.location.reload();
+    } catch (err) {
+      notify(errorText(err));
+    }
+  }
+  return (
+    <select
+      className="academic-select"
+      aria-label="Academic year"
+      value={current?.id ?? ""}
+      disabled={!admin || !years.data.length}
+      title={admin ? "Change the current academic year" : "The school's current academic year"}
+      onChange={(e) => e.target.value && change(Number(e.target.value))}
+    >
+      {!current ? <option value="">{years.data.length ? "No current academic year" : "No academic year yet"}</option> : null}
+      {years.data.map((y) => (
+        <option key={y.id} value={y.id}>
+          {`Academic year ${y.name}`}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 function Topbar({ who, role, school }: { who: string; role: string; school: Branding | null }) {
   return (
     <header className="topbar">
@@ -222,10 +263,7 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
         </div>
       </div>
       <div className="row">
-        <select className="academic-select" aria-label="Academic year">
-          <option>Academic year 2026–27</option>
-          <option>Academic year 2025–26</option>
-        </select>
+        {school ? <YearSelect admin={role === "School Admin"} /> : null}
         <div className="bar-divider" />
         <Link href={routeOf(296)} aria-label="Notifications" className="btn icon">
           <Icon name="bell" />
