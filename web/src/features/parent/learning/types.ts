@@ -1,5 +1,7 @@
 /** Response shapes for the learning screens (from the OpenAPI spec). */
 
+import type { Attachment } from "@/components/ui/Attachments";
+
 export type Homework = {
   id: number;
   subject_name: string | null;
@@ -14,6 +16,8 @@ export type Homework = {
   is_past_due: boolean;
   is_closed: boolean;
   rubric_name: string | null;
+  /** The teacher's uploaded files (attachment_url is the older link). */
+  attachments: Attachment[];
 };
 
 export type SubmissionStatus = "submitted" | "approved" | "rejected";
@@ -36,6 +40,10 @@ export type Submission = {
     total: number | null;
     criteria: { criterion_id: number; criterion_title: string; max_points: number; points: number | null; comment: string | null }[];
   } | null;
+  /** Files handed in with the work. */
+  files: Attachment[];
+  /** The teacher's files on the review. */
+  review_files: Attachment[];
 };
 
 export type Period = { id: number; day_of_week: number; period_number: number; start_time: string; end_time: string; label: string | null; is_break: boolean };

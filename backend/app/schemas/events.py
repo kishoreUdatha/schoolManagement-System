@@ -5,6 +5,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.core.enums import ConsentResponse, EventAudience, EventKind, PtmSlotStatus
+from app.schemas.attachment import AttachmentRead
 
 
 class _AudienceIn(BaseModel):
@@ -71,6 +72,7 @@ class EventRead(BaseModel):
     is_cancelled: bool
     consent_yes: int = 0
     consent_no: int = 0
+    attachments: list[AttachmentRead] = []  # circulars, permission slips
 
 
 class ConsentRow(BaseModel):

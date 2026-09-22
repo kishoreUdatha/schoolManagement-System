@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.enums import ProjectKind, ProjectProgressStatus
+from app.schemas.attachment import AttachmentRead
 
 
 class ProjectCreate(BaseModel):
@@ -43,6 +44,7 @@ class ProjectRead(BaseModel):
     is_past_due: bool
     progress_count: int = 0
     eligible_student_count: int = 0
+    attachments: list[AttachmentRead] = []  # uploaded files; attachment_url stays for links
 
 
 class ProgressUpdate(BaseModel):
@@ -73,3 +75,4 @@ class ProgressRead(BaseModel):
     reviewed_by_name: Optional[str] = None
     reviewed_at: Optional[datetime] = None
     updated_at: datetime
+    review_files: list[AttachmentRead] = []  # the teacher's files on the review

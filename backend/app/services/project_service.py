@@ -27,6 +27,7 @@ from app.schemas.project import (
     ProjectCreate,
     ProjectUpdate,
 )
+from app.services import attachment_service
 
 
 def _to_read_dict(db: Session, p: Project) -> dict:
@@ -68,6 +69,7 @@ def _to_read_dict(db: Session, p: Project) -> dict:
         "is_past_due": p.deadline < date.today(),
         "progress_count": int(progress),
         "eligible_student_count": int(eligible),
+        "attachments": attachment_service.read_for(db, "project", p.id),
     }
 
 
@@ -91,6 +93,7 @@ def _progress_dict(db: Session, pp: ProjectProgress) -> dict:
         "reviewed_by_name": reviewer.full_name if reviewer else None,
         "reviewed_at": pp.reviewed_at,
         "updated_at": pp.updated_at,
+        "review_files": attachment_service.read_for(db, "project_review", pp.id),
     }
 
 
@@ -229,6 +232,10 @@ def delete(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the teacher who created this can delete it",
         )
+    attachment_service.remove_all(db, "project", [p.id])
+    attachment_service.remove_all(db, "project_review", db.execute(
+        select(ProjectProgress.id).where(ProjectProgress.project_id == p.id)
+    ).scalars())
     db.delete(p)
     db.commit()
 
@@ -288,18 +295,7 @@ def teacher_review(
     school_id: int,
     data: ProgressReview,
 ) -> ProjectProgress:
-    pp = db.get(ProjectProgress, progress_id)
-    if not pp or pp.school_id != school_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Progress not found"
-        )
-    project = db.get(Project, pp.project_id)
-    cs = db.get(ClassSubject, project.class_subject_id) if project else None
-    if not cs or cs.teacher_user_id != teacher_user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't teach this project's class-subject",
-        )
+    pp = teacher_progress(db, progress_id, teacher_user_id, school_id)
     pp.teacher_remark = (data.teacher_remark or "").strip() or None
     pp.rating = data.rating
     pp.reviewed_by_user_id = teacher_user_id
@@ -435,3 +431,81 @@ def get_progress_for_child(
             ProjectProgress.student_id == student_id,
         )
     ).scalar_one_or_none()
+
+
+def teacher_progress(
+    db: Session, progress_id: int, teacher_user_id: int, school_id: int
+) -> ProjectProgress:
+    """A progress row the teacher may see: they teach the project's class-subject."""
+    pp = db.get(ProjectProgress, progress_id)
+    if not pp or pp.school_id != school_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Progress not found"
+        )
+    project = db.get(Project, pp.project_id)
+    cs = db.get(ClassSubject, project.class_subject_id) if project else None
+    if not cs or cs.teacher_user_id != teacher_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't teach this project's class-subject",
+        )
+    return pp
+
+
+# ----- Uploaded files -----
+
+def _own_project(db: Session, project_id: int, user: User) -> Project:
+    p = get(db, project_id, user.school_id)
+    if p.created_by_user_id != user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the teacher who created this can change its files",
+        )
+    return p
+
+
+def teacher_add_files(db: Session, project_id: int, user: User, files) -> Project:
+    p = _own_project(db, project_id, user)
+    attachment_service.add(db, kind="project", owner_id=p.id, tenant_id=p.tenant_id,
+                           school_id=p.school_id, user_id=user.id, files=files)
+    return p
+
+
+def teacher_remove_file(db: Session, project_id: int, user: User, attachment_id: int) -> Project:
+    p = _own_project(db, project_id, user)
+    attachment_service.remove(db, attachment_service.get(db, "project", p.id, attachment_id))
+    return p
+
+
+def teacher_add_review_files(db: Session, progress_id: int, user: User, files) -> ProjectProgress:
+    pp = teacher_progress(db, progress_id, user.id, user.school_id)
+    attachment_service.add(db, kind="project_review", owner_id=pp.id, tenant_id=pp.tenant_id,
+                           school_id=pp.school_id, user_id=user.id, files=files)
+    db.refresh(pp)
+    return pp
+
+
+def teacher_remove_review_file(db: Session, progress_id: int, user: User,
+                               attachment_id: int) -> ProjectProgress:
+    pp = teacher_progress(db, progress_id, user.id, user.school_id)
+    attachment_service.remove(db, attachment_service.get(db, "project_review", pp.id, attachment_id))
+    db.refresh(pp)
+    return pp
+
+
+def parent_file(db: Session, parent_user_id: int, student_id: int, project_id: int, attachment_id: int):
+    """The project brief's files, or the teacher's review files on this child's work."""
+    student = _verify_parent_owns(db, parent_user_id, student_id)
+    project = db.get(Project, project_id)
+    cs = db.get(ClassSubject, project.class_subject_id) if project else None
+    sec = db.get(Section, student.section_id)
+    if not project or project.school_id != student.school_id or not cs or not sec or cs.class_id != sec.class_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    try:
+        return attachment_service.get(db, "project", project.id, attachment_id)
+    except HTTPException:
+        pass
+    pp = get_progress_for_child(db, parent_user_id, student_id, project_id)
+    if not pp:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+    return attachment_service.get(db, "project_review", pp.id, attachment_id)

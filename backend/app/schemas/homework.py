@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.enums import SubmissionStatus
+from app.schemas.attachment import AttachmentRead
 from app.schemas.rubric import Marking
 
 
@@ -57,6 +58,7 @@ class HomeworkRead(BaseModel):
     is_closed: bool = False
     closed_at: Optional[datetime] = None
     closed_by_name: Optional[str] = None
+    attachments: list[AttachmentRead] = []  # uploaded files; attachment_url stays for links
 
 
 # --- Story 9.3 — Submissions ---
@@ -99,3 +101,5 @@ class SubmissionRead(BaseModel):
     reviewed_by_name: Optional[str] = None
     reviewed_at: Optional[datetime] = None
     marking: Optional[Marking] = None  # only when the homework uses a rubric
+    files: list[AttachmentRead] = []  # uploaded with the work
+    review_files: list[AttachmentRead] = []  # the teacher's files on the evaluation

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { openAttachment, type Attachment } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
@@ -35,6 +36,7 @@ type Message = {
   attachment_url: string | null;
   is_read_by_recipient: boolean;
   created_at: string;
+  files?: Attachment[];
 };
 type Oversight = {
   rows: {
@@ -234,6 +236,17 @@ function Conversations({ who }: { who: "teacher" | "parent" }) {
                           </a>
                         </>
                       ) : null}
+                      {(m.files ?? []).map((a) => (
+                        <button
+                          key={a.id}
+                          type="button"
+                          className="btn text"
+                          style={{ display: "block", padding: 0 }}
+                          onClick={() => openAttachment(`${base}/conversations/${active?.id}/messages/${m.id}/files/${a.id}`, a).catch((err) => setError(errorText(err)))}
+                        >
+                          {`Attachment: ${a.file_name}`}
+                        </button>
+                      ))}
                       <small>{`${dateTime(m.created_at)}${mine && m.is_read_by_recipient ? " · Read" : ""}`}</small>
                     </div>
                   );

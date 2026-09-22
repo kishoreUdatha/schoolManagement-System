@@ -29,6 +29,7 @@ from app.schemas.events import (
     PtmSessionRead,
     TeachersIn,
 )
+from app.services import attachment_service
 from app.services import events_service as svc
 
 
@@ -91,6 +92,31 @@ def cancel_event(event_id: int, current_user: SchoolAdminUser, db: Db):
 def delete_event(event_id: int, current_user: SchoolAdminUser, db: Db):
     svc.delete_event(db, svc.get_event(db, event_id, current_user.school_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/events/{event_id}/files", response_model=EventRead, status_code=status.HTTP_201_CREATED,
+             summary="Attach a circular or permission slip (PDF, image or Word; up to 5)")
+def add_event_files(event_id: int, current_user: SchoolAdminUser, db: Db, files: list[UploadFile] = File(...)):
+    e = svc.get_event(db, event_id, current_user.school_id)
+    attachment_service.add(db, kind="event", owner_id=e.id, tenant_id=e.tenant_id, school_id=e.school_id,
+                           user_id=current_user.id, files=files)
+    return svc.events_to_read(db, [e])[0]
+
+
+@router.delete("/events/{event_id}/files/{attachment_id}", response_model=EventRead)
+def remove_event_file(event_id: int, attachment_id: int, current_user: SchoolAdminUser, db: Db):
+    e = svc.get_event(db, event_id, current_user.school_id)
+    attachment_service.remove(db, attachment_service.get(db, "event", e.id, attachment_id))
+    return svc.events_to_read(db, [e])[0]
+
+
+@router.get("/events/{event_id}/files/{attachment_id}", summary="Open a file on an event")
+def event_file(event_id: int, attachment_id: int, current_user: Staff, db: Db):
+    e = svc.get_event(db, event_id, current_user.school_id)
+    # staff other than the admin see published events only, as in the list
+    if not e.is_published and current_user.role != UserRole.school_admin:
+        raise svc._404("Event")
+    return attachment_service.file_response(attachment_service.get(db, "event", e.id, attachment_id))
 
 
 @router.get("/events/{event_id}/consents", response_model=ConsentReport)

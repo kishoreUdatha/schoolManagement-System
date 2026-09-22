@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { FileCards, fileSize, filesForm, UploadZone, type Attachment } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
@@ -39,6 +40,7 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
   const [rubricId, setRubricId] = useState("");
   const [projectKind, setProjectKind] = useState<ProjectKind>("individual");
   const [notifyParents, setNotifyParents] = useState(false);
+  const [pending, setPending] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +67,28 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
 
   if (editing && existing.loading && !existing.data) return <Loading what="Loading the homework…" />;
 
+  /** Attach the queued files once the work exists. Returns the error text, or null when all went up. */
+  async function uploadPending(path: string): Promise<string | null> {
+    if (!pending.length) return null;
+    try {
+      await api.upload(path, filesForm(pending));
+      setPending([]);
+      return null;
+    } catch (err) {
+      return errorText(err);
+    }
+  }
+
+  async function removeSaved(a: Attachment) {
+    if (!window.confirm(`Remove “${a.file_name}”?`)) return;
+    try {
+      await api.delete(`/api/v1/teacher/homework/${id}/files/${a.id}`);
+      existing.reload();
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!csId) {
@@ -84,12 +108,20 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
         };
         if (editing) {
           await api.patch(`/api/v1/teacher/homework/${id}`, body);
-          notify("Homework updated.");
+          const failed = await uploadPending(`/api/v1/teacher/homework/${id}/files`);
+          notify(failed ? `Homework updated, but the files were not attached: ${failed}` : "Homework updated.");
           router.push(`${routeOf(130)}?id=${id}`);
           return;
         }
         const h = await api.post<Homework>("/api/v1/teacher/homework", { ...body, class_subject_id: csId, notify_parents: notifyParents });
-        notify(notifyParents ? "Homework published and parents notified." : "Homework published.");
+        const failed = await uploadPending(`/api/v1/teacher/homework/${h.id}/files`);
+        notify(
+          failed
+            ? `Homework published, but the files were not attached: ${failed}`
+            : notifyParents
+              ? "Homework published and parents notified."
+              : "Homework published.",
+        );
         router.push(`${routeOf(130)}?id=${h.id}`);
       } else {
         const p = await api.post<{ id: number }>("/api/v1/teacher/projects", {
@@ -101,7 +133,14 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
           kind: projectKind,
           notify_parents: notifyParents,
         });
-        notify(notifyParents ? "Assignment published and parents notified." : "Assignment published.");
+        const failed = await uploadPending(`/api/v1/teacher/projects/${p.id}/files`);
+        notify(
+          failed
+            ? `Assignment published, but the files were not attached: ${failed}`
+            : notifyParents
+              ? "Assignment published and parents notified."
+              : "Assignment published.",
+        );
         router.push(`${routeOf(136)}?id=${p.id}`);
       }
     } catch (err) {
@@ -201,8 +240,8 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
                   <input type="date" aria-label="Due date" required min={editing ? undefined : todayIso()} value={due} onChange={(e) => setDue(e.target.value)} />
                 </label>
                 <label className="field">
-                  <span>Attachment</span>
-                  {/* The API stores a link, not a file: there is no upload endpoint. */}
+                  <span>Attachment link</span>
+                  {/* A link (attachment_url) still works; files go in the Attachments panel. */}
                   <input type="url" aria-label="Attachment link" placeholder="https://… link to the worksheet" value={attachment} onChange={(e) => setAttachment(e.target.value)} />
                 </label>
                 {isHw ? (
@@ -261,7 +300,29 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
         </div>
       </form>
       <aside className="stack">
-        {/* Not wired: file upload zone — attachments are links (attachment_url); the API has no upload endpoint. */}
+        <Panel title="Attachments" sub="PDF, image or document">
+          <UploadZone onFiles={(fs) => setPending((p) => [...p, ...fs].slice(0, 5))} disabled={saving} />
+          {pending.map((f, i) => (
+            <div className="document-card" key={`${f.name}-${i}`}>
+              <div className="file-icon">{(f.name.split(".").pop() ?? "").toUpperCase().slice(0, 4)}</div>
+              <div className="document-info">
+                <h4>{f.name}</h4>
+                <p>{`${fileSize(f.size)} · uploads when you ${editing ? "save" : "publish"}`}</p>
+              </div>
+              <button type="button" className="btn text" onClick={() => setPending((p) => p.filter((_, j) => j !== i))}>
+                Remove
+              </button>
+            </div>
+          ))}
+          {existing.data?.attachments?.length ? (
+            <FileCards
+              files={existing.data.attachments}
+              pathOf={(a) => `/api/v1/teacher/homework/${id}/files/${a.id}`}
+              onRemove={removeSaved}
+              onError={setError}
+            />
+          ) : null}
+        </Panel>
         <Panel title="Publishing">
           <dl className="kv">
             <div>

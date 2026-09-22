@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { FileCards, fileSize, filesForm, UploadZone, type Attachment } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
@@ -31,6 +32,7 @@ export function EventForm() {
   const [consent, setConsent] = useState(false);
   const [startTime, setStartTime] = useState("");
   const [saving, setSaving] = useState(false);
+  const [pending, setPending] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -76,6 +78,17 @@ export function EventForm() {
     setError(null);
     try {
       const saved = e ? await api.put<SchoolEvent>(`/api/v1/school/events/${e.id}`, body) : await api.post<SchoolEvent>("/api/v1/school/events", body);
+      // Attach queued files before publishing, so the audience finds them when told.
+      if (pending.length) {
+        try {
+          await api.upload(`/api/v1/school/events/${saved.id}/files`, filesForm(pending));
+          setPending([]);
+        } catch (err) {
+          notify(`Saved, but the files were not attached: ${errorText(err)}`);
+          router.push(`${routeOf(248)}?id=${saved.id}`);
+          return;
+        }
+      }
       if (publish && !saved.is_published) {
         try {
           await api.post(`/api/v1/school/events/${saved.id}/publish`);
@@ -91,6 +104,16 @@ export function EventForm() {
       setError(errorText(err));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function removeFile(a: Attachment) {
+    if (!e || !window.confirm(`Remove “${a.file_name}”?`)) return;
+    try {
+      await api.delete(`/api/v1/school/events/${e.id}/files/${a.id}`);
+      list.reload();
+    } catch (err) {
+      setError(errorText(err));
     }
   }
 
@@ -244,7 +267,24 @@ export function EventForm() {
         </div>
       </form>
       <aside className="stack">
-        {/* Not wired: attachments — events have no attachment field in the API, so the upload box is dropped. */}
+        <Panel title="Attachments" sub="Circular, permission slip or poster">
+          <UploadZone onFiles={(fs) => setPending((p) => [...p, ...fs].slice(0, 5))} disabled={saving || locked} />
+          {pending.map((f, i) => (
+            <div className="document-card" key={`${f.name}-${i}`}>
+              <div className="file-icon">{(f.name.split(".").pop() ?? "").toUpperCase().slice(0, 4)}</div>
+              <div className="document-info">
+                <h4>{f.name}</h4>
+                <p>{`${fileSize(f.size)} · uploads when you save`}</p>
+              </div>
+              <button type="button" className="btn text" onClick={() => setPending((p) => p.filter((_, j) => j !== i))}>
+                Remove
+              </button>
+            </div>
+          ))}
+          {e?.attachments?.length ? (
+            <FileCards files={e.attachments} pathOf={(a) => `/api/v1/school/events/${e.id}/files/${a.id}`} onRemove={locked ? undefined : removeFile} onError={setError} />
+          ) : null}
+        </Panel>
         <Panel title="Publishing">
           <dl className="kv">
             <div>

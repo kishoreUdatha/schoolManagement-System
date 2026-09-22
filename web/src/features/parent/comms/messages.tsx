@@ -10,6 +10,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { initialsOf, useParent } from "@/components/parent/ParentShell";
+import { openAttachment, type Attachment } from "@/components/ui/Attachments";
 import { api, errorText } from "@/lib/api";
 import { date, dateTime } from "@/lib/format";
 import { parentRoute } from "@/lib/parentScreens";
@@ -41,6 +42,7 @@ export type Message = {
   attachment_url: string | null;
   is_read_by_recipient: boolean;
   created_at: string;
+  files?: Attachment[];
 };
 
 type TeacherContact = { teacher_user_id: number; teacher_name: string; subjects: string[] };
@@ -237,6 +239,17 @@ export function ConversationView() {
                       </a>
                     </>
                   ) : null}
+                  {(m.files ?? []).map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      className="text-button"
+                      style={{ display: "block" }}
+                      onClick={() => openAttachment(`${CONVS}/${m.conversation_id}/messages/${m.id}/files/${a.id}`, a).catch((err) => setError(errorText(err)))}
+                    >
+                      {`Attachment: ${a.file_name}`}
+                    </button>
+                  ))}
                   <small>{`${dateTime(m.created_at)}${sent && m.is_read_by_recipient ? " · Read" : ""}`}</small>
                 </div>
               </div>

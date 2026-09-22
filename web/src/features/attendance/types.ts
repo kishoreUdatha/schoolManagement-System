@@ -1,5 +1,7 @@
 // Shapes returned by the attendance endpoints (teacher, school and parent portals).
 
+import type { Attachment } from "@/components/ui/Attachments";
+
 export type Status = "present" | "absent" | "late" | "half_day";
 export const STATUSES: Status[] = ["present", "absent", "late", "half_day"];
 
@@ -158,6 +160,8 @@ export type StudentLeave = {
   decided_at: string | null;
   decision_note: string | null;
   can_decide?: boolean;
+  /** Supporting documents the family attached. */
+  attachments?: Attachment[];
 };
 export const LEAVE_KINDS = ["sick", "family", "travel", "religious", "other"];
 

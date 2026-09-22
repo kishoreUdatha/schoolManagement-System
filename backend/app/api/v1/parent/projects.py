@@ -11,7 +11,7 @@ from app.schemas.project import (
     ProgressUpdate,
     ProjectRead,
 )
-from app.services import project_service
+from app.services import attachment_service, project_service
 
 
 router = APIRouter()
@@ -66,3 +66,19 @@ def upsert_progress(
         db, current_user.id, student_id, project_id, payload
     )
     return ProgressRead.model_validate(project_service._progress_dict(db, pp))
+
+
+@router.get(
+    "/{student_id}/projects/{project_id}/files/{attachment_id}",
+    summary="Open a file on the project brief, or the teacher's review file",
+)
+def open_file(
+    student_id: int,
+    project_id: int,
+    attachment_id: int,
+    current_user: ParentUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return attachment_service.file_response(
+        project_service.parent_file(db, current_user.id, student_id, project_id, attachment_id)
+    )

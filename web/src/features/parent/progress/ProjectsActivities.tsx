@@ -9,6 +9,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useParent } from "@/components/parent/ParentShell";
+import { openAttachment, type Attachment } from "@/components/ui/Attachments";
 import { api, errorText } from "@/lib/api";
 import { date, dateTime, label } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
@@ -25,6 +26,7 @@ type Project = {
   kind: "individual" | "group";
   created_by_name: string | null;
   is_past_due: boolean;
+  attachments?: Attachment[];
 };
 
 type Progress = {
@@ -36,6 +38,7 @@ type Progress = {
   rating: number | null;
   reviewed_by_name: string | null;
   updated_at: string;
+  review_files?: Attachment[];
 };
 
 const STEP: Record<Progress["status"], number> = { not_started: 0, in_progress: 1, submitted: 2, reviewed: 3 };
@@ -135,6 +138,13 @@ function ProjectCard({ base, project: p }: { base: string; project: Project }) {
           </a>
         </p>
       ) : null}
+      {[...(p.attachments ?? []), ...(cur?.review_files ?? [])].map((a) => (
+        <p key={a.id}>
+          <button type="button" className="text-button" onClick={() => openAttachment(`${base}/${p.id}/files/${a.id}`, a).catch((e) => setErr(errorText(e)))}>
+            {`${cur?.review_files?.some((r) => r.id === a.id) ? "Teacher’s feedback" : "Project brief"}: ${a.file_name}`}
+          </button>
+        </p>
+      ))}
       {cur?.attachment_url ? (
         <p>
           <a href={cur.attachment_url} target="_blank" rel="noopener noreferrer">

@@ -9,6 +9,9 @@ import { useApi } from "@/lib/useApi";
 import type { PublicOpening, PublicSchoolInfo } from "./links";
 import { PublicFrame, PublicNote } from "./PublicFrame";
 
+/** The backend's limit for a résumé sent from this page (public/careers.py RESUME_MAX_MB). */
+const RESUME_MAX_MB = 5;
+
 function Field({ label: text, required = false, full = false, children }: { label: string; required?: boolean; full?: boolean; children: ReactNode }) {
   return (
     <label className={`field ${full ? "full" : ""}`}>
@@ -24,7 +27,8 @@ function Field({ label: text, required = false, full = false, children }: { labe
 /**
  * The school's careers page, no sign-in: GET /public/careers/{tenant}/{school}
  * and …/openings (published, public openings only); POST
- * …/openings/{id}/apply with the candidate's details.
+ * …/openings/{id}/apply/form (multipart: the candidate's details as JSON in
+ * `payload`, plus an optional résumé — PDF or Word, 5 MB at most).
  */
 export function Careers({ tenant, school }: { tenant: string; school: string }) {
   const base = `/api/v1/public/careers/${encodeURIComponent(tenant)}/${encodeURIComponent(school)}`;
@@ -45,10 +49,16 @@ export function Careers({ tenant, school }: { tenant: string; school: string }) 
       setDone("Thank you.");
       return;
     }
+    const resume = f.get("resume");
+    const file = resume instanceof File && resume.name ? resume : null;
+    if (file && file.size > RESUME_MAX_MB * 1024 * 1024) {
+      setError(`The résumé is larger than ${RESUME_MAX_MB} MB.`);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      const ack = await api.post<{ message: string }>(`${base}/openings/${applying.id}/apply`, {
+      const payload = {
         candidate: {
           full_name: text("full_name"),
           email: text("email"),
@@ -59,7 +69,11 @@ export function Careers({ tenant, school }: { tenant: string; school: string }) 
           current_employer: text("current_employer"),
         },
         message: text("message"),
-      });
+      };
+      const body = new FormData();
+      body.append("payload", JSON.stringify(payload));
+      if (file) body.append("resume", file);
+      const ack = await api.upload<{ message: string }>(`${base}/openings/${applying.id}/apply/form`, body);
       setDone(ack.message);
       window.scrollTo({ top: 0 });
     } catch (e) {
@@ -146,13 +160,16 @@ export function Careers({ tenant, school }: { tenant: string; school: string }) 
             <Field label="Why this role?" full>
               <textarea name="message" maxLength={2000} rows={4} />
             </Field>
+            <Field label="Résumé" full>
+              <input type="file" name="resume" accept=".pdf,.doc,.docx" />
+              <span className="small muted">{`PDF or Word, up to ${RESUME_MAX_MB} MB`}</span>
+            </Field>
           </div>
           <button type="submit" className="btn primary" disabled={saving}>
             <Icon name="check" className="sm" />
             {saving ? "Sending…" : "Send application"}
           </button>
-          {/* Not wired: résumé upload — the public apply endpoint takes no file; the school can attach one from the Candidate Pool. */}
-          <div className="auth-note">The school may ask for your résumé when it gets in touch.</div>
+          <div className="auth-note">Your details and résumé go only to the school&apos;s recruitment team.</div>
         </form>
       </>,
     );

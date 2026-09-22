@@ -26,7 +26,7 @@ from app.schemas.homework import (
     SubmissionReview,
     SubmissionUpdate,
 )
-from app.services import rubric_service
+from app.services import attachment_service, rubric_service
 
 
 def _check_open(h: Homework) -> None:
@@ -91,6 +91,7 @@ def _to_read_dict(db: Session, h: Homework, *, viewer_id: Optional[int] = None) 
         "is_closed": h.closed_at is not None,
         "closed_at": h.closed_at,
         "closed_by_name": closer.full_name if closer else None,
+        "attachments": attachment_service.read_for(db, "homework", h.id),
     }
 
 
@@ -271,6 +272,12 @@ def delete(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot delete homework past its due date — archive instead",
         )
+    sub_ids = list(db.execute(
+        select(HomeworkSubmission.id).where(HomeworkSubmission.homework_id == h.id)
+    ).scalars())
+    attachment_service.remove_all(db, "homework", [h.id])
+    attachment_service.remove_all(db, "homework_submission", sub_ids)
+    attachment_service.remove_all(db, "homework_review", sub_ids)
     db.delete(h)
     db.commit()
 
@@ -390,6 +397,8 @@ def submission_to_dict(db: Session, sub: HomeworkSubmission) -> dict:
         "reviewed_by_name": reviewer.full_name if reviewer else None,
         "reviewed_at": sub.reviewed_at,
         "marking": rubric_service.marking_for(db, sub.id),
+        "files": attachment_service.read_for(db, "homework_submission", sub.id),
+        "review_files": attachment_service.read_for(db, "homework_review", sub.id),
     }
 
 
@@ -428,12 +437,6 @@ def submit_for_student(
     _verify_homework_for_student(db, hw, student)
     _check_open(hw)
 
-    if not (data.attachment_url or data.comment):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Provide an attachment URL or a comment",
-        )
-
     now = datetime.now(timezone.utc)
     existing = db.execute(
         select(HomeworkSubmission).where(
@@ -441,6 +444,13 @@ def submit_for_student(
             HomeworkSubmission.student_id == student_id,
         )
     ).scalar_one_or_none()
+
+    # Files uploaded to the submission count as handing something in.
+    if not (data.attachment_url or data.comment or (existing and _has_files(db, existing.id))):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Provide an attachment URL or a comment",
+        )
 
     if existing:
         # Re-submitting overwrites and resets review state
@@ -512,10 +522,10 @@ def edit_submission_for_student(
     updates = data.model_dump(exclude_unset=True)
     for field, value in updates.items():
         setattr(sub, field, value)
-    if not (sub.attachment_url or sub.comment):
+    if not (sub.attachment_url or sub.comment or _has_files(db, sub.id)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Submission must have an attachment URL or a comment",
+            detail="Submission must have a file, an attachment URL or a comment",
         )
     sub.submitted_at = datetime.now(timezone.utc)
     sub.status = SubmissionStatus.submitted
@@ -576,6 +586,25 @@ def teacher_review_submission(
     school_id: int,
     data: SubmissionReview,
 ) -> HomeworkSubmission:
+    sub = teacher_submission(db, submission_id, teacher_user_id, school_id)
+    if data.status not in (SubmissionStatus.approved, SubmissionStatus.rejected):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Review status must be approved or rejected",
+        )
+    sub.status = data.status
+    sub.teacher_remark = data.teacher_remark
+    sub.reviewed_by_user_id = teacher_user_id
+    sub.reviewed_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(sub)
+    return sub
+
+
+def teacher_submission(
+    db: Session, submission_id: int, teacher_user_id: int, school_id: int
+) -> HomeworkSubmission:
+    """A submission the teacher may see: they teach the homework's class-subject."""
     sub = db.get(HomeworkSubmission, submission_id)
     if not sub or sub.school_id != school_id:
         raise HTTPException(
@@ -588,15 +617,129 @@ def teacher_review_submission(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't teach this homework's class-subject",
         )
-    if data.status not in (SubmissionStatus.approved, SubmissionStatus.rejected):
+    return sub
+
+
+# ----- Uploaded files -----
+
+SUBMISSION_FILE_KINDS = ("homework_submission", "homework_review")
+
+
+def _has_files(db: Session, submission_id: int) -> bool:
+    return bool(attachment_service.list_for(db, "homework_submission", submission_id))
+
+
+def _own_homework(db: Session, homework_id: int, school_id: int, teacher_user_id: int) -> Homework:
+    h = get(db, homework_id, school_id)
+    if h.created_by_user_id != teacher_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the teacher who posted this can change its files",
+        )
+    _check_open(h)
+    return h
+
+
+def teacher_add_files(db: Session, homework_id: int, user: User, files) -> Homework:
+    h = _own_homework(db, homework_id, user.school_id, user.id)
+    attachment_service.add(db, kind="homework", owner_id=h.id, tenant_id=h.tenant_id,
+                           school_id=h.school_id, user_id=user.id, files=files)
+    return h
+
+
+def teacher_remove_file(db: Session, homework_id: int, user: User, attachment_id: int) -> Homework:
+    h = _own_homework(db, homework_id, user.school_id, user.id)
+    attachment_service.remove(db, attachment_service.get(db, "homework", h.id, attachment_id))
+    return h
+
+
+def homework_for_student(db: Session, student: Student, homework_id: int) -> Homework:
+    """The homework if it is set for this child's class, else 404."""
+    hw = db.get(Homework, homework_id)
+    if not hw or hw.school_id != student.school_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Homework not found")
+    _verify_homework_for_student(db, hw, student)
+    return hw
+
+
+def _reset_review(sub: HomeworkSubmission, by_user_id: int) -> None:
+    sub.submitted_at = datetime.now(timezone.utc)
+    sub.status = SubmissionStatus.submitted
+    sub.teacher_remark = None
+    sub.reviewed_by_user_id = None
+    sub.reviewed_at = None
+    sub.submitted_by_user_id = by_user_id
+
+
+def add_submission_files(db: Session, student: Student, homework_id: int, files, *,
+                         by_user_id: int) -> HomeworkSubmission:
+    """Hand in files. Starts the submission if there isn't one yet; changing
+    the work puts it back in front of the teacher, as an edit does."""
+    hw = homework_for_student(db, student, homework_id)
+    _check_open(hw)
+    sub = get_submission_for_student(db, student.id, homework_id)
+    if sub is None:
+        sub = HomeworkSubmission(
+            tenant_id=hw.tenant_id, school_id=hw.school_id, homework_id=hw.id, student_id=student.id,
+            submitted_by_user_id=by_user_id, submitted_at=datetime.now(timezone.utc),
+            status=SubmissionStatus.submitted,
+        )
+        db.add(sub)
+        db.flush()
+    else:
+        _reset_review(sub, by_user_id)
+    attachment_service.add(db, kind="homework_submission", owner_id=sub.id, tenant_id=hw.tenant_id,
+                           school_id=hw.school_id, user_id=by_user_id, files=files, commit=False)
+    db.commit()
+    db.refresh(sub)
+    return sub
+
+
+def remove_submission_file(db: Session, student: Student, homework_id: int, attachment_id: int,
+                           *, by_user_id: int) -> HomeworkSubmission:
+    hw = homework_for_student(db, student, homework_id)
+    _check_open(hw)
+    sub = get_submission_for_student(db, student.id, homework_id)
+    if not sub:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No submission to edit")
+    a = attachment_service.get(db, "homework_submission", sub.id, attachment_id)
+    others = [x for x in attachment_service.list_for(db, "homework_submission", sub.id) if x.id != a.id]
+    if not (sub.attachment_url or sub.comment or others):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Review status must be approved or rejected",
+            detail="This is the only thing handed in — add another file or a comment before removing it",
         )
-    sub.status = data.status
-    sub.teacher_remark = data.teacher_remark
-    sub.reviewed_by_user_id = teacher_user_id
-    sub.reviewed_at = datetime.now(timezone.utc)
-    db.commit()
+    _reset_review(sub, by_user_id)
+    attachment_service.remove(db, a)
+    db.refresh(sub)
+    return sub
+
+
+def student_file(db: Session, student: Student, homework_id: int, attachment_id: int):
+    """A file the child (or their parent) may open: the teacher's worksheet,
+    the child's own submission, or the teacher's review of it."""
+    hw = homework_for_student(db, student, homework_id)
+    try:
+        return attachment_service.get(db, "homework", hw.id, attachment_id)
+    except HTTPException:
+        pass
+    sub = get_submission_for_student(db, student.id, homework_id)
+    if not sub:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+    return attachment_service.get_any(db, SUBMISSION_FILE_KINDS, sub.id, attachment_id)
+
+
+def teacher_add_review_files(db: Session, submission_id: int, user: User, files) -> HomeworkSubmission:
+    sub = teacher_submission(db, submission_id, user.id, user.school_id)
+    attachment_service.add(db, kind="homework_review", owner_id=sub.id, tenant_id=sub.tenant_id,
+                           school_id=sub.school_id, user_id=user.id, files=files)
+    db.refresh(sub)
+    return sub
+
+
+def teacher_remove_review_file(db: Session, submission_id: int, user: User,
+                               attachment_id: int) -> HomeworkSubmission:
+    sub = teacher_submission(db, submission_id, user.id, user.school_id)
+    attachment_service.remove(db, attachment_service.get(db, "homework_review", sub.id, attachment_id))
     db.refresh(sub)
     return sub

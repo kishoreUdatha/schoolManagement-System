@@ -134,7 +134,7 @@ function LearnerSubmissions() {
       h.title,
       h.subject_name ?? "—",
       date(s.submitted_at),
-      s.attachment_url ? "Link" : "—",
+      [s.files?.length ? `${s.files.length} file${s.files.length === 1 ? "" : "s"}` : "", s.attachment_url ? "Link" : ""].filter(Boolean).join(" · ") || "—",
       s.marking?.total != null ? `${s.marking.total} / ${s.marking.max_total}` : "—",
       learnerState(h, s),
     ];

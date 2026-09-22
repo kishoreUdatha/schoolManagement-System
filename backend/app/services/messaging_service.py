@@ -15,6 +15,7 @@ from app.models.parent import ParentStudent
 from app.models.student import Student
 from app.models.subject import ClassSubject, Subject
 from app.models.user import User
+from app.services import attachment_service
 
 
 ViewerRole = Literal["parent", "teacher"]
@@ -59,6 +60,7 @@ def _message_dict(db: Session, m: Message) -> dict:
         "attachment_url": m.attachment_url,
         "is_read_by_recipient": m.is_read_by_recipient,
         "created_at": m.created_at,
+        "files": attachment_service.read_for(db, "message", m.id),
     }
 
 
@@ -331,6 +333,32 @@ def send_in_conversation(
     db.commit()
     db.refresh(m)
     return m
+
+
+def attach_to_my_last_message(db: Session, conversation_id: int, sender: User, files) -> Message:
+    """Files go with the last message the sender wrote in this conversation
+    (send the text first, then the files), so the other side sees them with it."""
+    c = get_conversation_for_viewer(db, conversation_id, sender.id)
+    if c.closed_at is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This conversation is closed")
+    m = db.execute(
+        select(Message).where(Message.conversation_id == c.id, Message.sender_user_id == sender.id)
+        .order_by(Message.created_at.desc(), Message.id.desc()).limit(1)
+    ).scalar_one_or_none()
+    if not m:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Write a message first, then attach files to it")
+    attachment_service.add(db, kind="message", owner_id=m.id, tenant_id=m.tenant_id, school_id=m.school_id,
+                           user_id=sender.id, files=files)
+    return m
+
+
+def message_file(db: Session, conversation_id: int, message_id: int, viewer_user_id: int, attachment_id: int):
+    """A file on a message in a conversation the viewer is part of."""
+    c = get_conversation_for_viewer(db, conversation_id, viewer_user_id)
+    m = db.get(Message, message_id)
+    if not m or m.conversation_id != c.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message not found")
+    return attachment_service.get(db, "message", m.id, attachment_id)
 
 
 def mark_read(

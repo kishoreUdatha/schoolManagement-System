@@ -17,6 +17,7 @@ from app.schemas.events import (
     ParentEvent,
     ParentPtm,
 )
+from app.services import attachment_service
 from app.services import events_service as svc
 
 
@@ -43,6 +44,11 @@ def consent(event_id: int, payload: ConsentIn, current_user: ParentUser, db: Db)
     e = svc.give_consent(db, current_user.id, event_id, payload.student_id, payload.response, payload.note)
     ev = svc.get_event(db, e.event_id, e.school_id)
     return [x for x in svc.parent_events(db, current_user.id, ev.start_date, ev.end_date) if x["id"] == event_id]
+
+
+@router.get("/events/{event_id}/files/{attachment_id}", summary="Open a circular or permission slip on an event")
+def event_file(event_id: int, attachment_id: int, current_user: ParentUser, db: Db):
+    return attachment_service.file_response(svc.parent_event_file(db, current_user.id, event_id, attachment_id))
 
 
 @router.get("/ptm", response_model=list[ParentPtm])

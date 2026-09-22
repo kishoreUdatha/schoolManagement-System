@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { openAttachment } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
@@ -147,6 +148,23 @@ export function LeaveApproval() {
                     <dt>Reason</dt>
                     <dd>{current.reason}</dd>
                   </div>
+                  {current.attachments?.length ? (
+                    <div>
+                      <dt>Documents</dt>
+                      <dd>
+                        {current.attachments.map((a) => (
+                          <button
+                            key={a.id}
+                            type="button"
+                            className="btn text"
+                            onClick={() => openAttachment(`/api/v1/school/student-leaves/${current.id}/files/${a.id}`, a).catch((e) => setError(errorText(e)))}
+                          >
+                            {a.file_name}
+                          </button>
+                        ))}
+                      </dd>
+                    </div>
+                  ) : null}
                   <div>
                     <dt>Status</dt>
                     <dd>{`${label(current.status)}${current.decided_by_name ? ` · ${current.decided_by_name}` : ""}${current.decision_note ? ` · ${current.decision_note}` : ""}`}</dd>

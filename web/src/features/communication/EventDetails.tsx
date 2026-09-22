@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { FileCards } from "@/components/ui/Attachments";
 import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel, Person } from "@/components/ui/primitives";
@@ -106,6 +107,7 @@ export function EventDetails() {
             <p className="muted small" style={{ lineHeight: "1.9" }}>
               {ev.description || "No description was given for this event."}
             </p>
+            <FileCards files={ev.attachments ?? []} pathOf={(a) => `/api/v1/school/events/${ev.id}/files/${a.id}`} onError={setError} />
           </Panel>
           <Panel
             title="Participants"

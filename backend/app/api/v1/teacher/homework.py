@@ -1,6 +1,6 @@
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -15,7 +15,7 @@ from app.schemas.homework import (
     SubmissionReview,
 )
 from app.schemas.rubric import Marking, ScoresIn
-from app.services import homework_service, rubric_service
+from app.services import attachment_service, homework_service, rubric_service
 
 
 router = APIRouter()
@@ -178,3 +178,76 @@ def set_scores(
     db: Annotated[Session, Depends(get_db)],
 ):
     return rubric_service.set_scores(db, current_user, submission_id, payload.scores)
+
+
+# --- Uploaded files (the attachment_url link field keeps working alongside) ---
+
+@router.post("/{homework_id}/files", response_model=HomeworkRead,
+             summary="Attach files to your homework (PDF, image or Word; up to 5)")
+def add_files(
+    homework_id: int,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+    files: list[UploadFile] = File(...),
+):
+    h = homework_service.teacher_add_files(db, homework_id, current_user, files)
+    return HomeworkRead.model_validate(homework_service._to_read_dict(db, h, viewer_id=current_user.id))
+
+
+@router.delete("/{homework_id}/files/{attachment_id}", response_model=HomeworkRead)
+def remove_file(
+    homework_id: int,
+    attachment_id: int,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    h = homework_service.teacher_remove_file(db, homework_id, current_user, attachment_id)
+    return HomeworkRead.model_validate(homework_service._to_read_dict(db, h, viewer_id=current_user.id))
+
+
+@router.get("/{homework_id}/files/{attachment_id}", summary="Open a file attached to the homework")
+def homework_file(
+    homework_id: int,
+    attachment_id: int,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    h = homework_service.get(db, homework_id, current_user.school_id)
+    return attachment_service.file_response(attachment_service.get(db, "homework", h.id, attachment_id))
+
+
+@router.get("/submissions/{submission_id}/files/{attachment_id}",
+            summary="Open a file handed in, or one of your review files")
+def submission_file(
+    submission_id: int,
+    attachment_id: int,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    sub = homework_service.teacher_submission(db, submission_id, current_user.id, current_user.school_id)
+    return attachment_service.file_response(
+        attachment_service.get_any(db, homework_service.SUBMISSION_FILE_KINDS, sub.id, attachment_id)
+    )
+
+
+@router.post("/submissions/{submission_id}/review-files", response_model=SubmissionRead,
+             summary="Attach your marked copy or feedback file to a submission")
+def add_review_files(
+    submission_id: int,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+    files: list[UploadFile] = File(...),
+):
+    sub = homework_service.teacher_add_review_files(db, submission_id, current_user, files)
+    return SubmissionRead.model_validate(homework_service.submission_to_dict(db, sub))
+
+
+@router.delete("/submissions/{submission_id}/review-files/{attachment_id}", response_model=SubmissionRead)
+def remove_review_file(
+    submission_id: int,
+    attachment_id: int,
+    current_user: TeacherUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    sub = homework_service.teacher_remove_review_file(db, submission_id, current_user, attachment_id)
+    return SubmissionRead.model_validate(homework_service.submission_to_dict(db, sub))

@@ -1,5 +1,7 @@
 // Shapes returned by the teacher, student and parent portals for Homework & Assignments.
 
+import type { Attachment } from "@/components/ui/Attachments";
+
 /** One class-subject the teacher teaches (GET /teacher/my-classes → subject_teacher_of). */
 export type SubjectCard = {
   class_subject_id: number;
@@ -39,6 +41,8 @@ export type Homework = {
   is_closed: boolean;
   closed_at: string | null;
   closed_by_name: string | null;
+  /** Uploaded files; attachment_url is the older link field and still works. */
+  attachments: Attachment[];
 };
 
 export type SubmissionStatus = "submitted" | "approved" | "rejected";
@@ -71,6 +75,10 @@ export type Submission = {
   reviewed_by_name: string | null;
   reviewed_at: string | null;
   marking: Marking | null;
+  /** Files handed in with the work. */
+  files: Attachment[];
+  /** The teacher's files on the evaluation (marked copy, feedback). */
+  review_files: Attachment[];
 };
 
 export type Rubric = {
@@ -103,6 +111,7 @@ export type Project = {
   is_past_due: boolean;
   progress_count: number;
   eligible_student_count: number;
+  attachments: Attachment[];
 };
 
 export type ProgressStatus = "not_started" | "in_progress" | "submitted" | "reviewed";
@@ -123,6 +132,8 @@ export type Progress = {
   reviewed_by_name: string | null;
   reviewed_at: string | null;
   updated_at: string;
+  /** The teacher's files on the review. */
+  review_files: Attachment[];
 };
 
 /** GET /parent/me/children */

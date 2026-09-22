@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -24,7 +24,7 @@ from app.schemas.student_portal import (
     StudentDashboard,
     StudentProfile,
 )
-from app.services import homework_service, result_service, student_portal_service
+from app.services import attachment_service, homework_service, result_service, student_portal_service
 
 
 router = APIRouter()
@@ -77,6 +77,33 @@ def edit_submission(homework_id: int, payload: SubmissionUpdate, current_user: S
     sub = homework_service.edit_submission_for_student(
         db, student.id, homework_id, payload, by_user_id=current_user.id
     )
+    return homework_service.submission_to_dict(db, sub)
+
+
+@router.get("/homework/{homework_id}/files/{attachment_id}",
+            summary="Open a file: the worksheet, your work, or your teacher's review file")
+def homework_file(homework_id: int, attachment_id: int, current_user: StudentUser, db: Db):
+    student = student_portal_service.me(db, current_user)
+    return attachment_service.file_response(
+        homework_service.student_file(db, student, homework_id, attachment_id)
+    )
+
+
+@router.post("/homework/{homework_id}/submission/files", response_model=SubmissionRead,
+             status_code=status.HTTP_201_CREATED, summary="Hand in files (PDF, image or Word, up to 5)")
+def add_submission_files(homework_id: int, current_user: StudentUser, db: Db,
+                         files: list[UploadFile] = File(...)):
+    student = student_portal_service.me(db, current_user)
+    sub = homework_service.add_submission_files(db, student, homework_id, files, by_user_id=current_user.id)
+    return homework_service.submission_to_dict(db, sub)
+
+
+@router.delete("/homework/{homework_id}/submission/files/{attachment_id}", response_model=SubmissionRead,
+               summary="Take a file back out of what you handed in")
+def remove_submission_file(homework_id: int, attachment_id: int, current_user: StudentUser, db: Db):
+    student = student_portal_service.me(db, current_user)
+    sub = homework_service.remove_submission_file(db, student, homework_id, attachment_id,
+                                                  by_user_id=current_user.id)
     return homework_service.submission_to_dict(db, sub)
 
 

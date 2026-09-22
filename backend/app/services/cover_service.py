@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import notify
+from app.services import attachment_service
 from app.core.enums import StaffLeaveStatus, StudentLeaveStatus, UserRole
 from app.core.scoping import require_linked_child, school_today, section_labels
 from app.models.academic import Section
@@ -389,13 +390,15 @@ def leaves_to_read(db: Session, user: Optional[User], leaves: list[StudentLeave]
     students = dict(db.execute(select(Student.id, Student.full_name).where(Student.id.in_({lv.student_id for lv in leaves}))).all())
     labels = section_labels(db, {lv.section_id for lv in leaves})
     names = _names(db, {lv.applied_by_user_id for lv in leaves} | {lv.decided_by_user_id for lv in leaves})
+    files = attachment_service.read_many(db, "student_leave", [lv.id for lv in leaves])
     return [
         dict(id=lv.id, student_id=lv.student_id, student_name=students.get(lv.student_id, ""), section_id=lv.section_id,
              section_label=labels.get(lv.section_id, ""), kind=lv.kind, from_date=lv.from_date, to_date=lv.to_date,
              days=(lv.to_date - lv.from_date).days + 1, reason=lv.reason, status=lv.status,
              applied_by_name=names.get(lv.applied_by_user_id), created_at=lv.created_at,
              decided_by_name=names.get(lv.decided_by_user_id), decided_at=lv.decided_at, decision_note=lv.decision_note,
-             can_decide=bool(user) and lv.status == StudentLeaveStatus.pending and _can_decide(db, user, lv))
+             can_decide=bool(user) and lv.status == StudentLeaveStatus.pending and _can_decide(db, user, lv),
+             attachments=files.get(lv.id, []))
         for lv in leaves
     ]
 
@@ -485,6 +488,54 @@ def cancel(db: Session, parent_user_id: int, student_id: int, leave_id: int) -> 
         db.refresh(lv)
         return lv
     raise _400("Only pending leave, or approved leave that hasn't started, can be cancelled")
+
+
+# ---------- supporting documents on a leave request ----------
+
+
+def _child_leave(db: Session, parent_user_id: int, student_id: int, leave_id: int) -> StudentLeave:
+    st = require_linked_child(db, parent_user_id, student_id)
+    lv = db.get(StudentLeave, leave_id)
+    if not lv or lv.student_id != st.id:
+        raise _404("Leave")
+    return lv
+
+
+def add_leave_files(db: Session, parent_user_id: int, student_id: int, leave_id: int, files) -> StudentLeave:
+    """A medical note or the like. Only while the school hasn't decided, so
+    what the teacher decided on is what stays on the record."""
+    lv = _child_leave(db, parent_user_id, student_id, leave_id)
+    if lv.status != StudentLeaveStatus.pending:
+        raise _400(f"This request is already {lv.status.value} — documents can't be changed now")
+    attachment_service.add(db, kind="student_leave", owner_id=lv.id, tenant_id=lv.tenant_id,
+                           school_id=lv.school_id, user_id=parent_user_id, files=files)
+    return lv
+
+
+def remove_leave_file(db: Session, parent_user_id: int, student_id: int, leave_id: int,
+                      attachment_id: int) -> StudentLeave:
+    lv = _child_leave(db, parent_user_id, student_id, leave_id)
+    if lv.status != StudentLeaveStatus.pending:
+        raise _400(f"This request is already {lv.status.value} — documents can't be changed now")
+    attachment_service.remove(db, attachment_service.get(db, "student_leave", lv.id, attachment_id))
+    return lv
+
+
+def parent_leave_file(db: Session, parent_user_id: int, student_id: int, leave_id: int, attachment_id: int):
+    lv = _child_leave(db, parent_user_id, student_id, leave_id)
+    return attachment_service.get(db, "student_leave", lv.id, attachment_id)
+
+
+def staff_leave_file(db: Session, user: User, leave_id: int, attachment_id: int):
+    """Staff who can see the request in their list (class teacher of the
+    section, admin, principal) or may decide it by delegation."""
+    lv = db.get(StudentLeave, leave_id)
+    if not lv or lv.school_id != user.school_id:
+        raise _404("Leave")
+    sees = user.role in (UserRole.school_admin, UserRole.principal) or _can_decide(db, user, lv)
+    if not sees:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a leave request you can see")
+    return attachment_service.get(db, "student_leave", lv.id, attachment_id)
 
 
 def staff_leaves(db: Session, user: User, status_: Optional[StudentLeaveStatus], section_id: Optional[int],

@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { FileCards, filesForm, UploadZone, type Attachment } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
@@ -31,6 +32,7 @@ export function HomeworkEvaluation() {
   const [decision, setDecision] = useState<"approved" | "rejected">("approved");
   const [remark, setRemark] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Open the first one still waiting, or the first at all.
@@ -72,6 +74,32 @@ export function HomeworkEvaluation() {
       setError(errorText(err));
     } finally {
       setSaving(false);
+    }
+  }
+
+  const subFile = (submissionId: number, attachmentId: number) => `/api/v1/teacher/homework/submissions/${submissionId}/files/${attachmentId}`;
+
+  async function reviewFiles(submissionId: number, files: File[]) {
+    setUploading(true);
+    setError(null);
+    try {
+      await api.upload(`/api/v1/teacher/homework/submissions/${submissionId}/review-files`, filesForm(files));
+      notify("File attached. The student and parents can open it.");
+      await subs.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeReviewFile(submissionId: number, a: Attachment) {
+    if (!window.confirm(`Remove “${a.file_name}”?`)) return;
+    try {
+      await api.delete(`/api/v1/teacher/homework/submissions/${submissionId}/review-files/${a.id}`);
+      await subs.reload();
+    } catch (err) {
+      setError(errorText(err));
     }
   }
 
@@ -119,6 +147,7 @@ export function HomeworkEvaluation() {
                 </p>
               </div>
               {s.attachment_url ? <LinkCard url={s.attachment_url} note="Handed in with the work" /> : null}
+              <FileCards files={s.files ?? []} pathOf={(a) => subFile(s.id, a.id)} note="Handed in with the work" onError={setError} />
             </>
           ) : (
             <p className="muted">{subs.loading ? "Loading…" : "Nothing has been handed in yet."}</p>
@@ -197,12 +226,18 @@ export function HomeworkEvaluation() {
             ))}
           </dl>
         </Panel>
-        {h.attachment_url ? (
-          <Panel title="Attachments">
-            <LinkCard url={h.attachment_url} note="Attached by the teacher" />
+        {h.attachment_url || h.attachments?.length ? (
+          <Panel title="Homework attachments">
+            {h.attachment_url ? <LinkCard url={h.attachment_url} note="Attached by the teacher" /> : null}
+            <FileCards files={h.attachments ?? []} pathOf={(a) => `/api/v1/teacher/homework/${h.id}/files/${a.id}`} note="Attached by the teacher" onError={setError} />
           </Panel>
         ) : null}
-        {/* Not wired: teacher file upload on evaluation — the review API takes no attachment. */}
+        {s ? (
+          <Panel title="Attachments" sub="Marked copy or feedback for the student and parents">
+            <UploadZone onFiles={(fs) => reviewFiles(s.id, fs)} busy={uploading} />
+            <FileCards files={s.review_files ?? []} pathOf={(a) => subFile(s.id, a.id)} note="Your feedback file" onRemove={(a) => removeReviewFile(s.id, a)} onError={setError} />
+          </Panel>
+        ) : null}
       </aside>
     </div>
   );
