@@ -23,7 +23,7 @@ const fiveYearsBack = () => `${new Date().getFullYear() - 5}-04-01`;
  * prints from GET /parents/{id}/receipts/{collection}/pdf, and the family
  * ledger from GET /parents/{id}/ledger.pdf (?student_id=&from=&to=).
  */
-export function ParentPayments() {
+export function ParentPayments({ embedded = false }: { embedded?: boolean } = {}) {
   const { id, data: p, error, loading } = useParent();
   const [child, setChild] = useState("");
   const [from, setFrom] = useState(fiveYearsBack);
@@ -107,18 +107,21 @@ export function ParentPayments() {
 
   return (
     <>
-      <div className="panel profile-banner">
-        <div className="profile-hero">
-          <div className="row">
-            <span className="avatar mint large">{initials(p.full_name)}</span>
-            <div>
-              <h2>{p.full_name}</h2>
-              <p>{`${childNames(p) ? `Parent of ${childNames(p)}` : "No children linked"} · ${p.children.map((c) => c.section_label ?? "—").join(", ")}`}</p>
+      {/* under the parent profile's header (embedded) this name band would repeat it */}
+      {embedded ? null : (
+        <div className="panel profile-banner">
+          <div className="profile-hero">
+            <div className="row">
+              <span className="avatar mint large">{initials(p.full_name)}</span>
+              <div>
+                <h2>{p.full_name}</h2>
+                <p>{`${childNames(p) ? `Parent of ${childNames(p)}` : "No children linked"} · ${p.children.map((c) => c.section_label ?? "—").join(", ")}`}</p>
+              </div>
             </div>
+            <Badge>{!ready ? "Loading…" : balance > 0 ? `${money(balance)} outstanding` : "No outstanding balance"}</Badge>
           </div>
-          <Badge>{!ready ? "Loading…" : balance > 0 ? `${money(balance)} outstanding` : "No outstanding balance"}</Badge>
         </div>
-      </div>
+      )}
       <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Filter by child" value={child} onChange={(e) => setChild(e.target.value)}>

@@ -35,19 +35,33 @@ export function relationsOf(p: Parent): string {
 }
 
 /** Tabs across the parent record screens, each carrying ?id= on. */
-export function ParentTabs({ id, active }: { id: string; active: number }) {
-  const tabs: [number, string][] = [
-    [73, "Overview"],
-    [74, "Children"],
-    [76, "Login access"],
-    [77, "Interactions"],
-    [78, "Payments"],
-    [79, "Activity"],
-  ];
+export const PARENT_TABS = [
+  ["overview", "Overview"],
+  ["children", "Children"],
+  ["access", "Login access"],
+  ["interactions", "Interactions"],
+  ["payments", "Payments"],
+  ["activity", "Activity"],
+] as const;
+export type ParentTab = (typeof PARENT_TABS)[number][0];
+
+/** The tab named by ?tab= on the parent profile (Overview when absent). */
+export function useParentTab(): ParentTab {
+  const t = useSearchParams().get("tab");
+  return PARENT_TABS.some(([k]) => k === t) ? (t as ParentTab) : "overview";
+}
+
+/**
+ * Tabs across the parent profile. They stay on the profile page and only
+ * change ?tab= (replacing the address, so Back leaves the profile rather than
+ * stepping through tabs); the header stays put and just the content below
+ * changes. Each tab still has its own address to share or reload.
+ */
+export function ParentTabs({ id, tab }: { id: string; tab: ParentTab }) {
   return (
     <nav className="module-tabs profile-tabs">
-      {tabs.map(([n, t]) => (
-        <Link key={n} href={`${routeOf(n)}?id=${id}`} className={n === active ? "active" : ""}>
+      {PARENT_TABS.map(([k, t]) => (
+        <Link key={k} href={`${routeOf(73)}?id=${id}${k === "overview" ? "" : `&tab=${k}`}`} scroll={false} replace className={k === tab ? "active" : ""} aria-current={k === tab ? "page" : undefined}>
           {t}
         </Link>
       ))}
@@ -56,7 +70,7 @@ export function ParentTabs({ id, active }: { id: string; active: number }) {
 }
 
 /** Name, children and account status across the top of a parent record. */
-export function ParentBanner({ p, active, badge }: { p: Parent; active?: number; badge?: ReactNode }) {
+export function ParentBanner({ p, tab, badge }: { p: Parent; tab?: ParentTab; badge?: ReactNode }) {
   const kids = childNames(p);
   return (
     <section className="panel profile-banner">
@@ -88,7 +102,7 @@ export function ParentBanner({ p, active, badge }: { p: Parent; active?: number;
           </div>
         )}
       </div>
-      {active ? <ParentTabs id={String(p.user_id)} active={active} /> : null}
+      {tab ? <ParentTabs id={String(p.user_id)} tab={tab} /> : null}
     </section>
   );
 }

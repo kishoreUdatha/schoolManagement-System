@@ -1,13 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api } from "@/lib/api";
 import { dateTime, money, pct } from "@/lib/format";
+import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { StudentProfile } from "@/features/students/types";
-import { AuditItem, ParentBanner, PICK_PARENT, relationsOf, useParent } from "./ParentShell";
+import { LinkChildren } from "./LinkChildren";
+import { ParentAccess } from "./ParentAccess";
+import { ExportHistoryButton, ParentActivity } from "./ParentActivity";
+import { ParentInteractions } from "./ParentInteractions";
+import { ParentPayments } from "./ParentPayments";
+import { AuditItem, ParentBanner, PICK_PARENT, relationsOf, useParent, useParentTab, WithParentLink } from "./ParentShell";
 import type { AuditEntry, Parent } from "./types";
 
 /** Each linked child's profile, for attendance and fees at a glance. */
@@ -40,20 +48,79 @@ const kv = (rows: [string, string][]) => (
   </dl>
 );
 
-/** SCR-073, live: GET /parents/{id}, each child's /students/{id}, and /audit-log for the account. */
+/**
+ * SCR-073, live. The parent's header stays at the top and ?tab= picks what is
+ * under it: the overview here, or the Children, Login access, Interactions,
+ * Payments and Activity screens' content (the same components those screens
+ * use on their own). Switching tabs never reloads the header.
+ */
 export function ParentProfile() {
   const { id, data: p, error, loading } = useParent();
-  const kids = useChildren(p);
-  const activity = useApi<AuditEntry[]>(id ? "/api/v1/school/audit-log" : null, { entity_type: "User", entity_id: id, limit: 5 });
+  const tab = useParentTab();
   if (!id) return <PickFirst {...PICK_PARENT} />;
   if (loading && !p) return <Loading what="Loading the parent…" />;
   if (!p) return <ErrorNote>{error ?? "Parent not found."}</ErrorNote>;
+  return (
+    <>
+      <ParentBanner p={p} tab={tab} />
+      {tab === "children" ? (
+        <LinkChildren />
+      ) : tab === "access" ? (
+        <ParentAccess />
+      ) : tab === "interactions" ? (
+        <ParentInteractions />
+      ) : tab === "payments" ? (
+        <ParentPayments embedded />
+      ) : tab === "activity" ? (
+        <ParentActivity />
+      ) : (
+        <ParentOverview p={p} id={id} />
+      )}
+    </>
+  );
+}
 
+/** The page-head button for the tab on screen (what that tab's own screen offers). */
+export function ParentProfileActions() {
+  const tab = useParentTab();
+  if (tab === "children")
+    return (
+      <a href="#link-child" className="btn primary">
+        <Icon name="check" className="sm" />
+        Link child
+      </a>
+    );
+  if (tab === "interactions")
+    return (
+      <Link href={routeOf(251)} className="btn primary">
+        <Icon name="arrow" className="sm" />
+        Book meeting
+      </Link>
+    );
+  if (tab === "payments")
+    return (
+      <button type="button" className="btn" data-export="">
+        <Icon name="download" className="sm" />
+        Export
+      </button>
+    );
+  if (tab === "activity") return <ExportHistoryButton />;
+  if (tab === "access") return null;
+  return (
+    <WithParentLink screen={72} icon="arrow">
+      Edit guardian
+    </WithParentLink>
+  );
+}
+
+/** The Overview tab: GET each child's /students/{id}, and /audit-log for the account. */
+function ParentOverview({ p, id }: { p: Parent; id: string }) {
+  const kids = useChildren(p);
+  const activity = useApi<AuditEntry[]>("/api/v1/school/audit-log", { entity_type: "User", entity_id: id, limit: 5 });
   const feesPending = kids?.reduce((s, k) => s + Number(k.fees_pending_amount ?? 0), 0);
 
   return (
     <>
-      <ParentBanner p={p} active={73} />
       <div className="two-col">
         <div className="stack">
           <Panel title="Personal information">
