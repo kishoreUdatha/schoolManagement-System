@@ -165,7 +165,10 @@ converted the pack: each screen is `src/app/parent/<slug>/page.tsx` inside
 More menu. Its styles are `src/styles/parent.css`, which is generated and scoped
 under `.pm`, so use the pack's class names (`panel`, `item`, `action`, `status`,
 `v-icon`, `identity-card` …) exactly as the converted markup does. The registry is
-`src/lib/parentScreens.ts`; `parentRoute(n)` gives a screen's route.
+`src/lib/parentScreens.ts`; `parentRoute(n)` gives a screen's route. Screens the
+pack does not have (PM-101 online tests list, PM-102 taking a test, PM-103 photo
+gallery) are listed in `src/lib/parentExtraScreens.ts`, which the generated registry
+appends. Add new ones there from PM-104, and to the More menu in `ParentShell`.
 
 - `useParent()` (from `@/components/parent/ParentShell`) gives `children`, the selected
   `child` / `childId`, `setChild`, `notify` (toast), `go(n)`, `loading` and `error`.

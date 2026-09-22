@@ -95,7 +95,8 @@ const TABS: [key: string, label: string, n: number][] = [
 
 const MORE: [string, number][] = [
   ["My children", 5], ["Student profile", 8], ["Attendance & leave", 9], ["Timetable", 18], ["Exams & results", 19],
-  ["Transport", 29], ["Notice board", 33], ["School calendar", 37], ["Parent–teacher meeting", 39], ["Documents", 41],
+  ["Online tests", 101], ["Transport", 29], ["Notice board", 33], ["School calendar", 37], ["Photo gallery", 103],
+  ["Parent–teacher meeting", 39], ["Documents", 41],
   ["Health & emergency", 43], ["Help & requests", 44], ["Parent profile", 47], ["Settings", 48], ["Authorized pickup", 49],
   ["Library loans", 51], ["Hostel updates", 52], ["Meal menu", 53], ["Feedback", 54], ["Weekly progress", 55],
   ["Learning resources", 56], ["Behaviour & achievements", 57], ["Projects & activities", 58],
