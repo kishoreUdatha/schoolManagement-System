@@ -72,6 +72,8 @@ export function GatewaySettings() {
       void runCheck();
     } catch (err) {
       setError(errorText(err));
+      // the reason shows at the top of the form; Save may be at the bottom
+      document.getElementById("gateway-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
     } finally {
       setSaving(false);
     }
@@ -102,6 +104,8 @@ export function GatewaySettings() {
       : g.mode === "live"
         ? "On · live mode (real payments)"
         : "On · test mode (no real money moves)";
+  // the form no longer shows the saved keys: the status line must not vouch for them
+  const changed = g.configured && (keyId.trim() !== (g.key_id ?? "") || keySecret.trim() !== "");
   const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
@@ -109,7 +113,17 @@ export function GatewaySettings() {
       <form id="gateway-form" className="panel" onSubmit={save} autoComplete="off">
         <div className="panel-pad">
           <ErrorNote>{error}</ErrorNote>
-          {g.configured ? (
+          {g.configured && changed ? (
+            <div className="gateway-conn warn" role="status">
+              <div>
+                <strong>{error ? "The keys you typed were not accepted" : "New keys typed, not checked yet"}</strong>
+                <span>{`${error ? "Razorpay rejected them, so nothing was changed." : "Save gateway checks them with Razorpay and only keeps them if they work."} Still in use: ${g.key_id}${check?.connected ? " (connected)" : ""}.`}</span>
+              </div>
+              <button type="button" className="btn sm" onClick={() => { setKeyId(g.key_id ?? ""); setKeySecret(""); setError(null); }}>
+                Undo changes
+              </button>
+            </div>
+          ) : g.configured ? (
             <div className={`gateway-conn ${checking && !check ? "" : check?.connected ? "ok" : "bad"}`} role="status">
               <div>
                 <strong>{checking && !check ? "Checking with Razorpay…" : check?.connected ? "Connected to Razorpay" : "Not connected"}</strong>

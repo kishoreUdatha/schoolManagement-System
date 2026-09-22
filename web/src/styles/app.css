@@ -232,3 +232,4 @@ option{background:#fff}
 .gateway-conn span{font-size:12.5px;color:#56698a}
 .gateway-conn.ok{border-color:#bfe8d3;background:#effaf4}.gateway-conn.ok strong{color:#0f7a4d}
 .gateway-conn.bad{border-color:#f3c9c9;background:#fff5f5}.gateway-conn.bad strong{color:#b42318}
+.gateway-conn.warn{border-color:#f3dfa6;background:#fff8e6}.gateway-conn.warn strong{color:#8a5a00}
