@@ -226,16 +226,7 @@ export function SchoolBranding() {
   }
 
   return (
-    <div className="settings-layout">
-      <nav className="settings-nav">
-        <Link href={routeOf(289)}>School profile</Link>
-        <Link href={routeOf(290)}>Academic settings</Link>
-        <Link href={routeOf(291)}>Notifications</Link>
-        <Link href={routeOf(285)}>{"Roles & permissions"}</Link>
-        <Link href={routeOf(292)}>Integrations</Link>
-        <Link href={routeOf(293)}>Security</Link>
-        <Link href={routeOf(294)}>Audit log</Link>
-      </nav>
+    <div>
       <div>
         <form id="branding-form" className="panel" onSubmit={submit}>
           <div className="panel-head">

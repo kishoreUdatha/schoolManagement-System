@@ -1,13 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { dateTime, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
-import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 
 import { ask } from "@/lib/dialog";
@@ -90,16 +88,7 @@ export function PlatformSettings() {
   }
 
   return (
-    <div className="settings-layout">
-      <nav className="settings-nav">
-        <Link href={routeOf(20)} className="active">
-          Platform settings
-        </Link>
-        <Link href={routeOf(13)}>Subscription plans</Link>
-        <Link href={routeOf(16)}>Platform users</Link>
-        <Link href={routeOf(19)}>Global announcements</Link>
-        <Link href={routeOf(18)}>System health</Link>
-      </nav>
+    <div>
       <div>
         <form id="platform-settings-form" className="panel" onSubmit={save}>
           <div className="panel-head">
