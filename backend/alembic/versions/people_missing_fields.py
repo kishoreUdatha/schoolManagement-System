@@ -7,7 +7,7 @@
 - medical_profiles.guardian_consent / consent_given_by / consent_on
 
 Revision ID: fields_people
-Revises: 945cd484b8d9
+Revises: fields_staff
 """
 from typing import Sequence, Union
 
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 
 
 revision: str = "fields_people"
-down_revision: Union[str, None] = "945cd484b8d9"
+down_revision: Union[str, None] = "fields_staff"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -2,7 +2,7 @@
 canteen menu, communication hours, certificate delivery preference
 
 Revision ID: fields_parentsvc
-Revises: 945cd484b8d9
+Revises: fields_parentlearn
 Create Date: 2026-09-22
 
 """
@@ -14,7 +14,7 @@ from sqlalchemy.dialects import postgresql
 
 
 revision: str = "fields_parentsvc"
-down_revision: Union[str, None] = "945cd484b8d9"
+down_revision: Union[str, None] = "fields_parentlearn"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -2,7 +2,7 @@
 student leave, events and messages
 
 Revision ID: fields_files
-Revises: 945cd484b8d9
+Revises: fields_parentsvc
 Create Date: 2026-09-22
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 
 revision: str = "fields_files"
-down_revision: Union[str, None] = "945cd484b8d9"
+down_revision: Union[str, None] = "fields_parentsvc"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

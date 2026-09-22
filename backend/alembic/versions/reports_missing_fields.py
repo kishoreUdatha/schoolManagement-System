@@ -1,7 +1,7 @@
 """reports: kept health-probe samples
 
 Revision ID: fields_reports
-Revises: 945cd484b8d9
+Revises: fields_files
 Create Date: 2026-09-22
 
 Everything else the reports area needed is computed from data already kept
@@ -15,7 +15,7 @@ import sqlalchemy as sa
 
 
 revision: str = "fields_reports"
-down_revision: Union[str, None] = "945cd484b8d9"
+down_revision: Union[str, None] = "fields_files"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

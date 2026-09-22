@@ -8,7 +8,7 @@ filed it for someone else. Classroom observations: three 1-5 scores. Class
 subjects: the usual room.
 
 Revision ID: fields_staff
-Revises: 945cd484b8d9
+Revises: fields_setup
 """
 from typing import Sequence, Union
 
@@ -18,7 +18,7 @@ from sqlalchemy.dialects import postgresql
 
 
 revision: str = "fields_staff"
-down_revision: Union[str, None] = "945cd484b8d9"
+down_revision: Union[str, None] = "fields_setup"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
