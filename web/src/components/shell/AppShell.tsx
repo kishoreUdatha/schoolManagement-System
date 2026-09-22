@@ -10,6 +10,7 @@ import { heldJobs, usePermissions } from "@/lib/jobs";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { MODULES, SCREENS, screen, routeOf, type Screen } from "@/lib/screens";
+import { MENU_LABEL, tabGroupOf } from "@/lib/menuGroups";
 import { HOME_SCREEN, ROLE_LABEL, session } from "@/lib/session";
 import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
@@ -303,6 +304,7 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
 
   const schoolName = sess?.user.role === "super_admin" ? "BrightCampus Platform" : (school?.name ?? "Bright International");
   const home = useHome();
+  const group = tabGroupOf(s.n);
   return (
     <div className="app">
       <Sidebar s={s} viewer={viewer} school={school ?? null} />
@@ -316,11 +318,20 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
           {s.layout.includes("dashboard") ? null : (
             <div className="page-head">
               <div>
-                <h1>{s.name}</h1>
+                <h1>{group?.label ?? MENU_LABEL[s.n] ?? s.name}</h1>
               </div>
               <div className="actions">{actions}</div>
             </div>
           )}
+          {group ? (
+            <nav className="module-tabs page-tabs" aria-label={group.label}>
+              {group.tabs.map(([n, t]) => (
+                <Link key={n} href={routeOf(n)} className={n === s.n ? "active" : ""} aria-current={n === s.n ? "page" : undefined}>
+                  {t}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
           {children}
           <footer className="screen-note">
             <span>{`BrightCampus · ${schoolName}`}</span>

@@ -226,3 +226,4 @@ option{background:#fff}
 .messaging-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 @media(max-width:1100px){.messaging-grid{grid-template-columns:1fr}}
 .messaging-grid input[aria-label^="Test"]{height:38px;border:1px solid #dce5f2;border-radius:8px;padding:0 10px;font:inherit}
+.page-tabs{margin:-4px 0 18px}
