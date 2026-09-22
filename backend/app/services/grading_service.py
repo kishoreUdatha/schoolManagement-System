@@ -245,8 +245,13 @@ def type_to_read(db: Session, t: ExamType) -> dict:
 def settings(db: Session, school_id: int) -> ReportCardSetting:
     s = db.execute(select(ReportCardSetting).where(ReportCardSetting.school_id == school_id)).scalar_one_or_none()
     if not s:
-        school_tenant = db.execute(select(Exam.tenant_id).where(Exam.school_id == school_id).limit(1)).scalar_one_or_none()
-        s = ReportCardSetting(tenant_id=school_tenant or 1, school_id=school_id)
+        # The school's own organization. (It used to be read off one of the
+        # school's exams, falling back to organization 1, which broke for a
+        # new school with no exams yet.)
+        from app.models.tenant import School
+
+        school = db.get(School, school_id)
+        s = ReportCardSetting(tenant_id=school.tenant_id, school_id=school_id)
         db.add(s)
         db.commit()
         db.refresh(s)
