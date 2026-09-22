@@ -3,6 +3,7 @@
 // Shapes and small helpers for Events / PTM / Communication.
 
 import { useEffect, useMemo } from "react";
+import type { Attachment } from "@/components/ui/Attachments";
 import type { Role } from "@/lib/session";
 import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
@@ -67,6 +68,8 @@ export type SchoolEvent = {
   is_cancelled: boolean;
   consent_yes: number;
   consent_no: number;
+  /** Circulars and permission slips; open via …/events/{id}/files/{file_id}. */
+  attachments?: Attachment[];
 };
 
 export type ParentEvent = SchoolEvent & {

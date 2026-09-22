@@ -21,6 +21,7 @@ from app.schemas.cover import (
     UnavailabilityIn,
     UnavailabilityRead,
 )
+from app.services import attachment_service
 from app.services import cover_service as svc
 
 
@@ -128,3 +129,9 @@ def student_leaves(current_user: Academic, db: Db, status_: Optional[StudentLeav
 @router.post("/student-leaves/{leave_id}/decide", response_model=StudentLeaveRead)
 def decide(leave_id: int, payload: DecideIn, current_user: LeaveDecider, db: Db):
     return svc.leaves_to_read(db, current_user, [svc.decide(db, current_user, leave_id, payload)])[0]
+
+
+@router.get("/student-leaves/{leave_id}/files/{attachment_id}",
+            summary="Open the family's supporting document (class teacher, admin, principal)")
+def student_leave_file(leave_id: int, attachment_id: int, current_user: LeaveDecider, db: Db):
+    return attachment_service.file_response(svc.staff_leave_file(db, current_user, leave_id, attachment_id))

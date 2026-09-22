@@ -9,6 +9,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useParent } from "@/components/parent/ParentShell";
+import { openAttachment } from "@/components/ui/Attachments";
 import { api, errorText } from "@/lib/api";
 import { date, dateTime } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
@@ -113,6 +114,17 @@ function Detail() {
         return (
           <div key={m.id} className={`bubble ${mine ? "sent" : "received"}`} style={{ whiteSpace: "pre-line" }}>
             {m.body}
+            {(m.files ?? []).map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                className="text-button"
+                style={{ display: "block" }}
+                onClick={() => openAttachment(`/api/v1/parent/me/conversations/${conv.id}/messages/${m.id}/files/${a.id}`, a).catch((e) => setErr(errorText(e)))}
+              >
+                {`Attachment: ${a.file_name}`}
+              </button>
+            ))}
             <small>
               {mine ? "You" : m.sender_name ?? "School"} · {dateTime(m.created_at)}
             </small>

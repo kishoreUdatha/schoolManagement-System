@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import { useParent } from "@/components/parent/ParentShell";
+import { fileSize, openAttachment } from "@/components/ui/Attachments";
 import { api, errorText } from "@/lib/api";
 import { date, money } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
@@ -128,6 +129,15 @@ export function EventConsent() {
       {badge}
       <h1>{ev.title}</h1>
       <p className="lead">{ev.description || ev.audience_label}</p>
+      {(ev.attachments ?? []).map((a) => (
+        <button key={a.id} type="button" className="item" onClick={() => openAttachment(`${EVENTS}/${ev.id}/files/${a.id}`, a).catch((e) => setError(errorText(e)))}>
+          <span>
+            <strong>{a.file_name}</strong>
+            <small>{`From the school · ${fileSize(a.size_bytes)}`}</small>
+          </span>
+          <span className="value">Open</span>
+        </button>
+      ))}
       <dl>
         <div>
           <dt>Date</dt>

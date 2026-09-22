@@ -1,3 +1,5 @@
+import type { Attachment } from "@/components/ui/Attachments";
+
 /** A parent–teacher conversation (GET /parent/me/conversations). */
 export type Conversation = {
   id: number;
@@ -20,6 +22,8 @@ export type Message = {
   body: string;
   attachment_url: string | null;
   created_at: string;
+  /** Files sent with the message: GET …/conversations/{id}/messages/{message_id}/files/{file_id}. */
+  files?: Attachment[];
 };
 
 export type TeacherContact = { teacher_user_id: number; teacher_name: string; subjects: string[] };

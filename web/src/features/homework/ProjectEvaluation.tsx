@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { FileCards, filesForm, UploadZone, type Attachment } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
@@ -27,6 +28,7 @@ export function ProjectEvaluation() {
   const [rating, setRating] = useState("");
   const [remark, setRemark] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Only a student who has started has a row the teacher can review (id 0 means none yet).
@@ -65,6 +67,30 @@ export function ProjectEvaluation() {
       setError(errorText(err));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function reviewFiles(progressId: number, files: File[]) {
+    setUploading(true);
+    setError(null);
+    try {
+      await api.upload(`/api/v1/teacher/projects/progress/${progressId}/review-files`, filesForm(files));
+      notify("File attached. The student and parents can open it.");
+      await rows.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeReviewFile(progressId: number, a: Attachment) {
+    if (!window.confirm(`Remove “${a.file_name}”?`)) return;
+    try {
+      await api.delete(`/api/v1/teacher/projects/progress/${progressId}/review-files/${a.id}`);
+      await rows.reload();
+    } catch (err) {
+      setError(errorText(err));
     }
   }
 
@@ -166,12 +192,24 @@ export function ProjectEvaluation() {
             ))}
           </dl>
         </Panel>
-        {p.attachment_url ? (
-          <Panel title="Attachments">
-            <LinkCard url={p.attachment_url} note="Attached by the teacher" />
+        {p.attachment_url || p.attachments?.length ? (
+          <Panel title="Assignment attachments">
+            {p.attachment_url ? <LinkCard url={p.attachment_url} note="Attached by the teacher" /> : null}
+            <FileCards files={p.attachments ?? []} pathOf={(a) => `/api/v1/teacher/projects/${p.id}/files/${a.id}`} note="Attached by the teacher" onError={setError} />
           </Panel>
         ) : null}
-        {/* Not wired: teacher file upload on evaluation — the review API takes no attachment. */}
+        {r ? (
+          <Panel title="Attachments" sub="Feedback file for the student and parents">
+            <UploadZone onFiles={(fs) => reviewFiles(r.id, fs)} busy={uploading} />
+            <FileCards
+              files={r.review_files ?? []}
+              pathOf={(a) => `/api/v1/teacher/projects/progress/${r.id}/files/${a.id}`}
+              note="Your feedback file"
+              onRemove={(a) => removeReviewFile(r.id, a)}
+              onError={setError}
+            />
+          </Panel>
+        ) : null}
       </aside>
     </div>
   );

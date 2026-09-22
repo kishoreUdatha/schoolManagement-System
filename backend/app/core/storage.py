@@ -7,6 +7,7 @@ doesn't touch the models.
 import os
 import uuid
 from pathlib import Path
+from typing import Optional
 
 from fastapi import HTTPException, UploadFile, status
 
@@ -22,6 +23,25 @@ ALLOWED = {
     "webp": ("image/webp", (b"RIFF",)),
 }
 
+_DOCX = ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", (b"PK\x03\x04",))
+_DOC = ("application/msword", (b"\xd0\xcf\x11\xe0",))
+
+# Files people attach to records (homework, leave notes, event circulars…):
+# the images and PDFs above plus Word documents.
+ATTACHMENT_TYPES = {**ALLOWED, "docx": _DOCX, "doc": _DOC}
+
+# A résumé sent from the public careers page.
+RESUME_TYPES = {"pdf": ALLOWED["pdf"], "docx": _DOCX, "doc": _DOC}
+
+# A school logo: images only, since it is shown in an <img>.
+LOGO_TYPES = {k: v for k, v in ALLOWED.items() if k != "pdf"}
+
+
+def describe(allowed: dict) -> str:
+    """'PDF, JPG, PNG or WEBP' for an error message."""
+    names = list(dict.fromkeys("JPG" if k in ("jpg", "jpeg") else k.upper() for k in allowed))
+    return ", ".join(names[:-1]) + (" or " if len(names) > 1 else "") + names[-1]
+
 
 def _root() -> Path:
     return Path(settings.storage_dir)
@@ -34,22 +54,28 @@ def _path(key: str) -> Path:
     return p
 
 
-def save_upload(school_id: int, area: str, upload: UploadFile) -> dict:
-    """Validate type + size, write to disk. Returns key/content_type/size/original_name."""
+def save_upload(school_id: int, area: str, upload: UploadFile,
+                allowed: Optional[dict] = None, max_mb: Optional[int] = None) -> dict:
+    """Validate type + size, write to disk. Returns key/content_type/size/original_name.
+
+    `allowed` narrows or widens the accepted types (default: PDF and images);
+    `max_mb` lowers the size limit below settings.max_upload_mb."""
+    allowed = allowed or ALLOWED
+    max_mb = min(max_mb or settings.max_upload_mb, settings.max_upload_mb)
     name = upload.filename or "file"
     ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
-    if ext not in ALLOWED:
+    if ext not in allowed:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF, JPG, PNG or WEBP files can be uploaded",
+            detail=f"Only {describe(allowed)} files can be uploaded",
         )
-    content_type, magics = ALLOWED[ext]
-    limit = settings.max_upload_mb * 1024 * 1024
+    content_type, magics = allowed[ext]
+    limit = max_mb * 1024 * 1024
     data = upload.file.read(limit + 1)
     if len(data) > limit:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File is larger than {settings.max_upload_mb} MB",
+            detail=f"File is larger than {max_mb} MB",
         )
     if not data:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File is empty")

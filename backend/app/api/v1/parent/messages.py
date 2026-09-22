@@ -1,7 +1,7 @@
 """Story 17.2 — Parent-side messaging endpoints."""
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import ParentUser
@@ -13,7 +13,7 @@ from app.schemas.messaging import (
     MessageSend,
     TeacherContactCard,
 )
-from app.services import messaging_service
+from app.services import attachment_service, messaging_service
 
 
 router = APIRouter()
@@ -108,6 +108,38 @@ def send(
         db, conversation_id, current_user, payload.body, payload.attachment_url
     )
     return MessageRead.model_validate(messaging_service._message_dict(db, m))
+
+
+@router.post(
+    "/conversations/{conversation_id}/files",
+    response_model=MessageRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Attach files (PDF, image or Word; up to 5) to the last message you sent here",
+)
+def attach(
+    conversation_id: int,
+    current_user: ParentUser,
+    db: Annotated[Session, Depends(get_db)],
+    files: list[UploadFile] = File(...),
+):
+    m = messaging_service.attach_to_my_last_message(db, conversation_id, current_user, files)
+    return MessageRead.model_validate(messaging_service._message_dict(db, m))
+
+
+@router.get(
+    "/conversations/{conversation_id}/messages/{message_id}/files/{attachment_id}",
+    summary="Open a file sent with a message",
+)
+def message_file(
+    conversation_id: int,
+    message_id: int,
+    attachment_id: int,
+    current_user: ParentUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return attachment_service.file_response(
+        messaging_service.message_file(db, conversation_id, message_id, current_user.id, attachment_id)
+    )
 
 
 @router.post(

@@ -28,6 +28,7 @@ from app.models.application import (
     ApplicationStatusHistory,
 )
 from app.models.approval import ApprovalRequest
+from app.models.attachment import Attachment
 from app.models.audit import AuditLog
 from app.models.attendance_ops import (
     AbsenceContact,
@@ -374,4 +375,5 @@ __all__ = [
     "PtmSlot",
     "SchoolEvent",
     "WeeklyReport",
+    "Attachment",
 ]

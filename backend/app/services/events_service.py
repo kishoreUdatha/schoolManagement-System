@@ -34,6 +34,7 @@ from app.models.student import Student
 from app.models.subject import ClassSubject
 from app.models.user import User
 from app.schemas.events import AlbumIn, EventIn, PtmSessionIn, SlotOutcomeIn
+from app.services import attachment_service
 
 
 def _404(what: str) -> HTTPException:
@@ -169,6 +170,7 @@ def _consent_counts(db: Session, event_ids: list[int]) -> dict[int, dict]:
 def events_to_read(db: Session, events: list[SchoolEvent]) -> list[dict]:
     labels = _audience_labels(db, events)
     counts = _consent_counts(db, [e.id for e in events if e.requires_consent])
+    files = attachment_service.read_many(db, "event", [e.id for e in events])
     out = []
     for e in events:
         c = counts.get(e.id, {})
@@ -181,6 +183,7 @@ def events_to_read(db: Session, events: list[SchoolEvent]) -> list[dict]:
             audience_label=labels[e.id],
             consent_yes=c.get(ConsentResponse.yes, 0),
             consent_no=c.get(ConsentResponse.no, 0),
+            attachments=files.get(e.id, []),
         )
         out.append(d)
     return out
@@ -276,8 +279,22 @@ def cancel_event(db: Session, e: SchoolEvent) -> SchoolEvent:
 def delete_event(db: Session, e: SchoolEvent) -> None:
     if e.is_published:
         raise _400("Published events can't be deleted; cancel it instead")
+    attachment_service.remove_all(db, "event", [e.id])
     db.delete(e)
     db.commit()
+
+
+def parent_event_file(db: Session, parent_user_id: int, event_id: int, attachment_id: int):
+    """A file on a published event this parent's children are in the audience for."""
+    scope = ParentScope(db, parent_user_id)
+    visible = scope.children and db.execute(
+        select(SchoolEvent.id).where(
+            SchoolEvent.id == event_id, SchoolEvent.is_published.is_(True), scope.audience_clause(SchoolEvent)
+        )
+    ).first()
+    if not visible:
+        raise _404("Event")
+    return attachment_service.get(db, "event", event_id, attachment_id)
 
 
 def _eligible_students_stmt(e: SchoolEvent):

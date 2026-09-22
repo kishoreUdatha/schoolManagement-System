@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, model_validator
 
 from app.core.enums import StudentLeaveKind, StudentLeaveStatus
+from app.schemas.attachment import AttachmentRead
 
 
 # ---------- substitutions ----------
@@ -137,6 +138,7 @@ class StudentLeaveRead(BaseModel):
     decided_at: Optional[datetime]
     decision_note: Optional[str]
     can_decide: bool = False
+    attachments: list[AttachmentRead] = []  # supporting documents (medical note…)
 
 
 class StudentLeaveUpdate(BaseModel):

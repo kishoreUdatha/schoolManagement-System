@@ -143,8 +143,9 @@ export function SchoolDetails() {
 }
 
 /**
- * SCR-032, live: PATCH /api/v1/school/profile. The logo is a link to an
- * image; there is no upload endpoint for it yet.
+ * SCR-032, live: PATCH /api/v1/school/profile. The logo is uploaded with
+ * POST /api/v1/school/profile/logo (PNG, JPG or WEBP, 2 MB), which sets
+ * logo_url to the stored file; a pasted image link still works too.
  */
 export function SchoolBranding() {
   const profile = useApi<Profile>(PROFILE);
@@ -152,6 +153,7 @@ export function SchoolBranding() {
   const [appName, setAppName] = useState<string | null>(null);
   const [accent, setAccent] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (profile.loading && !profile.data) return <Loading what="Loading the school profile…" />;
@@ -160,6 +162,28 @@ export function SchoolBranding() {
   const brand = color ?? s.brand_color ?? "";
   const shown = appName ?? s.app_name ?? s.name;
   const accentShown = accent ?? s.accent_color ?? "";
+
+  async function uploadLogo(files: File[]) {
+    const file = files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setError("The logo is larger than 2 MB.");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      await api.upload(`${PROFILE}/logo`, fd);
+      notify("Logo uploaded.");
+      await profile.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -237,10 +261,21 @@ export function SchoolBranding() {
                   ) : (
                     <Icon name="folder" />
                   )}
-                  <strong>School logo</strong>
-                  {/* Not wired: file upload — the profile stores a logo link only; no upload endpoint */}
-                  <span className="small muted">Paste a link to the logo image (PNG or JPG)</span>
-                  <input type="url" name="logo_url" aria-label="Logo link" placeholder="https://…" defaultValue={s.logo_url ?? ""} />
+                  <strong>{uploading ? "Uploading…" : "School logo"}</strong>
+                  <span className="small muted">PNG, JPG or WEBP, up to 2 MB</span>
+                  <input
+                    type="file"
+                    aria-label="Choose logo"
+                    accept=".png,.jpg,.jpeg,.webp"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      uploadLogo(Array.from(e.target.files ?? []));
+                      e.target.value = "";
+                    }}
+                  />
+                  <span className="small muted">or paste a link to the image</span>
+                  {/* text, not url: an uploaded logo's link is a path on this site (/api/v1/branding/logo/…) */}
+                  <input type="text" name="logo_url" key={s.logo_url ?? ""} aria-label="Logo link" placeholder="https://…" maxLength={500} defaultValue={s.logo_url ?? ""} />
                 </div>
               </div>
               <div className="form-grid">

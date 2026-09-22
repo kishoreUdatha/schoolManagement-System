@@ -5,7 +5,8 @@
  * goes where the API can take it:
  *  - to one of the child's teachers, as a conversation about this child
  *    (POST /parent/me/conversations), with the category and subject as its
- *    first line; or
+ *    first line, and any attachment on that first message
+ *    (POST …/conversations/{id}/files); or
  *  - for a hostel resident, to the warden as a hostel complaint
  *    (POST …/hostel/complaints).
  */
@@ -13,6 +14,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useParent } from "@/components/parent/ParentShell";
+import { ATTACH_ACCEPT, ATTACH_RULES, filesForm } from "@/components/ui/Attachments";
 import { api, errorText } from "@/lib/api";
 import { label } from "@/lib/format";
 import { parentRoute } from "@/lib/parentScreens";
@@ -43,6 +45,7 @@ function Form() {
   const [hostelKind, setHostelKind] = useState("maintenance");
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -69,6 +72,15 @@ function Form() {
           student_id: childId,
           body: `${head}\n\n${description.trim()}`,
         });
+        if (files.length) {
+          try {
+            await api.upload(`/api/v1/parent/me/conversations/${c.id}/files`, filesForm(files));
+          } catch (e3) {
+            notify(`Request sent, but the attachment was not: ${errorText(e3)}`);
+            router.push(`${parentRoute(46)}?id=${c.id}`);
+            return;
+          }
+        }
         notify("Request sent.");
         router.push(`${parentRoute(46)}?id=${c.id}`);
       }
@@ -140,7 +152,13 @@ function Form() {
           maxLength={1800}
         />
       </label>
-      {/* Not wired: attachment — the request APIs take no file upload. */}
+      {toHostel ? null : (
+        <label className="field">
+          Attachment (optional)
+          <input type="file" multiple accept={ATTACH_ACCEPT} onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
+          <small className="micro">{ATTACH_RULES}</small>
+        </label>
+      )}
       <button className="action" type="submit" disabled={busy || (!toHostel && !teacherId)}>
         {busy ? "Sending…" : "Send request"}
       </button>

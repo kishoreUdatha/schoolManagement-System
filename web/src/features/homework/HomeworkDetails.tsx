@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { FileCards } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
@@ -103,9 +104,10 @@ export function HomeworkDetails() {
           <div className="gap" />
           <div className="assessment-prompt">
             <strong>What to submit</strong>
-            <p className="small muted">A written response, a link to the work, or both. Students and parents can hand it in until it is closed.</p>
+            <p className="small muted">A written response, files (PDF, image or Word), a link to the work, or any of these. Students and parents can hand it in until it is closed.</p>
           </div>
           {h.attachment_url ? <LinkCard url={h.attachment_url} note="Attached by the teacher" /> : null}
+          <FileCards files={h.attachments ?? []} pathOf={(a) => `/api/v1/teacher/homework/${h.id}/files/${a.id}`} note="Attached by the teacher" onError={setError} />
         </Panel>
         <Panel title="Submission overview">
           <StatStrip items={stats} compact />

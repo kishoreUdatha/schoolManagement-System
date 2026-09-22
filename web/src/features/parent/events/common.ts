@@ -1,5 +1,7 @@
 // Shapes from the parent events/PTM/calendar endpoints (PM-037…PM-040).
 
+import type { Attachment } from "@/components/ui/Attachments";
+
 export type CalendarItem = {
   type: "holiday" | "exam" | "event" | "ptm" | "ptm_slot" | string;
   id: number;
@@ -33,6 +35,8 @@ export type ParentEvent = {
   is_cancelled: boolean;
   consent_open: boolean;
   children: ChildConsent[];
+  /** Circulars and permission slips: GET …/events/{id}/files/{file_id}. */
+  attachments?: Attachment[];
 };
 
 export type PtmSlot = {

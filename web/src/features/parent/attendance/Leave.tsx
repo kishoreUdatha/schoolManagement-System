@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useParent } from "@/components/parent/ParentShell";
+import { ATTACH_ACCEPT, ATTACH_RULES, fileSize, filesForm, openAttachment, type Attachment } from "@/components/ui/Attachments";
 import { api, errorText } from "@/lib/api";
 import { dateTime } from "@/lib/format";
 import { parentRoute } from "@/lib/parentScreens";
@@ -26,6 +27,8 @@ export type StudentLeave = {
   decided_by_name: string | null;
   decided_at: string | null;
   decision_note: string | null;
+  /** Supporting documents (medical note…). */
+  attachments?: Attachment[];
 };
 
 export const KINDS: [LeaveKind, string][] = [
@@ -92,6 +95,7 @@ function ApplyFor({ childId, name }: { childId: number; name: string }) {
   const { notify } = useParent();
   const today = todayIso();
   const [f, setF] = useState<{ kind: LeaveKind; from_date: string; to_date: string; reason: string }>({ kind: "sick", from_date: today, to_date: today, reason: "" });
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -105,6 +109,16 @@ function ApplyFor({ childId, name }: { childId: number; name: string }) {
     setError(null);
     try {
       const lv = await api.post<StudentLeave>(leavesPath(childId), { ...f, reason: f.reason.trim() });
+      if (files.length) {
+        try {
+          await api.upload(`${leavesPath(childId)}/${lv.id}/files`, filesForm(files));
+        } catch (err) {
+          // The request is in; say so, and let the parent add the document from the request.
+          notify(`Leave request sent, but the document was not attached: ${errorText(err)} You can add it from the request.`);
+          router.push(`${parentRoute(13)}?id=${lv.id}`);
+          return;
+        }
+      }
       notify("Sent to the class teacher. You will get a notice when it is decided.");
       router.push(`${parentRoute(13)}?id=${lv.id}`);
     } catch (err) {
@@ -145,7 +159,14 @@ function ApplyFor({ childId, name }: { childId: number; name: string }) {
         Reason
         <textarea rows={3} required minLength={3} placeholder="Tell the school why leave is needed" value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} />
       </label>
-      {/* Not wired: supporting document upload — the leave request takes no attachment. */}
+      <div className="upload-box">
+        <b>Supporting document (optional)</b>
+        <p>{`A medical note or letter, if you have one. ${ATTACH_RULES}.`}</p>
+        <label className="field">
+          Document
+          <input type="file" multiple accept={ATTACH_ACCEPT} onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
+        </label>
+      </div>
       {error ? (
         <p className="micro bad" role="alert">
           {error}
@@ -200,6 +221,32 @@ function DetailFor({ childId }: { childId: number }) {
     }
   }
 
+  async function addDoc(files: File[]) {
+    if (!files.length) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.upload(`${leavesPath(childId)}/${lv!.id}/files`, filesForm(files));
+      notify("Document attached.");
+      list.reload();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeDoc(a: Attachment) {
+    if (!window.confirm(`Remove “${a.file_name}”?`)) return;
+    setError(null);
+    try {
+      await api.delete(`${leavesPath(childId)}/${lv!.id}/files/${a.id}`);
+      list.reload();
+    } catch (e) {
+      setError(errorText(e));
+    }
+  }
+
   const [statusLabel, , pill] = STATUS[lv.status];
   return (
     <>
@@ -231,6 +278,36 @@ function DetailFor({ childId }: { childId: number }) {
         <h3>Reason</h3>
         <p>{lv.reason}</p>
       </section>
+      {lv.attachments?.length || lv.status === "pending" ? (
+        <section className="section">
+          <h3>Supporting documents</h3>
+          {(lv.attachments ?? []).map((a) => (
+            <div key={a.id} className="item">
+              <button type="button" className="text-button" style={{ textAlign: "left", flex: 1 }} onClick={() => openAttachment(`${leavesPath(childId)}/${lv.id}/files/${a.id}`, a).catch((e) => setError(errorText(e)))}>
+                <span>
+                  <strong>{a.file_name}</strong>
+                  <small>{fileSize(a.size_bytes)}</small>
+                </span>
+              </button>
+              <span className="value">
+                {lv.status === "pending" ? (
+                  <button type="button" className="text-button" onClick={() => removeDoc(a)}>
+                    Remove
+                  </button>
+                ) : (
+                  "Open"
+                )}
+              </span>
+            </div>
+          ))}
+          {lv.status === "pending" ? (
+            <label className="field">
+              {lv.attachments?.length ? "Add another document" : "Add a document (medical note, letter)"}
+              <input type="file" accept={ATTACH_ACCEPT} disabled={busy} onChange={(e) => addDoc(Array.from(e.target.files ?? []))} />
+            </label>
+          ) : null}
+        </section>
+      ) : null}
       <section className="section">
         <h3>Request timeline</h3>
         <div className="timeline">

@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { FileCards, filesForm, UploadZone, type Attachment } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
@@ -25,6 +26,7 @@ export function HomeworkSubmission() {
   const [comment, setComment] = useState("");
   const [link, setLink] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<Submission | null>(null);
 
@@ -57,8 +59,9 @@ export function HomeworkSubmission() {
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const body = { comment: comment.trim() || null, attachment_url: link.trim() || null };
-    if (!body.comment && !body.attachment_url) {
-      setError("Write a response, add a link to the work, or both.");
+    // Files already handed in count as work, so the text fields may both be empty then.
+    if (!body.comment && !body.attachment_url && !s?.files?.length) {
+      setError("Write a response, add a link to the work, or upload a file.");
       return;
     }
     setSaving(true);
@@ -73,6 +76,35 @@ export function HomeworkSubmission() {
       setError(errorText(err));
     } finally {
       setSaving(false);
+    }
+  }
+
+  const fileAt = (attachmentId: number) => `${learner.base}/${hw.id}/files/${attachmentId}`;
+
+  async function upload(files: File[]) {
+    setUploading(true);
+    setError(null);
+    try {
+      const r = await api.upload<Submission>(`${learner.base}/${hw.id}/submission/files`, filesForm(files));
+      setSaved(r);
+      subs.reload();
+      notify(s ? "File added. The teacher will look again." : "Homework handed in.");
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeFile(a: Attachment) {
+    if (!window.confirm(`Remove “${a.file_name}” from what you handed in?`)) return;
+    setError(null);
+    try {
+      const r = await api.delete<Submission>(`${learner.base}/${hw.id}/submission/files/${a.id}`);
+      setSaved(r);
+      subs.reload();
+    } catch (err) {
+      setError(errorText(err));
     }
   }
 
@@ -122,7 +154,10 @@ export function HomeworkSubmission() {
               ) : null}
             </div>
             {hw.attachment_url ? <LinkCard url={hw.attachment_url} note="Attached by the teacher" /> : null}
+            <FileCards files={hw.attachments ?? []} pathOf={(a) => fileAt(a.id)} note="Attached by the teacher" onError={setError} />
             {s?.attachment_url ? <LinkCard url={s.attachment_url} note="What you handed in" /> : null}
+            <FileCards files={s?.files ?? []} pathOf={(a) => fileAt(a.id)} note="What you handed in" onRemove={locked ? undefined : removeFile} onError={setError} />
+            <FileCards files={s?.review_files ?? []} pathOf={(a) => fileAt(a.id)} note="From your teacher" onError={setError} />
           </Panel>
           <form id="submission-form" className="panel" onSubmit={submit}>
             <div className="panel-head">
@@ -136,14 +171,14 @@ export function HomeworkSubmission() {
                   <input type="text" placeholder="Enter response" aria-label="Response" value={comment} disabled={locked} onChange={(e) => setComment(e.target.value)} />
                 </label>
                 <label className="field">
-                  <span>Attachments</span>
-                  {/* The API takes a link to the work (attachment_url); there is no file upload. */}
+                  <span>Link to the work</span>
+                  {/* A link (attachment_url) still works; files go in the Attachments panel. */}
                   <input type="url" placeholder="https://… link to your work" aria-label="Link to your work" value={link} disabled={locked} onChange={(e) => setLink(e.target.value)} />
                 </label>
               </div>
             </div>
             <div className="form-footer">
-              <span>{locked ? "Closed by the teacher — no more submissions." : "A response, a link, or both."}</span>
+              <span>{locked ? "Closed by the teacher — no more submissions." : "A response, a link or files — any of them."}</span>
               <button type="submit" className="btn primary" disabled={saving || locked || subs.loading}>
                 <Icon name="check" className="sm" />
                 {saving ? "Saving…" : s ? "Save the change" : "Submit homework"}
@@ -168,7 +203,12 @@ export function HomeworkSubmission() {
               ))}
             </dl>
           </Panel>
-          {/* Not wired: file upload zone — submissions carry a link (attachment_url); no upload endpoint. */}
+          <Panel title="Attachments">
+            <UploadZone onFiles={upload} busy={uploading} disabled={locked} />
+            <p className="small muted" style={{ marginTop: 8 }}>
+              {s ? "Adding or removing a file hands the work in again for the teacher to look at." : "Uploading a file hands the work in."}
+            </p>
+          </Panel>
         </aside>
       </div>
     </>

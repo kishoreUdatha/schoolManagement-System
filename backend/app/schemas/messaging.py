@@ -3,6 +3,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.attachment import AttachmentRead
+
 
 class ConversationStartRequest(BaseModel):
     """Used by a parent to open a thread with a specific teacher about a child."""
@@ -30,6 +32,7 @@ class MessageRead(BaseModel):
     attachment_url: Optional[str] = None
     is_read_by_recipient: bool
     created_at: datetime
+    files: list[AttachmentRead] = []  # uploaded with the message
 
 
 class ConversationRead(BaseModel):
