@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { todayIso } from "./shared";
 import type { Homework, MyClasses, ProjectKind, Rubric } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-129 Create Homework: POST /teacher/homework, or PATCH
  * /teacher/homework/{id} when opened with ?id= (edit).
@@ -82,7 +83,7 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
   }
 
   async function removeSaved(a: Attachment) {
-    if (!window.confirm(`Remove “${a.file_name}”?`)) return;
+    if (!(await ask(`Remove “${a.file_name}”?`))) return;
     try {
       await api.delete(`/api/v1/teacher/homework/${id}/files/${a.id}`);
       existing.reload();

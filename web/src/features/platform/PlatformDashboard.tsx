@@ -16,6 +16,7 @@ import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import type { Health, Renewal, SchoolsByMonth, Tenant, TicketList, UsageSummary } from "./types";
 
+import { ask } from "@/lib/dialog";
 const n = (v: number | undefined) => (v === undefined ? "…" : v.toLocaleString("en-IN"));
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -45,7 +46,7 @@ export function PlatformDashboard() {
 
   async function sendReminders() {
     const count = renewals.data?.length ?? 0;
-    if (!window.confirm(`Send a renewal reminder to the school admins of ${count} organization(s) whose subscription ends in the next 30 days? It goes out in-app and by email.`)) return;
+    if (!(await ask(`Send a renewal reminder to the school admins of ${count} organization(s) whose subscription ends in the next 30 days? It goes out in-app and by email.`))) return;
     setSending(true);
     setSendError(null);
     try {

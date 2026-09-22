@@ -10,6 +10,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { api, type Paginated } from "@/lib/api";
 
+import { ask } from "@/lib/dialog";
 /** Today as YYYY-MM-DD in the viewer's time zone (not UTC). */
 export function today(): string {
   const d = new Date();
@@ -219,4 +220,4 @@ export function useNewFlag(): [boolean, () => void] {
 }
 
 /** Ask before a destructive step; the message says what will happen. */
-export const confirmed = (message: string) => typeof window !== "undefined" && window.confirm(message);
+export const confirmed = async (message: string) => typeof window !== "undefined" && (await ask(message));

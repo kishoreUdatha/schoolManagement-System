@@ -14,6 +14,7 @@ import { PROFILE } from "./GeneralSettings";
 import { SettingsNav } from "./SettingsNav";
 import type { Integration, NotificationCatalogue, NotificationTemplate, TemplatePreview } from "./types";
 
+import { ask } from "@/lib/dialog";
 const TEMPLATES = "/api/v1/school/settings/notifications/templates";
 
 const CHANNEL: Record<string, [string, string]> = {
@@ -110,7 +111,7 @@ export function NotificationSettings() {
   }
 
   async function remove(t: NotificationTemplate) {
-    if (!window.confirm(`Delete the ${t.name} template?`)) return;
+    if (!(await ask(`Delete the ${t.name} template?`))) return;
     setError(null);
     try {
       await api.delete(`${TEMPLATES}/${t.id}`);

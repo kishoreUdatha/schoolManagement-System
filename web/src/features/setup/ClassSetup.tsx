@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { Field, KV, SectionTitle, orNull } from "./bits";
 import type { AcademicYear, Branch, SchoolClass, StaffPick } from "./types";
 
+import { ask } from "@/lib/dialog";
 export const SCHOOL_LEVELS = ["Pre-primary", "Primary", "Middle school", "Secondary", "Senior secondary"];
 
 /**
@@ -130,7 +131,7 @@ export function ClassSetup() {
   }
 
   async function remove() {
-    if (!cls || !window.confirm(`Delete ${cls.name}? Its sections go with it.`)) return;
+    if (!cls || !(await ask(`Delete ${cls.name}? Its sections go with it.`))) return;
     setSaving(true);
     setError(null);
     try {

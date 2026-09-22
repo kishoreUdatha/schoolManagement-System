@@ -13,6 +13,7 @@ import type { SchoolClass } from "@/features/students/types";
 import { APPS, ENQ, openDocument, size, uploadDocument, useYears } from "./shared";
 import { DOC_KINDS, type Application, type EnquiryDetail } from "./types";
 
+import { ask } from "@/lib/dialog";
 /** The page-head button: "Save changes" when editing (?id=), else "Submit application". */
 export function ApplicationFormAction() {
   const editing = Boolean(useSearchParams().get("id"));
@@ -286,7 +287,7 @@ export function DocumentList({ a, onChange }: { a: Application; onChange: () => 
   const docs = a.documents ?? [];
 
   async function remove(id: number, name: string) {
-    if (!window.confirm(`Delete ${name}? The file is removed for good.`)) return;
+    if (!(await ask(`Delete ${name}? The file is removed for good.`))) return;
     setBusy(id);
     setError(null);
     try {

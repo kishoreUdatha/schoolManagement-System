@@ -19,6 +19,7 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { useYears } from "@/features/academics/setupKit";
 
+import { ask } from "@/lib/dialog";
 const S = "/api/v1/school/parent-services/surveys";
 
 type Kind = "rating" | "choice" | "text";
@@ -72,7 +73,7 @@ export function ParentSurveys() {
   }
 
   async function remove(s: Survey) {
-    if (!window.confirm(`Delete “${s.title}”?`)) return;
+    if (!(await ask(`Delete “${s.title}”?`))) return;
     setFailed(null);
     try {
       await api.delete(`${S}/${s.id}`);

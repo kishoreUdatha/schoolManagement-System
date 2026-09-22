@@ -11,6 +11,7 @@ import { Dialog, DialogActions, Field, SearchBox, YearSelect, downloadCsv, usePa
 import { RoomSelect, roomOf } from "@/features/setup/SectionSetup";
 import type { SchoolClass, Section, StaffMember } from "./types";
 
+import { ask } from "@/lib/dialog";
 const COLUMNS = ["Section", "Class", "Class teacher", "Room", "Capacity", "Enrolled"];
 
 type Line = Section & { className: string };
@@ -132,7 +133,7 @@ function SectionForm({
   }
 
   async function remove() {
-    if (!s || !window.confirm(`Delete section ${s.className} ${s.name}?`)) return;
+    if (!s || !(await ask(`Delete section ${s.className} ${s.name}?`))) return;
     setSaving(true);
     try {
       await api.delete(`/api/v1/school/sections/${s.id}`);

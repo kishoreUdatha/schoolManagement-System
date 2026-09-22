@@ -14,6 +14,7 @@ import { HOME_SCREEN, ROLE_LABEL, session } from "@/lib/session";
 import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
 
+import { ask } from "@/lib/dialog";
 /*
  * The signed-in frame every workspace screen sits in: sidebar, top bar,
  * breadcrumb, page head and footer, as drawn in the BrightCampus mocks.
@@ -221,7 +222,7 @@ function YearSelect({ admin }: { admin: boolean }) {
   async function change(id: number) {
     const y = years.data?.find((x) => x.id === id);
     if (!y || y.is_current) return;
-    if (!window.confirm(`Make ${y.name} the current academic year for the whole school?`)) return;
+    if (!(await ask(`Make ${y.name} the current academic year for the whole school?`))) return;
     try {
       await api.post(`/api/v1/school/academic-years/${id}/set-current`);
       window.location.reload();

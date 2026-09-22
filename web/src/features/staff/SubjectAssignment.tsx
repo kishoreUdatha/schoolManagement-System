@@ -10,6 +10,7 @@ import { useApi } from "@/lib/useApi";
 import type { AcademicYear, SchoolClass } from "@/features/students/types";
 import type { ClassSubject, Staff, Subject } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-085, live: the subjects a class takes and who teaches each
  * (GET /classes/{id}/subjects; POST to add a subject, PATCH
@@ -205,7 +206,7 @@ export function SubjectAssignment() {
                       type="button"
                       className="btn"
                       disabled={busy}
-                      onClick={() => window.confirm(`Remove ${cs.subject.name} from ${klass?.name ?? "this class"}?`) && run(() => api.delete(`/api/v1/school/class-subjects/${cs.id}`), "Subject removed.")}
+                      onClick={async () => (await ask(`Remove ${cs.subject.name} from ${klass?.name ?? "this class"}?`)) && run(() => api.delete(`/api/v1/school/class-subjects/${cs.id}`), "Subject removed.")}
                     >
                       Remove
                     </button>

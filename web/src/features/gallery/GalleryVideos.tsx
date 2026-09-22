@@ -336,7 +336,7 @@ function AlbumView({ id, canManage, onBack }: { id: string; canManage: boolean; 
   }
 
   async function removeAlbum() {
-    if (!confirmed(`Delete “${a!.title}” and all ${a!.photos.length} of its photos? This cannot be undone.`)) return;
+    if (!(await confirmed(`Delete “${a!.title}” and all ${a!.photos.length} of its photos? This cannot be undone.`))) return;
     setBusy(true);
     try {
       await api.delete(`${GALLERY}/${a!.id}`);
@@ -418,7 +418,7 @@ function AlbumView({ id, canManage, onBack }: { id: string; canManage: boolean; 
                     <button type="button" className="btn" onClick={() => setCaptioning(p)}>
                       Caption
                     </button>
-                    <button type="button" className="btn" disabled={busy} onClick={() => confirmed("Delete this photo?") && run(() => api.delete(`${GALLERY}/photos/${p.id}`), "Photo deleted.")}>
+                    <button type="button" className="btn" disabled={busy} onClick={async () => (await confirmed("Delete this photo?")) && run(() => api.delete(`${GALLERY}/photos/${p.id}`), "Photo deleted.")}>
                       Delete
                     </button>
                   </div>
@@ -508,7 +508,7 @@ function SchoolVideos({ canRemove }: { canRemove: boolean }) {
   ];
 
   async function remove(v: Video) {
-    if (!confirmed(`Remove “${v.title}”? Students will no longer see it.`)) return;
+    if (!(await confirmed(`Remove “${v.title}”? Students will no longer see it.`))) return;
     setError(null);
     try {
       await api.delete(`/api/v1/school/videos/${v.id}`);
@@ -588,7 +588,7 @@ function TeacherVideos() {
   }
 
   async function remove(v: Video) {
-    if (!confirmed(`Remove “${v.title}”? Students will no longer see it.`)) return;
+    if (!(await confirmed(`Remove “${v.title}”? Students will no longer see it.`))) return;
     try {
       await api.delete(`/api/v1/teacher/videos/${v.id}`);
       notify("Video removed.");

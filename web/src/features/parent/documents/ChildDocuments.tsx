@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { ChildGate, PmEmpty, PmError, PmLoading, useChildPath, valueClass, type Tone } from "../support/pm";
 import type { Certificate } from "./types";
 
+import { ask } from "@/lib/dialog";
 type Doc = {
   id: number;
   category: string;
@@ -86,7 +87,7 @@ function Documents() {
   }
 
   async function remove(d: Doc) {
-    if (!base || !window.confirm(`Remove “${d.title}”?`)) return;
+    if (!base || !(await ask(`Remove “${d.title}”?`))) return;
     try {
       await api.delete(`${base}/documents/${d.id}`);
       notify("Document removed.");

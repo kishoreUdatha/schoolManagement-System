@@ -87,7 +87,7 @@ export function ProjectEditDialog({ project, onClose, onSaved }: { project: Proj
 
 /** DELETE /teacher/projects/{id}, after a confirmation. Resolves true when deleted. */
 export async function deleteProject(project: Project): Promise<boolean> {
-  if (!confirmed(`Delete “${project.title}”? Students' progress and submissions on it are removed too.`)) return false;
+  if (!(await confirmed(`Delete “${project.title}”? Students' progress and submissions on it are removed too.`))) return false;
   await api.delete(`/api/v1/teacher/projects/${project.id}`);
   notify(`“${project.title}” deleted.`);
   return true;

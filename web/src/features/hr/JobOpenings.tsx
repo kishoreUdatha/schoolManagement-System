@@ -17,6 +17,7 @@ import { careersPath } from "@/features/public/links";
 import type { Department, Opening, OpeningStatus } from "./types";
 import { Dialog, Field, KV, useNewFlag } from "./ui";
 
+import { ask } from "@/lib/dialog";
 const BASE = "/api/v1/school/hr/openings";
 const STATUSES: OpeningStatus[] = ["draft", "open", "on_hold", "closed", "filled"];
 const TYPES = ["full_time", "part_time", "contract", "temporary"];
@@ -274,7 +275,7 @@ export function JobOpenings() {
                 className="btn"
                 disabled={busy}
                 onClick={async () => {
-                  if (!window.confirm(`Delete ${open.title}?`)) return;
+                  if (!(await ask(`Delete ${open.title}?`))) return;
                   if ((await act(() => api.delete(`${BASE}/${open.id}`), "Opening deleted.")) !== undefined) setOpen(null);
                 }}
               >

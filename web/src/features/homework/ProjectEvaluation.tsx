@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { LinkCard } from "./shared";
 import type { Progress, Project } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-137, live: a project's progress rows (?id= project, ?progress= row),
  * one student at a time; feedback and a 0–5 rating go to
@@ -85,7 +86,7 @@ export function ProjectEvaluation() {
   }
 
   async function removeReviewFile(progressId: number, a: Attachment) {
-    if (!window.confirm(`Remove “${a.file_name}”?`)) return;
+    if (!(await ask(`Remove “${a.file_name}”?`))) return;
     try {
       await api.delete(`/api/v1/teacher/projects/progress/${progressId}/review-files/${a.id}`);
       await rows.reload();

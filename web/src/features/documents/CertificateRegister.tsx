@@ -14,6 +14,7 @@ import { openFile } from "./files";
 import { StatusBadge } from "./parts";
 import { CERT_KINDS, type Certificate } from "./types";
 
+import { ask } from "@/lib/dialog";
 const COLUMNS = ["Certificate no.", "Student", "Type", "Issued on", "Issued by", "Status"];
 
 /**
@@ -211,9 +212,9 @@ function CertificateCard({ c, onClose, onChanged }: { c: Certificate; onClose: (
               type="button"
               className="btn danger"
               disabled={busy}
-              onClick={() =>
+              onClick={async () =>
                 needReason() &&
-                window.confirm(c.status === "issued" ? `Cancel certificate ${c.serial_no}? It stops being valid and the family sees it cancelled.` : "Reject this certificate request? The family sees your reason.") &&
+                (await ask(c.status === "issued" ? `Cancel certificate ${c.serial_no}? It stops being valid and the family sees it cancelled.` : "Reject this certificate request? The family sees your reason.")) &&
                 (c.status === "issued"
                   ? run(() => api.post(`/api/v1/school/certificates/${c.id}/cancel`, { reason: reason.trim() }), `Cancelled ${c.serial_no}.`)
                   : run(() => api.post(`/api/v1/school/certificates/${c.id}/decide`, { approve: false, remarks: reason.trim() }), "Request rejected."))

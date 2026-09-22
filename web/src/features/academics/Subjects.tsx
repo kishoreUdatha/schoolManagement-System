@@ -11,6 +11,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, DialogActions, Field, SearchBox, YearSelect, downloadCsv, usePageAction, useSearch, useYears } from "./setupKit";
 import type { ClassSubject, Department, SchoolClass, Subject } from "./types";
 
+import { ask } from "@/lib/dialog";
 const COLUMNS = ["Subject", "Subject code", "Department", "Subject type", "Classes", "Status"];
 
 /**
@@ -158,7 +159,7 @@ function SubjectForm({
   async function toggleClass(c: SchoolClass) {
     if (!s) return;
     const link = linkOf(c.id);
-    if (link && !window.confirm(`Stop teaching ${s.name} in ${c.name}? Its homework, online tests, syllabus, videos and timetable lessons for ${c.name} are deleted with it.`)) return;
+    if (link && !(await ask(`Stop teaching ${s.name} in ${c.name}? Its homework, online tests, syllabus, videos and timetable lessons for ${c.name} are deleted with it.`))) return;
     setError(null);
     try {
       if (link) await api.delete(`/api/v1/school/class-subjects/${link.id}`);
@@ -171,7 +172,7 @@ function SubjectForm({
   }
 
   async function remove() {
-    if (!s || !window.confirm(`Delete ${s.name}?`)) return;
+    if (!s || !(await ask(`Delete ${s.name}?`))) return;
     setSaving(true);
     try {
       await api.delete(`/api/v1/school/subjects/${s.id}`);

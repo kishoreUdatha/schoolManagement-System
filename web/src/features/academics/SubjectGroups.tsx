@@ -10,6 +10,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, DialogActions, Field, SearchBox, downloadCsv, usePageAction, useSearch, useYears } from "./setupKit";
 import type { SchoolClass, Subject, SubjectGroup } from "./types";
 
+import { ask } from "@/lib/dialog";
 const COLUMNS = ["Group", "Subjects", "Class", "Selection rule", "Minimum", "Maximum", "Status"];
 
 const picks = (n: number | null) => (n === null ? "—" : String(n));
@@ -244,8 +245,8 @@ function GroupDialog({
               type="button"
               className="btn danger"
               disabled={saving}
-              onClick={() =>
-                window.confirm(`Remove the group ${g.name}? The subjects in it are not affected.`) &&
+              onClick={async () =>
+                (await ask(`Remove the group ${g.name}? The subjects in it are not affected.`)) &&
                 run(() => api.delete(`${BASE}/${g.id}`), `${g.name} removed. Its subjects are untouched.`, true)
               }
             >

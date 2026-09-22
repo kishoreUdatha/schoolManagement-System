@@ -11,6 +11,7 @@ import { useApi } from "@/lib/useApi";
 import type { Checklist, StaffMember, Starter } from "./types";
 import { Dialog, Field, KV, today, useNewFlag } from "./ui";
 
+import { ask } from "@/lib/dialog";
 const BASE = "/api/v1/school/hr-ops/onboarding";
 const AREAS = ["hr", "it", "payroll", "workspace", "induction", "safeguarding", "library"];
 
@@ -183,7 +184,7 @@ export function Onboarding() {
                   className="btn primary"
                   disabled={busy || !c.can_complete}
                   title={c.can_complete ? "Sign the checklist off" : "Tick every task first"}
-                  onClick={() => window.confirm(`Sign off ${c.full_name ?? "this"}'s onboarding as complete?`) && run(() => api.post(`${BASE}/${c.staff_id}/complete`), "Onboarding complete.")}
+                  onClick={async () => (await ask(`Sign off ${c.full_name ?? "this"}'s onboarding as complete?`)) && run(() => api.post(`${BASE}/${c.staff_id}/complete`), "Onboarding complete.")}
                 >
                   Complete onboarding
                 </button>

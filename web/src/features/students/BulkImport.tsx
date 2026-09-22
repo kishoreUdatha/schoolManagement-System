@@ -15,6 +15,7 @@ import { useApi } from "@/lib/useApi";
 import { COLUMNS, MAX_ROWS, parseStudents, type ParsedRow } from "./csv";
 import type { AcademicYear, BulkResult, SchoolClass, Student } from "./types";
 
+import { ask } from "@/lib/dialog";
 type Outcome = { created: Student[]; failed: { line: number; name: string; error: string }[]; sectionLabel: string };
 
 /**
@@ -88,7 +89,7 @@ export function BulkImport() {
     if (!yearId || !sectionId || !section || !cls) return setError("Choose the academic year, class and section first.");
     if (!good.length) return setError("There are no rows ready to import.");
     if (tooMany) return setError(`One import takes at most ${MAX_ROWS} students. Split the file and import it in parts.`);
-    if (bad && !window.confirm(`${bad} row(s) have problems and will be skipped. Import the other ${good.length}?`)) return;
+    if (bad && !(await ask(`${bad} row(s) have problems and will be skipped. Import the other ${good.length}?`))) return;
     setBusy(true);
     setError(null);
     const sent: ParsedRow[] = good;

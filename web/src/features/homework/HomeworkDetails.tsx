@@ -16,6 +16,7 @@ import { useApi } from "@/lib/useApi";
 import { LinkCard, teacherState } from "./shared";
 import type { Homework, MyClasses, Rubric, Submission } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-130, live: GET /teacher/homework/{id} (?id=), its submissions,
  * the class size from /teacher/my-classes and the rubric's criteria.
@@ -52,7 +53,7 @@ export function HomeworkDetails() {
   ];
 
   async function act(what: "close" | "reopen" | "delete") {
-    if (what === "delete" && !window.confirm(`Delete "${h!.title}"?`)) return;
+    if (what === "delete" && !(await ask(`Delete "${h!.title}"?`))) return;
     setBusy(true);
     setError(null);
     try {

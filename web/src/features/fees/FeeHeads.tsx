@@ -15,6 +15,7 @@ import { Field } from "./common";
 import { ToggleRow, useNewFlag } from "./extra";
 import type { FeeHead } from "./types";
 
+import { ask } from "@/lib/dialog";
 type Form = { id: number; name: string; code: string; is_recurring: boolean; late_fee_type: FeeHead["late_fee_type"]; late_fee_value: string; late_fee_after_days: string; is_active: boolean };
 const EMPTY: Form = { id: 0, name: "", code: "", is_recurring: true, late_fee_type: "none", late_fee_value: "0", late_fee_after_days: "0", is_active: true };
 
@@ -106,7 +107,7 @@ export function FeeHeads() {
   }
 
   async function remove(h: FeeHead) {
-    if (!window.confirm(`Delete the fee head "${h.name}"? This cannot be undone.`)) return;
+    if (!(await ask(`Delete the fee head "${h.name}"? This cannot be undone.`))) return;
     setError(null);
     try {
       await api.delete(`/api/v1/school/fees/heads/${h.id}`);

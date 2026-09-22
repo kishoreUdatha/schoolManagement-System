@@ -16,6 +16,7 @@ import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, formNum, form
 import { WELL } from "./Clinic";
 import type { Appointment, Chain, CounsellingCase, Incident, IncidentStatus, OutstandingAction, StaffOption, Thin } from "./types";
 
+import { ask, askText } from "@/lib/dialog";
 const DISC = "/api/v1/school/discipline";
 const STAFF = "/api/v1/school/directory/staff";
 
@@ -332,7 +333,7 @@ export function CaseNotes() {
   }
 
   async function inform() {
-    const message = window.prompt("Message to the parents (a summary only — session notes are never shared):");
+    const message = (await askText("Message to the parents (a summary only — session notes are never shared):"));
     if (message && message.trim()) await run(() => api.post(`${DISC}/counselling/cases/${c!.id}/inform-parents`, { message: message.trim() }), "Parents informed.");
   }
 
@@ -745,7 +746,7 @@ export function IncidentFollowUp() {
   }
 
   async function share() {
-    const message = window.prompt("Message to the parents (optional):") ?? null;
+    const message = (await askText("Message to the parents (optional):")) ?? null;
     if (message === null) return;
     await run(() => api.post(`${DISC}/incidents/${inc!.id}/share`, { message: message.trim() || null }), "Shared with the parents.");
   }
@@ -825,7 +826,7 @@ export function IncidentFollowUp() {
                                     Mark served
                                   </button>
                                 )}
-                                <button type="button" className="btn" disabled={saving} onClick={() => window.confirm("Remove this action?") && run(() => api.delete(`${DISC}/actions/${a.id}`), "Action removed.")}>
+                                <button type="button" className="btn" disabled={saving} onClick={async () => (await ask("Remove this action?")) && run(() => api.delete(`${DISC}/actions/${a.id}`), "Action removed.")}>
                                   Remove
                                 </button>
                               </div>
@@ -881,7 +882,7 @@ export function IncidentFollowUp() {
                   className="btn"
                   disabled={saving}
                   onClick={async () => {
-                    if (window.confirm("Delete this incident?") && (await run(() => api.delete(`${DISC}/incidents/${inc.id}`), "Incident deleted."))) router.push(routeOf(223));
+                    if ((await ask("Delete this incident?")) && (await run(() => api.delete(`${DISC}/incidents/${inc.id}`), "Incident deleted."))) router.push(routeOf(223));
                   }}
                 >
                   Delete incident
@@ -1060,7 +1061,7 @@ export function EmergencyContacts() {
                             <button type="button" className="btn" onClick={() => move(i, 1)} disabled={i === links.length - 1} aria-label="Move down">
                               ↓
                             </button>
-                            <button type="button" className="btn" disabled={saving} onClick={() => window.confirm(`Remove ${l.contact_name}? The others renumber.`) && run(() => api.delete(`${WELL}/emergency/contacts/${l.id}`), "Contact removed.")}>
+                            <button type="button" className="btn" disabled={saving} onClick={async () => (await ask(`Remove ${l.contact_name}? The others renumber.`)) && run(() => api.delete(`${WELL}/emergency/contacts/${l.id}`), "Contact removed.")}>
                               Remove
                             </button>
                           </div>

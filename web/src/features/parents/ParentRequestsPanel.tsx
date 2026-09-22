@@ -19,6 +19,7 @@ import { date, dateTime } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 
+import { askText } from "@/lib/dialog";
 export type SchoolParentRequest = {
   id: number;
   kind: "link_child" | "contact_change" | "transport_change" | "library_renewal";
@@ -67,7 +68,7 @@ export function ParentRequestsPanel({
   const [failed, setFailed] = useState<string | null>(null);
 
   async function decide(r: SchoolParentRequest, approve: boolean) {
-    const note = approve ? "" : window.prompt("Reason for declining (the parent sees this):", "");
+    const note = approve ? "" : (await askText("Reason for declining (the parent sees this):", ""));
     if (note === null) return;
     setBusy(r.id);
     setFailed(null);

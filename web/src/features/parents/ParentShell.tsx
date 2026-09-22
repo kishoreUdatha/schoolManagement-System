@@ -13,6 +13,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { AuditEntry, Parent, ParentNote } from "./types";
 
+import { ask } from "@/lib/dialog";
 /** Load the parent named by ?id= (their user id). */
 export function useParent() {
   const id = useSearchParams().get("id");
@@ -211,7 +212,7 @@ export function AddNote({ id, onAdded }: { id: string; onAdded: () => void }) {
 export function NotesPanel({ id, notes, loading, onChange }: { id: string; notes: ParentNote[] | null; loading: boolean; onChange: () => void }) {
   const [error, setError] = useState<string | null>(null);
   async function remove(n: ParentNote) {
-    if (!window.confirm("Delete this note?")) return;
+    if (!(await ask("Delete this note?"))) return;
     setError(null);
     try {
       await api.delete(`/api/v1/school/parents/${id}/notes/${n.id}`);

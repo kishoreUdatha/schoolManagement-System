@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { MEETING_MODE, type MeetingMode, type ParentPtm, type PtmDetail, type PtmSession, type PtmSlot, SLOT_STATUS, type TeacherPtm, hhmm, useRole } from "./shared";
 
+import { ask } from "@/lib/dialog";
 type Child = { id: number; full_name: string; section_label?: string | null };
 
 /** SCR-251: parents book, teachers record meetings, the office oversees. */
@@ -108,7 +109,7 @@ function ParentBooking() {
   }
 
   async function cancel(slot: { id: number; start_time: string }) {
-    if (!window.confirm(`Cancel your ${hhmm(slot.start_time)} meeting?`)) return;
+    if (!(await ask(`Cancel your ${hhmm(slot.start_time)} meeting?`))) return;
     try {
       setItems(await api.delete<ParentPtm[]>(`/api/v1/parent/me/ptm/slots/${slot.id}`));
       notify("Booking cancelled.");
@@ -432,7 +433,7 @@ function OfficeSlots() {
 
   async function cancelBooking() {
     if (!s || !slot) return;
-    if (!window.confirm(`Cancel ${slot.student_name}'s ${hhmm(slot.start_time)} booking? The parent will be told.`)) return;
+    if (!(await ask(`Cancel ${slot.student_name}'s ${hhmm(slot.start_time)} booking? The parent will be told.`))) return;
     try {
       await api.delete(`/api/v1/school/ptm/${s.id}/slots/${slot.id}/booking`);
       notify("Booking cancelled.");

@@ -15,6 +15,7 @@ import { useApi } from "@/lib/useApi";
 import { useSetParam } from "./common";
 import type { MarkRow, MarkStatus, MarksSaveResult, MarksView, MyClasses, MyPaper } from "./types";
 
+import { ask } from "@/lib/dialog";
 const TONES = ["mint", "", "peach", "lilac"];
 
 /** What the teacher has typed for one student, before it is saved. */
@@ -153,7 +154,7 @@ export function MarksEntry() {
   }
 
   async function allAbsent() {
-    if (!window.confirm("Mark every unmarked student absent? Students who already have marks are not touched.")) return;
+    if (!(await ask("Mark every unmarked student absent? Students who already have marks are not touched."))) return;
     setSaving(true);
     setError(null);
     try {

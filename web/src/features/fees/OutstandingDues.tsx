@@ -14,6 +14,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { DuesAgeing, ReminderLog } from "./types";
 
+import { ask } from "@/lib/dialog";
 const AGE: [string, string, (d: number) => boolean][] = [
   ["", "All ages", () => true],
   ["current", "Not yet due", (d) => d <= 0],
@@ -65,7 +66,7 @@ export function OutstandingDues() {
   ]);
 
   async function runReminders() {
-    if (!window.confirm("Send a fee reminder to every family with fees due or overdue? Families already reminded today are skipped.")) return;
+    if (!(await ask("Send a fee reminder to every family with fees due or overdue? Families already reminded today are skipped."))) return;
     setRunning(true);
     setError(null);
     try {

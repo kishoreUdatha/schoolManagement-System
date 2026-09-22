@@ -11,6 +11,7 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { downloadCsv } from "./csv";
 
+import { ask } from "@/lib/dialog";
 type Announcement = {
   id: number;
   title: string;
@@ -109,8 +110,8 @@ export function GlobalAnnouncements() {
   }
 
   const toggle = (a: Announcement) => act(a.id, () => api.patch(`/api/v1/super-admin/announcements/${a.id}`, { is_active: !a.is_active }), a.is_active ? "Announcement switched off." : "Announcement switched on.");
-  const remove = (a: Announcement) => {
-    if (!window.confirm(`Remove "${a.title}"?`)) return;
+  const remove = async (a: Announcement) => {
+    if (!(await ask(`Remove "${a.title}"?`))) return;
     act(a.id, () => api.delete(`/api/v1/super-admin/announcements/${a.id}`), "Announcement removed.");
   };
 

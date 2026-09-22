@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { KV } from "@/features/setup/bits";
 import type { Assignment, StaffUser } from "./types";
 
+import { ask } from "@/lib/dialog";
 const STAFF = "/api/v1/school/staff";
 /** The roles GET /staff can filter by. */
 const ROLES = ["teacher", "staff", "principal", "accountant"];
@@ -67,7 +68,7 @@ export function UserManagement() {
   }
 
   async function reset(s: StaffUser) {
-    if (!window.confirm(`Reset the password for ${s.full_name}? Their current password stops working.`)) return;
+    if (!(await ask(`Reset the password for ${s.full_name}? Their current password stops working.`))) return;
     setBusy(true);
     setError(null);
     try {

@@ -10,6 +10,7 @@ import { parentRoute } from "@/lib/parentScreens";
 import { useApi } from "@/lib/useApi";
 import { ActionLink, childPath, ChildScoped, dateRange, longDate, PmEmpty, PmError, PmLoading, shortDate, todayIso } from "../home/parts";
 
+import { ask } from "@/lib/dialog";
 export type LeaveKind = "sick" | "family" | "travel" | "religious" | "other";
 export type LeaveStatus = "pending" | "approved" | "rejected" | "cancelled";
 
@@ -207,7 +208,7 @@ function DetailFor({ childId }: { childId: number }) {
   }
 
   async function cancel() {
-    if (!window.confirm("Cancel this leave request?")) return;
+    if (!(await ask("Cancel this leave request?"))) return;
     setBusy(true);
     setError(null);
     try {
@@ -237,7 +238,7 @@ function DetailFor({ childId }: { childId: number }) {
   }
 
   async function removeDoc(a: Attachment) {
-    if (!window.confirm(`Remove “${a.file_name}”?`)) return;
+    if (!(await ask(`Remove “${a.file_name}”?`))) return;
     setError(null);
     try {
       await api.delete(`${leavesPath(childId)}/${lv!.id}/files/${a.id}`);

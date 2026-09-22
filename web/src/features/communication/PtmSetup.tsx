@@ -13,6 +13,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { type PtmDetail, type PtmSession, type TeacherPtm, SLOT_STATUS, hhmm, isoDay, useCurrentClasses, useRole } from "./shared";
 
+import { ask } from "@/lib/dialog";
 type StaffRow = { user_id: number; full_name: string; role: string };
 type Scope = { section_id: number; class_id: number; label: string };
 
@@ -152,7 +153,7 @@ function OfficeSetup() {
 
   // The API refuses both while parents hold bookings, and says so.
   async function removeTeacher(t: PtmDetail["teachers"][number]) {
-    if (!window.confirm(`Take ${t.teacher_name} out of “${s!.title}”? Their ${t.slots.length} slot(s) are deleted.`)) return;
+    if (!(await ask(`Take ${t.teacher_name} out of “${s!.title}”? Their ${t.slots.length} slot(s) are deleted.`))) return;
     setSaving(true);
     setError(null);
     try {
@@ -168,7 +169,7 @@ function OfficeSetup() {
   }
 
   async function removeSession() {
-    if (!window.confirm(`Delete “${s!.title}” on ${date(s!.meeting_date)} with all its slots?${s!.is_published ? " Parents have already been told about it." : ""}`)) return;
+    if (!(await ask(`Delete “${s!.title}” on ${date(s!.meeting_date)} with all its slots?${s!.is_published ? " Parents have already been told about it." : ""}`))) return;
     setSaving(true);
     setError(null);
     try {

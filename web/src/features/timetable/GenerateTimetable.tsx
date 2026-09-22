@@ -13,6 +13,7 @@ import { useApi } from "@/lib/useApi";
 import { DAY_SHORT, useSectionPick, useYearClasses } from "./shared";
 import type { GenResult, Requirements } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-124, live: GET /school/timetable-gen/sections/{id}/requirements,
  * PUT /timetable-gen/class-subjects/{id}/periods for each subject's weekly
@@ -69,7 +70,7 @@ export function GenerateTimetable() {
       setError("Choose a class and section.");
       return;
     }
-    if (replace && !window.confirm("Replace this section's whole week? Every lesson already placed is removed and placed again.")) return;
+    if (replace && !(await ask("Replace this section's whole week? Every lesson already placed is removed and placed again."))) return;
     setBusy(true);
     setError(null);
     setResult(null);

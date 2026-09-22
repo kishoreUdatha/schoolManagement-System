@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import type { Application, DirectoryPerson, Interview } from "./types";
 import { Dialog, Field, KV, downloadAuthed, today, useNewFlag } from "./ui";
 
+import { ask } from "@/lib/dialog";
 const BASE = "/api/v1/school/hr";
 const MOVES = ["screening", "shortlisted", "interview", "rejected", "withdrawn"];
 
@@ -225,7 +226,7 @@ export function CandidateDetails() {
                       <button type="button" className="btn" onClick={() => setFeedbackFor(i)}>
                         Add feedback
                       </button>
-                      <button type="button" className="btn" disabled={busy} onClick={() => window.confirm("Cancel this interview?") && run(() => api.delete(`${BASE}/interviews/${i.id}`), "Interview removed.")}>
+                      <button type="button" className="btn" disabled={busy} onClick={async () => (await ask("Cancel this interview?")) && run(() => api.delete(`${BASE}/interviews/${i.id}`), "Interview removed.")}>
                         Cancel
                       </button>
                     </>

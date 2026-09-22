@@ -11,6 +11,7 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { downloadCsv } from "./csv";
 
+import { ask } from "@/lib/dialog";
 type Operator = {
   id: number;
   full_name: string;
@@ -97,8 +98,8 @@ export function PlatformUsers() {
       notify(is_active ? `${u.full_name} can sign in again.` : `${u.full_name} is switched off.`);
     });
 
-  const reset = (u: Operator) => {
-    if (!window.confirm(`Issue a new password for ${u.full_name}? The old one stops working.`)) return;
+  const reset = async (u: Operator) => {
+    if (!(await ask(`Issue a new password for ${u.full_name}? The old one stops working.`))) return;
     act(u.id, async () => {
       const r = await api.post<Issued>(`/api/v1/super-admin/platform-users/${u.id}/reset-password`);
       setIssued({ ...r, full_name: u.full_name });

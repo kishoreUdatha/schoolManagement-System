@@ -18,6 +18,7 @@ import { Empty, Hero, QuickActions, TimelineRow } from "@/features/dashboards/pa
 import { Field, formNum, formText, n, today, useNewFlag } from "./kit";
 import type { FeeHead, Route, TransportDashboard as Dash, Trip } from "./types";
 
+import { ask } from "@/lib/dialog";
 const TRANSPORT = "/api/v1/school/transport";
 const STATUS: Record<Trip["status"], string> = { scheduled: "Scheduled", in_progress: "In transit", completed: "Completed", cancelled: "Cancelled" };
 
@@ -139,7 +140,7 @@ export function TransportFeesDialog() {
   async function submit(e: FormEvent<HTMLFormElement>) {
     const f = new FormData(e.currentTarget);
     const period = formText(f, "period");
-    if (!window.confirm(`Raise the ${period ?? "month's"} transport fee for every student on a route? Anyone already billed for it is skipped.`)) return;
+    if (!(await ask(`Raise the ${period ?? "month's"} transport fee for every student on a route? Anyone already billed for it is skipped.`))) return;
     setSaving(true);
     setError(null);
     try {

@@ -13,6 +13,7 @@ import { Dialog, Field, isoToday, MODES, modeLabel, monthStart, sum } from "./co
 import { DateRange } from "./IncomeList";
 import type { Expense, ExpenseCategory, Supplier } from "./types";
 
+import { askText } from "@/lib/dialog";
 /**
  * SCR-167, live: GET /school/accounts/expenses?from=&to=&category_id=,
  * POST to record one, PATCH /{id} to amend it, POST /{id}/void with a reason. Categories from
@@ -44,7 +45,7 @@ export function ExpenseList() {
   const rows: Row[] = items.map((x) => [date(x.spent_on), x.reference ?? `EXP-${x.id}`, x.category_name, x.payee_name ?? "—", money(Number(x.amount) + Number(x.tax_amount)), x.is_void ? "Void" : "Paid"]);
 
   async function voidIt(x: Expense) {
-    const reason = window.prompt("Why is this expense being voided?");
+    const reason = (await askText("Why is this expense being voided?"));
     if (!reason) return;
     setError(null);
     try {

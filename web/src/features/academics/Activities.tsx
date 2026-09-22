@@ -12,6 +12,7 @@ import { useSession } from "@/lib/useSession";
 import { Dialog, time12, usePageAction } from "./planKit";
 import { ACTIVITY_KINDS, type Activity, type StaffRow, type StudentHit } from "./planTypes";
 
+import { ask } from "@/lib/dialog";
 const base = "/api/v1/school/academics/activities";
 const DAYS = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -293,7 +294,7 @@ function Roster({ id, canManage, onClose, onChanged }: { id: number | null; canM
                     type="button"
                     className="btn"
                     disabled={busy}
-                    onClick={() => window.confirm(`Take ${r.student_name} out of ${a.name}? The record of them stays.`) && run(() => api.post(`${base}/${a.id}/members/leave`, { student_id: r.student_id }), `${r.student_name} left ${a.name}.`)}
+                    onClick={async () => (await ask(`Take ${r.student_name} out of ${a.name}? The record of them stays.`)) && run(() => api.post(`${base}/${a.id}/members/leave`, { student_id: r.student_id }), `${r.student_name} left ${a.name}.`)}
                   >
                     Remove
                   </button>

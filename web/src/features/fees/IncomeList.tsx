@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, Field, isoToday, MODES, modeLabel, monthStart, sum } from "./common";
 import type { Income } from "./types";
 
+import { ask } from "@/lib/dialog";
 const SOURCES = ["donation", "rent", "grant", "interest", "sponsorship", "other"];
 
 /** From/to date inputs shared by the income, expense and cash-book screens. */
@@ -53,7 +54,7 @@ export function IncomeList() {
   const rows: Row[] = items.map((x) => [date(x.received_on), x.receipt_no, label(x.source), x.payer, money(x.amount), modeLabel(x.mode), x.is_void ? "Void" : "Received"]);
 
   async function voidIt(x: Income) {
-    if (!window.confirm(`Void receipt ${x.receipt_no} for ${money(x.amount)}? It stays on record, marked void.`)) return;
+    if (!(await ask(`Void receipt ${x.receipt_no} for ${money(x.amount)}? It stays on record, marked void.`))) return;
     setError(null);
     try {
       await api.post(`/api/v1/school/accounts/income/${x.id}/void`);

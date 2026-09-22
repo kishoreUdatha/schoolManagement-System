@@ -15,6 +15,7 @@ import type { SchoolClass } from "@/features/students/types";
 import { APPS, daysFromToday, ENQ, useYears } from "./shared";
 import { STAGES, type Activity, type Application, type EnquiryDetail } from "./types";
 
+import { ask } from "@/lib/dialog";
 const KIND_ICON: Record<string, IconName> = { note: "file", call: "message", visit: "building", email: "message", whatsapp: "message", stage_change: "check" };
 
 function activityTitle(a: Activity): string {
@@ -70,7 +71,7 @@ export function EnquiryDetails() {
 
   /** DELETE /enquiries/{id}; the API refuses once the enquiry is enrolled. */
   async function remove() {
-    if (!e || !window.confirm(`Delete the enquiry for ${e.student_name}? Its follow-up history goes with it.${app ? ` Application ${app.application_no} stays.` : ""}`)) return;
+    if (!e || !(await ask(`Delete the enquiry for ${e.student_name}? Its follow-up history goes with it.${app ? ` Application ${app.application_no} stays.` : ""}`))) return;
     setBusy(true);
     setError(null);
     try {
@@ -325,7 +326,7 @@ function ConvertForm({ e, onDone }: { e: EnquiryDetail; onDone: () => void }) {
   async function submit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault();
     const f = new FormData(ev.currentTarget);
-    if (!window.confirm("Create the student record from this enquiry?")) return;
+    if (!(await ask("Create the student record from this enquiry?"))) return;
     setSaving(true);
     setError(null);
     try {

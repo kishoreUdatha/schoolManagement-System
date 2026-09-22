@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { clock, ExamSelects, PaperSelect, useExamChoice, usePaperChoice } from "./common";
 import type { Allocation, ExamRoom, Invigilators, SeatedStudent } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-142, live: GET /school/exam-ops/rooms, GET/POST/DELETE
  * /exam-ops/papers/{id}/allocation and POST …/allocation/move. Rooms fill in
@@ -59,7 +60,7 @@ export function HallAllocation() {
     chosen.length
       ? run(() => api.post<Allocation>(`/api/v1/school/exam-ops/papers/${paperId}/allocation`, { room_ids: chosen }), "Seating saved.")
       : setError("Tick the rooms to seat this paper in, in the order they should fill.");
-  const clear = () => window.confirm("Empty the seating plan for this paper?") && run(() => api.delete<Allocation>(`/api/v1/school/exam-ops/papers/${paperId}/allocation`), "Seating cleared.");
+  const clear = async () => (await ask("Empty the seating plan for this paper?")) && run(() => api.delete<Allocation>(`/api/v1/school/exam-ops/papers/${paperId}/allocation`), "Seating cleared.");
   const move = (s: SeatedStudent, to: number) => run(() => api.post<Allocation>(`/api/v1/school/exam-ops/papers/${paperId}/allocation/move`, { student_id: s.student_id, room_id: to }), `${s.student_name} moved.`);
   const toggle = (id: number) => setChosen((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 

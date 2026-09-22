@@ -12,6 +12,7 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, usePageAction } from "@/features/onlinetests/kit";
 
+import { ask } from "@/lib/dialog";
 type Criterion = { id: number; title: string; description: string | null; max_points: number; sequence: number };
 type Rubric = {
   id: number;
@@ -85,8 +86,8 @@ export function Rubrics() {
     }
   }
 
-  function remove(r: Rubric) {
-    if (!window.confirm(`Delete the rubric ${r.name}? This cannot be undone.`)) return;
+  async function remove(r: Rubric) {
+    if (!(await ask(`Delete the rubric ${r.name}? This cannot be undone.`))) return;
     run(() => api.delete(`${base}/${r.id}`), `${r.name} deleted.`);
   }
 
@@ -293,7 +294,7 @@ function CriteriaDialog({ rubric, onClose, onChanged }: { rubric: Rubric; onClos
   }
 
   async function remove(c: Criterion) {
-    if (!window.confirm(`Remove the criterion ${c.title}?`)) return;
+    if (!(await ask(`Remove the criterion ${c.title}?`))) return;
     setError(null);
     try {
       await api.delete(`${base}/criteria/${c.id}`);

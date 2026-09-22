@@ -18,6 +18,7 @@ import { useSession } from "@/lib/useSession";
 import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, formNum, formText, today, useDebounced, type PickedStudent } from "@/features/transport/kit";
 import { PURPOSES, VISIT_STATUS, type FrontDeskDashboard, type GatePass, type Host, type SecurityIncident, type StaffGateEntry, type Visit } from "./types";
 
+import { ask } from "@/lib/dialog";
 const FD = "/api/v1/school/front-desk";
 const clock = (iso: string | null) => (iso ? dateTime(iso).split(", ")[1] : "—");
 /** An expected visit whose host has not answered yet. */
@@ -483,10 +484,10 @@ export function VisitorApproval() {
                 <div className="gap" />
                 <div className="row">
                   {buttons(sel)}
-                  <button type="button" className="btn" disabled={saving} onClick={() => window.confirm(`Deny entry to ${sel.visitor_name}?`) && act(sel, "deny", {}, "Entry denied.")}>
+                  <button type="button" className="btn" disabled={saving} onClick={async () => (await ask(`Deny entry to ${sel.visitor_name}?`)) && act(sel, "deny", {}, "Entry denied.")}>
                     Deny entry
                   </button>
-                  <button type="button" className="btn" disabled={saving} onClick={() => window.confirm(`Cancel ${sel.visitor_name}'s visit?`) && act(sel, "cancel", {}, "Visit cancelled.")}>
+                  <button type="button" className="btn" disabled={saving} onClick={async () => (await ask(`Cancel ${sel.visitor_name}'s visit?`)) && act(sel, "cancel", {}, "Visit cancelled.")}>
                     Cancel visit
                   </button>
                   <button type="button" className="btn" disabled={saving} onClick={() => (setEditError(null), setEditing(sel))}>
@@ -907,7 +908,7 @@ export function GatePassDesk() {
                       className="btn primary"
                       disabled={saving}
                       onClick={async () => {
-                        if (!window.confirm(`Release ${verified.student_name} to ${verified.pickup_name}?`)) return;
+                        if (!(await ask(`Release ${verified.student_name} to ${verified.pickup_name}?`))) return;
                         const r = await run(() => api.post<GatePass>(`${FD}/gate-passes/${verified.id}/release`), `${verified.student_name} released.`);
                         if (r) {
                           setVerified(null);
@@ -956,7 +957,7 @@ export function GatePassDesk() {
             if (await run(() => api.post(`${FD}/gate-passes/${open.id}/decide`, { approve, note }), approve ? "Gate pass approved." : "Gate pass rejected.")) setOpen(null);
           }}
           onRelease={async () => {
-            if (!window.confirm(`Release ${open.student_name} to ${open.pickup_name}?`)) return;
+            if (!(await ask(`Release ${open.student_name} to ${open.pickup_name}?`))) return;
             if (await run(() => api.post(`${FD}/gate-passes/${open.id}/release`), `${open.student_name} released.`)) setOpen(null);
           }}
         />

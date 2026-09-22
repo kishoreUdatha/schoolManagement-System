@@ -15,6 +15,7 @@ import type { Guardian, Student } from "@/features/students/types";
 import { PICK_PARENT, relationsOf, useParent } from "./ParentShell";
 import { RELATIONS, type ChildLink, type ParentRelation } from "./types";
 
+import { ask } from "@/lib/dialog";
 const TONES = ["mint", "lilac", "peach", ""];
 
 /**
@@ -79,7 +80,7 @@ export function LinkChildren() {
   }
 
   async function unlink(c: ChildLink) {
-    if (!window.confirm(`Unlink ${c.full_name} from ${p!.full_name}?`)) return;
+    if (!(await ask(`Unlink ${c.full_name} from ${p!.full_name}?`))) return;
     setFailed(null);
     try {
       await api.delete(`/api/v1/school/parents/${id}/links/${c.student_id}`);

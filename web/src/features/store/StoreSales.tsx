@@ -15,6 +15,7 @@ import { date, dateTime, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 
+import { ask } from "@/lib/dialog";
 type StorePayment = "cash" | "upi" | "card" | "add_to_fees";
 
 type Sale = {
@@ -93,7 +94,7 @@ export function StoreSales() {
   const [voidingId, setVoidingId] = useState<number | null>(null);
   async function voidIt(s: Sale) {
     if (voiding.current) return;
-    if (!window.confirm(`Void bill ${s.bill_no} for ${money(s.total)}? The items go back into stock${s.payment === "add_to_fees" ? " and the fee charge is waived" : ""}.`)) return;
+    if (!(await ask(`Void bill ${s.bill_no} for ${money(s.total)}? The items go back into stock${s.payment === "add_to_fees" ? " and the fee charge is waived" : ""}.`))) return;
     voiding.current = true;
     setVoidingId(s.id);
     setError(null);

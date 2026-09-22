@@ -18,6 +18,7 @@ import { Field, usePageAction } from "@/features/onlinetests/kit";
 import { useSetParam } from "./common";
 import type { Exam, ExamResult } from "./types";
 
+import { ask } from "@/lib/dialog";
 type Status = "normal" | "withheld" | "pass_by_grace" | "failed";
 type Decision = {
   id: number;
@@ -96,7 +97,7 @@ export function ResultOverrides() {
   ]);
 
   async function lift(d: Decision) {
-    if (!window.confirm(`Lift the decision on ${d.student_name}'s ${d.exam_name} result? It goes back to what the marks say.`)) return;
+    if (!(await ask(`Lift the decision on ${d.student_name}'s ${d.exam_name} result? It goes back to what the marks say.`))) return;
     setError(null);
     try {
       await api.delete(`${base}/${d.id}`);

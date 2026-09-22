@@ -8,6 +8,7 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import type { GradeScale } from "./types";
 
+import { ask } from "@/lib/dialog";
 type BandDraft = { grade: string; min_percent: string; max_percent: string; points: string; remark: string; is_pass: boolean };
 const blankBand = (): BandDraft => ({ grade: "", min_percent: "", max_percent: "", points: "", remark: "", is_pass: true });
 const str = (v: string | number | null | undefined) => (v === null || v === undefined ? "" : String(Number(v)));
@@ -108,12 +109,12 @@ export function GradingSetup() {
           </button>
         ) : null}
         {show ? (
-          <button type="button" className="btn" disabled={saving} onClick={() => window.confirm(`Delete ${show.name}?`) && run(() => api.delete(`/api/v1/school/grade-scales/${show.id}`), "Scale deleted.").then((ok) => ok && setPick(null))}>
+          <button type="button" className="btn" disabled={saving} onClick={async () => (await ask(`Delete ${show.name}?`)) && run(() => api.delete(`/api/v1/school/grade-scales/${show.id}`), "Scale deleted.").then((ok) => ok && setPick(null))}>
             Delete
           </button>
         ) : null}
       </div>
-      <div className="two-col">
+      <div>
         <form className="panel" onSubmit={submit} key={show?.id ?? "new"}>
           <div className="panel-pad">
             <ErrorNote>{error ?? scales.error}</ErrorNote>
@@ -217,27 +218,11 @@ export function GradingSetup() {
             </div>
           </div>
         </form>
-        <aside className="stack">
-          <div className="aside-panel">
-            <h3>Examinations</h3>
-            <dl className="kv">
-              <div>
-                <dt>Scales</dt>
-                <dd>{scales.loading ? "…" : String(list.length)}</dd>
-              </div>
-              <div>
-                <dt>Used by</dt>
-                <dd>{show ? `${show.used_by_exams} exam${show.used_by_exams === 1 ? "" : "s"}` : "—"}</dd>
-              </div>
-              <div>
-                <dt>Status</dt>
-                <dd>{show ? `${show.is_active ? "Active" : "Inactive"}${show.is_default ? " · Default" : ""}` : "New"}</dd>
-              </div>
-            </dl>
-            <div className="gap" />
-            <p>Marks already saved keep the grade they were given; re-save marks to re-grade them after changing a scale in use.</p>
-          </div>
-        </aside>
+        {show ? (
+          <p className="muted small" style={{ marginTop: 10 }}>
+            {`Used by ${show.used_by_exams} exam${show.used_by_exams === 1 ? "" : "s"}. Marks already saved keep the grade they were given; re-save marks to re-grade them after changing a scale in use.`}
+          </p>
+        ) : null}
       </div>
     </>
   );

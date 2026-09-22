@@ -19,6 +19,7 @@ import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, addDays, form
 import type { StaffOption } from "./types";
 import type { Alert, Appointment, Dose, Due, FirstAid, HealthDashboard, HealthRecord, ProfileRow, Visit, VisitOutcome } from "./types";
 
+import { ask } from "@/lib/dialog";
 export const HEALTH = "/api/v1/school/health";
 export const WELL = "/api/v1/school/wellbeing";
 
@@ -474,7 +475,7 @@ export function ClinicVisitForm() {
   }
 
   async function removeVisit(v: Visit) {
-    if (!window.confirm(`Delete ${v.student_name}'s clinic visit of ${dateTime(v.visited_at)}? It is removed from their health record.`)) return;
+    if (!(await ask(`Delete ${v.student_name}'s clinic visit of ${dateTime(v.visited_at)}? It is removed from their health record.`))) return;
     setEditError(null);
     try {
       await api.delete(`${HEALTH}/visits/${v.id}`);
@@ -997,7 +998,7 @@ export function ImmunizationAllergy() {
   async function runDrive(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    if (!window.confirm(`Record ${formText(f, "vaccine") ?? "this vaccine"} for every student in the section who has not had it?`)) return;
+    if (!(await ask(`Record ${formText(f, "vaccine") ?? "this vaccine"} for every student in the section who has not had it?`))) return;
     setSaving(true);
     setError(null);
     try {
@@ -1096,7 +1097,7 @@ export function ImmunizationAllergy() {
   const p = r.profile;
 
   async function remove(immId: number) {
-    if (!window.confirm("Delete this immunisation entry?")) return;
+    if (!(await ask("Delete this immunisation entry?"))) return;
     if (await run(() => api.delete(`${HEALTH}/immunizations/${immId}`), "Entry deleted.")) {
       setShot(null);
       rec.reload();

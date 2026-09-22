@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { appClass, APPS, emitChange, useDetails, useOnChange } from "./shared";
 import type { Application, Assessment, AssessmentKind, StaffOption } from "./types";
 
+import { ask } from "@/lib/dialog";
 const KINDS: AssessmentKind[] = ["written_test", "interaction", "interview", "audition", "other"];
 const COLUMN_KINDS: AssessmentKind[] = ["written_test", "interaction", "interview"];
 const OPEN = ["submitted", "verification", "assessment"];
@@ -152,7 +153,7 @@ function ResultForm({ scheduled }: { scheduled: { a: Application; t: Assessment 
 
   /** DELETE /applications/assessments/{id}: only one not yet marked done. */
   async function remove() {
-    if (!chosen || !window.confirm(`Remove the ${label(chosen.t.kind).toLowerCase()} for ${chosen.a.student_name} on ${dateTime(chosen.t.scheduled_at)}?`)) return;
+    if (!chosen || !(await ask(`Remove the ${label(chosen.t.kind).toLowerCase()} for ${chosen.a.student_name} on ${dateTime(chosen.t.scheduled_at)}?`))) return;
     setSaving(true);
     setError(null);
     try {

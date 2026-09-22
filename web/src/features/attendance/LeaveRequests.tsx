@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { Modal, usePageAction, useSchoolDay } from "./shared";
 import { EV, LEAVE_KINDS, type Child, type StudentLeave } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-114, live: a parent asks for leave for their child and follows it.
  * GET /parent/me/children, GET + POST /parent/me/children/{id}/leaves,
@@ -56,7 +57,7 @@ export function LeaveRequests() {
   const [viewing, setViewing] = useState<StudentLeave | null>(null);
   const [busy, setBusy] = useState(false);
   async function cancel(l: StudentLeave) {
-    if (!window.confirm(`Cancel ${l.student_name}'s leave request?`)) return;
+    if (!(await ask(`Cancel ${l.student_name}'s leave request?`))) return;
     setBusy(true);
     try {
       await api.post(`/api/v1/parent/me/children/${l.student_id}/leaves/${l.id}/cancel`);

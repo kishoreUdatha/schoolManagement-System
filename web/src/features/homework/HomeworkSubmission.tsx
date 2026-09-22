@@ -13,6 +13,7 @@ import { ChildPicker, learnerState, LinkCard } from "./shared";
 import { useLearnerHomework } from "./LearnerHomework";
 import type { Submission } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-132, live: hand in (POST) or change (PATCH) the submission for one
  * homework (?id=; without it, the soonest still open). Student portal
@@ -97,7 +98,7 @@ export function HomeworkSubmission() {
   }
 
   async function removeFile(a: Attachment) {
-    if (!window.confirm(`Remove “${a.file_name}” from what you handed in?`)) return;
+    if (!(await ask(`Remove “${a.file_name}” from what you handed in?`))) return;
     setError(null);
     try {
       const r = await api.delete<Submission>(`${learner.base}/${hw.id}/submission/files/${a.id}`);

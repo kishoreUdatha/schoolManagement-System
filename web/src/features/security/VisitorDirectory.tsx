@@ -94,9 +94,7 @@ export function VisitorDirectory() {
 
   async function backfill() {
     if (
-      !confirmed(
-        "Link older visits to the directory?\n\nVisits logged before the directory existed have no visitor record. This finds each one, matches it to a visitor with the same phone number, and creates a new visitor record where there is none. Visits themselves are not changed otherwise. It is safe to run more than once.",
-      )
+      !(await confirmed("Link older visits to the directory?\n\nVisits logged before the directory existed have no visitor record. This finds each one, matches it to a visitor with the same phone number, and creates a new visitor record where there is none. Visits themselves are not changed otherwise. It is safe to run more than once."))
     )
       return;
     setBackfilling(true);
@@ -250,7 +248,7 @@ function VisitorCard({ id, onChanged, onClose }: { id: string; onChanged: () => 
             Edit details
           </button>
           {v.is_blocked ? (
-            <button type="button" className="btn" disabled={saving} onClick={() => confirmed(`Allow ${v.full_name} in again?`) && run(() => api.post(`${VISITORS}/${id}/block`, { blocked: false, reason: null }), "Visitor unblocked.")}>
+            <button type="button" className="btn" disabled={saving} onClick={async () => (await confirmed(`Allow ${v.full_name} in again?`)) && run(() => api.post(`${VISITORS}/${id}/block`, { blocked: false, reason: null }), "Visitor unblocked.")}>
               Unblock
             </button>
           ) : (

@@ -14,6 +14,7 @@ import { label } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { ChildGate, PmEmpty, PmError, PmLoading, useChildPath } from "../support/pm";
 
+import { ask } from "@/lib/dialog";
 export type Guardian = {
   guardian_id: number;
   full_name: string;
@@ -66,7 +67,7 @@ function Pickup() {
   }
 
   async function remove(g: Guardian) {
-    if (!base || !window.confirm(`Remove ${g.full_name} from the pickup list?`)) return;
+    if (!base || !(await ask(`Remove ${g.full_name} from the pickup list?`))) return;
     try {
       await api.delete(`${base}/${g.guardian_id}`);
       notify(`${g.full_name} removed.`);

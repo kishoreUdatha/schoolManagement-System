@@ -14,6 +14,7 @@ import { Field } from "@/features/setup/bits";
 import { BASE_ROLES, ROLES, byModule, roleKind } from "./rbac";
 import type { Permission, Role } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-286, live. One role's permissions (?id=), or a new role (?new=1).
  * The rows are exactly GET /permissions; a role holds a set of their codes
@@ -90,7 +91,7 @@ export function RolePermissions() {
   }
 
   async function remove() {
-    if (!role || !window.confirm(`Delete ${role.name}?`)) return;
+    if (!role || !(await ask(`Delete ${role.name}?`))) return;
     setSaving(true);
     setError(null);
     try {

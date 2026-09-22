@@ -13,6 +13,7 @@ import { useApi } from "@/lib/useApi";
 import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, formText, time12, today, useDebounced, type PickedStudent } from "./kit";
 import type { Assignment, Crew, Direction, Route, Vehicle } from "./types";
 
+import { ask } from "@/lib/dialog";
 const CREW = "/api/v1/school/transport/crew";
 const ASSIGN = "/api/v1/school/transport/assignments";
 
@@ -85,7 +86,7 @@ export function CrewList() {
   }
 
   async function remove(c: Crew) {
-    if (!window.confirm(`Remove ${c.full_name}? Vehicles they are on will be left without them.`)) return;
+    if (!(await ask(`Remove ${c.full_name}? Vehicles they are on will be left without them.`))) return;
     try {
       await api.delete(`${CREW}/${c.id}`);
       notify("Crew member removed.");
@@ -243,7 +244,7 @@ export function RouteAssignment() {
   }
 
   async function end(a: Assignment) {
-    if (!window.confirm(`End transport for ${a.student_name}? Today is their last day on the route.`)) return;
+    if (!(await ask(`End transport for ${a.student_name}? Today is their last day on the route.`))) return;
     try {
       await api.post(`${ASSIGN}/${a.id}/end`, { end_date: today() });
       notify("Transport ended.");

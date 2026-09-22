@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { DAY_NAME, span } from "./shared";
 import type { Period } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-122, live: GET /school/periods; POST to add a slot, PATCH
  * /periods/{id} (?id=) to change its times, label or kind, DELETE to remove.
@@ -92,7 +93,7 @@ export function PeriodSetup() {
   }
 
   async function remove(p: Period) {
-    if (!window.confirm(`Delete ${DAY_NAME[p.day_of_week]} period ${p.period_number}? This removes it from all section timetables.`)) return;
+    if (!(await ask(`Delete ${DAY_NAME[p.day_of_week]} period ${p.period_number}? This removes it from all section timetables.`))) return;
     try {
       await api.delete(`/api/v1/school/periods/${p.id}`);
       notify(`Deleted ${DAY_NAME[p.day_of_week]} period ${p.period_number}.`);

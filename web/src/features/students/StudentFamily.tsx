@@ -18,6 +18,7 @@ import { Kv, StudentFrame } from "./StudentFrame";
 import type { Family } from "./records";
 import { RELATIONS, type Guardian, type PortalGrant, type Relation, type StudentProfile } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-068, live: GET /student-detail/{id}/family (siblings derived from
  * shared parent logins) and /students/{id}/guardians (family contacts).
@@ -74,7 +75,7 @@ function Body({ s }: { s: StudentProfile }) {
       setEditing(g);
       return;
     }
-    if (!window.confirm(`Create a parent-portal login for ${g.full_name} (${g.email})? A temporary password is shown once.`)) return;
+    if (!(await ask(`Create a parent-portal login for ${g.full_name} (${g.email})? A temporary password is shown once.`))) return;
     setBusy(g.guardian_id);
     setError(null);
     try {

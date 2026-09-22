@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import type { SectionResults } from "./records";
 import type { AcademicYear, SchoolClass, Student } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-069, live: pick a section in one year and a section in the next, review
  * the active roster, then POST /students/promote {source_section_id,
@@ -89,7 +90,7 @@ export function StudentPromotion() {
     if (fromYear === toYear) return setError("Promote into a different academic year.");
     if (!moving.length) return setError("Choose at least one student to promote.");
     const n = moving.length;
-    if (!window.confirm(`Promote ${n} student${n === 1 ? "" : "s"} to the new section? They move out of this section${held.size ? `; ${held.size} held back stay` : ""}.`)) return;
+    if (!(await ask(`Promote ${n} student${n === 1 ? "" : "s"} to the new section? They move out of this section${held.size ? `; ${held.size} held back stay` : ""}.`))) return;
     setBusy(true);
     setError(null);
     try {

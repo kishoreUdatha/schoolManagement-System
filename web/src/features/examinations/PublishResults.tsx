@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import type { AcademicYear } from "@/features/students/types";
 import type { Exam, ExamDashboard } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-150, live: GET /school/exams?academic_year_id= and each exam's
  * /school/exam-ops/{id}/dashboard (what is still outstanding);
@@ -55,8 +56,8 @@ export function PublishResults() {
       const msg = outstanding
         ? `${e.name} is not finished:\n${outstanding}\n\nPublishing now puts these results in front of families as they stand. Publish anyway?`
         : `Every paper of ${e.name} is marked and signed off. Publish the results to students and parents?`;
-      if (!window.confirm(msg)) return;
-    } else if (!window.confirm(`Take ${e.name} back off the student and parent portals? Families may already have seen it.`)) return;
+      if (!(await ask(msg))) return;
+    } else if (!(await ask(`Take ${e.name} back off the student and parent portals? Families may already have seen it.`))) return;
     setBusy(true);
     setError(null);
     try {
@@ -73,7 +74,7 @@ export function PublishResults() {
   // POST /exams/{id}/approve-results: the principal's (or admin's) sign-off
   // on an exam's results, which publishing looks for.
   async function approve(e: Exam, yes: boolean) {
-    if (!window.confirm(yes ? `Approve the results of ${e.name} for publishing?` : `Withdraw approval of ${e.name}'s results?`)) return;
+    if (!(await ask(yes ? `Approve the results of ${e.name} for publishing?` : `Withdraw approval of ${e.name}'s results?`))) return;
     setBusy(true);
     setError(null);
     try {

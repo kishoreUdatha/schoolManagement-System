@@ -15,6 +15,7 @@ import { useHydrated, useSession } from "@/lib/useSession";
 import { DAY_NAME, Lesson, Modal, Notice, WeekGrid, span, toneOf, useSectionPick, useYearClasses, weekLabel } from "./shared";
 import type { Child, ClassSubject, Entry, ExamRoom, Period, SectionTimetable } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-121 Timetable Setup (mode "edit") and SCR-125 Class Timetable (mode
  * "view"): one section's week.
@@ -75,7 +76,7 @@ function OfficeWeek({ mode }: { mode: "edit" | "view" }) {
   const lastDay = Math.max(5, ...(data?.periods.map((p) => p.day_of_week) ?? [5]));
 
   async function clear(p: Period) {
-    if (!window.confirm(`Clear the lesson in ${p.label ?? `period ${p.period_number}`}?`)) return;
+    if (!(await ask(`Clear the lesson in ${p.label ?? `period ${p.period_number}`}?`))) return;
     try {
       await api.delete(`/api/v1/school/sections/${pick.sectionId}/timetable/${p.id}`);
       setNotice(`${p.label ?? `Period ${p.period_number}`} cleared.`);
@@ -87,7 +88,7 @@ function OfficeWeek({ mode }: { mode: "edit" | "view" }) {
   }
 
   async function togglePublish() {
-    if (!window.confirm(publishedAt ? "Unpublish this timetable? Parents and teachers stop seeing it." : "Publish this timetable? Parents and teachers see it straight away.")) return;
+    if (!(await ask(publishedAt ? "Unpublish this timetable? Parents and teachers stop seeing it." : "Publish this timetable? Parents and teachers see it straight away."))) return;
     try {
       const r = await api.post<SectionTimetable>(`/api/v1/school/sections/${pick.sectionId}/timetable/${publishedAt ? "unpublish" : "publish"}`);
       setPublished(r.timetable_published_at);

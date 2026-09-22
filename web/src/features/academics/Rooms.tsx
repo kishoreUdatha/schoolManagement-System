@@ -12,6 +12,7 @@ import { useSession } from "@/lib/useSession";
 import { Dialog, usePageAction } from "./planKit";
 import { ROOM_KINDS, type Room } from "./planTypes";
 
+import { ask } from "@/lib/dialog";
 const base = "/api/v1/school/rooms";
 
 /** SCR-107, live: GET /api/v1/school/rooms (kind); add, edit and delete with POST / PUT / DELETE. */
@@ -188,7 +189,7 @@ function RoomDialog({ open, room, canManage, onClose, onSaved }: { open: boolean
         {room?.branch_name || room?.section_label ? <p className="small muted">{[room.branch_name, room.section_label ? `Home room of ${room.section_label}` : null].filter(Boolean).join(" · ")}</p> : null}
         <div className="actions row" style={{ gap: 8, justifyContent: "flex-end" }}>
           {room && canManage ? (
-            <button type="button" className="btn" disabled={busy} onClick={() => window.confirm(`Delete ${room.name}?`) && run(() => api.delete(`${base}/${room.id}`), "Room deleted.")}>
+            <button type="button" className="btn" disabled={busy} onClick={async () => (await ask(`Delete ${room.name}?`)) && run(() => api.delete(`${base}/${room.id}`), "Room deleted.")}>
               Delete
             </button>
           ) : null}

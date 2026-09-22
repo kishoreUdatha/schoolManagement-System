@@ -146,3 +146,18 @@ option{background:#fff}
 /* Settings: the screens are tabs across the top, the form takes the width. */
 .settings-layout:has(> .settings-tabs){display:block}
 .settings-tabs{margin-bottom:18px}
+
+/* In-app confirm / question dialog (lib/dialog), instead of the browser's. */
+.bc-dialog-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(15,33,66,.42);display:grid;place-items:center;padding:16px;animation:bc-fade .12s ease-out}
+.bc-dialog{width:100%;max-width:440px;background:#fff;border-radius:16px;box-shadow:0 24px 60px -18px rgba(15,33,66,.45);padding:22px 22px 18px;animation:bc-pop .14s ease-out;font-family:var(--font-sans, inherit)}
+.bc-dialog h3{font-size:17px;margin:0 0 8px;color:var(--ink,#101c33)}
+.bc-dialog p{font-size:14px;line-height:1.6;color:#46587a;margin:0 0 14px;white-space:pre-line}
+.bc-dialog-input{width:100%;border:1px solid #d5dfee;border-radius:10px;padding:10px 12px;font:inherit;font-size:14px;margin-bottom:4px;resize:vertical}
+.bc-dialog-input:focus{outline:2px solid #bcd3fb;border-color:#2563eb}
+.bc-dialog-hint{display:block;min-height:16px;font-size:12px;color:#b42318;margin-bottom:6px}
+.bc-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:6px}
+.bc-dialog-actions .btn{min-width:92px;justify-content:center}
+.btn.danger-solid{background:#d92d20;border-color:#d92d20;color:#fff}
+.btn.danger-solid:hover{background:#b42318;border-color:#b42318}
+@keyframes bc-fade{from{opacity:0}to{opacity:1}}
+@keyframes bc-pop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}

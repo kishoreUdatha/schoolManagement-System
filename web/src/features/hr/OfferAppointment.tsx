@@ -14,6 +14,7 @@ import { CandidateTabs, useApplication } from "./CandidateDetails";
 import type { Application, Department, StaffMember } from "./types";
 import { Dialog, Field, KV } from "./ui";
 
+import { ask, askText } from "@/lib/dialog";
 const BASE = "/api/v1/school/hr";
 const ROLES = ["teacher", "staff", "principal", "accountant"];
 /** Fired when the offer changes, so the page-head letter button refreshes. */
@@ -44,7 +45,7 @@ export function OfferLetterAction() {
       type="button"
       className="btn primary"
       title="Open the offer letter as a PDF"
-      onClick={() => api.open(`${BASE}/offers/${offer.id}/letter`).catch((e) => window.alert(errorText(e)))}
+      onClick={() => api.open(`${BASE}/offers/${offer.id}/letter`).catch((e) => notify(errorText(e)))}
     >
       <Icon name="download" className="sm" />
       Generate letter
@@ -251,7 +252,7 @@ export function OfferAppointment() {
                   Offer letter (PDF)
                 </button>
                 {offer.status === "draft" ? (
-                  <button type="button" className="btn primary" disabled={busy} onClick={() => window.confirm("Mark this offer as sent to the candidate?") && run(() => api.post(`${BASE}/offers/${offer.id}/send`), "Offer marked as sent.")}>
+                  <button type="button" className="btn primary" disabled={busy} onClick={async () => (await ask("Mark this offer as sent to the candidate?")) && run(() => api.post(`${BASE}/offers/${offer.id}/send`), "Offer marked as sent.")}>
                     Mark as sent
                   </button>
                 ) : null}
@@ -267,8 +268,8 @@ export function OfferAppointment() {
                       type="button"
                       className="btn"
                       disabled={busy}
-                      onClick={() => {
-                        const note = window.prompt("Why is the offer being withdrawn? (optional)");
+                      onClick={async () => {
+                        const note = (await askText("Why is the offer being withdrawn? (optional)"));
                         if (note === null) return;
                         run(() => api.post(`${BASE}/offers/${offer.id}/withdraw`, undefined, { note: note.trim() || null }), "Offer withdrawn.");
                       }}

@@ -11,6 +11,7 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import type { Plan } from "./types";
 
+import { ask } from "@/lib/dialog";
 /** The feature switches a plan carries (the backend's module keys). */
 const MODULE_KEYS = ["attendance", "homework", "exams", "fees", "behaviour", "digital_learning", "ai_reports", "ai_chatbot", "whatsapp", "sms"];
 
@@ -220,7 +221,7 @@ export function SubscriptionPlans() {
   }, []);
 
   async function retire(p: Plan) {
-    if (!window.confirm(`Retire ${p.name}? Organizations already on it keep it; it can no longer be assigned.`)) return;
+    if (!(await ask(`Retire ${p.name}? Organizations already on it keep it; it can no longer be assigned.`))) return;
     setError(null);
     try {
       await api.delete(`/api/v1/super-admin/plans/${p.id}`);

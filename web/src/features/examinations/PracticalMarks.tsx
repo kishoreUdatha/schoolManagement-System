@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { ExamSelects, PaperSelect, useExamChoice, usePaperChoice } from "./common";
 import type { ComponentMarkRow, ComponentMarks, Components, MarkStatus } from "./types";
 
+import { ask } from "@/lib/dialog";
 const TONES = ["mint", "", "peach", "lilac"];
 type Part = { name: string; max_marks: string; pass_marks: string };
 type Draft = { status: MarkStatus; values: Record<string, string> };
@@ -114,7 +115,7 @@ export function PracticalMarks() {
       setError(`The parts add up to ${total} but the paper is out of ${pc.paper.max_marks}.`);
       return;
     }
-    if (hasParts && !window.confirm("Changing the parts deletes the part marks already recorded for this paper. Continue?")) return;
+    if (hasParts && !(await ask("Changing the parts deletes the part marks already recorded for this paper. Continue?"))) return;
     setSaving(true);
     setError(null);
     try {

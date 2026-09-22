@@ -13,6 +13,7 @@ import { downloadFile, uploadForm } from "./common";
 import { TeacherPaperSelects, useTeacherPaper } from "./MarksEntry";
 import type { ImportJob } from "./types";
 
+import { ask } from "@/lib/dialog";
 const BASE = "/api/v1/teacher/mark-imports";
 const COLUMNS = ["admission_no", "marks", "status", "remark"];
 
@@ -59,7 +60,7 @@ export function BulkMarksImport() {
 
   async function commit() {
     if (!job) return;
-    if (job.error_rows && !window.confirm(`${job.error_rows} row(s) have problems and will be skipped. Import the other ${job.success_rows}?`)) return;
+    if (job.error_rows && !(await ask(`${job.error_rows} row(s) have problems and will be skipped. Import the other ${job.success_rows}?`))) return;
     setBusy(true);
     setError(null);
     try {

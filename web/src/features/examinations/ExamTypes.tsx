@@ -10,6 +10,7 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import type { ExamType } from "./types";
 
+import { ask } from "@/lib/dialog";
 /** SCR-139, live: GET/POST /school/exam-types, PUT/DELETE /school/exam-types/{id}. */
 export function ExamTypes() {
   const list = useApi<ExamType[]>("/api/v1/school/exam-types");
@@ -64,7 +65,7 @@ export function ExamTypes() {
   }
 
   async function remove(t: ExamType) {
-    if (!window.confirm(`Delete the exam type ${t.name}?`)) return;
+    if (!(await ask(`Delete the exam type ${t.name}?`))) return;
     setError(null);
     try {
       await api.delete(`/api/v1/school/exam-types/${t.id}`);

@@ -112,7 +112,7 @@ export function Holidays() {
   }
 
   async function remove(h: Holiday) {
-    if (!confirmed(`Delete “${h.name}” (${span(h)})? Those days will count as school days again.`)) return;
+    if (!(await confirmed(`Delete “${h.name}” (${span(h)})? Those days will count as school days again.`))) return;
     setError(null);
     try {
       await api.delete(`${HOLIDAYS}/${h.id}`);

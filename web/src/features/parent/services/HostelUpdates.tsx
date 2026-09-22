@@ -16,6 +16,7 @@ import { useApi } from "@/lib/useApi";
 import { ChildGate, PmEmpty, PmError, PmLoading, orNull, useChildPath, valueClass, type Tone } from "../support/pm";
 import type { ChildHostel } from "./types";
 
+import { ask } from "@/lib/dialog";
 type Outing = {
   id: number;
   kind: "outing" | "home_leave";
@@ -104,7 +105,7 @@ function Hostel() {
   }
 
   async function cancel(o: Outing) {
-    if (!base || !window.confirm("Cancel this request?")) return;
+    if (!base || !(await ask("Cancel this request?"))) return;
     try {
       await api.post(`${base}/outings/${o.id}/cancel`);
       notify("Request cancelled.");

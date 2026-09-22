@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, downloadCsv, usePageAction } from "./planKit";
 import { BLOOM, type ClassSubject, type Outcome, type OutcomeCoverage, type SyllabusDetail } from "./planTypes";
 
+import { ask } from "@/lib/dialog";
 const base = "/api/v1/school/learning-outcomes";
 const STATUS = { covered: "Covered", in_progress: "In progress", not_started: "Not started" } as const;
 
@@ -287,7 +288,7 @@ function OutcomeDialog({
               <button type="button" className="btn" disabled={busy} onClick={() => run(() => api.patch(`${base}/${outcome.id}`, { is_active: !outcome.is_active }), outcome.is_active ? "Outcome retired." : "Outcome restored.")}>
                 {outcome.is_active ? "Retire" : "Restore"}
               </button>
-              <button type="button" className="btn" disabled={busy} onClick={() => window.confirm(`Delete ${outcome.code}?`) && run(() => api.delete(`${base}/${outcome.id}`), "Outcome deleted.")}>
+              <button type="button" className="btn" disabled={busy} onClick={async () => (await ask(`Delete ${outcome.code}?`)) && run(() => api.delete(`${base}/${outcome.id}`), "Outcome deleted.")}>
                 Delete
               </button>
             </>

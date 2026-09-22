@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { clock, ExamSelects, PaperSelect, useExamChoice, usePaperChoice } from "./common";
 import type { AvailableStaff, DutyRoster, Invigilators } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-143, live: GET /school/exam-ops/{id}/duty-roster for the whole exam;
  * per paper GET/POST …/papers/{id}/invigilators, GET …/invigilators/available
@@ -79,7 +80,7 @@ export function Invigilation() {
   }
 
   async function unassign(id: number, name: string) {
-    if (!window.confirm(`Take ${name} off this duty?`)) return;
+    if (!(await ask(`Take ${name} off this duty?`))) return;
     setBusy(true);
     setError(null);
     try {

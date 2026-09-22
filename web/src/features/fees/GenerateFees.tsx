@@ -17,6 +17,7 @@ import { thisMonth } from "./extra";
 import { ordinal } from "./FeeStructureList";
 import type { FeeHead, FeeStructure, GenerateResult, StudentFee, TransportFeeResult } from "./types";
 
+import { ask } from "@/lib/dialog";
 type Done = { what: string; period: string; created: number; skipped: number; amount?: string; onFile?: number };
 
 /**
@@ -82,7 +83,7 @@ export function GenerateFees() {
   async function generate(e: FormEvent) {
     e.preventDefault();
     if (!yearId) return;
-    if (!window.confirm(`Raise ${monthLabel(period)} fees for every active student in ${year?.name ?? "this year"}? Charges that already exist are skipped.`)) return;
+    if (!(await ask(`Raise ${monthLabel(period)} fees for every active student in ${year?.name ?? "this year"}? Charges that already exist are skipped.`))) return;
     setBusy("fees");
     setError(null);
     try {
@@ -101,7 +102,7 @@ export function GenerateFees() {
   async function transport(e: FormEvent) {
     e.preventDefault();
     const head = heads.data?.find((h) => h.id === Number(tHead));
-    if (!window.confirm(`Raise ${monthLabel(tPeriod)} transport fees under "${head?.name ?? "this head"}" for every student on a bus route?`)) return;
+    if (!(await ask(`Raise ${monthLabel(tPeriod)} transport fees under "${head?.name ?? "this head"}" for every student on a bus route?`))) return;
     setBusy("transport");
     setError(null);
     try {

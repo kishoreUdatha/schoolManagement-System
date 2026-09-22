@@ -15,6 +15,7 @@ import { useApi } from "@/lib/useApi";
 import { Field, KV, SectionTitle, count, orNull } from "./bits";
 import type { AcademicYear, AuditEntry, Branch, SchoolClass, SchoolProfile, StaffMember, StaffPick } from "./types";
 
+import { ask } from "@/lib/dialog";
 const BRANCHES = "/api/v1/school/branches";
 
 /** SCR-025, live: GET /api/v1/school/branches, searched and filtered here (the list is not paged). */
@@ -267,7 +268,7 @@ export function BranchDetails() {
 
   async function remove() {
     if (!branch) return;
-    if (!window.confirm(`Delete the branch ${branch.name}? Role assignments limited to it become school-wide. This cannot be undone.`)) return;
+    if (!(await ask(`Delete the branch ${branch.name}? Role assignments limited to it become school-wide. This cannot be undone.`))) return;
     setDeleting(true);
     setError(null);
     try {

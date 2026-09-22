@@ -11,6 +11,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, DialogActions, Field, Kv, SearchBox, downloadCsv, usePageAction, useSearch } from "./setupKit";
 import type { AcademicYear, Term } from "./types";
 
+import { ask } from "@/lib/dialog";
 const COLUMNS = ["Academic year", "Start date", "End date", "Terms", "Admissions", "Status"];
 
 /** Open or closed, and when a closed year's admissions are due to open. */
@@ -163,7 +164,7 @@ function YearDialog({ y, terms, onClose, onChanged }: { y: AcademicYear; terms?:
   const [error, setError] = useState<string | null>(null);
 
   async function run(path: string, done: string, del = false) {
-    if (del && !window.confirm(`Delete ${y.name}? This cannot be undone.`)) return;
+    if (del && !(await ask(`Delete ${y.name}? This cannot be undone.`))) return;
     setBusy(true);
     setError(null);
     try {
@@ -207,7 +208,7 @@ function YearDialog({ y, terms, onClose, onChanged }: { y: AcademicYear; terms?:
             Unarchive
           </button>
         ) : (
-          <button type="button" className="btn" disabled={busy} onClick={() => window.confirm(`Archive ${y.name}? It becomes read-only until unarchived.`) && run("/archive", `${y.name} archived.`)}>
+          <button type="button" className="btn" disabled={busy} onClick={async () => (await ask(`Archive ${y.name}? It becomes read-only until unarchived.`)) && run("/archive", `${y.name} archived.`)}>
             Archive
           </button>
         )}

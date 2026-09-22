@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { LinkCard } from "./shared";
 import type { Homework, Submission } from "./types";
 
+import { ask } from "@/lib/dialog";
 const STATUS: Record<Submission["status"], string> = { submitted: "Submitted", approved: "Approved", rejected: "Returned" };
 
 /**
@@ -94,7 +95,7 @@ export function HomeworkEvaluation() {
   }
 
   async function removeReviewFile(submissionId: number, a: Attachment) {
-    if (!window.confirm(`Remove “${a.file_name}”?`)) return;
+    if (!(await ask(`Remove “${a.file_name}”?`))) return;
     try {
       await api.delete(`/api/v1/teacher/homework/submissions/${submissionId}/review-files/${a.id}`);
       await subs.reload();

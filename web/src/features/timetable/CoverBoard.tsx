@@ -13,6 +13,7 @@ import { ASSIGN_EVENT } from "./events";
 import { Modal, span, todayIso, useHeadEvent } from "./shared";
 import type { Candidate, CoverDay, CoverSlot, StaffLite } from "./types";
 
+import { ask } from "@/lib/dialog";
 type CoverStat = { user_id: number; full_name: string; covers: number };
 type MyCover = { id: number; sub_date: string; period_number: number; start_time: string; end_time: string; section_label: string; subject_name: string; absent_name: string | null; note: string | null };
 
@@ -73,7 +74,7 @@ export function CoverBoard() {
   useHeadEvent(ASSIGN_EVENT, openFirst);
 
   async function autoAssign() {
-    if (!window.confirm("Assign a free teacher to every uncovered lesson in this view?")) return;
+    if (!(await ask("Assign a free teacher to every uncovered lesson in this view?"))) return;
     setBusy(true);
     setError(null);
     try {
@@ -226,7 +227,7 @@ function PickSubstitute({ date, slot, onClose, onDone }: { date: string; slot: C
       onDone(userId ? "Substitute assigned and notified." : "Saved as uncovered.");
     } catch (e) {
       // A 409 is a warning (busy, already covering…) the office may override.
-      if (e instanceof ApiError && e.status === 409 && !force && window.confirm(`${e.message}\n\nAssign anyway?`)) return assign(userId, true);
+      if (e instanceof ApiError && e.status === 409 && !force && (await ask(`${e.message}\n\nAssign anyway?`))) return assign(userId, true);
       setError(errorText(e));
     } finally {
       setSaving(false);
@@ -235,7 +236,7 @@ function PickSubstitute({ date, slot, onClose, onDone }: { date: string; slot: C
 
   async function clear() {
     if (!slot.substitution_id) return;
-    if (!window.confirm("Remove the cover from this lesson? It goes back to uncovered.")) return;
+    if (!(await ask("Remove the cover from this lesson? It goes back to uncovered."))) return;
     setSaving(true);
     try {
       await api.delete(`/api/v1/school/cover/${slot.substitution_id}`);

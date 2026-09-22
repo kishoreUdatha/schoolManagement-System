@@ -14,6 +14,7 @@ import { Field } from "./common";
 import { ordinal } from "./FeeStructureList";
 import type { FeeHead, FeeStructure } from "./types";
 
+import { ask } from "@/lib/dialog";
 type Draft = { id: number | null; fee_head_id: string; amount: string; due_day_of_month: string };
 const EMPTY: Draft = { id: null, fee_head_id: "", amount: "", due_day_of_month: "10" };
 
@@ -92,7 +93,7 @@ export function FeeStructureForm() {
   }
 
   async function remove(l: FeeStructure) {
-    if (!window.confirm(`Remove ${l.fee_head_name} from this class's fee structure? This is only possible while no fees have been raised from it.`)) return;
+    if (!(await ask(`Remove ${l.fee_head_name} from this class's fee structure? This is only possible while no fees have been raised from it.`))) return;
     setError(null);
     try {
       await api.delete(`/api/v1/school/fees/structures/${l.id}`);

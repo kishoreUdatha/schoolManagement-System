@@ -15,6 +15,7 @@ import type { SchoolClass } from "@/features/students/types";
 import { APPS, emitChange, seatText, todayIso, useSeats, useYears } from "./shared";
 import type { Application } from "./types";
 
+import { ask } from "@/lib/dialog";
 type FeeStructure = { id: number; fee_head_name: string; amount: string; is_recurring?: boolean };
 
 type AdmitResult = { student_id: number; admission_no: string; parent_temporary_password?: string | null; parent_login_note?: string | null };
@@ -88,7 +89,7 @@ export function AdmissionConfirmation() {
         setError("Choose a class and section.");
         return;
       }
-      if (!window.confirm(`Create the student record for ${a.student_name ?? "this applicant"} and admit them?`)) return;
+      if (!(await ask(`Create the student record for ${a.student_name ?? "this applicant"} and admit them?`))) return;
       const r = await api.post<AdmitResult>(`${APPS}/${a.id}/admit`, {
         academic_year_id: yearId,
         section_id: sectionId,

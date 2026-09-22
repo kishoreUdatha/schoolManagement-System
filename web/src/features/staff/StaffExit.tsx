@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { useStaffProfile } from "./StaffProfile";
 import { ROLE_LABEL, type Clearance, type ClearanceItem } from "./types";
 
+import { ask } from "@/lib/dialog";
 const AREA: Record<string, string> = {
   library: "Library clearance",
   store: "Store & assets returned",
@@ -133,8 +134,8 @@ export function StaffExit() {
                   type="button"
                   className="btn primary"
                   disabled={busy || !open.can_complete}
-                  onClick={() =>
-                    window.confirm(`Complete the exit for ${p.full_name}? Their login will be deactivated.`) &&
+                  onClick={async () =>
+                    (await ask(`Complete the exit for ${p.full_name}? Their login will be deactivated.`)) &&
                     run(() => api.post(`/api/v1/school/staff-ops/clearances/${open.id}/complete`, { deactivate: true }), "Offboarding complete. The login is deactivated.")
                   }
                 >
@@ -145,7 +146,7 @@ export function StaffExit() {
                   type="button"
                   className="btn"
                   disabled={busy}
-                  onClick={() => window.confirm("Cancel this exit checklist?") && run(() => api.post(`/api/v1/school/staff-ops/clearances/${open.id}/cancel`), "Exit checklist cancelled.")}
+                  onClick={async () => (await ask("Cancel this exit checklist?")) && run(() => api.post(`/api/v1/school/staff-ops/clearances/${open.id}/cancel`), "Exit checklist cancelled.")}
                 >
                   Cancel exit
                 </button>

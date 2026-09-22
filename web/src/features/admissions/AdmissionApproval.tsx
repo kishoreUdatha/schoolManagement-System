@@ -15,6 +15,7 @@ import { useApi } from "@/lib/useApi";
 import { appClass, APPS, daysFromToday, emitChange, seatText, useDetails, useOnAction, useOnChange, useSeats, useYears } from "./shared";
 import type { Application } from "./types";
 
+import { ask } from "@/lib/dialog";
 const AWAITING = ["submitted", "verification", "assessment"];
 const TONES = ["mint", "", "peach", "lilac"];
 
@@ -95,7 +96,7 @@ export function AdmissionApproval() {
       return;
     }
     const who = a.student_name ?? "this applicant";
-    if (!window.confirm(approve ? `Approve the application for ${who}?` : `Reject the application for ${who}? The family is told the reason you gave.`)) return;
+    if (!(await ask(approve ? `Approve the application for ${who}?` : `Reject the application for ${who}? The family is told the reason you gave.`))) return;
     setBusy(true);
     setError(null);
     try {

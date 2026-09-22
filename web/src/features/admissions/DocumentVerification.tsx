@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { appClass, APPS, emitChange, openDocument, size, uploadDocument, useOnAction, useOnChange } from "./shared";
 import { DOC_KINDS, type AppDocument, type Application } from "./types";
 
+import { askText } from "@/lib/dialog";
 const LIVE = ["submitted", "verification", "assessment", "approved", "fee_pending"];
 const CHECKS = ["Name matches the record", "Document is readable", "Dates and reference checked"];
 
@@ -89,8 +90,8 @@ export function DocumentVerification() {
     }
   };
 
-  const reject = (d: AppDocument) => {
-    const remark = window.prompt(`Why is the ${label(d.category).toLowerCase()} not acceptable?`);
+  const reject = async (d: AppDocument) => {
+    const remark = (await askText(`Why is the ${label(d.category).toLowerCase()} not acceptable?`));
     if (!remark?.trim()) return;
     run(() => api.post(`${APPS}/documents/${d.id}/verify`, { verified: false, remark: remark.trim() }), "Sent back with your remark.");
   };

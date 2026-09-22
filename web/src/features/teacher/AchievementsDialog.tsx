@@ -17,6 +17,7 @@ import { date, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 
+import { ask, askText } from "@/lib/dialog";
 const PATH = "/api/v1/school/parent-services/achievements";
 const CATEGORIES = ["academic", "reading", "sports", "arts", "service", "conduct", "other"];
 
@@ -77,8 +78,8 @@ export function AchievementsDialog({ student, onClose }: { student: { student_id
     if (ok) setF({ ...f, title: "", target: "", current: "", unit: "", description: "" });
   }
 
-  function progress(a: Achievement) {
-    const v = window.prompt(`Progress on “${a.title}” (out of ${a.target_value}${a.unit ? ` ${a.unit}` : ""}):`, String(a.current_value ?? 0));
+  async function progress(a: Achievement) {
+    const v = (await askText(`Progress on “${a.title}” (out of ${a.target_value}${a.unit ? ` ${a.unit}` : ""}):`, String(a.current_value ?? 0)));
     if (v === null || v.trim() === "" || Number.isNaN(Number(v))) return;
     run(() => api.patch(`${PATH}/${a.id}`, { current_value: Number(v) }), "Progress updated.");
   }
@@ -123,7 +124,7 @@ export function AchievementsDialog({ student, onClose }: { student: { student_id
                 type="button"
                 className="btn"
                 disabled={busy}
-                onClick={() => window.confirm(`Remove “${a.title}”?`) && run(() => api.delete(`${PATH}/${a.id}`), "Removed.")}
+                onClick={async () => (await ask(`Remove “${a.title}”?`)) && run(() => api.delete(`${PATH}/${a.id}`), "Removed.")}
               >
                 Remove
               </button>

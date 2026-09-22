@@ -11,6 +11,7 @@ import { Dialog, DialogActions, Field, Kv, SearchBox, YearSelect, downloadCsv, u
 import { ClassDetailFields, classDetails } from "@/features/setup/ClassSetup";
 import type { SchoolClass } from "./types";
 
+import { ask } from "@/lib/dialog";
 const COLUMNS = ["Class", "School level", "Sections", "Students", "Coordinator", "Capacity", "Status"];
 
 /** The class's own planned capacity, else what its sections add up to. */
@@ -229,7 +230,7 @@ function ClassDialog({
           type="button"
           className="btn danger"
           disabled={busy}
-          onClick={() => window.confirm(`Delete ${c.name}? Its sections go with it.`) && run(() => api.delete(`/api/v1/school/classes/${c.id}`), `Deleted ${c.name}.`, true)}
+          onClick={async () => (await ask(`Delete ${c.name}? Its sections go with it.`)) && run(() => api.delete(`/api/v1/school/classes/${c.id}`), `Deleted ${c.name}.`, true)}
         >
           Delete
         </button>

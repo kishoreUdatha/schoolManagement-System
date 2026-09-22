@@ -13,6 +13,7 @@ import { useApi } from "@/lib/useApi";
 import type { LeaveType, StaffLeave } from "./types";
 import { AVATAR_TONES } from "./ui";
 
+import { ask } from "@/lib/dialog";
 type Balance = { id: number; leave_type_id: number; leave_type_name: string; year: number; available: string; used: string; allotted: string };
 
 const ageDays = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
@@ -137,7 +138,7 @@ export function LeaveApproval() {
                 <Badge>{label(l.status)}</Badge>
                 {l.status === "pending" ? (
                   <>
-                    <button type="button" className="btn" disabled={busy} onClick={(e) => { e.stopPropagation(); setSelected(l.id); if (window.confirm(`Decline ${l.applicant_name}'s leave?${remark.trim() ? "" : " Add a remark in the review panel first if you want to say why."}`)) decide(l, "rejected"); }}>
+                    <button type="button" className="btn" disabled={busy} onClick={async (e) => { e.stopPropagation(); setSelected(l.id); if ((await ask(`Decline ${l.applicant_name}'s leave?${remark.trim() ? "" : " Add a remark in the review panel first if you want to say why."}`))) decide(l, "rejected"); }}>
                       Decline
                     </button>
                     <button type="button" className="btn primary" disabled={busy} onClick={(e) => { e.stopPropagation(); setSelected(l.id); decide(l, "approved"); }}>

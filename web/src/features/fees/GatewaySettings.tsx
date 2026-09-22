@@ -10,6 +10,7 @@ import { Field } from "./common";
 import { ToggleRow } from "./extra";
 import type { Gateway } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * NEW-043, live: GET/PUT/DELETE /school/payments/gateway (Razorpay).
  * The server never returns the key secret or webhook secret, only whether
@@ -55,7 +56,7 @@ export function GatewaySettings() {
   }
 
   async function remove() {
-    if (!window.confirm("Remove the Razorpay keys? Parents will not be able to pay online until new keys are saved.")) return;
+    if (!(await ask("Remove the Razorpay keys? Parents will not be able to pay online until new keys are saved."))) return;
     setError(null);
     try {
       await api.delete("/api/v1/school/payments/gateway");

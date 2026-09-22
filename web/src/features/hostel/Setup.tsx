@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, addDays, formNum, formText, today, type PickedStudent } from "@/features/transport/kit";
 import type { Bed, Hostel, Resident, Room, Rota, StaffOption } from "./types";
 
+import { ask } from "@/lib/dialog";
 export const HOSTELS = "/api/v1/school/hostels";
 
 /** ?new=1 opens the page's "add" dialog; the page-head button links to it. */
@@ -367,7 +368,7 @@ export function HostelAllocation() {
   }
 
   async function vacate(r: Resident) {
-    if (!window.confirm(`${r.student_name} leaves the hostel today?`)) return;
+    if (!(await ask(`${r.student_name} leaves the hostel today?`))) return;
     try {
       await api.post(`${HOSTELS}/allocations/${r.allocation_id}/vacate`, undefined, { end_date: today() });
       done(`${r.student_name} has vacated.`);
@@ -468,7 +469,7 @@ export function WardenRota() {
   }
 
   async function remove() {
-    if (!viewing || !window.confirm("Remove this duty from the rota?")) return;
+    if (!viewing || !(await ask("Remove this duty from the rota?"))) return;
     try {
       await api.delete(`/api/v1/school/ops/warden-rota/${viewing.duty.duty_id}`);
       notify("Duty removed.");

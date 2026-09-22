@@ -14,6 +14,7 @@ import { useSetupYear } from "./ClassSetup";
 import type { Room } from "@/features/academics/planTypes";
 import type { Branch, Section, StaffMember } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * Room picker (name="room_id") from GET /rooms. A room seats one section, so
  * rooms another section already has are shown but can't be picked.
@@ -114,7 +115,7 @@ export function SectionSetup() {
   }
 
   async function remove() {
-    if (!section || !window.confirm(`Delete section ${section.class_name} ${section.name}?`)) return;
+    if (!section || !(await ask(`Delete section ${section.class_name} ${section.name}?`))) return;
     setSaving(true);
     setError(null);
     try {

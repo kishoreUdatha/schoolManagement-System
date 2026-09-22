@@ -15,6 +15,7 @@ import { Field, Kv, Modal, ModalActions, StudentPicker, addDays, formText, today
 import { LIB } from "./Catalogue";
 import type { Book, Borrower, CopyLookup, Fine, Fines, LibrarySettings, Loan, Member, Reservation, StaffOption } from "./types";
 
+import { ask } from "@/lib/dialog";
 const CHANNELS: Record<string, string> = { in_app: "in-app notice", sms: "SMS", email: "email", whatsapp: "WhatsApp", phone: "phone call" };
 const PAY: Record<string, string> = { cash: "Cash", upi: "UPI", card: "Card", cheque: "Cheque", bank_transfer: "Bank transfer", other: "Other" };
 
@@ -572,7 +573,7 @@ export function RenewReserve() {
                 type="button"
                 className="btn"
                 onClick={async () => {
-                  if (window.confirm("Cancel this reservation?") && (await run(() => api.post(`${LIB}/reservations/${holding.id}/cancel`), "Reservation cancelled."))) setHolding(null);
+                  if ((await ask("Cancel this reservation?")) && (await run(() => api.post(`${LIB}/reservations/${holding.id}/cancel`), "Reservation cancelled."))) setHolding(null);
                 }}
               >
                 Cancel reservation

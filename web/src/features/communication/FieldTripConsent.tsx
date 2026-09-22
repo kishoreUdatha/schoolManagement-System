@@ -14,6 +14,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { type ConsentReport, type ParentEvent, type SchoolEvent, hhmm, isoDay, useRole, useWindowEvent } from "./shared";
 
+import { ask, askText } from "@/lib/dialog";
 export const CONSENT_REQUEST_EVENT = "comm:consent-request";
 
 /** SCR-249: parents answer for their children; staff see the tracker. */
@@ -56,7 +57,7 @@ function ConsentTracker() {
       notify("Parents were asked when this event was published; their answers appear below.");
       return;
     }
-    if (!window.confirm(`Publish "${ev.title}" and ask ${ev.audience_label || "its audience"} for consent?`)) return;
+    if (!(await ask(`Publish "${ev.title}" and ask ${ev.audience_label || "its audience"} for consent?`))) return;
     try {
       await api.post(`/api/v1/school/events/${ev.id}/publish`);
       notify("Published. The audience has been notified and can now answer.");
@@ -165,7 +166,7 @@ function ParentConsent() {
   const items = (res.data ?? []).filter((e) => e.children.length > 0);
 
   async function reply(ev: ParentEvent, studentId: number, response: "yes" | "no") {
-    const note = response === "no" ? window.prompt("Reason (optional)") : null;
+    const note = response === "no" ? (await askText("Reason (optional)")) : null;
     try {
       await api.post(`/api/v1/parent/me/events/${ev.id}/consent`, { student_id: studentId, response, note: note?.trim() || null });
       notify(response === "yes" ? "Consent given. Thank you." : "Recorded that your child will not take part.");

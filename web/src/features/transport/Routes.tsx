@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { Field, Kv, SearchBox, time12 } from "./kit";
 import type { Route, Vehicle } from "./types";
 
+import { ask } from "@/lib/dialog";
 const ROUTES = "/api/v1/school/transport/routes";
 
 /** The driven distance when recorded, else the stop-to-stop straight line. */
@@ -148,7 +149,7 @@ export function RouteBuilder() {
   }
 
   async function remove() {
-    if (!r || !window.confirm(`Delete ${r.name}? Students must be moved off it first.`)) return;
+    if (!r || !(await ask(`Delete ${r.name}? Students must be moved off it first.`))) return;
     try {
       await api.delete(`${ROUTES}/${r.id}`);
       notify("Route deleted.");

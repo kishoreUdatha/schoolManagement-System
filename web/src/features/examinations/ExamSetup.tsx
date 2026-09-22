@@ -15,6 +15,7 @@ import type { AcademicYear, SchoolClass } from "@/features/students/types";
 import { clock } from "./common";
 import { EXAM_KINDS, type ClassSubject, type Exam, type ExamType, type Paper, type Term } from "./types";
 
+import { ask } from "@/lib/dialog";
 const field = (labelText: string, control: JSX.Element, required = false, full = false) => (
   <label className={`field ${full ? "full" : ""}`}>
     <span>
@@ -105,7 +106,7 @@ export function ExamSetup() {
 
   async function removeExam() {
     if (!ex) return;
-    if (!window.confirm(`Delete the exam ${ex.name} and its ${ex.papers_count} paper${ex.papers_count === 1 ? "" : "s"}? This cannot be undone.`)) return;
+    if (!(await ask(`Delete the exam ${ex.name} and its ${ex.papers_count} paper${ex.papers_count === 1 ? "" : "s"}? This cannot be undone.`))) return;
     setSaving(true);
     setError(null);
     try {
@@ -296,7 +297,7 @@ function Papers({ exam, reload }: { exam: Exam; reload: () => void }) {
 
   async function remove(i: number) {
     const p = exam.papers[i];
-    if (!window.confirm(`Remove the ${p.subject_name ?? ""} paper from this exam?`)) return;
+    if (!(await ask(`Remove the ${p.subject_name ?? ""} paper from this exam?`))) return;
     setError(null);
     try {
       await api.delete(`/api/v1/school/exams/papers/${p.id}`);

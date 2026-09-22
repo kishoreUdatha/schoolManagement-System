@@ -15,6 +15,7 @@ import { PROFILE, WorkingDays, readDays } from "./GeneralSettings";
 import { SettingsNav } from "./SettingsNav";
 import type { GradeScale, ReportCardSettings } from "./types";
 
+import { ask } from "@/lib/dialog";
 const RC = "/api/v1/school/report-card-settings";
 
 const TOGGLES: [keyof ReportCardSettings, string][] = [
@@ -84,7 +85,7 @@ export function AcademicSettings() {
   async function makeCurrent(id: number) {
     const y = years.data?.find((x) => x.id === id);
     if (!y || y.is_current) return;
-    if (!window.confirm(`Make ${y.name} the current academic year? Classes, attendance and fees switch to it.`)) return;
+    if (!(await ask(`Make ${y.name} the current academic year? Classes, attendance and fees switch to it.`))) return;
     setError(null);
     try {
       await api.post(`/api/v1/school/academic-years/${id}/set-current`);

@@ -16,6 +16,7 @@ import { BLOOMS, DIFFICULTIES, Field, KINDS, KIND_SHORT, RESULTS_ROUTE, TESTS_RO
 import { TestForm } from "./TestForm";
 import type { QuestionPage, TestDetail } from "./types";
 
+import { ask } from "@/lib/dialog";
 const VISIBILITY = { on_submit: "As soon as the student submits", after_close: "After the test closes", hidden: "Not shown to families" } as const;
 
 /**
@@ -68,7 +69,7 @@ export function TestEditor({ testId }: { testId: number }) {
   };
 
   async function remove() {
-    if (!window.confirm(`Delete the test "${t.title}"? This cannot be undone.`)) return;
+    if (!(await ask(`Delete the test "${t.title}"? This cannot be undone.`))) return;
     setBusy(true);
     setError(null);
     try {
@@ -117,7 +118,7 @@ export function TestEditor({ testId }: { testId: number }) {
             type="button"
             className="btn primary"
             disabled={busy || !t.question_count}
-            onClick={() => window.confirm("Publish this test? Families are notified and the questions are locked.") && run(() => api.post(`${url}/publish`), "Test published. Families were notified.")}
+            onClick={async () => (await ask("Publish this test? Families are notified and the questions are locked.")) && run(() => api.post(`${url}/publish`), "Test published. Families were notified.")}
           >
             <Icon name="check" className="sm" />
             Publish
@@ -128,7 +129,7 @@ export function TestEditor({ testId }: { testId: number }) {
             type="button"
             className="btn primary"
             disabled={busy}
-            onClick={() => window.confirm("Close this test now? Anyone still writing is submitted as they are.") && run(() => api.post(`${url}/close`), "Test closed.")}
+            onClick={async () => (await ask("Close this test now? Anyone still writing is submitted as they are.")) && run(() => api.post(`${url}/close`), "Test closed.")}
           >
             Close now
           </button>

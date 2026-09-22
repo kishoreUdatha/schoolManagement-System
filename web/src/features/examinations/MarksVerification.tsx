@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { downloadFile, ExamSelects, useExamChoice } from "./common";
 import type { ExamDashboard } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-148, live: GET /school/exams/{id} (papers, who signed off) and
  * /school/exam-ops/{id}/dashboard (candidates, marks entered);
@@ -136,7 +137,7 @@ export function MarksVerification() {
                   </td>
                   <td className="right">
                     {p.marks_verified_at ? (
-                      <button type="button" className="btn" disabled={busy} onClick={() => window.confirm("Remove the sign-off from this paper? Its marks can be changed again, and it must be signed off before publishing.") && run(() => api.post(`/api/v1/school/exams/papers/${p.id}/verify`, { verified: false }), `Sign-off removed from ${p.subject_name ?? "the paper"}.`)}>
+                      <button type="button" className="btn" disabled={busy} onClick={async () => (await ask("Remove the sign-off from this paper? Its marks can be changed again, and it must be signed off before publishing.")) && run(() => api.post(`/api/v1/school/exams/papers/${p.id}/verify`, { verified: false }), `Sign-off removed from ${p.subject_name ?? "the paper"}.`)}>
                         Remove sign-off
                       </button>
                     ) : (
@@ -145,8 +146,8 @@ export function MarksVerification() {
                         className="btn primary"
                         disabled={busy || !(d?.marks_entered ?? p.marks_entered_count)}
                         title={d?.marks_entered || p.marks_entered_count ? undefined : "No marks have been entered for this paper yet"}
-                        onClick={() =>
-                          (d?.marks_complete || window.confirm(`Only ${d?.marks_entered ?? p.marks_entered_count} of ${d?.candidates ?? "the"} candidates are marked. Sign off anyway?`)) &&
+                        onClick={async () =>
+                          (d?.marks_complete || (await ask(`Only ${d?.marks_entered ?? p.marks_entered_count} of ${d?.candidates ?? "the"} candidates are marked. Sign off anyway?`))) &&
                           run(() => api.post(`/api/v1/school/exams/papers/${p.id}/verify`, { verified: true }), `${p.subject_name ?? "Paper"} marks signed off.`)
                         }
                       >

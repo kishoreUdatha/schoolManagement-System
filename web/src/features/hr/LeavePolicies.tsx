@@ -11,6 +11,7 @@ import { useApi } from "@/lib/useApi";
 import type { DirectoryPerson, LeaveType } from "./types";
 import { Field } from "./ui";
 
+import { ask } from "@/lib/dialog";
 const BASE = "/api/v1/school/hr";
 const KINDS = ["casual", "sick", "earned", "unpaid", "other"];
 
@@ -65,7 +66,7 @@ export function LeavePolicies() {
   }
 
   async function remove() {
-    if (!t || !window.confirm(`Delete ${t.name}?`)) return;
+    if (!t || !(await ask(`Delete ${t.name}?`))) return;
     setErr(null);
     try {
       await api.delete(`${BASE}/leave-types/${t.id}`);
@@ -78,7 +79,7 @@ export function LeavePolicies() {
   }
 
   async function allot() {
-    if (!window.confirm(`Give every member of staff their ${year} leave, carrying forward what each type allows?`)) return;
+    if (!(await ask(`Give every member of staff their ${year} leave, carrying forward what each type allows?`))) return;
     setErr(null);
     try {
       const r = await api.post<{ staff: number; types: number; created: number; updated: number }>(`${BASE}/leave-balances/allot`, { year, carry_forward: true });

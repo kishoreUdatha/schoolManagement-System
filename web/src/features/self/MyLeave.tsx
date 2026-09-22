@@ -70,7 +70,7 @@ export function MyLeave() {
   ]);
 
   async function cancel(l: StaffLeave) {
-    if (!confirmed(`Cancel your leave from ${date(l.from_date)} to ${date(l.to_date)}?`)) return;
+    if (!(await confirmed(`Cancel your leave from ${date(l.from_date)} to ${date(l.to_date)}?`))) return;
     setError(null);
     try {
       await api.post(`${BASE}/${l.id}/cancel`);

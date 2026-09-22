@@ -10,6 +10,7 @@ import { useApi } from "@/lib/useApi";
 import { AuditItem, childNames, PICK_PARENT, useParent } from "./ParentShell";
 import type { AuditEntry, PasswordReset } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-076, live: GET /parents/{id}; POST /parents/{id}/activate or /deactivate
  * behind the portal-access switch; POST /parents/{id}/reset-password (shows the
@@ -42,7 +43,7 @@ export function ParentAccess() {
   }
 
   async function reset() {
-    if (!window.confirm(`Reset the password for ${p!.full_name}? Their current password stops working.`)) return;
+    if (!(await ask(`Reset the password for ${p!.full_name}? Their current password stops working.`))) return;
     setBusy(true);
     setFailed(null);
     try {

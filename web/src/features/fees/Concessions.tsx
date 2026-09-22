@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, Field, isoToday, StudentPicker } from "./common";
 import type { Concession, FeeHead, PickedStudent } from "./types";
 
+import { ask } from "@/lib/dialog";
 const REASONS = ["sibling", "merit", "staff ward", "scholarship", "need-based", "sports quota", "other"];
 const TONES = ["mint", "", "peach", "lilac"];
 
@@ -60,7 +61,7 @@ export function Concessions() {
 
   async function decide(c: Concession, approve: boolean) {
     const verb = approve ? "Approve" : "Reject";
-    if (!window.confirm(`${verb} the ${describe(c)} concession for ${c.student_name}?`)) return;
+    if (!(await ask(`${verb} the ${describe(c)} concession for ${c.student_name}?`))) return;
     setError(null);
     try {
       const r = await api.post<Concession>(`/api/v1/school/accounts/concessions/${c.id}/${approve ? "approve" : "reject"}`, {});
@@ -72,7 +73,7 @@ export function Concessions() {
   }
 
   async function end(c: Concession) {
-    if (!window.confirm(`End the ${describe(c)} concession for ${c.student_name}? Fees raised from now on are charged in full.`)) return;
+    if (!(await ask(`End the ${describe(c)} concession for ${c.student_name}? Fees raised from now on are charged in full.`))) return;
     setError(null);
     try {
       await api.post(`/api/v1/school/accounts/concessions/${c.id}/end`);

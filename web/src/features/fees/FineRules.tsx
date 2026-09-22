@@ -11,6 +11,7 @@ import { useApi } from "@/lib/useApi";
 import { Field } from "./common";
 import type { FeeHead, LateFeePreview, LateFeeRule } from "./types";
 
+import { ask } from "@/lib/dialog";
 const BASIS: [LateFeeRule["basis"], string, string][] = [
   ["per_day", "Fixed daily amount", "Daily amount (₹)"],
   ["once", "One-time amount", "Amount (₹)"],
@@ -68,7 +69,7 @@ export function FineRules() {
   }
 
   async function remove(r: LateFeeRule) {
-    if (!window.confirm(`Delete the rule "${r.name}"? Late fees already charged stay on the students' accounts.`)) return;
+    if (!(await ask(`Delete the rule "${r.name}"? Late fees already charged stay on the students' accounts.`))) return;
     setError(null);
     try {
       await api.delete(`/api/v1/school/fees/late-fee-rules/${r.id}`);
@@ -82,7 +83,7 @@ export function FineRules() {
   }
 
   async function apply() {
-    if (!window.confirm(`Charge ${money(preview.data?.total ?? 0)} in late fees now and tell the parents?`)) return;
+    if (!(await ask(`Charge ${money(preview.data?.total ?? 0)} in late fees now and tell the parents?`))) return;
     setApplying(true);
     setError(null);
     try {

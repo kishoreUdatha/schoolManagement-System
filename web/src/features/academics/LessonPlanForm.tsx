@@ -15,6 +15,7 @@ import { planStatusText } from "./LessonPlanList";
 import { todayIso } from "./planKit";
 import type { ClassSubject, LessonPlan, SyllabusDetail } from "./planTypes";
 
+import { ask } from "@/lib/dialog";
 const base = "/api/v1/school/lesson-plans";
 
 /**
@@ -323,7 +324,7 @@ export function LessonPlanForm() {
                 type="button"
                 className="btn"
                 disabled={saving}
-                onClick={() => window.confirm("Delete this lesson plan?") && run(() => api.delete(`${base}/${plan.id}`), "Lesson plan deleted.", () => router.push(routeOf(102)))}
+                onClick={async () => (await ask("Delete this lesson plan?")) && run(() => api.delete(`${base}/${plan.id}`), "Lesson plan deleted.", () => router.push(routeOf(102)))}
               >
                 Delete plan
               </button>

@@ -13,6 +13,7 @@ import { useSession } from "@/lib/useSession";
 import { Dialog, Field, isoToday, MODES, modeLabel, StudentPicker } from "./common";
 import type { PickedStudent, Refund, RefundOption } from "./types";
 
+import { askText } from "@/lib/dialog";
 const TONES = ["mint", "", "peach", "lilac"];
 const STATUS_LABEL: Record<Refund["status"], string> = { requested: "Pending", approved: "Approved", rejected: "Declined", processed: "Paid out" };
 
@@ -51,7 +52,7 @@ export function Refunds() {
   const decided = all.filter((r) => r.decided_at).sort((a, b) => (b.decided_at ?? "").localeCompare(a.decided_at ?? "")).slice(0, 3);
 
   async function decide(r: Refund, approve: boolean) {
-    const note = window.prompt(approve ? "A note for the record (optional):" : "Why is this refund being declined?");
+    const note = (await askText(approve ? "A note for the record (optional):" : "Why is this refund being declined?"));
     if (note === null) return;
     setError(null);
     try {

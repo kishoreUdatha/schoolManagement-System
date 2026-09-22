@@ -13,6 +13,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, Field, isoToday, StudentPicker } from "./common";
 import type { Assignment, FeeHead, PickedStudent } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-157, live: GET /school/finance/assignments (what one child pays when it
  * differs from their class). "Assign fees" POSTs one; a row can be applied to
@@ -49,7 +50,7 @@ export function FeeAssignments() {
   ]);
 
   async function apply(a: Assignment) {
-    if (!window.confirm("Change this student's unpaid charges to the assigned amount? Paid and part-paid charges are left alone.")) return;
+    if (!(await ask("Change this student's unpaid charges to the assigned amount? Paid and part-paid charges are left alone."))) return;
     setError(null);
     try {
       const r = await api.post<{ updated: number; left_alone_count: number }>(`/api/v1/school/finance/assignments/${a.id}/apply`);
@@ -62,7 +63,7 @@ export function FeeAssignments() {
   }
 
   async function end(a: Assignment) {
-    if (!window.confirm(`End this assignment for ${a.student_name ?? "the student"}? Future charges go back to the class amount.`)) return;
+    if (!(await ask(`End this assignment for ${a.student_name ?? "the student"}? Future charges go back to the class amount.`))) return;
     setError(null);
     try {
       await api.patch(`/api/v1/school/finance/assignments/${a.id}`, { is_active: false, ends_on: isoToday() });

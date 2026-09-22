@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { useOnAction } from "./shared";
 import { SOURCES, type Campaign } from "./types";
 
+import { ask } from "@/lib/dialog";
 const BASE = "/api/v1/school/admissions/campaigns";
 
 function dates(c: Campaign): string {
@@ -106,11 +107,11 @@ export function AdmissionCampaigns() {
     if (ok) setEditing(null);
   }
 
-  const remove = (c: Campaign) => {
+  const remove = async (c: Campaign) => {
     const msg = c.enquiry_count
       ? `Delete ${c.name}? Its ${c.enquiry_count} enquir${c.enquiry_count === 1 ? "y keeps" : "ies keep"} their details but lose the campaign tag.`
       : `Delete ${c.name}?`;
-    if (window.confirm(msg)) act(() => api.delete(`${BASE}/${c.id}`), "Campaign deleted.");
+    if ((await ask(msg))) act(() => api.delete(`${BASE}/${c.id}`), "Campaign deleted.");
   };
 
   const current = editing && editing !== "new" ? editing : null;

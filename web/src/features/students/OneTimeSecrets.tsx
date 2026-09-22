@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
 
+import { ask } from "@/lib/dialog";
+import { notify } from "@/lib/notify";
 /** One credential to hand over: who it is for, what they sign in with, and the password. */
 export type Secret = { key: string; name: string; sub?: string; signIn: string; password: string; tag?: string };
 
@@ -36,14 +38,14 @@ export function OneTimeSecrets({ title, heading, rows, footnote, onDone }: { tit
       await navigator.clipboard.writeText(text);
       setCopied(true);
     } catch {
-      window.alert("The browser would not copy. Select the table and copy it by hand, or print it.");
+      notify("The browser would not copy. Select the table and copy it by hand, or print it.");
     }
   }
 
   /** Slips, one per person, in a fresh window that is not kept anywhere. */
   function print() {
     const w = window.open("", "_blank", "width=820,height=900");
-    if (!w) return window.alert("Allow pop-ups for this site to print the slips.");
+    if (!w) return notify("Allow pop-ups for this site to print the slips.");
     const slips = rows
       .map(
         (r) => `<div class="slip"><h3>${esc(r.name)}</h3>${r.sub ? `<p>${esc(r.sub)}</p>` : ""}<dl><dt>${esc(heading[0])}</dt><dd>${esc(r.signIn)}</dd><dt>Password</dt><dd class="pw">${esc(r.password)}</dd></dl><small>${esc(footnote)}</small></div>`,
@@ -56,8 +58,8 @@ export function OneTimeSecrets({ title, heading, rows, footnote, onDone }: { tit
     setPrinted(true);
   }
 
-  function done() {
-    if (!copied && !printed && !window.confirm("These passwords cannot be shown again. Have you printed or copied them?")) return;
+  async function done() {
+    if (!copied && !printed && !(await ask("These passwords cannot be shown again. Have you printed or copied them?"))) return;
     onDone();
   }
 

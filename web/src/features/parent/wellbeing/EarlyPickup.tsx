@@ -15,6 +15,7 @@ import { useApi } from "@/lib/useApi";
 import { ChildGate, PmError, PmLoading, orNull, useChildPath, valueClass, type Tone } from "../support/pm";
 import type { Guardian } from "./AuthorizedPickup";
 
+import { ask } from "@/lib/dialog";
 type Pass = {
   id: number;
   leave_on: string;
@@ -89,7 +90,7 @@ function Request() {
   }
 
   async function cancel(p: Pass) {
-    if (!base || !window.confirm("Cancel this pickup request?")) return;
+    if (!base || !(await ask("Cancel this pickup request?"))) return;
     try {
       await api.post(`${base}/gate-passes/${p.id}/cancel`);
       notify("Pickup request cancelled.");

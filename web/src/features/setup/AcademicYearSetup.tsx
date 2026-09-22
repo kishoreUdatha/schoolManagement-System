@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import { Field, KV, SectionTitle, orNull } from "./bits";
 import type { AcademicYear, Branch, Term } from "./types";
 
+import { ask } from "@/lib/dialog";
 type Status = "current" | "active" | "archived";
 const statusOf = (y: AcademicYear): Status => (y.is_current ? "current" : y.is_archived ? "archived" : "active");
 const STATUS_LABEL: Record<Status, string> = { current: "Current", active: "Active", archived: "Archived" };
@@ -86,7 +87,7 @@ export function AcademicYearSetup() {
   }
 
   async function remove() {
-    if (!year || !window.confirm(`Delete ${year.name}? This cannot be undone.`)) return;
+    if (!year || !(await ask(`Delete ${year.name}? This cannot be undone.`))) return;
     setSaving(true);
     setError(null);
     try {

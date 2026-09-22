@@ -11,6 +11,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, DialogActions, Field, SearchBox, YearSelect, downloadCsv, usePageAction, useSearch, useYears } from "./setupKit";
 import type { Term } from "./types";
 
+import { ask } from "@/lib/dialog";
 const COLUMNS = ["Term", "Academic year", "Start date", "End date", "Working days", "Status"];
 
 /** Where a term stands against today: its dates are all the API keeps. */
@@ -99,7 +100,7 @@ function TermForm({ yearId, t, onClose, onSaved }: { yearId: number; t?: Term; o
   }
 
   async function remove() {
-    if (!t || !window.confirm(`Delete ${t.name}?`)) return;
+    if (!t || !(await ask(`Delete ${t.name}?`))) return;
     setSaving(true);
     try {
       await api.delete(`/api/v1/school/terms/${t.id}`);

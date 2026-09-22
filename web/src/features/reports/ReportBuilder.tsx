@@ -13,6 +13,7 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { downloadCsv, Kv, useYear } from "./kit";
 
+import { ask } from "@/lib/dialog";
 type Source = { source: string; label: string; columns: string[]; filters: string[] };
 type Definition = {
   id: number;
@@ -172,7 +173,7 @@ export function ReportBuilder() {
 
   async function remove() {
     if (!chosenSaved) return;
-    if (!window.confirm(`Delete the saved report "${chosenSaved.name}"? Files already exported from it are kept.`)) return;
+    if (!(await ask(`Delete the saved report "${chosenSaved.name}"? Files already exported from it are kept.`))) return;
     setBusy(true);
     setError(null);
     try {

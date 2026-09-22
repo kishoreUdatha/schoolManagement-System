@@ -10,6 +10,7 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, Modal, ModalActions, Tip, orNull, useNewFlag, type Lab, type StaffRow } from "./common";
 
+import { ask } from "@/lib/dialog";
 type Room = { id: number; name: string; code: string };
 type Subject = { id: number; name: string };
 
@@ -119,7 +120,7 @@ function LabDialog({ existing, onClose, onSaved }: { existing: Lab | null; onClo
   }
 
   async function remove() {
-    if (!existing || !window.confirm(`Delete ${existing.name}?`)) return;
+    if (!existing || !(await ask(`Delete ${existing.name}?`))) return;
     try {
       await api.delete(`/api/v1/school/labs/${existing.id}`);
       notify("Lab deleted.");

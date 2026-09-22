@@ -10,6 +10,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 
+import { ask } from "@/lib/dialog";
 type Setting = { key: string; value: Record<string, unknown> | null; description: string | null; set: boolean; updated_at: string | null };
 
 /** A plain value is stored as {"value": …}; unwrap it so nobody types JSON
@@ -77,7 +78,7 @@ export function PlatformSettings() {
   }
 
   async function unset(s: Setting) {
-    if (!window.confirm(`Put ${label(s.key)} back to its default?`)) return;
+    if (!(await ask(`Put ${label(s.key)} back to its default?`))) return;
     setError(null);
     try {
       await api.delete(`/api/v1/super-admin/settings/${s.key}`);

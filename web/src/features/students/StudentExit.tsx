@@ -15,6 +15,7 @@ import { today } from "./StudentFrame";
 import type { Leaver, Loan } from "./records";
 import type { AcademicYear, Student, StudentProfile } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-070, live: POST /students/{id}/transfer {to_school, left_on, reason,
  * remarks, ignore_dues}. Clearance is read from /students/{id} (fees pending) and
@@ -49,7 +50,7 @@ export function StudentExit() {
     if (!studentId) return setError("Choose the student who is leaving.");
     const f = new FormData(e.currentTarget);
     const reason = String(f.get("reason") ?? "").trim();
-    if (!window.confirm(`Record that ${p?.full_name ?? "this student"} has left? They become inactive and leave the class lists; this cannot be undone here.`)) return;
+    if (!(await ask(`Record that ${p?.full_name ?? "this student"} has left? They become inactive and leave the class lists; this cannot be undone here.`))) return;
     setBusy(true);
     setError(null);
     try {

@@ -13,6 +13,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { EVENT_AUDIENCE, EVENT_KINDS, type EventAudience, type SchoolEvent, eventStatus, useCurrentClasses } from "./shared";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-247 Create / Edit Event. New: POST /api/v1/school/events (a draft).
  * Edit (?id=): PUT /api/v1/school/events/{id}. "Publish event" saves, then
@@ -110,7 +111,7 @@ export function EventForm() {
   }
 
   async function removeFile(a: Attachment) {
-    if (!e || !window.confirm(`Remove “${a.file_name}”?`)) return;
+    if (!e || !(await ask(`Remove “${a.file_name}”?`))) return;
     try {
       await api.delete(`/api/v1/school/events/${e.id}/files/${a.id}`);
       list.reload();
@@ -121,8 +122,8 @@ export function EventForm() {
 
   async function act(action: "cancel" | "delete") {
     if (!e) return;
-    const ask = action === "cancel" ? `Cancel "${e.title}"? Everyone who was told about it will be notified.` : `Delete the draft "${e.title}"?`;
-    if (!window.confirm(ask)) return;
+    const question = action === "cancel" ? `Cancel "${e.title}"? Everyone who was told about it will be notified.` : `Delete the draft "${e.title}"?`;
+    if (!(await ask(question))) return;
     try {
       if (action === "delete") await api.delete(`/api/v1/school/events/${e.id}`);
       else await api.post(`/api/v1/school/events/${e.id}/cancel`);

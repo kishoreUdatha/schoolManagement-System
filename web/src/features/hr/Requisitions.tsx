@@ -13,6 +13,7 @@ import { useSession } from "@/lib/useSession";
 import type { Department, Requisition, RequisitionStatus } from "./types";
 import { AVATAR_TONES, Dialog, Field, useNewFlag } from "./ui";
 
+import { ask } from "@/lib/dialog";
 const BASE = "/api/v1/school/hr-ops/requisitions";
 const STATES: RequisitionStatus[] = ["draft", "submitted", "approved", "rejected", "filled", "cancelled"];
 const SHOWN: Record<RequisitionStatus, string> = {
@@ -195,7 +196,7 @@ export function Requisitions() {
                   <button
                     type="button"
                     className="btn"
-                    onClick={() => window.confirm(`Cancel the request for ${r.title}?`) && act(() => api.post(`${BASE}/${r.id}/status`, { status: "cancelled" }), "Request cancelled.")}
+                    onClick={async () => (await ask(`Cancel the request for ${r.title}?`)) && act(() => api.post(`${BASE}/${r.id}/status`, { status: "cancelled" }), "Request cancelled.")}
                   >
                     Cancel
                   </button>

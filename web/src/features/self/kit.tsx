@@ -13,6 +13,7 @@ import { Loading } from "@/components/ui/states";
 import type { Role } from "@/lib/session";
 import { useHydrated, useSession } from "@/lib/useSession";
 
+import { ask } from "@/lib/dialog";
 /** A plain panel with one line of text, for the wrong role or an empty setup. */
 export function Note({ children }: { children: ReactNode }) {
   return (
@@ -140,4 +141,4 @@ export function num(v: string | number | null | undefined): string {
   return Number.isNaN(n) ? String(v) : String(Math.round(n * 100) / 100);
 }
 
-export const confirmed = (message: string) => typeof window !== "undefined" && window.confirm(message);
+export const confirmed = async (message: string) => typeof window !== "undefined" && (await ask(message));

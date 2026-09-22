@@ -12,6 +12,7 @@ import { Field } from "@/features/setup/bits";
 import { ROLES } from "./rbac";
 import type { Assignment, Branch, Role } from "./types";
 
+import { ask } from "@/lib/dialog";
 const ASSIGN = "/api/v1/school/role-assignments";
 
 type StaffPick = { user_id: number; full_name: string; role: string };
@@ -95,7 +96,7 @@ export function RoleAssignment() {
   }
 
   async function remove(a: Assignment) {
-    if (!window.confirm(`Take ${a.role_name} away from ${a.user_name}?`)) return;
+    if (!(await ask(`Take ${a.role_name} away from ${a.user_name}?`))) return;
     setError(null);
     try {
       await api.delete(`${ASSIGN}/${a.id}`);

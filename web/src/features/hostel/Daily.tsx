@@ -13,6 +13,7 @@ import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, formText, tod
 import { HOSTELS, NoHostel, useAddDialog, useHostel } from "./Setup";
 import type { Complaint, Meal, MenuSlot, Outing, Resident, RollStatus } from "./types";
 
+import { ask } from "@/lib/dialog";
 const ROLL: Record<RollStatus, [string, string]> = { present: ["Present", "present"], absent: ["Absent", "absent"], on_leave: ["Leave", "leave"] };
 
 /** SCR-212, live: GET /hostels/{id}/residents?on= and POST /hostels/{id}/roll-call (morning or night; check-in time, late and a remark per resident). */
@@ -544,10 +545,10 @@ export function ComplaintsFees() {
     run(() => api.patch(`${HOSTELS}/complaints/${open!.id}`, { status: formText(f, "status"), resolution: formText(f, "resolution") }), "Complaint updated.");
   }
 
-  function bill(e: FormEvent<HTMLFormElement>) {
+  async function bill(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    if (!window.confirm(`Raise the ${formText(f, "period") ?? "month's"} hostel fee for every resident? Anyone already billed for it is skipped.`)) return;
+    if (!(await ask(`Raise the ${formText(f, "period") ?? "month's"} hostel fee for every resident? Anyone already billed for it is skipped.`))) return;
     setSaving(true);
     setError(null);
     api

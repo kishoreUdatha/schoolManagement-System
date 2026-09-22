@@ -27,6 +27,7 @@ import {
   type StaffRow,
 } from "./types";
 
+import { ask } from "@/lib/dialog";
 /**
  * SCR-256 Document Repository (scope "all"), SCR-257 Student Documents
  * ("student", optional ?id= student), SCR-258 Staff Documents ("staff",
@@ -120,7 +121,7 @@ export function DocumentList({ scope }: { scope: Scope }) {
   const open = (d: Doc) => openFile(`/api/v1/school/documents/${d.id}/file`).catch((e) => setError(errorText(e)));
 
   async function remove(d: Doc) {
-    if (!window.confirm(`Delete "${d.title}"? The file is removed permanently.`)) return;
+    if (!(await ask(`Delete "${d.title}"? The file is removed permanently.`))) return;
     try {
       await api.delete(`/api/v1/school/documents/${d.id}`);
       notify(`Deleted ${d.title}.`);

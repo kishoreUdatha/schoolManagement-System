@@ -14,6 +14,7 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { SettingsNav } from "./SettingsNav";
 
+import { ask } from "@/lib/dialog";
 /**
  * NEW-082, live: GET/PUT/DELETE /school/whatsapp (the school's own WhatsApp
  * Business connection: Meta Cloud API or Twilio; secrets are write-only),
@@ -144,7 +145,7 @@ export function WhatsappSettings() {
   }
 
   async function disconnect() {
-    if (!window.confirm("Disconnect WhatsApp? Messages will go in the app only until it is connected again.")) return;
+    if (!(await ask("Disconnect WhatsApp? Messages will go in the app only until it is connected again."))) return;
     setError(null);
     try {
       await api.delete("/api/v1/school/whatsapp");

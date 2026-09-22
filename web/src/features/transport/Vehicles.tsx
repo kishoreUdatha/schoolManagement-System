@@ -15,6 +15,7 @@ import { useApi } from "@/lib/useApi";
 import { Field, Kv, Modal, ModalActions, SearchBox, formNum, formText, time12, today } from "./kit";
 import { KIND_LABEL, type Crew, type LogKind, type Route, type Vehicle, type VehicleLog } from "./types";
 
+import { ask } from "@/lib/dialog";
 const VEHICLES = "/api/v1/school/transport/vehicles";
 const ROUTES = "/api/v1/school/transport/routes";
 const CREW = "/api/v1/school/transport/crew";
@@ -273,7 +274,7 @@ export function VehicleDetails() {
   // The API refuses while an active route uses the vehicle and says which one.
   async function remove() {
     const name = vehicleName(v!);
-    if (!window.confirm(`Delete ${name} (${v!.registration_no}) for good? Its fuel, service and GPS history goes with it. To keep the history, edit it and set it Inactive instead.`)) return;
+    if (!(await ask(`Delete ${name} (${v!.registration_no}) for good? Its fuel, service and GPS history goes with it. To keep the history, edit it and set it Inactive instead.`))) return;
     try {
       await api.delete(`${VEHICLES}/${v!.id}`);
       notify(`${name} deleted.`);
@@ -284,7 +285,7 @@ export function VehicleDetails() {
   }
 
   async function makeKey() {
-    if (v!.gps_enabled && !window.confirm("Generate a new key? The tracker using the old key will stop reporting.")) return;
+    if (v!.gps_enabled && !(await ask("Generate a new key? The tracker using the old key will stop reporting."))) return;
     try {
       const r = await api.post<{ gps_api_key: string }>(`${VEHICLES}/${v!.id}/gps-key`);
       setGpsKey(r.gps_api_key);
@@ -490,7 +491,7 @@ export function MaintenanceFuel() {
   }
 
   async function remove(l: VehicleLog) {
-    if (!window.confirm("Delete this entry?")) return;
+    if (!(await ask("Delete this entry?"))) return;
     try {
       await api.delete(`${VEHICLES}/${l.vehicle_id}/logs/${l.id}`);
       notify("Entry deleted.");

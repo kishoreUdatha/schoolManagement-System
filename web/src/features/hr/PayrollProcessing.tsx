@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import type { Payslip, Run, RunDetail } from "./types";
 import { Dialog, Field, downloadAuthed, monthLabel, today, useNewFlag } from "./ui";
 
+import { ask } from "@/lib/dialog";
 const BASE = "/api/v1/school/payroll/runs";
 const allowances = (p: Payslip) => ["da", "hra", "conveyance", "special_allowance", "other_allowance", "bonus"].reduce((t, k) => t + Number(p[k as keyof Payslip] ?? 0), 0);
 
@@ -142,7 +143,7 @@ export function PayrollProcessing() {
                 <button type="button" className="btn" disabled={busy} onClick={() => act(() => api.post(`${BASE}/${r.id}/recalculate`), "Recalculated from the latest attendance and salaries.")}>
                   Recalculate
                 </button>
-                <button type="button" className="btn primary" disabled={busy} onClick={() => window.confirm(`Finalise the ${month} payroll? Staff will see their payslips.`) && act(() => api.post(`${BASE}/${r.id}/finalize`), "Payroll finalised. Staff can now see their payslips.")}>
+                <button type="button" className="btn primary" disabled={busy} onClick={async () => (await ask(`Finalise the ${month} payroll? Staff will see their payslips.`)) && act(() => api.post(`${BASE}/${r.id}/finalize`), "Payroll finalised. Staff can now see their payslips.")}>
                   Finalise
                 </button>
                 <button
@@ -150,7 +151,7 @@ export function PayrollProcessing() {
                   className="btn"
                   disabled={busy}
                   onClick={async () => {
-                    if (!window.confirm(`Delete the ${month} draft payroll?`)) return;
+                    if (!(await ask(`Delete the ${month} draft payroll?`))) return;
                     if (await act(() => api.delete(`${BASE}/${r.id}`), "Draft deleted.")) open(null);
                   }}
                 >
@@ -160,7 +161,7 @@ export function PayrollProcessing() {
             ) : null}
             {r.status === "finalized" ? (
               <>
-                <button type="button" className="btn" disabled={busy} onClick={() => window.confirm("Reopen this finalised payroll for changes? Payslips can be edited again until it is finalised.") && act(() => api.post(`${BASE}/${r.id}/reopen`), "Reopened for changes.")}>
+                <button type="button" className="btn" disabled={busy} onClick={async () => (await ask("Reopen this finalised payroll for changes? Payslips can be edited again until it is finalised.")) && act(() => api.post(`${BASE}/${r.id}/reopen`), "Reopened for changes.")}>
                   Reopen
                 </button>
                 <button type="button" className="btn primary" disabled={busy} onClick={() => setPaying(true)}>

@@ -71,7 +71,7 @@ export function HealthCheckups() {
   }
 
   async function remove(c: Checkup) {
-    if (!confirmed(`Delete the check-up of ${date(c.checked_on)}? This cannot be undone.`)) return;
+    if (!(await confirmed(`Delete the check-up of ${date(c.checked_on)}? This cannot be undone.`))) return;
     setError(null);
     try {
       await api.delete(`${HEALTH}/checkups/${c.id}`);

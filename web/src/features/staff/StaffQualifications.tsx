@@ -14,6 +14,7 @@ import { StaffBanner, useStaffProfile } from "./StaffProfile";
 import type { QualificationsPage, StaffDocument } from "./types";
 import { openFile, uploadForm } from "./util";
 
+import { ask } from "@/lib/dialog";
 const CATEGORIES = ["qualification", "experience", "id_proof", "address_proof", "photo", "medical", "other"];
 
 const ext = (title: string) => {
@@ -173,7 +174,7 @@ export function StaffQualifications() {
                         type="button"
                         className="btn"
                         disabled={busy}
-                        onClick={() => window.confirm(`Remove ${x.qualification}?`) && run(() => api.delete(`/api/v1/school/staff-ops/qualifications/${x.id}`), "Qualification removed.")}
+                        onClick={async () => (await ask(`Remove ${x.qualification}?`)) && run(() => api.delete(`/api/v1/school/staff-ops/qualifications/${x.id}`), "Qualification removed.")}
                       >
                         Remove
                       </button>

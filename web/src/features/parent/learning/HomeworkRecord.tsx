@@ -11,6 +11,7 @@ import { ActionLink, childPath, ChildScoped, dueLabel, longDate, PmEmpty, PmErro
 import type { Homework, Submission } from "./types";
 import { stageOf, submissionPath, useOneHomework } from "./useHomework";
 
+import { ask } from "@/lib/dialog";
 /** Loads the assignment named by ?id= for the selected child and hands it to `render`. */
 function WithHomework({ render }: { render: (x: { childId: number; hw: Homework; sub: Submission | null; reload: () => void }) => ReactNode }) {
   const id = Number(useSearchParams().get("id")) || 0;
@@ -166,7 +167,7 @@ function SubmitForm({ childId, hw, sub }: { childId: number; hw: Homework; sub: 
   }, [sub]);
 
   async function removeFile(a: Attachment) {
-    if (!window.confirm(`Remove “${a.file_name}” from the work handed in?`)) return;
+    if (!(await ask(`Remove “${a.file_name}” from the work handed in?`))) return;
     setError(null);
     try {
       setCurrent(await api.delete<Submission>(`${submissionPath(childId, hw.id)}/files/${a.id}`));

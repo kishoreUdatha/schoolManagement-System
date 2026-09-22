@@ -11,6 +11,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, openFile, postForm, usePageAction } from "./planKit";
 import { RESOURCE_KINDS, type ClassSubject, type Resource, type SyllabusDetail } from "./planTypes";
 
+import { ask } from "@/lib/dialog";
 const base = "/api/v1/school/teaching-resources";
 
 const ICON: Record<string, [string, string]> = {
@@ -163,7 +164,7 @@ export function TeachingResources() {
                 {managing.visible_to_parents ? "Make staff only" : "Share with parents"}
               </button>
               {managing.is_active ? (
-                <button type="button" className="btn" onClick={() => window.confirm(`Remove ${managing.title}?`) && run(() => api.delete(`${base}/${managing.id}`), "Resource removed.")}>
+                <button type="button" className="btn" onClick={async () => (await ask(`Remove ${managing.title}?`)) && run(() => api.delete(`${base}/${managing.id}`), "Resource removed.")}>
                   Remove
                 </button>
               ) : (

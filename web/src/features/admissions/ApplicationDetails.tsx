@@ -15,6 +15,7 @@ import { DocumentList } from "./ApplicationForm";
 import { appClass, APPS, emitChange, todayIso, uploadDocument, useOnChange } from "./shared";
 import { DOC_KINDS, type Application } from "./types";
 
+import { askText } from "@/lib/dialog";
 /** Application · Documents · Assessment · Approval, carrying ?id= along. */
 export function ApplicationTabs({ id, active }: { id: number | string; active: number }) {
   const tabs: [number, string][] = [
@@ -269,8 +270,8 @@ function NextStep({ a }: { a: Application }) {
   }
 
   const closed = ["admitted", "rejected", "withdrawn"].includes(a.status);
-  const withdraw = () => {
-    const note = window.prompt("Why is the application being withdrawn?");
+  const withdraw = async () => {
+    const note = (await askText("Why is the application being withdrawn?"));
     if (note === null) return;
     run(() => api.post(`${APPS}/${a.id}/withdraw`, {}, { note: note.trim() || null }), "Application withdrawn.");
   };

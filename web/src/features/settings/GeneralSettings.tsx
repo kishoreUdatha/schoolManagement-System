@@ -15,6 +15,7 @@ import type { SchoolProfile } from "@/features/setup/types";
 import { SettingsNav } from "./SettingsNav";
 import type { Integration, SecurityPolicy, TwoFactorScope } from "./types";
 
+import { ask } from "@/lib/dialog";
 export const PROFILE = "/api/v1/school/profile";
 export const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const DAY_LABEL: Record<string, string> = { MON: "Mon", TUE: "Tue", WED: "Wed", THU: "Thu", FRI: "Fri", SAT: "Sat", SUN: "Sun" };
@@ -59,7 +60,7 @@ export function SchoolSettings() {
   async function makeCurrent(id: number) {
     const y = years.data?.find((x) => x.id === id);
     if (!y || y.is_current) return;
-    if (!window.confirm(`Make ${y.name} the current academic year? Classes, attendance and fees switch to it.`)) return;
+    if (!(await ask(`Make ${y.name} the current academic year? Classes, attendance and fees switch to it.`))) return;
     setError(null);
     try {
       await api.post(`/api/v1/school/academic-years/${id}/set-current`);

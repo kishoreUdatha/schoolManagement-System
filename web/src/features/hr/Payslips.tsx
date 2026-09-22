@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import type { Payslip, Run, RunDetail } from "./types";
 import { downloadAuthed, monthLabel } from "./ui";
 
+import { notify } from "@/lib/notify";
 const ONES = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
 const TENS = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
 
@@ -199,7 +200,7 @@ export function PayslipDownload() {
         id &&
         downloadAuthed(`/api/v1/school/payroll/payslips/${id}/pdf`, `payslip-${id}.pdf`).catch((e) => {
           setErr(errorText(e));
-          window.alert(errorText(e));
+          notify(errorText(e));
         })
       }
     >

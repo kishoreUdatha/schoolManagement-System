@@ -17,6 +17,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Field, Kv, ago, formNum, formText, minutesSince, time12, today } from "./kit";
 import type { LocationPoint, Route, Trip, TripDetail, TripStudent, Vehicle } from "./types";
 
+import { ask } from "@/lib/dialog";
 const TRIPS = "/api/v1/school/transport/trips";
 const tripName = (t: Trip) => `${t.route_name} · ${t.direction === "pickup" ? "Morning pickup" : "Afternoon drop"}`;
 const STATUS: Record<Trip["status"], string> = { scheduled: "Scheduled", in_progress: "In transit", completed: "Completed", cancelled: "Cancelled" };
@@ -290,7 +291,7 @@ export function TripSheet() {
                   Save log
                 </button>
                 {t.status === "scheduled" || t.status === "in_progress" ? (
-                  <button type="button" className="btn" disabled={saving} onClick={() => window.confirm("Cancel this trip?") && patch({ status: "cancelled" }, "Trip cancelled.")}>
+                  <button type="button" className="btn" disabled={saving} onClick={async () => (await ask("Cancel this trip?")) && patch({ status: "cancelled" }, "Trip cancelled.")}>
                     Cancel trip
                   </button>
                 ) : null}

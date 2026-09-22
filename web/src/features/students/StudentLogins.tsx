@@ -15,6 +15,7 @@ import { usePageAction } from "@/features/attendance/shared";
 import { OneTimeSecrets } from "./OneTimeSecrets";
 import { EV, type AcademicYear, type ClassLoginsCreated, type LoginCreated, type LoginStatusRow, type SchoolClass, type SchoolCode } from "./types";
 
+import { ask } from "@/lib/dialog";
 const loginState = (r: LoginStatusRow) => (!r.has_login ? "Pending setup" : r.is_active ? "Active" : "Inactive");
 
 /**
@@ -73,7 +74,7 @@ export function StudentLogins() {
   };
 
   async function one(r: LoginStatusRow) {
-    if (r.has_login && r.is_active && !window.confirm(`Make a new password for ${r.student_name}? Their current one stops working at once.`)) return;
+    if (r.has_login && r.is_active && !(await ask(`Make a new password for ${r.student_name}? Their current one stops working at once.`))) return;
     setBusy(r.student_id);
     setError(null);
     try {

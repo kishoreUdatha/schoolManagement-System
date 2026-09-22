@@ -14,6 +14,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, DialogActions, Field, Kv, YearSelect, usePageAction, useYears } from "./setupKit";
 import type { Chapter, ClassSubjectSummary, CopySource, SyllabusDetail, Topic } from "./types";
 
+import { ask, askText } from "@/lib/dialog";
 const BASE = "/api/v1/school/syllabus";
 
 type ChapterDraft = { id: number | null; chapter?: Chapter };
@@ -217,7 +218,7 @@ export function SyllabusTree({ mode }: { mode: "view" | "edit" }) {
                             type="button"
                             className="btn danger"
                             style={small}
-                            onClick={() => window.confirm(`Delete chapter "${ch.title}"?`) && run(() => api.delete(`${BASE}/chapters/${ch.id}`), "Chapter deleted.")}
+                            onClick={async () => (await ask(`Delete chapter "${ch.title}"?`)) && run(() => api.delete(`${BASE}/chapters/${ch.id}`), "Chapter deleted.")}
                           >
                             Delete
                           </button>
@@ -252,8 +253,8 @@ export function SyllabusTree({ mode }: { mode: "view" | "edit" }) {
                                 type="button"
                                 className="btn"
                                 style={small}
-                                onClick={() => {
-                                  const title = window.prompt("Topic title", t.title);
+                                onClick={async () => {
+                                  const title = (await askText("Topic title", t.title));
                                   if (title && title.trim()) run(() => api.put(`${BASE}/topics/${t.id}`, { title: title.trim(), planned_periods: t.planned_periods }));
                                 }}
                               >
@@ -263,7 +264,7 @@ export function SyllabusTree({ mode }: { mode: "view" | "edit" }) {
                                 type="button"
                                 className="btn danger"
                                 style={small}
-                                onClick={() => window.confirm(`Delete "${t.title}"?`) && run(() => api.delete(`${BASE}/topics/${t.id}`), "Topic deleted.")}
+                                onClick={async () => (await ask(`Delete "${t.title}"?`)) && run(() => api.delete(`${BASE}/topics/${t.id}`), "Topic deleted.")}
                               >
                                 Delete
                               </button>

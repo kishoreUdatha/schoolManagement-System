@@ -14,6 +14,7 @@ import { BLOOMS, DIFFICULTIES, KINDS, KIND_SHORT, answerText, cap, kindLabel, nu
 import { QuestionForm } from "./QuestionForm";
 import type { Question, QuestionPage } from "./types";
 
+import { ask } from "@/lib/dialog";
 const LIMIT = 25;
 const clip = (s: string, n = 90) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
@@ -101,8 +102,8 @@ export function QuestionBank() {
 
   const toggle = (q: Question) =>
     run(() => api.post(`/api/v1/school/questions/${q.id}/active`, undefined, { active: !q.is_active }), q.is_active ? "Question deactivated." : "Question activated.");
-  const remove = (q: Question) => {
-    if (!window.confirm("Delete this question from the bank? This cannot be undone.")) return;
+  const remove = async (q: Question) => {
+    if (!(await ask("Delete this question from the bank? This cannot be undone."))) return;
     run(() => api.delete(`/api/v1/school/questions/${q.id}`), "Question deleted.");
   };
 

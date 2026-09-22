@@ -13,6 +13,7 @@ import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
 import { KIND_EFFECT, KIND_LABEL, STATUS_LABEL, type Approval, type ApprovalKind, type ApprovalStatus, type Exam } from "./types";
 
+import { ask } from "@/lib/dialog";
 const TONES = ["mint", "", "peach", "lilac"];
 const DAY = 86_400_000;
 const NEW_EVENT = "approvals:new";
@@ -110,7 +111,7 @@ function Queue({ principal }: { principal: boolean }) {
       setError("Say why the request is rejected, so the person who asked knows what to do next.");
       return;
     }
-    if (decision === "approved" && a.kind === "result_publishing" && !window.confirm("Approving publishes these results to parents and students now. Continue?")) return;
+    if (decision === "approved" && a.kind === "result_publishing" && !(await ask("Approving publishes these results to parents and students now. Continue?"))) return;
     setBusy(true);
     setError(null);
     try {

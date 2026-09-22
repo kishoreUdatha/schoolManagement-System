@@ -11,6 +11,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { CHANNELS, CHANNEL_LABEL, type Channel, NOTICE_AUDIENCE, type Notice, type NoticeAudience, deliveryLine, useCurrentClasses, useRole } from "./shared";
 
+import { ask } from "@/lib/dialog";
 type Summary = { sent: number; scheduled: number; draft: number; overdue: number; scheduler_running: boolean };
 type Due = { due: { notice_id: number; title: string; scheduled_at: string }[]; count: number };
 type RunResult = { sent_count: number; failed_count: number; failed: { title: string; error: string }[] };
@@ -129,7 +130,7 @@ function Compose({ teacher }: { teacher: boolean }) {
       body.event_end_time = text("event_end_time");
       body.event_venue = text("event_venue");
     }
-    if (send && !window.confirm(`Send "${body.title}" now?`)) return;
+    if (send && !(await ask(`Send "${body.title}" now?`))) return;
     setSaving(true);
     setError(null);
     try {
@@ -159,7 +160,7 @@ function Compose({ teacher }: { teacher: boolean }) {
   }
 
   async function runDue() {
-    if (!window.confirm("Send every scheduled notice that is now due? They go to their audiences straight away.")) return;
+    if (!(await ask("Send every scheduled notice that is now due? They go to their audiences straight away."))) return;
     setRunning(true);
     try {
       const r = await api.post<RunResult>("/api/v1/school/ops/scheduled-notices/run");

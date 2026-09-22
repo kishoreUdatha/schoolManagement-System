@@ -12,6 +12,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { CHANNEL_LABEL, type Delivery, NOTICE_AUDIENCE, type Notice, type NoticeAudience, deliveryLine, noticeAudience, useRole } from "./shared";
 
+import { ask } from "@/lib/dialog";
 type CampaignRow = {
   notice_id: number;
   title: string;
@@ -94,7 +95,7 @@ export function Announcements() {
   const loading = notices.loading || campaigns.loading;
 
   async function send(n: Item) {
-    if (!window.confirm(`Send "${n.title}" to ${n.audience}?`)) return;
+    if (!(await ask(`Send "${n.title}" to ${n.audience}?`))) return;
     try {
       const r = await api.post<Notice>(`/api/v1/school/notices/${n.id}/send`);
       notify(`Handed to ${r.recipient_count} recipient(s). ${deliveryLine(r.delivery)}.`);
@@ -105,7 +106,7 @@ export function Announcements() {
   }
 
   async function remove(n: Item) {
-    if (!window.confirm(n.status === "sent" ? `Delete "${n.title}"? It also disappears from the inboxes of everyone it was sent to.` : `Delete "${n.title}"?`)) return;
+    if (!(await ask(n.status === "sent" ? `Delete "${n.title}"? It also disappears from the inboxes of everyone it was sent to.` : `Delete "${n.title}"?`))) return;
     try {
       await api.delete(`/api/v1/school/notices/${n.id}`);
       notify("Deleted.");
