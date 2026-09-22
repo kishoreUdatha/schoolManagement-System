@@ -259,3 +259,8 @@ option{background:#fff}
 .profile-hero .profile-badge{width:auto;height:auto;display:flex;align-items:baseline;gap:6px;padding:7px 14px;border-radius:999px}
 .profile-hero .profile-badge strong{font-size:18px}
 .profile-hero .profile-meta{margin-top:6px}
+/* Page content: narrower side margins (the mock used 28–30px) */
+.main.main{padding-left:16px;padding-right:16px;max-width:none}
+@media(max-width:700px){.main.main{padding-left:12px;padding-right:12px}}
+.topbar.topbar{padding-left:16px;padding-right:16px}
+@media(max-width:700px){.topbar.topbar{padding-left:12px;padding-right:12px}}
