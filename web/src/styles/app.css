@@ -161,3 +161,33 @@ option{background:#fff}
 .btn.danger-solid:hover{background:#b42318;border-color:#b42318}
 @keyframes bc-fade{from{opacity:0}to{opacity:1}}
 @keyframes bc-pop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+
+/* Setup guide (NEW-084) and the dashboard's setup strip. */
+.setup-strip{display:flex;align-items:center;gap:18px;background:#fff;border:1px solid #cfe0fb;border-radius:14px;padding:14px 18px;margin-bottom:18px;box-shadow:var(--lift)}
+.setup-strip-bar{flex:0 0 140px;height:8px;border-radius:6px;background:#e6eefb;overflow:hidden}
+.setup-strip-bar i{display:block;height:100%;background:var(--blue-grad, #2563eb);border-radius:6px}
+.setup-strip-text{flex:1;min-width:0}
+.setup-strip-text strong{display:block;font-size:14px}
+.setup-strip-text span{font-size:12.5px;color:#56698a}
+.setup-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:20px 24px;margin-bottom:16px}
+.setup-head h2{font-size:20px;margin:0 0 4px}
+.setup-head p{margin:0;color:#56698a;font-size:13.5px;max-width:720px}
+.setup-meter{text-align:center;min-width:90px}
+.setup-meter b{display:block;font-size:28px;color:var(--blue)}
+.setup-meter span{font-size:12px;color:#56698a}
+.setup-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.setup-step{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.setup-step.open{border-color:#b9d1f7;box-shadow:var(--lift)}
+.setup-step-head{width:100%;display:flex;align-items:center;gap:14px;padding:14px 18px;background:none;border:0;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.setup-num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:#eaf2ff;color:var(--blue);font-weight:800;font-size:13px}
+.setup-step.done .setup-num{background:#dcf5e8;color:#0f8a57}
+.setup-title{flex:1;min-width:0}
+.setup-title strong{display:block;font-size:14.5px}
+.setup-title small{display:block;font-size:12.5px;color:#56698a;margin-top:2px}
+.setup-body{padding:4px 18px 18px 62px}
+.setup-body .row{flex-wrap:wrap;gap:10px;align-items:center}
+.setup-chips{display:flex;flex-wrap:wrap;gap:8px}
+.setup-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #d5e1f3;border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer;background:#fff}
+.setup-chip:has(input:checked){border-color:var(--blue);background:#eef4ff;color:var(--blue)}
+.setup-chip.has{opacity:.7;cursor:default}
+@media(max-width:700px){.setup-strip{flex-wrap:wrap}.setup-strip-bar{flex-basis:100%}.setup-body{padding-left:18px}}

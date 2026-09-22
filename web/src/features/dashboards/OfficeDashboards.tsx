@@ -8,6 +8,7 @@ import { dateTime, date, label, money, pct } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { count, DateRow, Empty, Hero, lastMonths, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel } from "./parts";
 import type { AnalyticsOverview, Approval, OfficeDashboard } from "./types";
+import { SetupProgressStrip } from "@/features/setup/SetupGuide";
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const thisMonth = () => {
@@ -110,6 +111,7 @@ export function SchoolAdminDashboard() {
   return (
     <>
       <Hero text={hero} cta={{ href: "/reports-analytics/executive-analytics-dashboard", label: "View school overview" }} />
+      <SetupProgressStrip />
       <ErrorNote>{dash.error ?? overview.error}</ErrorNote>
       <StatStrip items={stats} />
       <QuickActions
