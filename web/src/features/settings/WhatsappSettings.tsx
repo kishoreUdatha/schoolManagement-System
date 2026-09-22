@@ -12,6 +12,7 @@ import { api, errorText } from "@/lib/api";
 import { dateTime, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
+import { SettingsNav } from "./SettingsNav";
 
 /**
  * NEW-082, live: GET/PUT/DELETE /school/whatsapp (the school's own WhatsApp
@@ -200,6 +201,7 @@ export function WhatsappSettings() {
 
   return (
     <>
+      <SettingsNav active={1082} />
       <StatStrip items={stats} compact />
       {c.last_error ? (
         <div className="tip warn" role="alert">

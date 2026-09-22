@@ -1,7 +1,7 @@
 // SCR-289 · School Settings
 // Module: Settings / Roles / Permissions / Audit · Role: IT Admin · Release: Phase 2 · Stories: US-0577 / US-0578
 // Mock: screens/SCR-289_School_Settings.html
-// Wired: GET/PATCH /api/v1/school/profile, GET /academic-years, GET /settings. Hand-maintained.
+// Wired: GET/PATCH /api/v1/school/profile, GET /academic-years. Settings screens are tabs across the top. Hand-maintained.
 
 import { AppShell } from "@/components/shell/AppShell";
 import { SubmitFor } from "@/features/setup/bits";

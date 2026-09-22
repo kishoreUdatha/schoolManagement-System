@@ -11,7 +11,7 @@ import { useApi } from "@/lib/useApi";
 import { BoardSelect, Field, orNull } from "@/features/setup/bits";
 import type { SchoolProfile } from "@/features/setup/types";
 import { SettingsNav } from "./SettingsNav";
-import type { Integration, SecurityPolicy, SettingEntry, TwoFactorScope } from "./types";
+import type { Integration, SecurityPolicy, TwoFactorScope } from "./types";
 
 export const PROFILE = "/api/v1/school/profile";
 export const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
@@ -41,15 +41,10 @@ export function readDays(f: FormData): string | null {
 
 const hhmm = (t: string | null) => (t ? t.slice(0, 5) : "");
 
-/**
- * SCR-289, live. General configuration is the school profile (PATCH
- * /profile); below it, the settings index (GET /settings) says which
- * settings areas have been set up.
- */
+/** SCR-289, live. General configuration is the school profile (PATCH /profile). */
 export function SchoolSettings() {
   const profile = useApi<SchoolProfile>(PROFILE);
   const years = useApi<{ id: number; name: string; is_current: boolean }[]>("/api/v1/school/academic-years");
-  const index = useApi<SettingEntry[]>("/api/v1/school/settings");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,7 +74,7 @@ export function SchoolSettings() {
         school_end_time: orNull(f.get("school_end_time")),
       });
       notify("Settings saved.");
-      await Promise.all([profile.reload(), index.reload()]);
+      await profile.reload();
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -155,18 +150,6 @@ export function SchoolSettings() {
             </button>
           </div>
         </form>
-        <Panel title="Settings areas" sub={index.data ? `${index.data.filter((x) => x.configured).length} of ${index.data.length} set up` : "Loading…"}>
-          <ErrorNote>{index.error}</ErrorNote>
-          {index.data?.map((x) => (
-            <div className="toggle-row" key={x.key}>
-              <div>
-                <strong>{`${x.name} · ${x.module}`}</strong>
-                <p>{x.description}</p>
-              </div>
-              <span className={`badge ${x.configured ? "" : "warn"}`}>{x.configured ? "Set up" : "Not set up"}</span>
-            </div>
-          ))}
-        </Panel>
       </div>
     </div>
   );

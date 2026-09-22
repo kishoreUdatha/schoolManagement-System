@@ -7,14 +7,15 @@ const LINKS: [number, string][] = [
   [291, "Notifications"],
   [285, "Roles & permissions"],
   [292, "Integrations"],
+  [1082, "WhatsApp"],
   [293, "Security"],
   [294, "Audit log"],
 ];
 
-/** The settings side menu from the mocks, with the current screen marked. */
+/** The settings screens as a row of tabs, with the current one marked. */
 export function SettingsNav({ active }: { active: number }) {
   return (
-    <nav className="settings-nav">
+    <nav className="module-tabs settings-tabs" aria-label="Settings">
       {LINKS.map(([n, t]) => (
         <Link key={n} href={routeOf(n)} className={n === active ? "active" : ""}>
           {t}
