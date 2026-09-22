@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     twilio_auth_token: str = ""
     twilio_whatsapp_from: str = ""
 
+    # The address the outside world reaches this API on (https://erp.example.com),
+    # for providers that call back with delivery reports (Twilio needs it on
+    # each message). Empty: no callback is requested.
+    public_api_base_url: str = ""
+    # How often queued WhatsApp messages are sent, in seconds (0 turns it off).
+    whatsapp_dispatch_interval_seconds: int = 15
+
     s3_bucket: str = "sms-uploads"
     s3_region: str = "ap-south-1"
 

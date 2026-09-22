@@ -50,9 +50,9 @@ class ChangeIn(BaseModel):
 
 
 SAME_ANSWER = (
-    "If that address belongs to an account and the school sends email, a reset "
-    "code is on its way. If nothing arrives, ask the school office to reset "
-    "your password."
+    "If that address belongs to an account and the school sends codes by WhatsApp, "
+    "a reset code is on its way to the mobile number on the account. If nothing "
+    "arrives, ask the school office to reset your password."
 )
 
 
@@ -67,6 +67,7 @@ def forgot_password(payload: ForgotIn, db: Db):
             "Reset your password",
             f"Use this code to set a new password: {token}\n"
             "It stops working in 30 minutes. If you did not ask for it, ignore this.",
+            code=token,
         )
     # The same body, and no branch that takes materially longer, whether or
     # not there was an account.

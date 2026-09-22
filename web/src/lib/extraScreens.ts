@@ -22,6 +22,7 @@ const M = {
   inventory: ["Inventory / Assets / Labs", "Inventory & labs"],
   comms: ["Events / PTM / Communication", "Communication"],
   settings: ["Settings / Roles / Permissions / Audit", "Settings"],
+  platform: ["Super Admin / SaaS Administration", "Platform"],
 } as const;
 
 type Def = [n: number, name: string, mod: keyof typeof M, role: string, layout: string, route: string];
@@ -62,6 +63,8 @@ const DEFS: Def[] = [
   [1073, "Library Settings", "library", "Librarian", "settings", "/library/library-settings"],
   [1080, "Approval Requests", "settings", "Principal", "approval", "/settings/approval-requests"],
   [1081, "Data Exports", "settings", "School Admin", "table", "/settings/data-exports"],
+  [1082, "WhatsApp Integration", "settings", "School Admin", "settings", "/settings/whatsapp-integration"],
+  [1083, "Tenant Integrations", "platform", "Super Admin", "table", "/platform/tenant-integrations"],
   // Self-service portals: staff, teacher, student.
   [1090, "My Attendance", "hr", "Staff", "attendancehistory", "/human-resources/my-attendance"],
   [1091, "My Leave", "hr", "Staff", "table", "/human-resources/my-leave"],

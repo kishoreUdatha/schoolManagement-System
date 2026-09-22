@@ -58,10 +58,32 @@ def _send(db: Session, *, tenant_id: int, school_id: int, user_ids: list[int], t
                         sent_at=now,
                     )
                 )
+            _queue_whatsapp(db, n, user_ids, audience, category)
         return len(set(user_ids))
     except Exception:  # noqa: BLE001
         log.exception("Couldn't send notice %r", title)
         return 0
+
+
+def _queue_whatsapp(db: Session, n: Notice, user_ids: list[int], audience: NoticeAudience,
+                    category: NotificationCategory) -> None:
+    """Also send a family alert on WhatsApp when the school has connected
+    WhatsApp and chosen to send this kind of message there. Staff-only
+    notices stay in the app. People who switched WhatsApp off for this kind
+    of message are left out."""
+    if audience in (NoticeAudience.all_staff, NoticeAudience.all_teachers):
+        return
+    from app.services import comms_settings_service, whatsapp_service
+
+    cfg = whatsapp_service.live_config(db, n.school_id)
+    cat = category.value if hasattr(category, "value") else str(category)
+    if cfg is None or cat not in (cfg.auto_categories or []):
+        return
+    muted = comms_settings_service.muted_user_ids(db, list(user_ids), NoticeChannel.whatsapp, category)
+    wanted = [u for u in dict.fromkeys(user_ids) if u not in muted]
+    if wanted:
+        n.channels = [NoticeChannel.in_app.value, NoticeChannel.whatsapp.value]
+        whatsapp_service.queue_for_notice(db, n, wanted)
 
 
 def student_parents(db: Session, student: Student, title: str, body: str, *,

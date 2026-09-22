@@ -390,3 +390,5 @@ from app.models.parent_services import (  # noqa: E402,F401  parent services are
     Survey,
     SurveyResponse,
 )
+
+from app.models.whatsapp import SchoolWhatsappConfig, SchoolWhatsappTemplate  # noqa: E402,F401  per-school WhatsApp

@@ -93,6 +93,7 @@ def login(req: LoginRequest, db: Annotated[Session, Depends(get_db)]):
             "Your sign-in code",
             f"Your code is {code}. It stops working in ten minutes. "
             "If you did not just try to sign in, ignore this and change your password.",
+            code=code,
         )
         if where == "none":
             # Still fail closed, but say why instead of waiting for a code
@@ -100,8 +101,9 @@ def login(req: LoginRequest, db: Annotated[Session, Depends(get_db)]):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
-                    "Your school asks for a sign-in code, but no email or SMS is set up "
-                    "to send it. Please contact the school office."
+                    "Your school asks for a sign-in code, but it can't be sent: the school "
+                    "hasn't connected WhatsApp for codes, or your account has no mobile "
+                    "number. Please contact the school office."
                 ),
             )
         return LoginStep(otp_required=True, challenge=challenge, sent_via=where)

@@ -134,3 +134,7 @@ class NoticeRecipient(Base, PrimaryKeyMixin, TimestampMixin):
     error: Mapped[Optional[str]] = mapped_column(String(500))
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     read_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # WhatsApp: the provider's id for the message (to match delivery reports)
+    # and the number it went to.
+    provider_message_id: Mapped[Optional[str]] = mapped_column(String(100), index=True)
+    to_phone: Mapped[Optional[str]] = mapped_column(String(20))

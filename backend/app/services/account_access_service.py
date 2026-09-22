@@ -250,7 +250,7 @@ def require_change(db: Session, user: User) -> None:
 # ---------- delivery ----------
 
 
-def deliver(db: Session, user: User, subject: str, body: str) -> str:
+def deliver(db: Session, user: User, subject: str, body: str, code: Optional[str] = None) -> str:
     """Hand a one-time code (password reset, sign-in code) to a channel that
     can carry it privately, and say which one; "none" when there is none.
 
@@ -261,5 +261,14 @@ def deliver(db: Session, user: User, subject: str, body: str) -> str:
     through signing in, cannot open their inbox. There is no mailer or SMS
     gateway wired into this deployment yet, so nothing is sent; callers tell
     the person to ask the school office instead.
+
+    The one private channel wired in is the school's own WhatsApp: when the
+    school has connected it and set an approved "otp" template, and the
+    person has a mobile number, the code goes there.
     """
+    if code:
+        from app.services import whatsapp_service
+
+        if whatsapp_service.send_code(db, user, code):
+            return "whatsapp"
     return "none"

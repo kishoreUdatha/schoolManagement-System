@@ -73,9 +73,13 @@ export function NotificationSettings() {
 
   if (cat.loading && !cat.data) return <Loading what="Loading notification settings…" />;
   const c = cat.data;
-  // Only in-app delivery is built in; SMS/WhatsApp need the provider the integrations list reports.
-  const outside = integrations.data?.find((x) => x.key === "notifications");
-  const connected = (ch: string) => ch === "in_app" || Boolean(outside?.enabled && outside.configured);
+  // In-app is built in; WhatsApp is the school's own connection (Settings >
+  // WhatsApp Integration); SMS and email need the provider the list reports.
+  const connected = (ch: string) => {
+    if (ch === "in_app") return true;
+    const it = integrations.data?.find((x) => x.key === (ch === "whatsapp" ? "whatsapp" : "notifications"));
+    return Boolean(it?.enabled && it.configured);
+  };
   const current = editing && editing !== "new" ? editing : null;
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -145,7 +149,7 @@ export function NotificationSettings() {
                 <div>
                   <strong>{CHANNEL[ch]?.[0] ?? label(ch)}</strong>
                   <p>
-                    {`${CHANNEL[ch]?.[1] ?? ""} ${connected(ch) ? "Available." : outside?.detail ?? "No provider is connected."}${
+                    {`${CHANNEL[ch]?.[1] ?? ""} ${connected(ch) ? "Available." : ch === "whatsapp" ? "Not connected: set it up under Settings > WhatsApp Integration." : "No provider is connected."}${
                       c.locked_channels.includes(ch) ? " Always on — people cannot turn it off." : ""
                     }`}
                   </p>

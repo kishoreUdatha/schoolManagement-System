@@ -96,6 +96,9 @@ def settings(current_user: SchoolAdminUser, db: Db):
             summary="Outside services the school is wired to")
 def integrations(current_user: SchoolAdminUser, db: Db):
     gateway = online_payment_service.get_gateway(db, current_user.school_id)
+    from app.services import whatsapp_service
+
+    wa = whatsapp_service.get_config(db, current_user.school_id)
     gateway_read = online_payment_service.gateway_to_read(current_user.school_id, gateway) if gateway else None
     return [
         {
@@ -119,13 +122,23 @@ def integrations(current_user: SchoolAdminUser, db: Db):
             "detail": "Local disk on the server",
         },
         {
+            "key": "whatsapp",
+            "name": "WhatsApp",
+            "purpose": "Notices, alerts and sign-in codes on the school's own WhatsApp number",
+            "read": "GET /school/whatsapp",
+            "write": "PUT /school/whatsapp",
+            "enabled": bool(wa and whatsapp_service.live_config(db, current_user.school_id)),
+            "configured": wa is not None,
+            "detail": (f"{wa.sender_number} · {wa.provider}" if wa else "Not connected"),
+        },
+        {
             "key": "notifications",
-            "name": "SMS and WhatsApp",
+            "name": "SMS and email",
             "purpose": "Sending notices outside the app",
             "read": "GET /school/notices",
             "write": None,
             "enabled": False,
             "configured": False,
-            "detail": "Notices are delivered in-app; no provider is connected yet",
+            "detail": "No SMS or email provider is connected yet",
         },
     ]

@@ -220,12 +220,28 @@ def send(db: Session, notice_id: int, school_id: int) -> Notice:
         for ch in channels
     }
 
+    # WhatsApp goes out through the school's own connection, from a queue
+    # (whatsapp_service.dispatch_queued), and is billed when actually sent.
+    from app.services import whatsapp_service
+
+    wa_live = NoticeChannel.whatsapp in channels and whatsapp_service.live_config(db, n.school_id) is not None
+
     for user in recipients:
         for ch in channels:
             if user.id in muted[ch]:
                 # Not a failure and not a skip: they were never a recipient
                 # on this channel, so no row is written and nothing counts it
                 # as undelivered.
+                continue
+            if ch == NoticeChannel.whatsapp and wa_live:
+                db.add(NoticeRecipient(
+                    tenant_id=n.tenant_id,
+                    school_id=n.school_id,
+                    notice_id=n.id,
+                    user_id=user.id,
+                    channel=ch,
+                    status=RecipientStatus.queued,
+                ))
                 continue
             if ch in _LIVE_CHANNELS:
                 rec = NoticeRecipient(
@@ -245,9 +261,15 @@ def send(db: Session, notice_id: int, school_id: int) -> Notice:
                     user_id=user.id,
                     channel=ch,
                     status=RecipientStatus.skipped,
-                    error="Provider not configured (MVP — wire SMS/email/WhatsApp module to enable)",
+                    error=(
+                        "WhatsApp is not connected for this school"
+                        if ch == NoticeChannel.whatsapp
+                        else "Provider not configured (MVP — wire SMS/email/WhatsApp module to enable)"
+                    ),
                 )
             db.add(rec)
+            if ch == NoticeChannel.whatsapp:
+                continue  # nothing was handed to a provider, so nothing to bill
             # Count attempted dispatch — matches production billing model
             # where providers charge per request regardless of delivery.
             counter_bumps[ch.value] = counter_bumps.get(ch.value, 0) + 1

@@ -17,6 +17,9 @@ from app.api.v1.public import account_access as public_account_access
 from app.api.v1.public import admissions as public_admissions
 from app.api.v1.public import careers as public_careers
 from app.api.v1.public import payments as public_payments
+from app.api.v1.public import whatsapp as public_whatsapp
+from app.api.v1.school import whatsapp as school_whatsapp
+from app.api.v1.super_admin import integrations as super_admin_integrations
 from app.api.v1.public import transport as public_transport
 from app.api.v1.school import (
     academic_years as school_academic_years,
@@ -224,11 +227,48 @@ async def _health_sample_loop():
         await asyncio.sleep(300)
 
 
+def _dispatch_whatsapp_once() -> dict:
+    from app.database import SessionLocal
+    from app.services import whatsapp_service
+
+    db = SessionLocal()
+    try:
+        return whatsapp_service.dispatch_queued(db)
+    finally:
+        db.close()
+
+
+async def _whatsapp_loop():
+    """Send queued WhatsApp messages through each school's own connection.
+    The sending is plain HTTP, so it runs in a worker thread and a slow
+    provider never holds up requests."""
+    import asyncio
+    import logging
+
+    log = logging.getLogger("whatsapp")
+    interval = settings.whatsapp_dispatch_interval_seconds
+    if interval <= 0:
+        log.info("WhatsApp dispatcher disabled (interval=0).")
+        return
+    while True:
+        try:
+            result = await asyncio.to_thread(_dispatch_whatsapp_once)
+            if any(result.values()):
+                log.info("WhatsApp dispatch: %s", result)
+        except Exception:  # noqa: BLE001
+            log.exception("WhatsApp dispatch failed; will retry next tick")
+        await asyncio.sleep(interval)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     import asyncio
 
-    tasks = [asyncio.create_task(_fee_reminder_loop()), asyncio.create_task(_health_sample_loop())]
+    tasks = [
+        asyncio.create_task(_fee_reminder_loop()),
+        asyncio.create_task(_health_sample_loop()),
+        asyncio.create_task(_whatsapp_loop()),
+    ]
     try:
         yield
     finally:
@@ -755,6 +795,22 @@ app.include_router(
     public_payments.router,
     prefix="/api/v1/public/payments",
     tags=["public / payments"],
+)
+
+app.include_router(
+    school_whatsapp.router,
+    prefix="/api/v1/school/whatsapp",
+    tags=["school / whatsapp"],
+)
+app.include_router(
+    public_whatsapp.router,
+    prefix="/api/v1/public/whatsapp",
+    tags=["public / whatsapp"],
+)
+app.include_router(
+    super_admin_integrations.router,
+    prefix="/api/v1/super-admin",
+    tags=["super-admin / integrations"],
 )
 
 app.include_router(
