@@ -94,6 +94,16 @@ def login(req: LoginRequest, db: Annotated[Session, Depends(get_db)]):
             f"Your code is {code}. It stops working in ten minutes. "
             "If you did not just try to sign in, ignore this and change your password.",
         )
+        if where == "none":
+            # Still fail closed, but say why instead of waiting for a code
+            # that cannot arrive.
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Your school asks for a sign-in code, but no email or SMS is set up "
+                    "to send it. Please contact the school office."
+                ),
+            )
         return LoginStep(otp_required=True, challenge=challenge, sent_via=where)
 
     user.last_login_at = datetime.now(timezone.utc)

@@ -256,6 +256,23 @@ def update_class_subject(
 
 
 def remove_class_subject(db: Session, cs_id: int, school_id: int) -> None:
+    from app.models.exam import ExamSubject
+
     cs = _get_class_subject(db, cs_id, school_id)
+    papers = db.execute(
+        select(func.count(ExamSubject.id)).where(ExamSubject.class_subject_id == cs.id)
+    ).scalar_one()
+    if papers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{papers} exam paper(s) use this subject in this class. Remove those papers first.",
+        )
     db.delete(cs)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Records still depend on this subject in this class, so it can't be removed.",
+        )

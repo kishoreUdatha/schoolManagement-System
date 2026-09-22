@@ -17,6 +17,7 @@ from app.models.document import Document
 from app.models.fee import FeeHead, StudentFee
 from app.models.inventory import StoreSale, Supplier
 from app.models.payroll import PayrollRun, Payslip
+from app.models.purchasing import VendorPayment
 from app.models.student import Student
 from app.models.user import User
 from app.schemas.accounts import (
@@ -504,13 +505,21 @@ def cash_book(db: Session, school_id: int, frm: date, to: date) -> dict:
         by_mode[r.mode.value]["out"] += r.amount
         daily[r.processed_on]["out"] += r.amount
 
+    vendors = ZERO
+    for vp in db.execute(select(VendorPayment).where(
+        VendorPayment.school_id == school_id, VendorPayment.paid_on.between(frm, to)
+    )).scalars():
+        vendors += vp.amount
+        by_mode[vp.mode.value]["out"] += vp.amount
+        daily[vp.paid_on]["out"] += vp.amount
+
     total_in = sum(fees_by_mode.values(), ZERO) + sum(other.values(), ZERO) + sum(store.values(), ZERO)
-    total_out = sum(by_cat.values(), ZERO) + payroll + refunds
+    total_out = sum(by_cat.values(), ZERO) + payroll + refunds + vendors
     return {
         "from_date": frm,
         "to_date": to,
         "income": {"fees": dict(fees_by_mode), "fees_by_head": dict(fees_by_head), "other": dict(other), "store": dict(store)},
-        "expenses": {"by_category": dict(by_cat), "payroll": payroll, "refunds": refunds},
+        "expenses": {"by_category": dict(by_cat), "payroll": payroll, "refunds": refunds, "vendors": vendors},
         "total_in": total_in,
         "total_out": total_out,
         "net": total_in - total_out,

@@ -760,8 +760,16 @@ def teacher_sessions(db: Session, teacher_user_id: int, school_id: int) -> list[
     sessions = list(db.execute(
         select(PtmSession)
         .where(
-            PtmSession.school_id == school_id, PtmSession.is_published.is_(True), PtmSession.meeting_date >= horizon,
-            PtmSession.id.in_(select(PtmSlot.session_id).where(PtmSlot.teacher_user_id == teacher_user_id)),
+            PtmSession.school_id == school_id, PtmSession.meeting_date >= horizon,
+            or_(
+                # published meetings they have slots in, and their own drafts
+                # (so a teacher who saves a draft can come back and publish it)
+                and_(
+                    PtmSession.is_published.is_(True),
+                    PtmSession.id.in_(select(PtmSlot.session_id).where(PtmSlot.teacher_user_id == teacher_user_id)),
+                ),
+                PtmSession.created_by_user_id == teacher_user_id,
+            ),
         )
         .order_by(PtmSession.meeting_date)
     ).scalars())
@@ -773,6 +781,7 @@ def teacher_sessions(db: Session, teacher_user_id: int, school_id: int) -> list[
         ).scalars())
         d = session_to_read(db, s)
         d["slots"] = _slot_rows(db, slots)
+        d["created_by_user_id"] = s.created_by_user_id
         out.append(d)
     return out
 

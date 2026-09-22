@@ -512,6 +512,8 @@ def decide(db: Session, user: User, leave_id: int, data: DecideIn) -> StudentLea
         raise _404("Leave")
     if not _can_decide(db, user, lv):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the class teacher or school admin can decide")
+    if lv.status == StudentLeaveStatus.cancelled:
+        raise _400("The family cancelled this request")
     if lv.status != StudentLeaveStatus.pending:
         raise _400("This request has already been decided")
     if not data.approve and not (data.note or "").strip():

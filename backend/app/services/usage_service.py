@@ -267,32 +267,27 @@ def send_renewal_reminders(
     Uses the existing notice infrastructure — once SMS/email providers are wired,
     these reminders will dispatch via those channels automatically.
     """
-    from app.core.enums import (
-        NoticeAudience,
-        NoticeChannel,
-        NoticeStatus,
-    )
-    from app.models.notice import Notice
-    from app.services import notice_service
+    from app.core import notify
 
     expiring = list_expiring_subscriptions(db, within_days=within_days)
     if not expiring:
-        return {"tenants_notified": 0, "notices_created": 0}
-
-    # Find a representative super_admin to use as created_by
-    super_admin = db.execute(
-        select(User).where(User.role == UserRole.super_admin).limit(1)
-    ).scalar_one_or_none()
-    created_by = super_admin.id if super_admin else None
+        return {"tenants_notified": 0, "notices_created": 0, "tenants_due": 0}
 
     notices_created = 0
     for item in expiring:
         tenant_id = item["tenant_id"]
-        # Pick a school in this tenant (notices are scoped to a school for now)
-        school = db.execute(
-            select(School).where(School.tenant_id == tenant_id).limit(1)
-        ).scalar_one_or_none()
-        if not school:
+        # The organisation's school admins, straight to their inboxes. (An
+        # "all staff" notice goes to teachers and non-teaching staff, never
+        # to the admins who have to renew.)
+        admins = list(db.execute(
+            select(User.id, User.school_id).where(
+                User.tenant_id == tenant_id,
+                User.role == UserRole.school_admin,
+                User.is_active.is_(True),
+                User.school_id.is_not(None),
+            )
+        ).all())
+        if not admins:
             continue
 
         days_left = item.get("days_remaining")
@@ -303,29 +298,15 @@ def send_renewal_reminders(
             + (f" ({days_left} days from now)." if days_left is not None else ".")
             + " Please renew to avoid interruption. Contact support if you need help."
         )
-
-        notice = Notice(
-            tenant_id=tenant_id,
-            school_id=school.id,
-            title=title,
-            body=body,
-            audience=NoticeAudience.all_staff,
-            channels=[
-                NoticeChannel.in_app.value,
-                NoticeChannel.email.value,
-            ],
-            status=NoticeStatus.draft,
-            created_by_user_id=created_by,
-        )
-        db.add(notice)
-        db.flush()
-        # Dispatch immediately
-        try:
-            notice_service.send(db, notice.id, school.id)
+        by_school: dict[int, list[int]] = {}
+        for uid, sid in admins:
+            by_school.setdefault(sid, []).append(uid)
+        reached = 0
+        for sid, uids in by_school.items():
+            reached += notify.staff_users(db, tenant_id=tenant_id, school_id=sid, user_ids=uids, title=title, body=body)
+        if reached:
             notices_created += 1
-        except Exception:
-            # No school admin users yet for this tenant — leave notice as draft
-            continue
+    db.commit()
 
     return {
         "tenants_notified": notices_created,

@@ -111,8 +111,27 @@ def delete_head(db: Session, head_id: int, school_id: int) -> None:
                 "Remove those first or deactivate the head instead."
             ),
         )
+    raised = db.execute(
+        select(func.count(StudentFee.id)).where(StudentFee.fee_head_id == h.id)
+    ).scalar_one()
+    if raised:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Fee head '{h.name}' has {raised} fee(s) raised against it. "
+                "Deactivate the head instead, so its history stays."
+            ),
+        )
     db.delete(h)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Something else still points at it (a fine rule, concession, assignment…).
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Fee head '{h.name}' is still in use. Deactivate it instead.",
+        )
 
 
 # ----- Fee structures -----
@@ -599,6 +618,9 @@ def record_payment(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Fee record not found"
         )
+    # Lock the fee row: two payments at the same moment must not both pass the
+    # outstanding check (the second waits here and then sees the first).
+    db.refresh(sf, with_for_update=True)
     if sf.status == FeeStatus.waived:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -617,8 +639,12 @@ def record_payment(
 
     sf.amount_paid = new_paid
     sf.payment_mode = data.payment_mode
-    sf.payment_ref = data.payment_ref
-    sf.notes = data.notes
+    # Keep what the fee already says (a concession, the store bill it came
+    # from) unless this payment brings its own reference or note.
+    if data.payment_ref:
+        sf.payment_ref = data.payment_ref
+    if data.notes:
+        sf.notes = (f"{sf.notes} · {data.notes}" if sf.notes and data.notes not in sf.notes else data.notes)[:300]
     sf.recorded_by_user_id = recorded_by_user_id
     if new_paid >= sf.amount_due:
         sf.status = FeeStatus.paid
@@ -645,6 +671,12 @@ def waive(
     if not sf or sf.school_id != school_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Fee record not found"
+        )
+    db.refresh(sf, with_for_update=True)
+    if sf.status != FeeStatus.pending:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Only an unpaid fee can be waived; this one is {sf.status.value}",
         )
     sf.status = FeeStatus.waived
     sf.recorded_by_user_id = recorded_by_user_id

@@ -231,7 +231,7 @@ def cancel_own(
     if l.status != StaffLeaveStatus.pending:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot cancel a {l.status.value} leave",
+            detail=f"Only a pending leave can be cancelled; this one is {l.status.value}",
         )
     was_approved = l.status == StaffLeaveStatus.approved
     l.status = StaffLeaveStatus.cancelled

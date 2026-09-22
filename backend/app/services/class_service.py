@@ -144,7 +144,18 @@ def delete_class(db: Session, class_id: int, school_id: int) -> None:
             ),
         )
     db.delete(cls)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Former students, enrolment history or exam papers still point at it.
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Cannot delete class '{cls.name}': it has history (former students, "
+                "enrolments or exam papers). Keep it, or remove that history first."
+            ),
+        )
 
 
 def reorder_classes(
@@ -247,4 +258,14 @@ def delete_section(db: Session, section_id: int, school_id: int) -> None:
             ),
         )
     db.delete(sec)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Cannot delete this section: it has history (former students or "
+                "enrolments). Keep it, or remove that history first."
+            ),
+        )

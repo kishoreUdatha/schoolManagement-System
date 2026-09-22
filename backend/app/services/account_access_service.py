@@ -251,40 +251,15 @@ def require_change(db: Session, user: User) -> None:
 
 
 def deliver(db: Session, user: User, subject: str, body: str) -> str:
-    """Hand a message to whatever can carry it, and say what happened.
+    """Hand a one-time code (password reset, sign-in code) to a channel that
+    can carry it privately, and say which one; "none" when there is none.
 
-    There is no mailer or SMS gateway wired into this deployment yet, which
-    the rest of the system already models honestly — an email recipient is
-    recorded as skipped rather than pretended to be sent. This does the same
-    and returns the channel used, so a caller can tell the person which way
-    to look, or the office that nothing left the building.
+    Such a code must never become a school notice: notices are listed to the
+    office (the Announcements screen shows their text), so the code would be
+    readable by someone other than its owner. And an in-app message is no use
+    for it anyway: a person who has forgotten their password, or is halfway
+    through signing in, cannot open their inbox. There is no mailer or SMS
+    gateway wired into this deployment yet, so nothing is sent; callers tell
+    the person to ask the school office instead.
     """
-    from app.models.notice import Notice, NoticeRecipient
-    from app.core.enums import NoticeAudience, NoticeStatus, RecipientStatus
-    from app.config import settings
-
-    can_email = bool(getattr(settings, "smtp_host", "")) and bool(user.email)
-    channel = NoticeChannel.email if can_email else NoticeChannel.in_app
-
-    notice = Notice(
-        tenant_id=user.tenant_id,
-        school_id=user.school_id,
-        title=subject,
-        body=body,
-        audience=NoticeAudience.single_parent if user.role == UserRole.parent else NoticeAudience.all_staff,
-        channels=[channel.value],
-        status=NoticeStatus.sent,
-        sent_at=_now(),
-    )
-    db.add(notice)
-    db.flush()
-    db.add(NoticeRecipient(
-        tenant_id=user.tenant_id,
-        school_id=user.school_id,
-        notice_id=notice.id,
-        user_id=user.id,
-        channel=channel,
-        status=RecipientStatus.sent if channel == NoticeChannel.in_app else RecipientStatus.skipped,
-    ))
-    db.commit()
-    return channel.value
+    return "none"

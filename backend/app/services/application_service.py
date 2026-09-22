@@ -36,7 +36,9 @@ from app.schemas.application import (
 # what each status may become
 NEXT = {
     ApplicationStatus.draft: {ApplicationStatus.submitted, ApplicationStatus.withdrawn},
-    ApplicationStatus.submitted: {ApplicationStatus.verification, ApplicationStatus.rejected, ApplicationStatus.withdrawn},
+    # an entrance assessment can be booked straight from a new application
+    ApplicationStatus.submitted: {ApplicationStatus.verification, ApplicationStatus.assessment,
+                                  ApplicationStatus.rejected, ApplicationStatus.withdrawn},
     ApplicationStatus.verification: {ApplicationStatus.assessment, ApplicationStatus.approved,
                                      ApplicationStatus.rejected, ApplicationStatus.withdrawn},
     ApplicationStatus.assessment: {ApplicationStatus.approved, ApplicationStatus.rejected, ApplicationStatus.withdrawn},

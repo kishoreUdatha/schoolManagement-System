@@ -50,8 +50,9 @@ class ChangeIn(BaseModel):
 
 
 SAME_ANSWER = (
-    "If that address belongs to an account, a reset link is on its way. "
-    "Check your inbox, and the spam folder."
+    "If that address belongs to an account and the school sends email, a reset "
+    "code is on its way. If nothing arrives, ask the school office to reset "
+    "your password."
 )
 
 

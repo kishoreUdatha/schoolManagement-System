@@ -27,10 +27,11 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.enums import BillStatus, FeeStatus, MoneyMode, PurchaseOrderStatus
+from app.core.enums import BillStatus, FeeStatus, MoneyMode, PurchaseOrderStatus, RefundStatus
 from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.accounts import Expense, ExpenseCategory, FeeCollection
 from app.models.fee import FeeHead, FeeStructure, StudentFee
+from app.models.fee_extra import Refund
 from app.models.fee_plan import StudentFeeAssignment
 from app.models.inventory import Supplier
 from app.models.purchasing import (
@@ -40,6 +41,7 @@ from app.models.purchasing import (
     VendorPayment,
 )
 from app.models.student import Student
+from app.services import ledger_service
 from app.models.user import User
 
 ZERO = Decimal("0")
@@ -258,8 +260,15 @@ def apply_assignment_to_unpaid(
             continue
         if fee.status == FeeStatus.waived:
             continue
-        if fee.amount_due != row.amount:
-            fee.amount_due = row.amount
+        # The assigned amount, less any concession the student has on this
+        # head (the same rule fee generation uses).
+        amount, note = ledger_service.discounted(db, fee.student_id, fee.fee_head_id, _money(row.amount), fee.due_date)
+        # Replace only a concession note; any other note on the charge stays.
+        is_concession_note = bool(fee.notes and fee.notes.startswith("Concession ("))
+        new_notes = note if (note or is_concession_note) else fee.notes
+        if fee.amount_due != amount or new_notes != fee.notes:
+            fee.amount_due = amount
+            fee.notes = new_notes
             changed += 1
     db.commit()
     return {
@@ -287,6 +296,9 @@ def ledger(db: Session, school_id: int, student_id: int) -> dict:
     receipts = list(db.execute(
         select(FeeCollection).where(FeeCollection.student_id == student_id)
     ).scalars())
+    refunds = list(db.execute(
+        select(Refund).where(Refund.student_id == student_id, Refund.status == RefundStatus.processed)
+    ).scalars())
 
     entries = []
     for fee, head in fees:
@@ -300,6 +312,34 @@ def ledger(db: Session, school_id: int, student_id: int) -> dict:
             "fee_id": fee.id,
             "status": fee.status.value,
             "note": fee.notes,
+        })
+        # A waiver cancels what was still owed on the charge (not what was paid).
+        if fee.status == FeeStatus.waived:
+            forgiven = _money(fee.amount_due) - _money(fee.amount_paid)
+            if forgiven > 0:
+                entries.append({
+                    "on": fee.due_date,
+                    "kind": "waiver",
+                    "detail": f"Waived · {head.name if head else 'Fee'} · {fee.period}",
+                    "reference": None,
+                    "charged": -forgiven,
+                    "paid": ZERO,
+                    "fee_id": fee.id,
+                    "status": None,
+                    "note": None,
+                })
+    for rf in refunds:
+        # Money handed back: the family owes it again (the fee reopens).
+        entries.append({
+            "on": rf.processed_on,
+            "kind": "refund",
+            "detail": "Refund paid out",
+            "reference": rf.reference,
+            "charged": ZERO,
+            "paid": -_money(rf.amount),
+            "fee_id": rf.student_fee_id,
+            "status": None,
+            "note": rf.reason,
         })
     for r in receipts:
         entries.append({
@@ -317,18 +357,17 @@ def ledger(db: Session, school_id: int, student_id: int) -> dict:
     # A charge raised on the day a receipt lands is shown first: you cannot
     # pay a bill that has not been raised, and a balance that dips negative
     # for one line reads as an error.
-    entries.sort(key=lambda e: (e["on"], 0 if e["kind"] == "charge" else 1))
+    order = {"charge": 0, "waiver": 1, "receipt": 2, "refund": 3}
+    entries.sort(key=lambda e: (e["on"], order.get(e["kind"], 4)))
 
     balance = ZERO
     for e in entries:
         balance += e["charged"] - e["paid"]
         e["balance"] = balance
 
-    charged = sum((e["charged"] for e in entries), ZERO)
-    paid = sum((e["paid"] for e in entries), ZERO)
-    waived = sum(
-        (_money(f.amount_due) for f, _ in fees if f.status == FeeStatus.waived), ZERO
-    )
+    charged = sum((e["charged"] for e in entries if e["kind"] == "charge"), ZERO)
+    paid = sum((e["paid"] for e in entries if e["kind"] in ("receipt", "refund")), ZERO)
+    waived = sum((-e["charged"] for e in entries if e["kind"] == "waiver"), ZERO)
     section = db.get(Section, student.section_id) if student.section_id else None
     cls = db.get(SchoolClass, section.class_id) if section else None
 
@@ -388,6 +427,8 @@ def record_vendor_payment(
     bill = db.get(VendorBill, int(data["bill_id"]))
     if not bill or bill.school_id != school_id:
         raise _404("Bill")
+    # Lock the bill so two payments at once can't both fit under its total.
+    db.refresh(bill, with_for_update=True)
     if bill.status == BillStatus.cancelled:
         raise _400("That bill has been cancelled.")
 

@@ -439,6 +439,8 @@ def sell(db: Session, user: User, data: SaleIn) -> StoreSale:
 
 def void_sale(db: Session, sale_id: int, user: User) -> StoreSale:
     sale = _scoped(db, StoreSale, sale_id, user.school_id, "Bill")
+    # Lock the bill: voiding twice at once would return the stock twice.
+    db.refresh(sale, with_for_update=True)
     if sale.is_void:
         raise _400("Bill is already void")
     if sale.student_fee_id:

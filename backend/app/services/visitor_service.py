@@ -193,7 +193,8 @@ def host_decision(db: Session, visit_id: int, user: User, approved: bool, reason
     else:
         if not (reason or "").strip():
             raise _400("Say why they aren't being seen, so the desk can tell them")
-        v.status = VisitStatus.denied
+        # Stays expected: the desk follows up (tells the visitor, then denies
+        # or cancels). Denying here hid the visit from the desk's list.
         v.host_approved_at = None
         v.host_approved_by_user_id = None
         v.host_declined_reason = reason.strip()[:300]
@@ -206,6 +207,13 @@ def check_in(db: Session, visit_id: int, school_id: int, actor_id: int) -> Visit
     v = _visit(db, visit_id, school_id)
     if v.status != VisitStatus.expected:
         raise _400(f"Visitor is {v.status.value.replace('_', ' ')}")
+    # A block made after the visit was booked still applies at the door.
+    if v.visitor_id:
+        from app.models.register import Visitor
+
+        who = db.get(Visitor, v.visitor_id)
+        if who and who.is_blocked:
+            raise _400(f"{who.full_name} is not allowed on site: {who.blocked_reason or 'no reason recorded'}")
     return _check_in(db, v, actor_id)
 
 
@@ -379,7 +387,7 @@ def verify_code(db: Session, school_id: int, code: str) -> GatePass:
         )
     ).scalar_one_or_none()
     if not g:
-        raise _404("No approved pass for today with that code")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No approved pass for today with that code")
     return g
 
 

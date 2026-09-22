@@ -219,6 +219,8 @@ class ParentPtm(PtmSessionRead):
 
 class TeacherPtm(PtmSessionRead):
     slots: list[SlotRead]
+    # who set it up: a teacher can publish only their own draft
+    created_by_user_id: Optional[int] = None
 
 
 # ---------- gallery ----------

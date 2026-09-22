@@ -359,6 +359,7 @@ def correction_to_dict(db: Session, row: AttendanceCorrection) -> dict:
         "reason": row.reason,
         "status": row.status.value,
         "requested_by": asked.full_name if asked else None,
+        "requested_by_user_id": row.requested_by_user_id,
         "decided_by": decided.full_name if decided else None,
         "decided_at": row.decided_at,
         "decision_note": row.decision_note,

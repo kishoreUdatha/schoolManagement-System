@@ -240,6 +240,20 @@ def request_refund(db: Session, user: User, data: RefundIn) -> Refund:
         left = refundable(db, fee)
         if data.amount > left:
             raise _400(f"Only {left} can be refunded against this fee")
+    else:
+        # Not tied to one fee: never more than the family has paid in all,
+        # less refunds already asked for, agreed or paid out.
+        collected = db.execute(
+            select(func.coalesce(func.sum(FeeCollection.amount), 0)).where(FeeCollection.student_id == st.id)
+        ).scalar_one()
+        promised = db.execute(
+            select(func.coalesce(func.sum(Refund.amount), 0)).where(
+                Refund.student_id == st.id, Refund.status != RefundStatus.rejected
+            )
+        ).scalar_one()
+        left = Decimal(collected) - Decimal(promised)
+        if data.amount > left:
+            raise _400(f"Only {max(left, Decimal('0'))} of this student's payments can still be refunded")
     r = Refund(tenant_id=user.tenant_id, school_id=user.school_id, student_id=st.id,
                student_fee_id=fee.id if fee else None, amount=data.amount, reason=data.reason,
                mode=data.mode, requested_by_user_id=user.id)
@@ -269,12 +283,14 @@ def decide_refund(db: Session, user: User, refund_id: int, data: RefundDecideIn)
 
 def process_refund(db: Session, user: User, refund_id: int, data: RefundProcessIn) -> Refund:
     r = _get(db, refund_id, user.school_id)
+    db.refresh(r, with_for_update=True)  # one payout per refund, even on a double submit
     if r.status != RefundStatus.approved:
         raise _400("Only approved refunds can be paid out")
     if data.processed_on > school_today(db, user.school_id):
         raise _400("Can't record a refund in the future")
     if r.student_fee_id:
         fee = db.get(StudentFee, r.student_fee_id)
+        db.refresh(fee, with_for_update=True)
         left = refundable(db, fee)
         if r.amount > left:
             raise _400(f"Only {left} can still be refunded against this fee")
