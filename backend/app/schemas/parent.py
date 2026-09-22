@@ -14,6 +14,8 @@ class StudentLink(BaseModel):
     section_id: int
     section_label: Optional[str] = None  # e.g. "Grade 1 A" (populated by service)
     relation: ParentRelation
+    # This parent is the child's primary contact (student_guardians.is_primary).
+    is_primary_contact: bool = False
 
 
 class ParentCreate(BaseModel):
@@ -22,11 +24,21 @@ class ParentCreate(BaseModel):
     phone: Optional[str] = Field(None, max_length=20)
     student_id: int
     relation: ParentRelation = ParentRelation.guardian
+    # Kept on the family contact (guardians) that mirrors this login.
+    occupation: Optional[str] = Field(None, max_length=120)
+    address: Optional[str] = Field(None, max_length=2000)
+    # Make this parent the child's primary contact. Left out, they become it
+    # only when the child has none yet.
+    primary_contact: Optional[bool] = None
 
 
 class ParentUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=160)
     phone: Optional[str] = Field(None, max_length=20)
+    occupation: Optional[str] = Field(None, max_length=120)
+    address: Optional[str] = Field(None, max_length=2000)
+    # True makes this parent the primary contact for every child they are linked to.
+    primary_contact: Optional[bool] = None
 
 
 class ParentRead(BaseModel):
@@ -37,7 +49,22 @@ class ParentRead(BaseModel):
     phone: Optional[str] = None
     is_active: bool
     last_login_at: Optional[datetime] = None
+    occupation: Optional[str] = None
+    address: Optional[str] = None
     children: list[StudentLink] = []
+
+
+class ParentNoteIn(BaseModel):
+    body: str = Field(..., min_length=1, max_length=4000)
+
+
+class ParentNoteRead(BaseModel):
+    id: int
+    parent_user_id: int
+    body: str
+    created_by_user_id: Optional[int] = None
+    created_by_name: Optional[str] = None
+    created_at: datetime
 
 
 class ParentCreateResponse(BaseModel):

@@ -4,7 +4,7 @@ The flow is draft -> submitted -> verification -> assessment -> approved ->
 fee pending -> admitted, with rejected and withdrawn as endings. Every move is
 written to the history so the school can show how a decision was reached.
 Admitting creates the student through the normal student flow."""
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import HTTPException, UploadFile, status
@@ -227,6 +227,8 @@ def admit(db: Session, user: User, application_id: int, data: AdmitIn) -> dict:
         raise _400("Approve the application before admitting")
     if a.status == ApplicationStatus.fee_pending and not a.fee_paid_on:
         raise _400("Record the admission fee first")
+    if data.admission_date and data.admission_date > date.today() + timedelta(days=366):
+        raise _400("The admission date is more than a year away")
     student = student_service.create_student(db, a.tenant_id, a.school_id, StudentCreate(
         full_name=a.student_name, dob=a.dob, gender=a.gender, admission_no=data.admission_no,
         academic_year_id=data.academic_year_id, section_id=data.section_id,
@@ -246,7 +248,21 @@ def admit(db: Session, user: User, application_id: int, data: AdmitIn) -> dict:
                 result["parent_temporary_password"] = password
             except HTTPException as e:
                 result["parent_login_note"] = f"Student created, but the parent login wasn't: {e.detail}"
-    _move(db, a, ApplicationStatus.admitted, f"Admitted as {student.admission_no}", user.id)
+    if data.admission_date:
+        from app.models.foundation import StudentEnrollment
+
+        enr = db.execute(
+            select(StudentEnrollment).where(
+                StudentEnrollment.student_id == student.id,
+                StudentEnrollment.academic_year_id == student.academic_year_id,
+            )
+        ).scalars().first()
+        if enr:
+            enr.start_date = data.admission_date
+    note = f"Admitted as {student.admission_no}"
+    if data.admission_date:
+        note += f" from {data.admission_date:%d %b %Y}"
+    _move(db, a, ApplicationStatus.admitted, note, user.id)
     a.student_id = student.id
     if a.enquiry_id:
         e = db.get(AdmissionEnquiry, a.enquiry_id)
@@ -342,7 +358,7 @@ def to_read(db: Session, items: list[AdmissionApplication], with_detail: bool = 
             academic_year_name=years.get(a.academic_year_id), class_id=a.class_id,
             class_name=classes.get(a.class_id) or a.applying_for_class, applying_for_class=a.applying_for_class,
             student_name=a.student_name, dob=a.dob, gender=a.gender, previous_school=a.previous_school,
-            sibling_in_school=a.sibling_in_school, category=a.category, father_name=a.father_name,
+            sibling_in_school=a.sibling_in_school, transport_required=a.transport_required, category=a.category, father_name=a.father_name,
             mother_name=a.mother_name, guardian_name=a.guardian_name, phone=a.phone, email=a.email,
             address=a.address, notes=a.notes, status=a.status, submitted_at=a.submitted_at,
             decided_by_name=users.get(a.decided_by_user_id), decided_at=a.decided_at, decision_note=a.decision_note,

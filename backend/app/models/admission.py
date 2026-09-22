@@ -99,6 +99,10 @@ class AdmissionEnquiry(Base, PrimaryKeyMixin, TimestampMixin):
     campaign_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("admission_campaigns.id", ondelete="SET NULL")
     )
+    # Which campus the family is asking about, when the school has more than one.
+    branch_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("branches.id", ondelete="SET NULL")
+    )
     stage: Mapped[AdmissionStage] = mapped_column(
         SAEnum(AdmissionStage, name="admission_stage"),
         default=AdmissionStage.enquiry,

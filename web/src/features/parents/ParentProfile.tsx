@@ -57,12 +57,12 @@ export function ParentProfile() {
       <div className="two-col">
         <div className="stack">
           <Panel title="Personal information">
-            {/* Not wired: occupation and address — a parent login (ParentRead) carries neither. */}
             {kv([
               ["Guardian name", p.full_name],
               ["Relationship", relationsOf(p)],
-              ["Phone", p.phone ?? "—"],
-              ["Email address", p.email ?? "—"],
+              ["Occupation", p.occupation ?? "—"],
+              ["Address", p.address ?? "—"],
+              ["Primary contact for", p.children.filter((c) => c.is_primary_contact).map((c) => c.full_name.split(/\s+/)[0]).join(", ") || "—"],
             ])}
           </Panel>
           <Panel title="Contact information">

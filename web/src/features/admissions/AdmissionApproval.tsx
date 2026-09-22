@@ -12,7 +12,7 @@ import { date, dateTime, initials, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { appClass, APPS, daysFromToday, emitChange, useDetails, useOnAction, useOnChange } from "./shared";
+import { appClass, APPS, daysFromToday, emitChange, seatText, useDetails, useOnAction, useOnChange, useSeats, useYears } from "./shared";
 import type { Application } from "./types";
 
 const AWAITING = ["submitted", "verification", "assessment"];
@@ -30,7 +30,8 @@ function assessmentSummary(a: Application | undefined): string {
 /**
  * SCR-053, live: applications waiting for a decision (GET /applications,
  * submitted · verification · assessment, with GET /applications/{id} for the
- * evidence). POST /applications/{id}/decide approves or rejects.
+ * evidence). POST /applications/{id}/decide approves or rejects. Class
+ * capacity from GET /admissions/seats for the application's year.
  */
 export function AdmissionApproval() {
   const idParam = useSearchParams().get("id");
@@ -62,6 +63,8 @@ export function AdmissionApproval() {
   const shown = queue.filter((a) => (!classFilter || appClass(a) === classFilter) && (!status || a.status === status));
   const current = shown.find((a) => a.id === selected) ?? shown[0];
   const cur = current ? details.data[current.id] : undefined;
+  const years = useYears();
+  const seats = useSeats(current?.academic_year_id ?? years.current?.id);
 
   useEffect(() => {
     setNote("");
@@ -118,6 +121,12 @@ export function AdmissionApproval() {
     ["Required documents", docsOk, cur ? `${cur.documents_verified} of ${cur.documents_total} verified` : "…"],
     ["Assessment outcome", testsOk, assessmentSummary(cur)],
   ];
+  const classSeats = current?.class_id ? seats.data?.find((c) => c.class_id === current.class_id) : undefined;
+  checklist.push([
+    "Class capacity",
+    Boolean(classSeats && (!classSeats.capacity || (classSeats.available ?? 0) > 0)),
+    !current ? "…" : !current.class_id ? "No class chosen on the application" : seats.loading && !seats.data ? "…" : classSeats ? `${classSeats.class_name}: ${seatText(classSeats)}` : "Class not found in this year",
+  ]);
   const history = [...(cur?.history ?? [])].sort((x, z) => z.changed_at.localeCompare(x.changed_at)).slice(0, 5);
   const classes = [...new Set(queue.map(appClass))].sort();
 
@@ -191,7 +200,6 @@ export function AdmissionApproval() {
                   </label>
                 </div>
               ))}
-              {/* Not wired: Class capacity — sections carry a capacity, but no endpoint counts seats taken per class */}
             </div>
             <div className="gap" />
             <label className="field">

@@ -102,7 +102,108 @@ def academic(db: Session, school_id: int, student_id: int) -> dict:
             "outcome": e.outcome.value if e.outcome else None,
         })
 
-    return {**_label(db, s), "subjects": subjects, "history": history}
+    board, curriculum_name = _board_for(db, school_id, s.academic_year_id, section.class_id if section else None)
+    term = _term_now(db, s.academic_year_id)
+    return {
+        **_label(db, s), "subjects": subjects, "history": history,
+        "board": board, "curriculum_name": curriculum_name,
+        "term_name": term.name if term else None,
+        "term_start": term.start_date if term else None,
+        "term_end": term.end_date if term else None,
+    }
+
+
+def _board_for(db: Session, school_id: int, year_id: int, class_id: Optional[int]) -> tuple[Optional[str], Optional[str]]:
+    """The board the child's class follows, from its curriculum.
+
+    A class's own curriculum wins over a school-wide one; a published one over
+    a draft. Nothing is stored on the student: it is a fact about the class.
+    """
+    from app.core.enums import CurriculumStatus
+    from app.models.academics_ops import Curriculum
+
+    rows = list(db.execute(
+        select(Curriculum).where(
+            Curriculum.school_id == school_id, Curriculum.academic_year_id == year_id,
+            or_(Curriculum.class_id == class_id, Curriculum.class_id.is_(None)),
+        )
+    ).scalars())
+    rows.sort(key=lambda c: (
+        c.class_id is None,
+        c.status != CurriculumStatus.active,
+        not c.board,
+        -c.id,
+    ))
+    for c in rows:
+        if c.board:
+            return c.board, c.name
+    return None, rows[0].name if rows else None
+
+
+def _term_now(db: Session, year_id: int):
+    """The term running today, else the next one, else the last one of the year."""
+    from app.models.foundation import Term
+
+    terms = list(db.execute(
+        select(Term).where(Term.academic_year_id == year_id).order_by(Term.sequence)
+    ).scalars())
+    today = date.today()
+    for t in terms:
+        if t.start_date <= today <= t.end_date:
+            return t
+    upcoming = [t for t in terms if t.start_date > today]
+    if upcoming:
+        return upcoming[0]
+    return terms[-1] if terms else None
+
+
+def section_results(db: Session, school_id: int, section_id: int) -> dict:
+    """Each child's result across this year's published exams, for promotion.
+
+    One row per active child in the section: marks over all scored papers,
+    the percentage, and pass / fail — failed when any marked paper is below
+    its pass mark, so a strong average cannot hide a failed subject.
+    """
+    section = db.get(Section, section_id)
+    cls = db.get(SchoolClass, section.class_id) if section else None
+    if not section or not cls or cls.school_id != school_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Section not found")
+
+    papers = db.execute(
+        select(ExamSubject.id, ExamSubject.max_marks, Exam.id)
+        .join(Exam, Exam.id == ExamSubject.exam_id)
+        .join(ClassSubject, ClassSubject.id == ExamSubject.class_subject_id)
+        .where(Exam.school_id == school_id, Exam.is_published.is_(True), ClassSubject.class_id == cls.id)
+    ).all()
+    max_of = {pid: mx for pid, mx, _ in papers}
+    exam_ids = {eid for _, _, eid in papers}
+    students = list(db.execute(
+        select(Student).where(Student.section_id == section_id, Student.is_active.is_(True))
+    ).scalars())
+
+    agg: dict[int, dict] = {s.id: {"obtained": 0, "out_of": 0, "marked": 0, "failed": 0} for s in students}
+    if max_of and students:
+        for m in db.execute(
+            select(Mark).where(Mark.exam_subject_id.in_(list(max_of)), Mark.student_id.in_(list(agg)))
+        ).scalars():
+            a = agg[m.student_id]
+            if m.status == MarkStatus.scored and m.marks_obtained is not None:
+                a["obtained"] += m.marks_obtained
+                a["out_of"] += max_of[m.exam_subject_id]
+                a["marked"] += 1
+            if m.is_pass is False:
+                a["failed"] += 1
+
+    rows = []
+    for s in students:
+        a = agg[s.id]
+        pct = round(float(a["obtained"]) / float(a["out_of"]) * 100, 1) if a["out_of"] else None
+        result = "no_marks" if not a["marked"] and not a["failed"] else "fail" if a["failed"] else "pass"
+        rows.append({
+            "student_id": s.id, "obtained": a["obtained"], "out_of": a["out_of"], "percent": pct,
+            "papers_marked": a["marked"], "papers_failed": a["failed"], "result": result,
+        })
+    return {"section_id": section_id, "exams_counted": len(exam_ids), "students": rows}
 
 
 # ---------- how they have done ----------
@@ -275,6 +376,9 @@ def leavers(db: Session, school_id: int, *, year_id: Optional[int] = None) -> di
             "last_class_name": cls.name if cls else None,
             "last_section_name": sec.name if sec else None,
             "outcome": last.outcome.value if last and last.outcome else None,
+            "left_on": last.end_date if last else None,
+            "exit_note": last.notes if last else None,
+            "exit_remarks": last.exit_remarks if last else None,
             "certificate_id": cert.id if cert else None,
             "certificate_no": getattr(cert, "serial_no", None) if cert else None,
             "certificate_status": cert.status.value if cert and cert.status else None,

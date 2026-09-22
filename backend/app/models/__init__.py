@@ -138,7 +138,7 @@ from app.models.online_exam import (
     Question,
     TestAttempt,
 )
-from app.models.parent import ParentStudent
+from app.models.parent import ParentNote, ParentStudent
 from app.models.pastoral import (
     CounsellingCase,
     CounsellingSession,
@@ -261,6 +261,7 @@ __all__ = [
     "Notice",
     "OtherIncome",
     "NoticeRecipient",
+    "ParentNote",
     "ParentStudent",
     "PayrollRun",
     "PayrollSettings",

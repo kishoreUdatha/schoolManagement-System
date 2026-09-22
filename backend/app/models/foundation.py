@@ -59,6 +59,8 @@ class StudentEnrollment(Base, PrimaryKeyMixin, TimestampMixin, _School):
         SAEnum(EnrollmentOutcome, name="enrollment_outcome"), default=EnrollmentOutcome.studying, nullable=False
     )
     notes: Mapped[Optional[str]] = mapped_column(String(300))  # e.g. "Moved from Class 5 A on 12 Aug"
+    # Anything the office wants kept about a child leaving, beyond the short reason.
+    exit_remarks: Mapped[Optional[str]] = mapped_column(Text)
 
 
 class Guardian(Base, PrimaryKeyMixin, TimestampMixin, _School):

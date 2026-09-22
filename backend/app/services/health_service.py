@@ -52,8 +52,16 @@ def save_profile(db: Session, student: Student, actor_id: int, data: ProfileIn) 
     if p is None:
         p = MedicalProfile(tenant_id=student.tenant_id, school_id=student.school_id, student_id=student.id)
         db.add(p)
+    if data.consent_on and data.consent_on > date.today():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The consent date is in the future")
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(p, k, (v.strip() or None) if isinstance(v, str) else v)
+    # A yes or no recorded without a date was given today.
+    if p.guardian_consent is not None and p.consent_on is None:
+        p.consent_on = date.today()
+    if p.guardian_consent is None:
+        p.consent_given_by = None
+        p.consent_on = None
     p.updated_by_user_id = actor_id
     db.commit()
     db.refresh(p)

@@ -21,6 +21,11 @@ def leavers(user: SchoolAdminOrPrincipal, db: Db, year_id: Optional[int] = None)
     return student_detail_service.leavers(db, user.school_id, year_id=year_id)
 
 
+@router.get("/section-results", summary="Each child's result this year, for promotion")
+def section_results(user: SchoolAdminOrPrincipal, db: Db, section_id: int):
+    return student_detail_service.section_results(db, user.school_id, section_id)
+
+
 @router.get("/{student_id}/academic", summary="Subjects this year, and the years behind")
 def academic(student_id: int, user: SchoolAdminOrPrincipal, db: Db):
     return student_detail_service.academic(db, user.school_id, student_id)

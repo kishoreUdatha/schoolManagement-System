@@ -17,7 +17,7 @@ import type { AcademicYear, Student, StudentProfile } from "./types";
 
 /**
  * SCR-070, live: POST /students/{id}/transfer {to_school, left_on, reason,
- * ignore_dues}. Clearance is read from /students/{id} (fees pending) and
+ * remarks, ignore_dues}. Clearance is read from /students/{id} (fees pending) and
  * /library/loans (books still out); leavers from /student-detail/leavers.
  */
 export function StudentExit() {
@@ -57,6 +57,7 @@ export function StudentExit() {
         to_school: String(f.get("to_school") ?? "").trim(),
         left_on: String(f.get("left_on")) || null,
         reason: reason || null,
+        remarks: String(f.get("remarks") ?? "").trim() || null,
         ignore_dues: ignoreDues,
       });
       notify(res.note || `${res.student_name} has left the school.`);
@@ -129,7 +130,7 @@ export function StudentExit() {
                       true,
                     )
                   : null}
-                {/* Not wired: Remarks — the exit record keeps only the reason (up to 300 characters). */}
+                {field("Remarks", <textarea name="remarks" maxLength={4000} rows={3} placeholder="Anything to keep on the record about this exit" />, false, true)}
               </div>
             </section>
           </div>
@@ -153,7 +154,8 @@ export function StudentExit() {
             <div className="spread" key={l.student_id} style={{ padding: "8px 0", borderTop: "1px solid var(--line)" }}>
               <div>
                 <Link href={`${routeOf(57)}?id=${l.student_id}`}>{l.full_name}</Link>
-                <p className="small muted">{`${l.admission_no} · ${l.last_class_name ?? ""} ${l.last_section_name ?? ""} · ${l.last_year_name ?? "—"}`}</p>
+                <p className="small muted">{`${l.admission_no} · ${l.last_class_name ?? ""} ${l.last_section_name ?? ""} · ${l.last_year_name ?? "—"}${l.left_on ? ` · left ${date(l.left_on)}` : ""}`}</p>
+                {l.exit_remarks ? <p className="small muted">{l.exit_remarks}</p> : null}
               </div>
               <Badge>{l.certificate_no ? `TC ${l.certificate_no}` : "No certificate"}</Badge>
             </div>

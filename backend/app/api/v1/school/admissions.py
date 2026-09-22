@@ -10,6 +10,8 @@ from app.core.enums import AdmissionSource, AdmissionStage
 from app.database import get_db
 from app.models.tenant import School, Tenant
 from app.schemas.admission import (
+    BranchOption,
+    ClassSeats,
     ActivityCreate,
     AdmissionStats,
     CampaignCreate,
@@ -249,3 +251,17 @@ def convert(
             payload,
         )
     )
+
+
+@router.get("/branches", response_model=list[BranchOption], summary="Campuses an enquiry can be for")
+def branches(current_user: AdmissionsWorker, db: Annotated[Session, Depends(get_db)]):
+    return admission_service.list_branches(db, current_user.school_id)
+
+
+@router.get("/seats", response_model=list[ClassSeats], summary="Capacity and seats taken, per class and section")
+def seats(
+    current_user: AdmissionsWorker,
+    db: Annotated[Session, Depends(get_db)],
+    academic_year_id: int = Query(...),
+):
+    return admission_service.seats(db, current_user.school_id, academic_year_id)

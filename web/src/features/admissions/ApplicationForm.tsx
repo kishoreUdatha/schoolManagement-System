@@ -80,6 +80,7 @@ export function ApplicationForm() {
       phone: text("phone"),
       email: text("email"),
       address: text("address"),
+      transport_required: f.get("transport_required") === "yes",
     };
     setSaving(true);
     setError(null);
@@ -211,7 +212,13 @@ export function ApplicationForm() {
                   {field("Mobile number", <input type="tel" name="phone" placeholder="Enter mobile number" required minLength={6} defaultValue={a?.phone ?? e?.parent_phone} />, true)}
                   {field("Email address", <input type="email" name="email" placeholder="Enter email address" defaultValue={a?.email ?? e?.parent_email ?? ""} />)}
                   {field("Address", <input type="text" name="address" placeholder="Enter address" defaultValue={a?.address ?? e?.address ?? ""} />)}
-                  {/* Not wired: Transport required — the application has no transport field */}
+                  {field(
+                    "Transport required",
+                    <select name="transport_required" defaultValue={a?.transport_required ? "yes" : "no"}>
+                      <option value="no">No</option>
+                      <option value="yes">Yes</option>
+                    </select>,
+                  )}
                   {field(
                     "Document type",
                     <select name="category" defaultValue="birth_certificate">
