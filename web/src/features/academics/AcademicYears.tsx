@@ -186,7 +186,7 @@ function YearDialog({ y, terms, onClose, onChanged }: { y: AcademicYear; terms?:
             Unarchive
           </button>
         ) : (
-          <button type="button" className="btn" disabled={busy} onClick={() => run("/archive", `${y.name} archived.`)}>
+          <button type="button" className="btn" disabled={busy} onClick={() => window.confirm(`Archive ${y.name}? It becomes read-only until unarchived.`) && run("/archive", `${y.name} archived.`)}>
             Archive
           </button>
         )}

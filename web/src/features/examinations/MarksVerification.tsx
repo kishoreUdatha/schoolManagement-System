@@ -131,7 +131,7 @@ export function MarksVerification() {
                   </td>
                   <td className="right">
                     {p.marks_verified_at ? (
-                      <button type="button" className="btn" disabled={busy} onClick={() => run(() => api.post(`/api/v1/school/exams/papers/${p.id}/verify`, { verified: false }), `Sign-off removed from ${p.subject_name ?? "the paper"}.`)}>
+                      <button type="button" className="btn" disabled={busy} onClick={() => window.confirm("Remove the sign-off from this paper? Its marks can be changed again, and it must be signed off before publishing.") && run(() => api.post(`/api/v1/school/exams/papers/${p.id}/verify`, { verified: false }), `Sign-off removed from ${p.subject_name ?? "the paper"}.`)}>
                         Remove sign-off
                       </button>
                     ) : (

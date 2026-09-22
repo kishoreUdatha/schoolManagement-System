@@ -9,6 +9,7 @@ import { api, errorText } from "@/lib/api";
 import { date, initials } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import { Modal, StudentSearch, statusLabel, usePageAction, useSchoolDay } from "./shared";
 import { EV, STATUSES, type Correction, type StudentHit } from "./types";
 
@@ -52,6 +53,10 @@ export function Corrections() {
     { label: "Oldest request", value: oldest ? `${daysSince(oldest.created_at)} days` : "—", note: oldest ? `Submitted ${date(oldest.created_at)}` : "Nothing waiting" },
   ];
 
+  // Four eyes: whoever asked for a change can't agree to it themselves.
+  const myId = useSession()?.user.id;
+  const own = (c: Correction | null | undefined) => Boolean(c && c.requested_by_user_id != null && c.requested_by_user_id === myId);
+
   async function decide(c: Correction, approve: boolean) {
     setBusy(true);
     setError(null);
@@ -70,7 +75,7 @@ export function Corrections() {
   }
   // The page head's "Approve correction" acts on the request under review.
   usePageAction(EV.approveCorrection, () => {
-    if (current?.status === "pending") decide(current, true);
+    if (current?.status === "pending" && !own(current)) decide(current, true);
     else setError("There is no pending correction to approve.");
   });
 
@@ -143,7 +148,7 @@ export function Corrections() {
                 <button type="button" className="btn" onClick={() => setPicked(c.id)}>
                   Review
                 </button>
-                {c.status === "pending" ? (
+                {c.status === "pending" && !own(c) ? (
                   <button type="button" className="btn primary" disabled={busy} onClick={() => decide(c, true)}>
                     <Icon name="check" className="sm" />
                     Approve
@@ -188,15 +193,19 @@ export function Corrections() {
                       <span>Note (optional)</span>
                       <textarea value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} placeholder="Why it was agreed or refused" />
                     </label>
-                    <div className="row" style={{ marginTop: 12, gap: 8 }}>
-                      <button type="button" className="btn primary" disabled={busy} onClick={() => decide(current, true)}>
-                        <Icon name="check" className="sm" />
-                        Approve
-                      </button>
-                      <button type="button" className="btn" disabled={busy} onClick={() => decide(current, false)}>
-                        Refuse
-                      </button>
-                    </div>
+                    {own(current) ? (
+                      <p className="muted" style={{ marginTop: 12 }}>You asked for this change, so somebody else has to approve or refuse it.</p>
+                    ) : (
+                      <div className="row" style={{ marginTop: 12, gap: 8 }}>
+                        <button type="button" className="btn primary" disabled={busy} onClick={() => decide(current, true)}>
+                          <Icon name="check" className="sm" />
+                          Approve
+                        </button>
+                        <button type="button" className="btn" disabled={busy} onClick={() => decide(current, false)}>
+                          Refuse
+                        </button>
+                      </div>
+                    )}
                   </>
                 ) : null}
               </>

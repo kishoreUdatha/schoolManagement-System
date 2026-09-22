@@ -49,6 +49,7 @@ export function StudentExit() {
     if (!studentId) return setError("Choose the student who is leaving.");
     const f = new FormData(e.currentTarget);
     const reason = String(f.get("reason") ?? "").trim();
+    if (!window.confirm(`Record that ${p?.full_name ?? "this student"} has left? They become inactive and leave the class lists; this cannot be undone here.`)) return;
     setBusy(true);
     setError(null);
     try {

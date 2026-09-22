@@ -91,6 +91,8 @@ export function AdmissionApproval() {
       setError("Give a reason when rejecting an application.");
       return;
     }
+    const who = a.student_name ?? "this applicant";
+    if (!window.confirm(approve ? `Approve the application for ${who}?` : `Reject the application for ${who}? The family is told the reason you gave.`)) return;
     setBusy(true);
     setError(null);
     try {

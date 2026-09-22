@@ -206,7 +206,8 @@ function PlanDetail({ id, onClose, onEdit }: { id: number; onClose: () => void; 
  * which deactivates).
  */
 export function SubscriptionPlans() {
-  const plans = useApi<Paginated<Plan>>("/api/v1/super-admin/plans");
+  // Retired plans too, so they stay visible (badged Inactive) and can be re-activated.
+  const plans = useApi<Paginated<Plan>>("/api/v1/super-admin/plans", { active_only: false });
   const [editing, setEditing] = useState<Plan | "new" | null>(null);
   const [viewing, setViewing] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);

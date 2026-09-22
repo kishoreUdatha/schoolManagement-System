@@ -53,6 +53,7 @@ export function CashBook() {
         ...lines("Expense", b.expenses.by_category, false),
         ...(Number(b.expenses.payroll) ? ([["Payroll", b.expenses.payroll]] as const) : []),
         ...(Number(b.expenses.refunds) ? ([["Refunds", b.expenses.refunds]] as const) : []),
+        ...(Number(b.expenses.vendors) ? ([["Supplier payments", b.expenses.vendors]] as const) : []),
       ]
     : [];
 

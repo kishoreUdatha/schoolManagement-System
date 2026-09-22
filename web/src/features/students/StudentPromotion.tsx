@@ -78,6 +78,8 @@ export function StudentPromotion() {
     if (!fromSection || !toSection) return setError("Choose the section students leave and the section they join.");
     if (fromYear === toYear) return setError("Promote into a different academic year.");
     if (!moving.length) return setError("Choose at least one student to promote.");
+    const n = moving.length;
+    if (!window.confirm(`Promote ${n} student${n === 1 ? "" : "s"} to the new section? They move out of this section${held.size ? `; ${held.size} held back stay` : ""}.`)) return;
     setBusy(true);
     setError(null);
     try {
@@ -87,6 +89,8 @@ export function StudentPromotion() {
         student_ids: held.size ? moving.map((s) => s.id) : null,
       });
       notify(`${res.promoted?.length ?? moving.length} students promoted.`);
+      // Those held back are all that is left in the section; start them unticked.
+      setHeld(new Set());
       roster.reload();
     } catch (e) {
       setError(errorText(e));

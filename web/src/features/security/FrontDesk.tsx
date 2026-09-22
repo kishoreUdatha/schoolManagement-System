@@ -479,10 +479,10 @@ export function VisitorApproval() {
                 <div className="gap" />
                 <div className="row">
                   {buttons(sel)}
-                  <button type="button" className="btn" disabled={saving} onClick={() => act(sel, "deny", {}, "Entry denied.")}>
+                  <button type="button" className="btn" disabled={saving} onClick={() => window.confirm(`Deny entry to ${sel.visitor_name}?`) && act(sel, "deny", {}, "Entry denied.")}>
                     Deny entry
                   </button>
-                  <button type="button" className="btn" disabled={saving} onClick={() => act(sel, "cancel", {}, "Visit cancelled.")}>
+                  <button type="button" className="btn" disabled={saving} onClick={() => window.confirm(`Cancel ${sel.visitor_name}'s visit?`) && act(sel, "cancel", {}, "Visit cancelled.")}>
                     Cancel visit
                   </button>
                   <button type="button" className="btn" disabled={saving} onClick={() => (setEditError(null), setEditing(sel))}>
@@ -761,7 +761,11 @@ export function VisitorCheckOut() {
 
 /** SCR-231, live: GET/POST /front-desk/gate-passes, POST …/{id}/decide, POST /gate-passes/verify, POST …/{id}/release. */
 export function GatePassDesk() {
-  const passes = useApi<GatePass[]>(`${FD}/gate-passes`, { on: today() });
+  // A day's passes, or every pass still waiting for approval: parents can ask
+  // for a later date, and the office should be able to approve it ahead.
+  const [day, setDay] = useState(today());
+  const [pendingAll, setPendingAll] = useState(false);
+  const passes = useApi<GatePass[]>(`${FD}/gate-passes`, pendingAll ? { pending_only: true } : { on: day });
   const [student, setStudent] = useState<PickedStudent | null>(null);
   const [code, setCode] = useState("");
   const [verified, setVerified] = useState<GatePass | null>(null);
@@ -866,10 +870,10 @@ export function GatePassDesk() {
           <div className="aside-panel">
             <h3>At the gate</h3>
             <Field label="Pass code">
-              <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Code from the parent or pass" />
+              <input value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" maxLength={6} placeholder="6-digit code from the parent or pass" />
             </Field>
             <div className="gap" />
-            <button type="button" className="btn" onClick={verify} disabled={saving || !code.trim()}>
+            <button type="button" className="btn" onClick={verify} disabled={saving || code.length !== 6}>
               Verify code
             </button>
             {verified ? (
@@ -891,6 +895,7 @@ export function GatePassDesk() {
                       className="btn primary"
                       disabled={saving}
                       onClick={async () => {
+                        if (!window.confirm(`Release ${verified.student_name} to ${verified.pickup_name}?`)) return;
                         const r = await run(() => api.post<GatePass>(`${FD}/gate-passes/${verified.id}/release`), `${verified.student_name} released.`);
                         if (r) {
                           setVerified(null);
@@ -908,8 +913,26 @@ export function GatePassDesk() {
         </aside>
       </div>
       <div className="gap" />
-      <Panel title="Today’s gate passes" flush>
-        <DataTable columns={["Student", "Pickup person", "Time", "Reason", "Guardian check", "Status"]} rows={rows} selectable={false} onView={(i) => setOpen((passes.data ?? [])[i])} empty={passes.loading ? "Loading…" : "No gate passes today."} />
+      <Panel
+        title={pendingAll ? "Waiting for approval · any date" : day === today() ? "Today’s gate passes" : `Gate passes · ${date(day)}`}
+        flush
+        action={
+          <div className="row">
+            <select aria-label="Show" value={pendingAll ? "pending" : "day"} onChange={(e) => setPendingAll(e.target.value === "pending")}>
+              <option value="day">Passes for a day</option>
+              <option value="pending">Waiting for approval (any date)</option>
+            </select>
+            {!pendingAll ? <input type="date" aria-label="Day" value={day} onChange={(e) => setDay(e.target.value || today())} /> : null}
+          </div>
+        }
+      >
+        <DataTable
+          columns={["Student", "Pickup person", pendingAll ? "Leaves" : "Time", "Reason", "Guardian check", "Status"]}
+          rows={pendingAll ? rows.map((r, i) => r.map((c, k) => (k === 2 ? `${date((passes.data ?? [])[i].leave_on)}${(passes.data ?? [])[i].leave_time ? ` · ${(passes.data ?? [])[i].leave_time}` : ""}` : c)) as Row) : rows}
+          selectable={false}
+          onView={(i) => setOpen((passes.data ?? [])[i])}
+          empty={passes.loading ? "Loading…" : pendingAll ? "No passes waiting for approval." : day === today() ? "No gate passes today." : "No gate passes on this day."}
+        />
       </Panel>
       {open ? (
         <GatePassModal
@@ -921,6 +944,7 @@ export function GatePassDesk() {
             if (await run(() => api.post(`${FD}/gate-passes/${open.id}/decide`, { approve, note }), approve ? "Gate pass approved." : "Gate pass rejected.")) setOpen(null);
           }}
           onRelease={async () => {
+            if (!window.confirm(`Release ${open.student_name} to ${open.pickup_name}?`)) return;
             if (await run(() => api.post(`${FD}/gate-passes/${open.id}/release`), `${open.student_name} released.`)) setOpen(null);
           }}
         />

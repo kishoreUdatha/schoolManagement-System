@@ -9,6 +9,7 @@ import { api, errorText } from "@/lib/api";
 import { date, dateTime, initials, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import type { Department, Requisition, RequisitionStatus } from "./types";
 import { AVATAR_TONES, Dialog, Field, useNewFlag } from "./ui";
 
@@ -37,7 +38,11 @@ export function Requisitions() {
   const [typed, setTyped] = useState("");
   const list = useApi<Requisition[]>(BASE, { state });
   const all = useApi<Requisition[]>(BASE);
-  const depts = useApi<Department[]>("/api/v1/school/departments");
+  // The principal raises and reviews requests; filling, cancelling and the
+  // department list are the school admin's (the API refuses the principal).
+  const me = useSession()?.user;
+  const admin = me?.role === "school_admin";
+  const depts = useApi<Department[]>(admin ? "/api/v1/school/departments" : null);
   const [creating, closeCreate] = useNewFlag();
   const [deciding, setDeciding] = useState<Requisition | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
@@ -176,18 +181,18 @@ export function Requisitions() {
                     Send
                   </button>
                 ) : null}
-                {r.status === "draft" || r.status === "submitted" ? (
+                {(r.status === "draft" || r.status === "submitted") && r.raised_by_user_id !== me?.id ? (
                   <button type="button" className="btn primary" onClick={() => setDeciding(r)}>
                     <Icon name="check" className="sm" />
                     Review
                   </button>
                 ) : null}
-                {r.status === "approved" ? (
+                {admin && r.status === "approved" ? (
                   <button type="button" className="btn" onClick={() => act(() => api.post(`${BASE}/${r.id}/status`, { status: "filled" }), `${r.title} marked filled.`)}>
                     Mark filled
                   </button>
                 ) : null}
-                {["draft", "submitted", "approved"].includes(r.status) ? (
+                {admin && ["draft", "submitted", "approved"].includes(r.status) ? (
                   <button
                     type="button"
                     className="btn"

@@ -70,6 +70,23 @@ export function PublishResults() {
     }
   }
 
+  // POST /exams/{id}/approve-results: the principal's (or admin's) sign-off
+  // on an exam's results, which publishing looks for.
+  async function approve(e: Exam, yes: boolean) {
+    if (!window.confirm(yes ? `Approve the results of ${e.name} for publishing?` : `Withdraw approval of ${e.name}'s results?`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.post(`/api/v1/school/exams/${e.id}/approve-results`, undefined, { approve: yes });
+      notify(yes ? `${e.name} results approved.` : `Approval of ${e.name} withdrawn.`);
+      exams.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const n = (v: number) => (exams.loading ? "…" : String(v));
   const stats = [
     { label: "Exams", value: n(list.length), note: years.data?.find((y) => y.id === yearId)?.name ?? "This academic year" },
@@ -133,10 +150,21 @@ export function PublishResults() {
                           Take back
                         </button>
                       ) : (
-                        <button type="button" className="btn primary" disabled={busy || !checks[e.id]} onClick={() => act(e, "publish")}>
-                          <Icon name="check" className="sm" />
-                          Publish results
-                        </button>
+                        <div className="row" style={{ justifyContent: "flex-end" }}>
+                          {e.results_approved_at ? (
+                            <button type="button" className="btn" disabled={busy} title={`Approved ${dateTime(e.results_approved_at)}`} onClick={() => approve(e, false)}>
+                              Withdraw approval
+                            </button>
+                          ) : (
+                            <button type="button" className="btn" disabled={busy} onClick={() => approve(e, true)}>
+                              Approve results
+                            </button>
+                          )}
+                          <button type="button" className="btn primary" disabled={busy || !checks[e.id]} onClick={() => act(e, "publish")}>
+                            <Icon name="check" className="sm" />
+                            Publish results
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>

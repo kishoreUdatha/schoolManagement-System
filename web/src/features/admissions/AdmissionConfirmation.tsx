@@ -81,6 +81,7 @@ export function AdmissionConfirmation() {
         setError("Choose a class and section.");
         return;
       }
+      if (!window.confirm(`Create the student record for ${a.student_name ?? "this applicant"} and admit them?`)) return;
       const r = await api.post<AdmitResult>(`${APPS}/${a.id}/admit`, {
         academic_year_id: yearId,
         section_id: sectionId,

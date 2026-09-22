@@ -160,7 +160,7 @@ export function PayrollProcessing() {
             ) : null}
             {r.status === "finalized" ? (
               <>
-                <button type="button" className="btn" disabled={busy} onClick={() => act(() => api.post(`${BASE}/${r.id}/reopen`), "Reopened for changes.")}>
+                <button type="button" className="btn" disabled={busy} onClick={() => window.confirm("Reopen this finalised payroll for changes? Payslips can be edited again until it is finalised.") && act(() => api.post(`${BASE}/${r.id}/reopen`), "Reopened for changes.")}>
                   Reopen
                 </button>
                 <button type="button" className="btn primary" disabled={busy} onClick={() => setPaying(true)}>

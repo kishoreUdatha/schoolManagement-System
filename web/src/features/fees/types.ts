@@ -267,7 +267,7 @@ export type CashBook = {
   from_date: string;
   to_date: string;
   income: { fees: Record<string, string>; fees_by_head: Record<string, string>; other: Record<string, string>; store: Record<string, string> };
-  expenses: { by_category: Record<string, string>; payroll: string; refunds: string };
+  expenses: { by_category: Record<string, string>; payroll: string; refunds: string; vendors?: string };
   total_in: string;
   total_out: string;
   net: string;

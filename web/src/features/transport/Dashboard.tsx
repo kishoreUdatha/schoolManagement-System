@@ -134,6 +134,7 @@ export function TransportFeesDialog() {
   async function submit(e: FormEvent<HTMLFormElement>) {
     const f = new FormData(e.currentTarget);
     const period = formText(f, "period");
+    if (!window.confirm(`Raise the ${period ?? "month's"} transport fee for every student on a route? Anyone already billed for it is skipped.`)) return;
     setSaving(true);
     setError(null);
     try {

@@ -325,6 +325,7 @@ function ConvertForm({ e, onDone }: { e: EnquiryDetail; onDone: () => void }) {
   async function submit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault();
     const f = new FormData(ev.currentTarget);
+    if (!window.confirm("Create the student record from this enquiry?")) return;
     setSaving(true);
     setError(null);
     try {
@@ -426,7 +427,7 @@ function ConvertForm({ e, onDone }: { e: EnquiryDetail; onDone: () => void }) {
           </label>
         </div>
         <div className="gap" />
-        <button type="submit" className="btn primary" disabled={saving}>
+        <button type="submit" className="btn primary" disabled={saving || Boolean(result)}>
           <Icon name="cap" className="sm" />
           {saving ? "Enrolling…" : "Create student"}
         </button>

@@ -133,6 +133,7 @@ export type Correction = {
   reason: string;
   status: "pending" | "approved" | "rejected";
   requested_by: string | null;
+  requested_by_user_id?: number | null;
   decided_by: string | null;
   decided_at: string | null;
   decision_note: string | null;

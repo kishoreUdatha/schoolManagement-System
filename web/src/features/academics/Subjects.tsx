@@ -158,6 +158,7 @@ function SubjectForm({
   async function toggleClass(c: SchoolClass) {
     if (!s) return;
     const link = linkOf(c.id);
+    if (link && !window.confirm(`Stop teaching ${s.name} in ${c.name}? Its homework, online tests, syllabus, videos and timetable lessons for ${c.name} are deleted with it.`)) return;
     setError(null);
     try {
       if (link) await api.delete(`/api/v1/school/class-subjects/${link.id}`);

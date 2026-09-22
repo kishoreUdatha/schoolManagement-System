@@ -977,6 +977,7 @@ export function ImmunizationAllergy() {
   async function runDrive(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
+    if (!window.confirm(`Record ${formText(f, "vaccine") ?? "this vaccine"} for every student in the section who has not had it?`)) return;
     setSaving(true);
     setError(null);
     try {

@@ -10,6 +10,7 @@ import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import { planStatusText } from "./LessonPlanList";
 import { todayIso } from "./planKit";
 import type { ClassSubject, LessonPlan, SyllabusDetail } from "./planTypes";
@@ -27,6 +28,10 @@ export function LessonPlanForm() {
   const plans = useApi<LessonPlan[]>(id ? base : null);
   const syllabus = useApi<ClassSubject[]>("/api/v1/school/syllabus");
   const plan = id ? plans.data?.find((p) => String(p.id) === id) : undefined;
+  // Only the teacher who wrote a plan can submit, mark taught or delete it
+  // (the API refuses anyone else), so reviewers don't get those buttons.
+  const myId = useSession()?.user.id;
+  const mine = Boolean(plan && plan.teacher_user_id === myId);
 
   const [csId, setCsId] = useState<number | null>(null);
   const [sectionId, setSectionId] = useState<number | null>(null);
@@ -284,7 +289,7 @@ export function LessonPlanForm() {
             <p className="muted" style={{ marginTop: 12 }}>{`${plan.reviewed_by_name ?? "Reviewer"}: ${plan.review_comment}`}</p>
           ) : null}
         </Panel>
-        {plan && !plan.delivered_on ? (
+        {plan && mine && !plan.delivered_on ? (
           <Panel title="Next steps">
             <div className="stack">
               {plan.status === "draft" || plan.status === "returned" ? (

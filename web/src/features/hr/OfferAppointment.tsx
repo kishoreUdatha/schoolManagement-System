@@ -185,7 +185,7 @@ export function OfferAppointment() {
             {offer ? (
               <div className="stack">
                 {offer.status === "draft" ? (
-                  <button type="button" className="btn primary" disabled={busy} onClick={() => run(() => api.post(`${BASE}/offers/${offer.id}/send`), "Offer marked as sent.")}>
+                  <button type="button" className="btn primary" disabled={busy} onClick={() => window.confirm("Mark this offer as sent to the candidate?") && run(() => api.post(`${BASE}/offers/${offer.id}/send`), "Offer marked as sent.")}>
                     Mark as sent
                   </button>
                 ) : null}

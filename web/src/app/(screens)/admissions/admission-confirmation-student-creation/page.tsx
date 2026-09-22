@@ -5,17 +5,15 @@
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
-import { Icon } from "@/components/ui/Icon";
 import { AdmissionConfirmation } from "@/features/admissions/AdmissionConfirmation";
 
 export const metadata = { title: "SCR-054 · Admission Confirmation & Student Creation · BrightCampus" };
 
 export default function Page() {
   return (
-    <AppShell screen="SCR-054" actions={<button type="submit" form="admit-form" className="btn primary">
-        <Icon name="check" className="sm" />
-        Create student
-      </button>}>
+    // The form's own "Create student" button is enabled only when the
+    // application can be admitted; a header copy could not know that.
+    <AppShell screen="SCR-054">
       <Suspense>
         <AdmissionConfirmation />
       </Suspense>

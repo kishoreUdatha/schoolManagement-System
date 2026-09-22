@@ -11,6 +11,7 @@ import { date, dateTime } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import { type ParentPtm, type PtmDetail, type PtmSession, type PtmSlot, SLOT_STATUS, type TeacherPtm, hhmm, useRole } from "./shared";
 
 type Child = { id: number; full_name: string; section_label?: string | null };
@@ -287,6 +288,7 @@ function TeacherSlots() {
   const list = res.data ?? [];
   const m = list.find((x) => String(x.id) === meetingId) ?? list[0];
   const slot = m?.slots.find((x) => x.id === slotId);
+  const myId = useSession()?.user.id;
 
   async function record(status: "done" | "no_show") {
     if (!slot) return;
@@ -332,7 +334,7 @@ function TeacherSlots() {
       <section className="panel">
         <div className="panel-head">
           <h2>Your meeting slots</h2>
-          {m && !m.is_published ? (
+          {m && !m.is_published && m.created_by_user_id === myId ? (
             <button type="button" className="btn primary" onClick={publish}>
               Publish for booking
             </button>

@@ -65,11 +65,18 @@ export function OutstandingDues() {
   ]);
 
   async function runReminders() {
+    if (!window.confirm("Send a fee reminder to every family with fees due or overdue? Families already reminded today are skipped.")) return;
     setRunning(true);
     setError(null);
     try {
-      const r = await api.post<{ sent?: number; skipped?: number }>("/api/v1/school/fees/reminders/run");
-      notify(r?.sent ? `${r.sent} reminder(s) sent. They appear in each family's notices.` : "Nothing was due a reminder today; the run was skipped rather than repeated.");
+      const r = await api.post<{ sent?: number; skipped_already_sent?: number }>("/api/v1/school/fees/reminders/run");
+      notify(
+        r?.sent
+          ? `${r.sent} reminder(s) sent. They appear in each family's notices.`
+          : r?.skipped_already_sent
+            ? `No new reminders: ${r.skipped_already_sent} family(ies) were already reminded today.`
+            : "Nobody is due a reminder right now.",
+      );
       sent.reload();
     } catch (e) {
       setError(errorText(e));

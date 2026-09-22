@@ -153,6 +153,7 @@ function Compose({ teacher }: { teacher: boolean }) {
   }
 
   async function runDue() {
+    if (!window.confirm("Send every scheduled notice that is now due? They go to their audiences straight away.")) return;
     setRunning(true);
     try {
       const r = await api.post<RunResult>("/api/v1/school/ops/scheduled-notices/run");

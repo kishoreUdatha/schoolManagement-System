@@ -73,6 +73,7 @@ export function CoverBoard() {
   useHeadEvent(ASSIGN_EVENT, openFirst);
 
   async function autoAssign() {
+    if (!window.confirm("Assign a free teacher to every uncovered lesson in this view?")) return;
     setBusy(true);
     setError(null);
     try {
@@ -234,6 +235,7 @@ function PickSubstitute({ date, slot, onClose, onDone }: { date: string; slot: C
 
   async function clear() {
     if (!slot.substitution_id) return;
+    if (!window.confirm("Remove the cover from this lesson? It goes back to uncovered.")) return;
     setSaving(true);
     try {
       await api.delete(`/api/v1/school/cover/${slot.substitution_id}`);

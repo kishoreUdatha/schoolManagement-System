@@ -65,10 +65,12 @@ export function AcademicYearSetup() {
         router.replace(`${routeOf(28)}?id=${created.id}`);
         return;
       }
-      await api.patch(`/api/v1/school/academic-years/${year.id}`, { start_date: start, end_date: end });
+      // An archived year can't be edited: unarchive first, change the dates,
+      // and archive last so the dates are saved before it locks.
       const before = statusOf(year);
+      if (before === "archived" && status !== "archived") await api.post(`/api/v1/school/academic-years/${year.id}/unarchive`);
+      if (before !== "archived" || status !== "archived") await api.patch(`/api/v1/school/academic-years/${year.id}`, { start_date: start, end_date: end });
       if (status !== before) {
-        if (before === "archived") await api.post(`/api/v1/school/academic-years/${year.id}/unarchive`);
         if (status === "current") await api.post(`/api/v1/school/academic-years/${year.id}/set-current`);
         if (status === "archived") await api.post(`/api/v1/school/academic-years/${year.id}/archive`);
       }

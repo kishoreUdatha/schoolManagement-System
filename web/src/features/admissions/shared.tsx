@@ -143,7 +143,8 @@ export function downloadCsv(name: string, columns: string[], rows: (string | num
 /** Bytes to "1.2 MB" / "480 KB". */
 export function size(n: number): string {
   if (n >= 1_048_576) return `${(n / 1_048_576).toFixed(1)} MB`;
-  return `${Math.max(1, Math.round(n / 1024))} KB`;
+  if (n < 1024) return `${n} bytes`;
+  return `${Math.round(n / 1024)} KB`;
 }
 
 /** Everything an application needs but the list omits, fetched per row. */

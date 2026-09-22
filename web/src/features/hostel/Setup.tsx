@@ -407,7 +407,8 @@ export function HostelAllocation() {
                 </select>
               </Field>
               <Field label={moving ? "Moved on" : "From date"}>
-                <input type="date" name="on" defaultValue={today()} />
+                {/* A move must fall after the stay began; someone placed today moves tomorrow at the earliest. */}
+                <input type="date" name="on" defaultValue={moving && moving.since >= today() ? addDays(moving.since, 1) : today()} min={moving ? addDays(moving.since, 1) : undefined} />
               </Field>
             </div>
             {moving ? (

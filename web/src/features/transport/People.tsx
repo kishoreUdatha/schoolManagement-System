@@ -243,7 +243,7 @@ export function RouteAssignment() {
   }
 
   async function end(a: Assignment) {
-    if (!window.confirm(`Stop transport for ${a.student_name} from today?`)) return;
+    if (!window.confirm(`End transport for ${a.student_name}? Today is their last day on the route.`)) return;
     try {
       await api.post(`${ASSIGN}/${a.id}/end`, { end_date: today() });
       notify("Transport ended.");

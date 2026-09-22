@@ -75,7 +75,7 @@ export function FeeStructureForm() {
   }
 
   async function remove(l: FeeStructure) {
-    if (!window.confirm(`Remove ${l.fee_head_name} from this class's fee structure? Fees already raised are not touched.`)) return;
+    if (!window.confirm(`Remove ${l.fee_head_name} from this class's fee structure? This is only possible while no fees have been raised from it.`)) return;
     setError(null);
     try {
       await api.delete(`/api/v1/school/fees/structures/${l.id}`);

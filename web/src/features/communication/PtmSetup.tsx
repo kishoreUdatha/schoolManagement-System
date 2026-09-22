@@ -197,7 +197,7 @@ function OfficeSetup() {
     setError(null);
     try {
       const saved = s ? await api.put<PtmSession>(`/api/v1/school/ptm/${s.id}`, body) : await api.post<PtmSession>("/api/v1/school/ptm", body);
-      const done: string[] = [s ? "Meeting updated." : "Meeting saved as a draft."];
+      const done: string[] = [s ? "Meeting updated." : publish ? "Meeting created." : "Meeting saved as a draft."];
       if (teachers.length) {
         try {
           await api.post(`/api/v1/school/ptm/${saved.id}/teachers`, { user_ids: teachers.map(Number) });

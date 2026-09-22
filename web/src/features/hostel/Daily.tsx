@@ -470,7 +470,7 @@ const COLUMNS: [Complaint["status"], string][] = [
 export function ComplaintsFees() {
   const { hostels, hostel, select } = useHostel();
   const complaints = useApi<Complaint[]>(hostel ? `${HOSTELS}/${hostel.id}/complaints` : null);
-  const heads = useApi<{ id: number; name: string; code: string }[]>("/api/v1/school/fees/heads");
+  const heads = useApi<{ id: number; name: string; code: string }[]>("/api/v1/school/fees/heads", { active_only: true });
   const add = useAddDialog(215);
   const [student, setStudent] = useState<PickedStudent | null>(null);
   const [search, setSearch] = useState("");
@@ -518,6 +518,7 @@ export function ComplaintsFees() {
   function bill(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
+    if (!window.confirm(`Raise the ${formText(f, "period") ?? "month's"} hostel fee for every resident? Anyone already billed for it is skipped.`)) return;
     setSaving(true);
     setError(null);
     api

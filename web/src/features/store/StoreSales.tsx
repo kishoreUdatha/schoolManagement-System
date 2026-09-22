@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
@@ -88,8 +88,14 @@ export function StoreSales() {
     s.is_void ? "Void" : "Paid",
   ]);
 
+  // One void at a time: a double-click must not return the stock twice.
+  const voiding = useRef(false);
+  const [voidingId, setVoidingId] = useState<number | null>(null);
   async function voidIt(s: Sale) {
+    if (voiding.current) return;
     if (!window.confirm(`Void bill ${s.bill_no} for ${money(s.total)}? The items go back into stock${s.payment === "add_to_fees" ? " and the fee charge is waived" : ""}.`)) return;
+    voiding.current = true;
+    setVoidingId(s.id);
     setError(null);
     try {
       await api.post(`/api/v1/school/inventory/store/sales/${s.id}/void`);
@@ -100,6 +106,9 @@ export function StoreSales() {
       items.reload();
     } catch (err) {
       setError(errorText(err));
+    } finally {
+      voiding.current = false;
+      setVoidingId(null);
     }
   }
 
@@ -127,7 +136,7 @@ export function StoreSales() {
                 View
               </button>
               {!shown[i].is_void ? (
-                <button type="button" className="btn danger" onClick={() => voidIt(shown[i])}>
+                <button type="button" className="btn danger" disabled={voidingId !== null} onClick={() => voidIt(shown[i])}>
                   Void
                 </button>
               ) : null}
@@ -147,7 +156,7 @@ export function StoreSales() {
                 Close
               </button>
               {!viewing.is_void ? (
-                <button type="button" className="btn danger" onClick={() => voidIt(viewing)}>
+                <button type="button" className="btn danger" disabled={voidingId !== null} onClick={() => voidIt(viewing)}>
                   Void bill
                 </button>
               ) : null}

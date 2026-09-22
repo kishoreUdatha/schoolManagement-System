@@ -49,6 +49,7 @@ export function FeeAssignments() {
   ]);
 
   async function apply(a: Assignment) {
+    if (!window.confirm("Change this student's unpaid charges to the assigned amount? Paid and part-paid charges are left alone.")) return;
     setError(null);
     try {
       const r = await api.post<{ updated: number; left_alone_count: number }>(`/api/v1/school/finance/assignments/${a.id}/apply`);

@@ -60,7 +60,13 @@ export function Results() {
         </select>
       </label>
       <PmError>{detail.error}</PmError>
-      {r ? (
+      {r && r.result_status === "withheld" ? (
+        // A withheld result has no marks to show; zeros would read as a score.
+        <div className="panel soft">
+          <span className="eyebrow">RESULT WITHHELD</span>
+          <p>{r.parent_note || "The school has withheld this result. Please contact the school office."}</p>
+        </div>
+      ) : r ? (
         <>
           <div className="metrics two">
             <div className="metric">

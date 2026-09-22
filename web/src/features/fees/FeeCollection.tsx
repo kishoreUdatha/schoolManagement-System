@@ -13,7 +13,6 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { Field, isoToday, MODES, modeLabel, StudentPicker } from "./common";
-import type { StudentProfile } from "@/features/students/types";
 import type { Collection, PickedStudent, StudentFee } from "./types";
 
 /** A year back, so a student's recent receipts are not cut at the 1st of the month. */
@@ -30,6 +29,8 @@ function yearAgo(): string {
  * refuses more than is outstanding. Recent receipts come from
  * GET /school/accounts/collections?student_id=. Opens on ?student=<id>.
  */
+type LedgerHead = { student_id: number; student_name: string; admission_no: string; class_name: string | null; section_name: string | null };
+
 export function FeeCollection() {
   const params = useSearchParams();
   const preset = params.get("student");
@@ -43,13 +44,15 @@ export function FeeCollection() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ?student= from a ledger or dues screen: look the student up by id.
+  // ?student= from a ledger or dues screen: look the student up by id. The
+  // finance ledger names the student and, unlike the student record, is open
+  // to the accountant as well as the school admin.
   const [presetDone, setPresetDone] = useState(false);
-  const presetStudent = useApi<StudentProfile>(preset && !presetDone ? `/api/v1/school/students/${preset}` : null);
+  const presetStudent = useApi<LedgerHead>(preset && !presetDone ? `/api/v1/school/finance/ledger/${preset}` : null);
   useEffect(() => {
     const p = presetStudent.data;
     if (p && !presetDone) setPresetDone(true);
-    if (p && !presetDone) setStudent({ id: p.id, full_name: p.full_name, admission_no: p.admission_no, section_label: [p.class_name, p.section_name].filter(Boolean).join(" ") || null });
+    if (p && !presetDone) setStudent({ id: p.student_id, full_name: p.student_name, admission_no: p.admission_no, section_label: [p.class_name, p.section_name].filter(Boolean).join(" ") || null });
   }, [presetStudent.data, presetDone]);
 
   const sid = student?.id ?? null;
@@ -161,7 +164,7 @@ export function FeeCollection() {
             <h2>Payment details</h2>
           </div>
           <div className="panel-body">
-            <ErrorNote>{error ?? fees.error}</ErrorNote>
+            <ErrorNote>{error ?? presetStudent.error ?? fees.error}</ErrorNote>
             <div className="form-grid">
               <StudentPicker
                 value={student}

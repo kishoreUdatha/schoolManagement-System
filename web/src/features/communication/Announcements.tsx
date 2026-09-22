@@ -105,7 +105,7 @@ export function Announcements() {
   }
 
   async function remove(n: Item) {
-    if (!window.confirm(`Delete "${n.title}"?`)) return;
+    if (!window.confirm(n.status === "sent" ? `Delete "${n.title}"? It also disappears from the inboxes of everyone it was sent to.` : `Delete "${n.title}"?`)) return;
     try {
       await api.delete(`/api/v1/school/notices/${n.id}`);
       notify("Deleted.");

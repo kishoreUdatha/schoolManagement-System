@@ -180,7 +180,7 @@ export type PtmSlot = {
 };
 
 export type PtmDetail = PtmSession & { teachers: { teacher_user_id: number; teacher_name: string; slots: PtmSlot[] }[] };
-export type TeacherPtm = PtmSession & { slots: PtmSlot[] };
+export type TeacherPtm = PtmSession & { slots: PtmSlot[]; created_by_user_id?: number | null };
 export type ParentSlot = {
   id: number;
   start_time: string;

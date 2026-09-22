@@ -66,6 +66,7 @@ export function GenerateTimetable() {
       setError("Choose a class and section.");
       return;
     }
+    if (replace && !window.confirm("Replace this section's whole week? Every lesson already placed is removed and placed again.")) return;
     setBusy(true);
     setError(null);
     setResult(null);

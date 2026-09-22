@@ -51,10 +51,12 @@ export function LeaveRequests() {
   );
   const rows: Row[] = items.map((l) => [{ name: l.student_name, sub: l.section_label }, `${label(l.kind)} leave`, date(l.from_date), date(l.to_date), String(l.days), label(l.status)]);
 
-  // Viewing one request, and cancelling it while the school has not answered.
+  // Viewing one request, and cancelling it while it is pending, or approved
+  // but not yet started (the same rule as the backend and the parent app).
   const [viewing, setViewing] = useState<StudentLeave | null>(null);
   const [busy, setBusy] = useState(false);
   async function cancel(l: StudentLeave) {
+    if (!window.confirm(`Cancel ${l.student_name}'s leave request?`)) return;
     setBusy(true);
     try {
       await api.post(`/api/v1/parent/me/children/${l.student_id}/leaves/${l.id}/cancel`);
@@ -145,7 +147,7 @@ export function LeaveRequests() {
         title={viewing ? `${viewing.student_name} · ${label(viewing.kind)} leave` : ""}
         onClose={() => setViewing(null)}
         footer={
-          viewing?.status === "pending" ? (
+          viewing && (viewing.status === "pending" || (viewing.status === "approved" && today !== null && viewing.from_date > today)) ? (
             <button type="button" className="btn primary" disabled={busy} onClick={() => cancel(viewing)}>
               Cancel request
             </button>

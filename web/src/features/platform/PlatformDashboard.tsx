@@ -45,8 +45,11 @@ export function PlatformDashboard() {
     setSending(true);
     setSendError(null);
     try {
-      const r = await api.post<{ tenants_notified?: number; notices_created?: number }>("/api/v1/super-admin/usage/renewals/send", undefined, { within_days: 30 });
-      notify(`Reminders sent to ${r.tenants_notified ?? 0} organization(s).`);
+      const r = await api.post<{ tenants_notified?: number; notices_created?: number; tenants_due?: number }>("/api/v1/super-admin/usage/renewals/send", undefined, { within_days: 30 });
+      const sent = r.tenants_notified ?? 0;
+      const due = r.tenants_due ?? count;
+      if (sent < due) setSendError(`Reminders reached ${sent} of ${due} organization(s). The others have no one to receive them.`);
+      else notify(`Reminders sent to ${sent} organization(s).`);
     } catch (err) {
       setSendError(errorText(err));
     } finally {
