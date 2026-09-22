@@ -583,12 +583,17 @@ export function ComplaintsFees() {
             <ErrorNote>{error}</ErrorNote>
             <div className="form-grid">
               <Field label="Category" required>
-                <input name="category" required list="complaint-categories" placeholder="e.g. Maintenance" />
-                <datalist id="complaint-categories">
-                  {["Maintenance", "Cleanliness", "Food", "Electrical", "Plumbing", "Security", "Other"].map((c) => (
-                    <option key={c} value={c} />
+                {/* The API accepts exactly these (ComplaintIn.category). */}
+                <select name="category" required defaultValue="">
+                  <option value="" disabled>
+                    Choose a category
+                  </option>
+                  {["maintenance", "food", "cleanliness", "security", "roommate", "other"].map((c) => (
+                    <option key={c} value={c}>
+                      {label(c)}
+                    </option>
                   ))}
-                </datalist>
+                </select>
               </Field>
               <StudentPicker label="Student (optional)" value={student} onChange={setStudent} />
               <Field label="Description" required full>

@@ -49,6 +49,11 @@ export function ClassroomObservation() {
     const f = new FormData(form);
     const text = (k: string) => String(f.get(k) ?? "").trim() || null;
     const num = (k: string) => (text(k) ? Number(text(k)) : null);
+    // The API refuses an observation that records neither.
+    if (!text("strengths") && !text("next_steps")) {
+      setError("Write at least one strength or next step.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {

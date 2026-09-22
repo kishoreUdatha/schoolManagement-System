@@ -730,6 +730,11 @@ export function MedicationFirstAid() {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     const outcome = formText(f, "outcome");
+    // The API needs to know who was hurt; this form records children.
+    if (!aidStudent) {
+      setError("Choose the child who was hurt.");
+      return;
+    }
     const ok = await run(
       () =>
         api.post(`${WELL}/first-aid`, {
