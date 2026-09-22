@@ -4,6 +4,7 @@
 // Mock: Parent_Mobile_58_Screens/screens/PM-010_attendance_detail.html
 // Wired: GET /api/v1/parent/me/children/{id}/attendance/day (?date) — register mark, arrival time, period attendance. Hand-maintained.
 
+import { Suspense } from "react";
 import { ParentShell } from "@/components/parent/ParentShell";
 import { AttendanceDetail } from "@/features/parent/attendance/Attendance";
 
@@ -12,7 +13,9 @@ export const metadata = { title: "PM-010 · Attendance detail · BrightCampus Pa
 export default function Page() {
   return (
     <ParentShell screen={10}>
-      <AttendanceDetail />
+      <Suspense>
+        <AttendanceDetail />
+      </Suspense>
     </ParentShell>
   );
 }
