@@ -2,7 +2,8 @@
 // Parent app · Module: Fees & payments · Release: MVP · ERP: SCR-078 / SCR-160
 // Feature: List verified transactions, pending attempts and downloadable receipts.
 // Mock: Parent_Mobile_58_Screens/screens/PM-027_payments_receipts.html
-// Wired: GET /api/v1/parent/me/children/{id}/payments, GET /api/v1/parent/me/children/{id}/fees. Hand-maintained.
+// Wired: GET /api/v1/parent/me/academic-years, GET /api/v1/parent/me/children/{id}/payments (?academic_year_id=), GET /api/v1/parent/me/children/{id}/counter-receipts (?academic_year_id=),
+// GET …/counter-receipts/{receipt}/receipt.pdf. Hand-maintained.
 
 import { Suspense } from "react";
 import { ParentShell } from "@/components/parent/ParentShell";

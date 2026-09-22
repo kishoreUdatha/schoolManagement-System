@@ -1,21 +1,27 @@
 "use client";
 
 /*
- * PM-053 · Meal menu. The only menu the parent API exposes is today's hostel
- * menu for a hostel resident (menu_today in GET …/hostel). Beside it, the
- * child's own allergies and dietary restrictions from the health record
- * (GET …/health), so a parent can check the two together.
+ * PM-053 · Meal menu. The week's menu for the child's meals
+ * (GET /parent/me/children/{id}/meal-menu): the hostel mess menu for a
+ * hostel resident, otherwise the school canteen's menu. Any day of the week
+ * can be picked (today first). Beside it, the child's own allergies and
+ * dietary restrictions from the health record (GET …/health), so a parent
+ * can check the two together.
  */
 
+import { useState } from "react";
 import { useParent } from "@/components/parent/ParentShell";
 import { label } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { ChildGate, PmEmpty, PmError, PmLoading, useChildPath } from "../support/pm";
-import type { ChildHostel } from "./types";
 
 type Health = { profile: { allergies: string | null; dietary_restrictions: string | null } };
+type WeekMenu = { source: "hostel" | "canteen" | "none"; name: string | null; week: { day_of_week: number; meal: string; items: string }[] };
 
 const MEALS = ["breakfast", "lunch", "snacks", "dinner"];
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+/** 0 = Monday, as the API counts. */
+const todayIndex = () => (new Date().getDay() + 6) % 7;
 
 export function MealMenu() {
   return (
@@ -26,49 +32,58 @@ export function MealMenu() {
 }
 
 function Menu() {
-  const { go } = useParent();
+  const { go, childId } = useParent();
   const base = useChildPath();
-  const stay = useApi<ChildHostel | null>(base && `${base}/hostel`);
+  const menu = useApi<WeekMenu>(childId ? `/api/v1/parent/me/children/${childId}/meal-menu` : null);
   const health = useApi<Health>(base && `${base}/health`);
+  const [day, setDay] = useState(todayIndex);
 
-  if (stay.loading && stay.data === null && !stay.error) return <PmLoading />;
-  const menu = stay.data?.menu_today ?? {};
-  const meals = [...MEALS.filter((m) => menu[m]), ...Object.keys(menu).filter((m) => !MEALS.includes(m) && menu[m])];
-  const today = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+  if (menu.loading && !menu.data) return <PmLoading />;
+  const m = menu.data;
+  const slots = (m?.week ?? []).filter((s) => s.day_of_week === day);
+  const meals = [...MEALS.filter((x) => slots.some((s) => s.meal === x)), ...slots.map((s) => s.meal).filter((x) => !MEALS.includes(x))];
   const p = health.data?.profile;
 
   return (
     <>
-      <PmError>{stay.error}</PmError>
-      {/* Not wired: choosing another day and a day-school (canteen) menu — the parent API returns only today's hostel menu. */}
-      {stay.data ? (
+      <PmError>{menu.error}</PmError>
+      {m && m.source !== "none" ? (
         <>
+          <label className="field">
+            Day
+            <select value={day} onChange={(e) => setDay(Number(e.target.value))}>
+              {DAYS.map((d, i) => (
+                <option key={d} value={i}>
+                  {d}
+                  {i === todayIndex() ? " (today)" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="item">
             <span>
-              <strong>Today</strong>
+              <strong>{day === todayIndex() ? "Today" : DAYS[day]}</strong>
               <small>
-                {today} · {stay.data.hostel_name}
+                {DAYS[day]} · {m.name ?? (m.source === "hostel" ? "Hostel mess" : "School canteen")}
               </small>
             </span>
             <span className="value" />
           </div>
-          {meals.length === 0 ? <PmEmpty title="No menu for today">The hostel has not published today’s menu.</PmEmpty> : null}
-          {meals.map((m) => (
-            <section key={m} className="section">
-              <h3>{label(m)}</h3>
+          {meals.length === 0 ? <PmEmpty title={`No menu for ${DAYS[day]}`}>The {m.source === "hostel" ? "hostel" : "canteen"} has not published a menu for this day.</PmEmpty> : null}
+          {meals.map((meal) => (
+            <section key={meal} className="section">
+              <h3>{label(meal)}</h3>
               <div className="item">
                 <span>
-                  <strong>{menu[m]}</strong>
+                  <strong>{slots.find((s) => s.meal === meal)?.items}</strong>
                 </span>
                 <span className="value" />
               </div>
             </section>
           ))}
         </>
-      ) : !stay.error ? (
-        <PmEmpty title="No meal menu available">
-          Meal menus appear here for hostel residents. For school meals, ask the school office.
-        </PmEmpty>
+      ) : m ? (
+        <PmEmpty title="No meal menu available">The school has not published a hostel or canteen menu yet.</PmEmpty>
       ) : null}
 
       <div className="panel soft">

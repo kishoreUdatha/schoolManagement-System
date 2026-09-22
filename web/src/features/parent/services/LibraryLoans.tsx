@@ -2,12 +2,19 @@
 
 /*
  * PM-051 · Library loans. Books the child has borrowed (GET …/library):
- * current loans with their due dates, fines, and returned books.
+ * current loans with their due dates, fines, and returned books. "Request
+ * renewal" asks the library (POST /parent/me/children/{id}/library/
+ * renewal-requests); the librarian approves it under the library's rules,
+ * and the request's status comes from GET /parent/me/requests.
  */
 
+import { useState } from "react";
+import { useParent } from "@/components/parent/ParentShell";
+import { api, errorText } from "@/lib/api";
 import { date, label, money } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { ChildGate, PmEmpty, PmError, PmLoading, useChildPath } from "../support/pm";
+import { ME, REQUEST_STATUS, type ParentRequest } from "../support/services";
 
 type Loan = {
   id: number;
@@ -37,7 +44,25 @@ export function LibraryLoans() {
 }
 
 function Loans() {
+  const { childId, notify } = useParent();
   const loans = useApi<Loan[]>(useChildPath("/library"));
+  const renewals = useApi<ParentRequest[]>(childId ? `${ME}/requests` : null, { kind: "library_renewal", student_id: childId });
+  const [busy, setBusy] = useState<number | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function renew(l: Loan) {
+    setBusy(l.id);
+    setErr(null);
+    try {
+      await api.post(`${ME}/children/${childId}/library/renewal-requests`, { loan_id: l.id });
+      notify("Renewal requested. The library will confirm the new date.");
+      renewals.reload();
+    } catch (e) {
+      setErr(errorText(e));
+    } finally {
+      setBusy(null);
+    }
+  }
 
   if (loans.loading && !loans.data) return <PmLoading />;
   if (!loans.data) return <PmError>{loans.error}</PmError>;
@@ -48,7 +73,7 @@ function Loans() {
 
   return (
     <>
-      <PmError>{loans.error}</PmError>
+      <PmError>{err || loans.error}</PmError>
       {current.length === 0 ? <PmEmpty title="Nothing borrowed right now">Books your child borrows from the school library will appear here.</PmEmpty> : null}
       {current.map((l) => (
         <div key={l.id} className="panel soft">
@@ -72,7 +97,7 @@ function Loans() {
               </dd>
             </div>
           </dl>
-          {/* Not wired: "Request renewal" — no parent renewal endpoint; renewals are done at the library desk. */}
+          <RenewalState loan={l} requests={renewals.data} busy={busy === l.id} onRenew={() => renew(l)} />
         </div>
       ))}
       <div className="item">
@@ -101,6 +126,35 @@ function Loans() {
         </section>
       ) : null}
       <p className="micro">Renewal is subject to the school library’s policy.</p>
+    </>
+  );
+}
+
+/** The latest renewal request for this loan, and the button to ask for one. */
+function RenewalState({ loan, requests, busy, onRenew }: { loan: Loan; requests: ParentRequest[] | null; busy: boolean; onRenew: () => void }) {
+  const last = (requests ?? []).find((r) => Number(r.details.loan_id) === loan.id && r.status !== "cancelled");
+  const shown = last && (last.status === "pending" || last.status === "rejected") ? last : null;
+  return (
+    <>
+      {shown ? (
+        <div className="item">
+          <span>
+            <strong>Renewal request</strong>
+            <small>
+              Sent {date(shown.created_at)}
+              {shown.decision_note ? ` · ${shown.decision_note}` : ""}
+            </small>
+          </span>
+          <span className={REQUEST_STATUS[shown.status][1]}>{REQUEST_STATUS[shown.status][0]}</span>
+        </div>
+      ) : null}
+      {shown?.status === "pending" ? null : loan.overdue_days > 0 ? (
+        <p className="micro">Overdue books must be returned before they can be renewed.</p>
+      ) : (
+        <button className="action secondary" disabled={busy || requests === null} onClick={onRenew}>
+          {busy ? "Sending…" : "Request renewal"}
+        </button>
+      )}
     </>
   );
 }

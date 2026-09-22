@@ -103,7 +103,9 @@ def list_certificates(student_id: int, current_user: ParentUser, db: Db):
 def request_certificate(
     student_id: int, payload: CertificateRequestCreate, current_user: ParentUser, db: Db
 ):
-    c = certificate_service.parent_request(db, current_user, student_id, payload.template_id, payload.purpose)
+    c = certificate_service.parent_request(
+        db, current_user, student_id, payload.template_id, payload.purpose, payload.delivery_preference
+    )
     return CertificateRead.model_validate(certificate_service.to_read(db, c))
 
 

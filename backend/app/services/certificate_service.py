@@ -494,6 +494,7 @@ def to_read(db: Session, c: CertificateIssue) -> dict:
         "requested_by_name": requester.full_name if requester else None,
         "remarks": c.remarks,
         "print_count": c.print_count,
+        "delivery_preference": c.delivery_preference,
         "created_at": c.created_at,
     }
 
@@ -514,7 +515,9 @@ def parent_templates(db: Session, parent_user_id: int, student_id: int) -> list[
     )
 
 
-def parent_request(db: Session, parent: User, student_id: int, template_id: int, purpose: str) -> CertificateIssue:
+def parent_request(
+    db: Session, parent: User, student_id: int, template_id: int, purpose: str, delivery_preference: str = "digital"
+) -> CertificateIssue:
     student = require_linked_child(db, parent.id, student_id)
     t = _template(db, template_id, student.school_id)
     if not t.parent_can_request or not t.is_active:
@@ -538,6 +541,7 @@ def parent_request(db: Session, parent: User, student_id: int, template_id: int,
         purpose=purpose.strip(),
         fields={},
         requested_by_user_id=parent.id,
+        delivery_preference=delivery_preference,
     )
     db.add(c)
     db.commit()

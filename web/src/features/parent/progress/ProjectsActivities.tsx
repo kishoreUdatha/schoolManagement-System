@@ -3,8 +3,11 @@
 /*
  * PM-058 · Projects & activities. Projects set for the child's class
  * (GET …/projects), the child's progress on each (GET …/projects/{id}/progress)
- * with the teacher's review, and a progress update on the child's behalf
- * (POST …/projects/{id}/progress: in progress / submitted, a link, a note).
+ * with the teacher's review, the project's milestones
+ * (GET /parent/me/children/{id}/project-milestones), a progress update on
+ * the child's behalf (POST …/projects/{id}/progress: in progress /
+ * submitted, a link, a note), and the clubs and activities the child takes
+ * part in (GET /parent/me/children/{id}/activities).
  */
 
 import { useState, type FormEvent } from "react";
@@ -38,6 +41,25 @@ type Progress = {
   updated_at: string;
 };
 
+type Milestone = { id: number; project_id: number; title: string; due_on: string | null; position: number };
+
+type Activity = {
+  activity_id: number;
+  name: string;
+  kind: string;
+  day_of_week: number | null;
+  start_time: string | null;
+  end_time: string | null;
+  venue: string | null;
+  in_charge_name: string | null;
+  role: string | null;
+  joined_on: string;
+  left_on: string | null;
+};
+
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const hm = (t: string | null) => (t ? t.slice(0, 5) : "");
+
 const STEP: Record<Progress["status"], number> = { not_started: 0, in_progress: 1, submitted: 2, reviewed: 3 };
 
 export function ProjectsActivities() {
@@ -49,9 +71,12 @@ export function ProjectsActivities() {
 }
 
 function Projects() {
-  const { go } = useParent();
+  const { go, childId } = useParent();
   const base = useChildPath("/projects");
   const projects = useApi<Project[]>(base);
+  const me = childId ? `/api/v1/parent/me/children/${childId}` : null;
+  const milestones = useApi<Milestone[]>(me && `${me}/project-milestones`);
+  const activities = useApi<Activity[]>(me && `${me}/activities`);
 
   if (projects.loading && !projects.data) return <PmLoading />;
   if (!projects.data) return <PmError>{projects.error}</PmError>;
@@ -60,12 +85,12 @@ function Projects() {
 
   return (
     <>
-      <PmError>{projects.error}</PmError>
-      {/* Not wired: activity participation and per-project milestones — the API has projects with one progress record each. */}
+      <PmError>{projects.error || milestones.error || activities.error}</PmError>
       {list.length === 0 ? <PmEmpty title="No projects yet">Projects set for your child’s class will appear here.</PmEmpty> : null}
       {list.map((p) => (
-        <ProjectCard key={p.id} base={base!} project={p} />
+        <ProjectCard key={p.id} base={base!} project={p} milestones={(milestones.data ?? []).filter((m) => m.project_id === p.id)} />
       ))}
+      <Activities list={activities.data} />
       <button className="action secondary" onClick={() => go(45)}>
         Message project teacher
       </button>
@@ -73,7 +98,7 @@ function Projects() {
   );
 }
 
-function ProjectCard({ base, project: p }: { base: string; project: Project }) {
+function ProjectCard({ base, project: p, milestones }: { base: string; project: Project; milestones: Milestone[] }) {
   const { notify } = useParent();
   const prog = useApi<Progress | null>(`${base}/${p.id}/progress`);
   const [open, setOpen] = useState(false);
@@ -128,6 +153,23 @@ function ProjectCard({ base, project: p }: { base: string; project: Project }) {
         {p.is_past_due ? "Was due" : "Due"} {date(p.deadline)}
         {cur?.submitted_at ? ` · Submitted ${dateTime(cur.submitted_at)}` : ""}
       </small>
+      {milestones.length ? (
+        <div className="timeline">
+          {milestones.map((m) => {
+            const done = step >= 2;
+            const late = !done && m.due_on !== null && m.due_on < new Date().toISOString().slice(0, 10);
+            return (
+              <p key={m.id} className={done ? "current" : undefined}>
+                <b>{m.title}</b>
+                <small>
+                  {m.due_on ? `Due ${date(m.due_on)}` : "No date"}
+                  {done ? " · done" : late ? " · date passed" : ""}
+                </small>
+              </p>
+            );
+          })}
+        </div>
+      ) : null}
       {p.attachment_url ? (
         <p>
           <a href={p.attachment_url} target="_blank" rel="noopener noreferrer">
@@ -185,5 +227,46 @@ function ProjectCard({ base, project: p }: { base: string; project: Project }) {
         </button>
       ) : null}
     </div>
+  );
+}
+
+function Activities({ list }: { list: Activity[] | null }) {
+  if (!list) return null;
+  const current = list.filter((a) => !a.left_on);
+  const past = list.filter((a) => a.left_on);
+  return (
+    <section className="section">
+      <h3>Activities</h3>
+      {list.length === 0 ? <p className="micro">Your child is not in any club or activity yet.</p> : null}
+      {current.map((a) => (
+        <div key={a.activity_id} className="item">
+          <span>
+            <strong>{a.name}</strong>
+            <small>
+              {[
+                label(a.kind),
+                a.day_of_week !== null ? `${DAYS[a.day_of_week]}${a.start_time ? ` ${hm(a.start_time)}–${hm(a.end_time)}` : ""}` : null,
+                a.venue,
+                a.in_charge_name,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </small>
+          </span>
+          <span className="value good">{a.role ?? "Member"}</span>
+        </div>
+      ))}
+      {past.map((a) => (
+        <div key={a.activity_id} className="item">
+          <span>
+            <strong>{a.name}</strong>
+            <small>
+              {date(a.joined_on)} – {date(a.left_on)}
+            </small>
+          </span>
+          <span className="value">Past</span>
+        </div>
+      ))}
+    </section>
   );
 }

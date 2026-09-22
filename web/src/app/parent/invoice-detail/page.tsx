@@ -2,7 +2,7 @@
 // Parent app · Module: Fees & payments · Release: MVP · ERP: SCR-157 / SCR-161
 // Feature: Review payable fee line items and permitted instalments.
 // Mock: Parent_Mobile_58_Screens/screens/PM-024_invoice_detail.html
-// Wired: GET /api/v1/parent/me/children/{id}/fees. Hand-maintained.
+// Wired: GET /api/v1/parent/me/children/{id}/fees (invoice_no per fee period, late-fee lines flagged is_late_fee). Hand-maintained.
 
 import { Suspense } from "react";
 import { ParentShell } from "@/components/parent/ParentShell";

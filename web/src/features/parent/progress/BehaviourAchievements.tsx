@@ -2,9 +2,10 @@
 
 /*
  * PM-057 · Behaviour & achievements. Only what the school shares with
- * guardians: teacher behaviour ratings (GET …/behaviour; the AI suggestion
- * teachers see is never shown) and incidents the school has shared with
- * parents (GET …/discipline). Witness names and counselling case details
+ * guardians: achievements and milestones such as reading targets
+ * (GET /parent/me/children/{id}/achievements), teacher behaviour ratings
+ * (GET …/behaviour; the AI suggestion teachers see is never shown) and
+ * incidents the school has shared with parents (GET …/discipline). Witness names and counselling case details
  * are not shown; a counselling referral appears only as the action's name.
  */
 
@@ -25,6 +26,19 @@ type Rating = {
   teacher_note: string | null;
   rated_by_name: string | null;
   created_at: string;
+};
+
+type Achievement = {
+  id: number;
+  title: string;
+  category: string;
+  description: string | null;
+  status: "achieved" | "in_progress";
+  achieved_on: string | null;
+  target_value: number | null;
+  current_value: number | null;
+  unit: string | null;
+  recorded_by_name: string | null;
 };
 
 type Incident = {
@@ -58,10 +72,11 @@ export function BehaviourAchievements() {
 }
 
 function Behaviour() {
-  const { go } = useParent();
+  const { go, childId } = useParent();
   const base = useChildPath();
   const ratings = useApi<Rating[]>(base && `${base}/behaviour`);
   const incidents = useApi<Incident[]>(base && `${base}/discipline`);
+  const achievements = useApi<Achievement[]>(childId ? `/api/v1/parent/me/children/${childId}/achievements` : null);
 
   if ((ratings.loading && !ratings.data) || (incidents.loading && !incidents.data)) return <PmLoading />;
   const list = ratings.data ?? [];
@@ -70,8 +85,8 @@ function Behaviour() {
 
   return (
     <>
-      <PmError>{ratings.error || incidents.error}</PmError>
-      {/* Not wired: achievements / milestones (e.g. reading targets) — no parent endpoint records them. */}
+      <PmError>{ratings.error || incidents.error || achievements.error}</PmError>
+      <Achievements list={achievements.data} />
       {latest ? (
         <>
           <div className="panel soft">
@@ -150,5 +165,50 @@ function Behaviour() {
         Message class teacher
       </button>
     </>
+  );
+}
+
+function Achievements({ list }: { list: Achievement[] | null }) {
+  if (!list) return null;
+  const goals = list.filter((a) => a.status === "in_progress");
+  const done = list.filter((a) => a.status === "achieved");
+  return (
+    <section className="section">
+      <h3>Achievements & milestones</h3>
+      {list.length === 0 ? <p className="micro">No achievements recorded yet. Prizes and milestones your child’s teachers record appear here.</p> : null}
+      {goals.map((a) => {
+        const target = a.target_value ?? 0;
+        const now = Math.min(a.current_value ?? 0, target);
+        return (
+          <div key={a.id} className="panel soft">
+            <span className="eyebrow">{label(a.category).toUpperCase()} MILESTONE</span>
+            <h3>{a.title}</h3>
+            {a.description ? <p>{a.description}</p> : null}
+            <div className="progress-track">
+              <span style={{ width: `${target ? (now / target) * 100 : 0}%` }} />
+            </div>
+            <small>
+              {now} of {target}
+              {a.unit ? ` ${a.unit}` : ""}
+              {a.recorded_by_name ? ` · ${a.recorded_by_name}` : ""}
+            </small>
+          </div>
+        );
+      })}
+      {done.map((a) => (
+        <div key={a.id} className="item">
+          <span>
+            <strong>{a.title}</strong>
+            <small>
+              {label(a.category)}
+              {a.achieved_on ? ` · ${date(a.achieved_on)}` : ""}
+              {a.recorded_by_name ? ` · ${a.recorded_by_name}` : ""}
+              {a.description ? ` · ${a.description}` : ""}
+            </small>
+          </span>
+          <span className="value good">Achieved</span>
+        </div>
+      ))}
+    </section>
   );
 }

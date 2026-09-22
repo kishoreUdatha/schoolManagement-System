@@ -9,6 +9,7 @@ export type Certificate = {
   serial_no: string | null;
   issued_on: string | null;
   remarks: string | null;
+  delivery_preference?: "digital" | "collect" | null;
   created_at: string;
 };
 

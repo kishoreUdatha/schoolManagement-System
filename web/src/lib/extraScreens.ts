@@ -38,6 +38,8 @@ const DEFS: Def[] = [
   [1023, "Online Tests", "exams", "Teacher", "table", "/examinations/online-tests"],
   [1024, "Online Test Results", "exams", "Teacher", "table", "/examinations/online-test-results"],
   [1025, "Gallery & Videos", "comms", "School Admin", "table", "/communication/gallery-videos"],
+  [1026, "Parent Help Desk", "comms", "School Admin", "table", "/communication/parent-help-desk"],
+  [1027, "Parent Surveys", "comms", "School Admin", "table", "/communication/parent-surveys"],
   [1030, "Register Lock & Reopen", "attendance", "School Admin", "table", "/attendance/register-lock-reopen"],
   [1031, "Period Attendance Gaps", "attendance", "School Admin", "table", "/attendance/period-attendance-gaps"],
   [1040, "Fee Heads", "fees", "Accountant", "table", "/fees-finance/fee-heads"],

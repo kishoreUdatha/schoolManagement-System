@@ -14,6 +14,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { ProjectEditDialog, deleteProject } from "@/features/teacher/ProjectEdit";
+import { MilestonesDialog } from "@/features/teacher/MilestonesDialog";
 import { daysUntil, shortDate, teacherState, todayIso, useEach } from "./shared";
 import type { Homework, MyClasses, Progress, Project, Submission } from "./types";
 
@@ -51,6 +52,7 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
   const [includePast, setIncludePast] = useState(true);
   const me = useSession()?.user.id;
   const [editing, setEditing] = useState<Project | null>(null);
+  const [milestones, setMilestones] = useState<Project | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const homework = useApi<Homework[]>(isHw ? "/api/v1/teacher/homework" : null, { class_subject_id: csId, include_past: includePast, limit: 200 });
@@ -223,6 +225,9 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
                           <button type="button" className="btn" onClick={() => setEditing(p)}>
                             Edit
                           </button>
+                          <button type="button" className="btn" onClick={() => setMilestones(p)}>
+                            Milestones
+                          </button>
                           <button type="button" className="btn" onClick={() => remove(p)}>
                             Delete
                           </button>
@@ -235,6 +240,7 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
           empty={loading ? "Loading…" : cards.length === 0 ? "You aren't assigned as a subject teacher anywhere yet." : search || status || csId ? "Nothing matches these filters." : `No ${noun} set yet.`}
         />
       </Panel>
+      {milestones ? <MilestonesDialog project={milestones} onClose={() => setMilestones(null)} /> : null}
       {editing ? (
         <ProjectEditDialog
           project={editing}

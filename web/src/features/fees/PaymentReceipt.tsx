@@ -64,6 +64,7 @@ type Receipt = {
  *                  /parent/me/children/{child}/payments, staff from
  *                  /school/payments/online?student_id=; both have a PDF.
  *  ?receipt=       a counter receipt, /school/accounts/collections/{id}.
+ * The school's name and address come from GET /api/v1/branding/me.
  */
 export function PaymentReceipt() {
   const params = useSearchParams();
@@ -76,6 +77,7 @@ export function PaymentReceipt() {
   const parentOrders = useApi<OnlineOrder[]>(sess && isParent && child && orderId ? `/api/v1/parent/me/children/${child}/payments` : null);
   const schoolOrders = useApi<OnlineOrder[]>(sess && !isParent && child && orderId ? "/api/v1/school/payments/online" : null, { student_id: child });
   const counter = useApi<Collection>(sess && !isParent && receiptId ? `/api/v1/school/accounts/collections/${receiptId}` : null);
+  const school = useApi<{ name: string; address: string | null }>(sess ? "/api/v1/branding/me" : null);
 
   if (!(child && orderId) && !receiptId) {
     return isParent ? (
@@ -152,7 +154,12 @@ export function PaymentReceipt() {
           <p>Student</p>
           <h3>{r.student}</h3>
           <p>{r.sub}</p>
-          {/* Not wired: the school's name and address — not returned with the payment. */}
+          {school.data ? (
+            <p className="small muted">
+              {school.data.name}
+              {school.data.address ? ` · ${school.data.address}` : ""}
+            </p>
+          ) : null}
         </div>
         <div className="right">
           <p>{`Issued on: ${r.issued}`}</p>

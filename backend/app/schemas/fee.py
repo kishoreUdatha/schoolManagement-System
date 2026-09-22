@@ -88,6 +88,13 @@ class StudentFeeRead(BaseModel):
     payment_ref: Optional[str] = None
     payment_mode: Optional[str] = None
     notes: Optional[str] = None
+    # Where the charge came from ('late_fee' for a fine on an overdue fee,
+    # whose source_id is that fee), and the invoice it belongs to: one
+    # invoice per student per fee period.
+    source: Optional[str] = None
+    source_id: Optional[int] = None
+    is_late_fee: bool = False
+    invoice_no: Optional[str] = None
 
 
 class RecordPayment(BaseModel):

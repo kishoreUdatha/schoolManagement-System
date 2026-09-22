@@ -2,7 +2,8 @@
 // Parent app · Module: Support · Release: MVP · ERP: SCR-017 / SCR-253
 // Feature: View request status, assigned team and conversation.
 // Mock: Parent_Mobile_58_Screens/screens/PM-046_request_detail.html
-// Wired: GET /api/v1/parent/me/conversations, GET/POST …/conversations/{id}/messages, POST …/conversations/{id}/mark-read (?id=). Hand-maintained.
+// Wired: GET /api/v1/parent/me/conversations, GET/POST …/conversations/{id}/messages, POST …/conversations/{id}/mark-read, POST …/conversations/{id}/resolve (?id=);
+// office requests GET /api/v1/parent/me/help-tickets/{id}, POST …/replies, POST …/resolve (?ticket=). Hand-maintained.
 
 import { Suspense } from "react";
 import { ParentShell } from "@/components/parent/ParentShell";

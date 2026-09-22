@@ -138,7 +138,7 @@ export function Chevron() {
 }
 
 /** The school the parent belongs to, from the caller's branding. */
-export type Branding = { school_id: number; name: string; code: string | null };
+export type Branding = { school_id: number; name: string; code: string | null; logo_url?: string | null; address?: string | null };
 export const BRANDING_PATH = "/api/v1/branding/me";
 
 /** The pack's full-width `.action` button that navigates (an <a> would lose the button styling). */
