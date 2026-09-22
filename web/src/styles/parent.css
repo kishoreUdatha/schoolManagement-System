@@ -474,13 +474,12 @@
 .pm #more-menu .item{min-height:51px;padding:8px 0;font-size:12px}
 .pm .phone #pm-toast{background:#142f55;border-radius:12px;font-size:12px;line-height:1.5;bottom:78px}
 .pm .phone[aria-busy=true]{opacity:.7}
-.pm @media(max-width:740px){.phone{border-width:0;border-radius:0;box-shadow:none;width:min(390px,100vw)}
+@media(max-width:740px){.pm .phone{border-width:0;border-radius:0;box-shadow:none;width:min(390px,100vw)}
 .pm .phone input:not([type=checkbox]), .pm .phone select, .pm .phone textarea{font-size:16px}
 .pm .phone .form-grid input{font-size:12px}
 .pm .phone input[type=file]{font-size:11px}
-.pm .phone .child-select small{font-size:11px}
-.pm }
-@media(max-width:360px){.scroll-body{padding-left:12px;padding-right:12px}
+.pm .phone .child-select small{font-size:11px}}
+@media(max-width:360px){.pm .scroll-body{padding-left:12px;padding-right:12px}
 .pm #child-bar{padding-left:12px;padding-right:12px}
 .pm .identity-top{padding:12px 9px}
 .pm .identity-person{gap:7px}
@@ -525,8 +524,7 @@
 .pm .phone .check{padding:11px}
 .pm .homework-tabs button{font-size:10px}
 .pm .invoice-sheet .invoice-total{font-size:37px}
-.pm .phone[data-screen="57"] #app-header h2{font-size:16px}
-.pm }
+.pm .phone[data-screen="57"] #app-header h2{font-size:16px}}
 .pm{--blue:#2457e6;--ink:#14254b;--muted:#52627b;--line:#dce4f2;--bg:#fff;--mint:#13754a}
 .pm{background:#fff}
 .pm .phone{background:#fff;--accent:#2457e6;--soft:#edf3ff;--accent-ink:#1944bd;--accent-border:#cbdcff}
@@ -803,7 +801,7 @@
 .pm .day-tile{min-height:113px}
 .pm .learning-overview{min-height:105px;padding-top:13px;padding-bottom:13px}
 .pm .phone[data-screen="14"] .section-head{margin-top:8px}
-.pm @media(max-width:360px){#child-bar{padding-left:12px;padding-right:12px}
+@media(max-width:360px){.pm #child-bar{padding-left:12px;padding-right:12px}
 .pm .child-select .child-copy{gap:6px}
 .pm .child-select .child-copy b{font-size:12px}
 .pm .child-select .child-copy small{font-size:10px;padding-left:6px}
@@ -848,4 +846,4 @@
 .pm .phone[data-screen="23"] .invoice-sheet{padding:14px}
 .pm .invoice-amount>.v-icon{width:49px;height:57px}
 .pm .phone #app-header h2{font-size:18px}
-.pm .phone[data-screen="57"] #app-header h2{font-size:16px}
+.pm .phone[data-screen="57"] #app-header h2{font-size:16px}}

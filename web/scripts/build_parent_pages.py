@@ -68,6 +68,9 @@ def scope_selector(sel: str) -> str | None:
 def scope(css: str) -> str:
     out, i = [], 0
     while i < len(css):
+        if css[i].isspace():
+            i += 1
+            continue
         if css.startswith("@media", i):
             head_end = css.index("{", i)
             head = css[i:head_end]
