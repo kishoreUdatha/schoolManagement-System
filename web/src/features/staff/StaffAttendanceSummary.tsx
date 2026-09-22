@@ -8,7 +8,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { date, label, pct } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
-import type { AttendanceSummary } from "./types";
+import type { AttendanceSummary, OnlyStaff } from "./types";
 import { downloadCsv, thisMonth } from "./util";
 
 const COLUMNS = ["Staff member", "Days marked", "Present", "Absent", "Leave", "Attendance"];
@@ -30,8 +30,12 @@ function Bars({ items }: { items: [string, number][] }) {
   );
 }
 
-/** SCR-088, live: GET /api/v1/school/staff-ops/attendance-summary (year, month). */
-export function StaffAttendanceSummary() {
+/**
+ * SCR-088, live: GET /api/v1/school/staff-ops/attendance-summary (year, month).
+ * With `only` (the staff profile's Attendance tab) the month is narrowed to
+ * that person and the role filter goes.
+ */
+export function StaffAttendanceSummary({ only }: { only?: OnlyStaff }) {
   const [month, setMonth] = useState(thisMonth());
   const [role, setRole] = useState("");
   const [y, m] = month.split("-").map(Number);
@@ -39,7 +43,7 @@ export function StaffAttendanceSummary() {
   const d = res.data;
 
   const roles = useMemo(() => Array.from(new Set((d?.staff ?? []).map((s) => s.role))), [d]);
-  const list = (d?.staff ?? []).filter((s) => !role || s.role === role);
+  const list = (d?.staff ?? []).filter((s) => (!role || s.role === role) && (!only || s.user_id === only.userId));
   const marked = list.reduce((a, s) => a + s.marked, 0);
   const sum = (k: "present" | "late" | "absent" | "on_leave" | "sick") => list.reduce((a, s) => a + s[k], 0);
   const avg = list.length ? list.reduce((a, s) => a + s.percent, 0) / list.length : null;
@@ -53,7 +57,7 @@ export function StaffAttendanceSummary() {
     { label: "Average attendance", value: d ? pct(avg) : "…", note: "Across the staff shown" },
   ];
 
-  const byRole: [string, number][] = roles.map((r) => {
+  const byRole: [string, number][] = (only ? roles.filter((r) => list.some((s) => s.role === r)) : roles).map((r) => {
     const rs = list.filter((s) => s.role === r);
     return [label(r), rs.length ? rs.reduce((a, s) => a + s.percent, 0) / rs.length : 0];
   });
@@ -65,14 +69,16 @@ export function StaffAttendanceSummary() {
   return (
     <>
       <div className="filterbar">
-        <select aria-label="Filter by role" value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="">All roles</option>
-          {roles.map((r) => (
-            <option key={r} value={r}>
-              {label(r)}
-            </option>
-          ))}
-        </select>
+        {only ? null : (
+          <select aria-label="Filter by role" value={role} onChange={(e) => setRole(e.target.value)}>
+            <option value="">All roles</option>
+            {roles.map((r) => (
+              <option key={r} value={r}>
+                {label(r)}
+              </option>
+            ))}
+          </select>
+        )}
         <input type="month" aria-label="Month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} />
         <button
           type="button"
@@ -126,7 +132,7 @@ export function StaffAttendanceSummary() {
         </aside>
       </div>
       <Panel title="Detailed breakdown" sub="Present includes late arrivals; leave includes sick days" flush>
-        <DataTable columns={COLUMNS} rows={rows} selectable={false} rowAction={false} empty={res.loading ? "Loading…" : "No staff attendance recorded for this month."} />
+        <DataTable columns={COLUMNS} rows={rows} selectable={false} rowAction={false} empty={res.loading ? "Loading…" : only ? `No attendance recorded for ${only.name} this month.` : "No staff attendance recorded for this month."} />
       </Panel>
     </>
   );

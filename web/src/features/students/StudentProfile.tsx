@@ -12,23 +12,48 @@ import { date, initials, label, money, pct } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { AcademicBody } from "./StudentAcademic";
+import { AttendanceBody } from "./StudentAttendance";
+import { DocumentsBody } from "./StudentDocuments";
+import { CollectFeeLink, LedgerBody } from "./StudentLedger";
+import { PrintButton, ResultsBody } from "./StudentResults";
+import { TransportBody } from "./StudentTransport";
 import type { Guardian, StudentProfile as Profile } from "./types";
 
-/** The profile tabs, each carrying the student on to the next screen. */
-export function StudentTabs({ id, active }: { id: string; active: number }) {
-  const tabs: [number, string][] = [
-    [57, "Overview"],
-    [59, "Academics"],
-    [60, "Attendance"],
-    [61, "Results"],
-    [62, "Fees"],
-    [63, "Documents"],
-    [66, "Transport"],
-  ];
+/** The profile tabs: key, label and the screen that shows the same content on its own. */
+export const STUDENT_TABS = [
+  ["overview", "Overview", 57],
+  ["academics", "Academics", 59],
+  ["attendance", "Attendance", 60],
+  ["results", "Results", 61],
+  ["fees", "Fees", 62],
+  ["documents", "Documents", 63],
+  ["transport", "Transport", 66],
+] as const;
+export type StudentTab = (typeof STUDENT_TABS)[number][0];
+
+/** The tab named by ?tab= on the student profile (Overview when absent). */
+export function useStudentTab(): StudentTab {
+  const t = useSearchParams().get("tab");
+  return STUDENT_TABS.some(([k]) => k === t) ? (t as StudentTab) : "overview";
+}
+
+/** The profile tab a per-student screen stands for, or null (Health, Library…). */
+export function tabOfScreen(screen: number): StudentTab | null {
+  return STUDENT_TABS.find(([, , n]) => n === screen)?.[0] ?? null;
+}
+
+/**
+ * Tabs across the student profile. They stay on the profile page and only
+ * change ?tab= (replacing the address, so Back leaves the profile rather than
+ * stepping through tabs); the header stays put and just the content below
+ * changes. `tab` null (a screen that is not a tab) highlights none.
+ */
+export function StudentTabs({ id, tab }: { id: string; tab: StudentTab | null }) {
   return (
     <nav className="module-tabs profile-tabs">
-      {tabs.map(([n, t]) => (
-        <Link key={n} href={`${routeOf(n)}?id=${id}`} className={n === active ? "active" : ""}>
+      {STUDENT_TABS.map(([k, t]) => (
+        <Link key={k} href={`${routeOf(57)}?id=${id}${k === "overview" ? "" : `&tab=${k}`}`} scroll={false} replace className={k === tab ? "active" : ""} aria-current={k === tab ? "page" : undefined}>
           {t}
         </Link>
       ))}
@@ -37,7 +62,7 @@ export function StudentTabs({ id, active }: { id: string; active: number }) {
 }
 
 /** Name, class and attendance across the top of every student screen. */
-export function StudentBanner({ s, active }: { s: Profile; active: number }) {
+export function StudentBanner({ s, tab }: { s: Profile; tab: StudentTab | null }) {
   return (
     <section className="panel profile-banner">
       <div className="profile-hero">
@@ -66,7 +91,7 @@ export function StudentBanner({ s, active }: { s: Profile; active: number }) {
           <small>{`Attendance · ${s.attendance.days_marked} days marked`}</small>
         </div>
       </div>
-      <StudentTabs id={String(s.id)} active={active} />
+      <StudentTabs id={String(s.id)} tab={tab} />
     </section>
   );
 }
@@ -78,14 +103,93 @@ export function useStudent() {
   return { id, ...res };
 }
 
-/** SCR-057, live: GET /api/v1/school/students/{id}. */
+/**
+ * SCR-057, live: GET /api/v1/school/students/{id}. The student's header stays
+ * at the top and ?tab= picks what is under it: the overview here, or the
+ * Academics, Attendance, Results, Fees, Documents and Transport screens'
+ * content (the same components those screens use on their own). Switching
+ * tabs never reloads the header.
+ */
 export function StudentProfile() {
   const { id, data: s, error, loading, reload } = useStudent();
-  const guardians = useApi<Guardian[]>(id ? `/api/v1/school/students/${id}/guardians` : null);
+  const tab = useStudentTab();
   if (!id) return <PickFirst what="student" href={routeOf(55)} cta="Open the student directory" />;
   if (loading && !s) return <Loading what="Loading the student…" />;
   if (!s) return <ErrorNote>{error ?? "Student not found."}</ErrorNote>;
+  return (
+    <>
+      <StudentBanner s={s} tab={tab} />
+      {tab === "academics" ? (
+        <AcademicBody s={s} />
+      ) : tab === "attendance" ? (
+        <AttendanceBody s={s} />
+      ) : tab === "results" ? (
+        <ResultsBody s={s} />
+      ) : tab === "fees" ? (
+        <LedgerBody s={s} />
+      ) : tab === "documents" ? (
+        <DocumentsBody s={s} />
+      ) : tab === "transport" ? (
+        <TransportBody s={s} />
+      ) : (
+        <StudentOverview s={s} onChange={reload} />
+      )}
+    </>
+  );
+}
 
+/** The page-head buttons for the tab on screen (what that tab's own screen offers). */
+export function StudentProfileActions() {
+  const tab = useStudentTab();
+  if (tab === "academics")
+    return (
+      <Link href="/examinations/report-card" className="btn primary">
+        <Icon name="arrow" className="sm" />
+        View report card
+      </Link>
+    );
+  if (tab === "attendance")
+    return (
+      <Link href="/attendance/attendance-correction" className="btn primary">
+        <Icon name="arrow" className="sm" />
+        Request correction
+      </Link>
+    );
+  if (tab === "results")
+    return (
+      <>
+        <PrintButton />
+        <Link href="/examinations/student-result" className="btn primary">
+          <Icon name="arrow" className="sm" />
+          Download result
+        </Link>
+      </>
+    );
+  if (tab === "fees") return <CollectFeeLink />;
+  if (tab === "documents")
+    return (
+      <button type="submit" form="upload-document" className="btn primary">
+        <Icon name="check" className="sm" />
+        Upload document
+      </button>
+    );
+  if (tab === "transport")
+    return (
+      <Link href="/transport/student-route-assignment" className="btn primary">
+        <Icon name="arrow" className="sm" />
+        Change route
+      </Link>
+    );
+  return (
+    <WithStudentLink screen={58} icon="arrow">
+      Edit student
+    </WithStudentLink>
+  );
+}
+
+/** The Overview tab: GET /students/{id}/guardians alongside the record. */
+function StudentOverview({ s, onChange }: { s: Profile; onChange: () => void }) {
+  const guardians = useApi<Guardian[]>(`/api/v1/school/students/${s.id}/guardians`);
   const people = guardians.data ?? [];
   const primary = people.find((g) => g.is_primary) ?? people[0];
   const emergency = people.find((g) => g.is_emergency_contact) ?? primary;
@@ -102,7 +206,6 @@ export function StudentProfile() {
 
   return (
     <>
-      <StudentBanner s={s} active={57} />
       <div className="two-col">
         <div className="stack">
           <Panel title="Personal information">
@@ -185,7 +288,7 @@ export function StudentProfile() {
               <p className="muted">No homework set recently.</p>
             )}
           </Panel>
-          <RecordStatus s={s} onChange={reload} />
+          <RecordStatus s={s} onChange={onChange} />
         </aside>
       </div>
     </>

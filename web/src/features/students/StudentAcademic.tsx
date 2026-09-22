@@ -17,10 +17,11 @@ import type { SchoolClass, StudentProfile } from "./types";
  * /student-detail/{id}/exams (latest average), /classes + /staff (class teacher).
  */
 export function StudentAcademic() {
-  return <StudentFrame active={59}>{(s) => <Body s={s} />}</StudentFrame>;
+  return <StudentFrame active={59}>{(s) => <AcademicBody s={s} />}</StudentFrame>;
 }
 
-function Body({ s }: { s: StudentProfile }) {
+/** The screen's content under the banner; the profile's tab renders it too. */
+export function AcademicBody({ s }: { s: StudentProfile }) {
   const academic = useApi<Academic>(`/api/v1/school/student-detail/${s.id}/academic`);
   const exams = useApi<ExamHistory>(`/api/v1/school/student-detail/${s.id}/exams`);
   const classes = useApi<SchoolClass[]>("/api/v1/school/classes", { academic_year_id: s.academic_year_id });

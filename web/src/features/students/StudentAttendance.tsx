@@ -13,12 +13,13 @@ import type { StudentProfile } from "./types";
 
 /** SCR-060, live: GET /reports/attendance/students/{id} (months and days). */
 export function StudentAttendance() {
-  return <StudentFrame active={60}>{(s) => <Body s={s} />}</StudentFrame>;
+  return <StudentFrame active={60}>{(s) => <AttendanceBody s={s} />}</StudentFrame>;
 }
 
 const days = (n: number) => `${n} ${n === 1 ? "day" : "days"}`;
 
-function Body({ s }: { s: StudentProfile }) {
+/** The screen's content under the banner; the profile's tab renders it too. */
+export function AttendanceBody({ s }: { s: StudentProfile }) {
   const report = useApi<AttendanceReport>(`/api/v1/school/reports/attendance/students/${s.id}`);
   const [month, setMonth] = useState("");
   const [status, setStatus] = useState("");

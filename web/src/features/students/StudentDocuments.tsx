@@ -19,7 +19,7 @@ import type { StudentProfile } from "./types";
  * GET /documents/{doc}/file (open), POST /documents (multipart upload).
  */
 export function StudentDocuments() {
-  return <StudentFrame active={63}>{(s) => <Body s={s} />}</StudentFrame>;
+  return <StudentFrame active={63}>{(s) => <DocumentsBody s={s} />}</StudentFrame>;
 }
 
 function size(n: number | null) {
@@ -32,7 +32,8 @@ function kindOf(d: Doc) {
   return ext && ext.length <= 4 ? ext : (d.content_type?.split("/").pop()?.toUpperCase() ?? "FILE");
 }
 
-function Body({ s }: { s: StudentProfile }) {
+/** The screen's content under the banner; the profile's tab renders it too. */
+export function DocumentsBody({ s }: { s: StudentProfile }) {
   const docs = useApi<Doc[]>("/api/v1/school/documents", { owner_type: "student", owner_id: s.id });
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("");

@@ -10,7 +10,7 @@ import { api, errorText } from "@/lib/api";
 import { date, label, pct } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
-import type { LeaveBalance, StaffLeave } from "./types";
+import type { LeaveBalance, OnlyStaff, StaffLeave } from "./types";
 import { downloadCsv } from "./util";
 
 const COLUMNS = ["Staff member", "Leave type", "Entitlement", "Used", "Carried forward", "Available"];
@@ -34,8 +34,9 @@ function Bars({ items }: { items: [string, number, string][] }) {
 /**
  * SCR-089, live: requests and decisions (GET /staff-leaves, POST
  * /staff-leaves/{id}/decide) and balances (GET /hr/leave-balances?year=).
+ * With `only` (the staff profile's Leave tab) both are narrowed to that person.
  */
-export function StaffLeaveSummary() {
+export function StaffLeaveSummary({ only }: { only?: OnlyStaff }) {
   const thisYear = new Date().getFullYear();
   const [status, setStatus] = useState("");
   const [year, setYear] = useState(thisYear);
@@ -46,7 +47,7 @@ export function StaffLeaveSummary() {
   const leaves = useApi<StaffLeave[]>("/api/v1/school/staff-leaves", { status });
   const balances = useApi<LeaveBalance[]>("/api/v1/school/hr/leave-balances", { year });
 
-  const all = leaves.data ?? [];
+  const all = (leaves.data ?? []).filter((l) => !only || l.applicant_user_id === only.userId);
   const inYear = all.filter((l) => l.from_date.startsWith(String(year)) || l.to_date.startsWith(String(year)));
   const count = (s: StaffLeave["status"]) => inYear.filter((l) => l.status === s).length;
   const approvedDays = inYear.filter((l) => l.status === "approved").reduce((a, l) => a + l.days, 0);
@@ -65,7 +66,7 @@ export function StaffLeaveSummary() {
   const maxDays = Math.max(1, ...byKind.map(([, v]) => v));
   const share = (v: number) => (inYear.length ? (v / inYear.length) * 100 : 0);
 
-  const bal = balances.data ?? [];
+  const bal = (balances.data ?? []).filter((b) => !only || b.user_id === only.userId);
   const cells = bal.map((b) => [b.leave_type_name, `${Number(b.allotted)} days`, String(Number(b.used)), String(Number(b.carried_forward)), String(Number(b.available))]);
   const rows: Row[] = bal.map((b, i) => [{ name: b.user_name, sub: b.is_paid ? "Paid leave" : "Unpaid leave" }, ...cells[i]]);
 

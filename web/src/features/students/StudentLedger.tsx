@@ -17,10 +17,11 @@ import type { StudentProfile } from "./types";
 
 /** SCR-062, live: GET /finance/ledger/{id} (charges, receipts, waivers, running balance). */
 export function StudentLedger() {
-  return <StudentFrame active={62}>{(s) => <Body s={s} />}</StudentFrame>;
+  return <StudentFrame active={62}>{(s) => <LedgerBody s={s} />}</StudentFrame>;
 }
 
-function Body({ s }: { s: StudentProfile }) {
+/** The screen's content under the banner; the profile's tab renders it too. */
+export function LedgerBody({ s }: { s: StudentProfile }) {
   const ledger = useApi<Ledger>(`/api/v1/school/finance/ledger/${s.id}`);
   const [kind, setKind] = useState("");
   const [status, setStatus] = useState("");

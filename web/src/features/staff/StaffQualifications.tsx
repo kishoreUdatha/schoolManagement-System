@@ -25,8 +25,10 @@ const ext = (title: string) => {
 /**
  * SCR-087, live: GET /staff-ops/{id}/qualifications; POST to add one, verify
  * and DELETE; documents upload through POST /documents (owner_type=staff).
+ * `embedded` leaves out the name header, for the staff profile's Documents
+ * tab, which already shows it.
  */
-export function StaffQualifications() {
+export function StaffQualifications({ embedded = false }: { embedded?: boolean }) {
   const { id, data: p, error: pError, loading } = useStaffProfile();
   const page = useApi<QualificationsPage>(id ? `/api/v1/school/staff-ops/${id}/qualifications` : null);
   const [typed, setTyped] = useState("");
@@ -114,7 +116,7 @@ export function StaffQualifications() {
 
   return (
     <>
-      <StaffBanner p={p} active={87} />
+      {embedded ? null : <StaffBanner p={p} tab="documents" />}
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

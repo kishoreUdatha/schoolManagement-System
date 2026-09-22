@@ -12,15 +12,18 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { AcademicYear, SchoolClass } from "@/features/students/types";
-import type { Staff, WorkloadReport } from "./types";
+import type { OnlyStaff, Staff, WorkloadReport } from "./types";
 
 const COLUMNS = ["Teacher", "Department", "Assigned classes", "Weekly periods", "Class teacher of", "Status"];
 
 /**
  * SCR-084, live: who teaches what (GET /staff-ops/workload) and the class
- * teacher of every section (GET /classes, PATCH /sections/{id}).
+ * teacher of every section (GET /classes, PATCH /sections/{id}). With `only`
+ * (the staff profile's Allocation tab) the workspace shows just that person;
+ * the class-teacher table still lists every section, as that is where they
+ * are made class teacher of one.
  */
-export function TeacherAllocation() {
+export function TeacherAllocation({ only }: { only?: OnlyStaff }) {
   const router = useRouter();
   const [typed, setTyped] = useState("");
   const [status, setStatus] = useState("");
@@ -40,10 +43,10 @@ export function TeacherAllocation() {
   const list = useMemo(
     () =>
       (workload.data?.staff ?? [])
-        .filter((s) => s.role === "teacher")
+        .filter((s) => (only ? s.staff_id === only.staffId : s.role === "teacher"))
         .filter((s) => !status || (status === "active") === s.is_active)
         .filter((s) => !q || `${s.full_name} ${s.employee_no} ${s.department_name ?? ""}`.toLowerCase().includes(q)),
-    [workload.data, status, q],
+    [workload.data, status, q, only],
   );
   const rows: Row[] = list.map((s) => [
     { name: s.full_name, sub: s.employee_no },
@@ -82,17 +85,21 @@ export function TeacherAllocation() {
 
   return (
     <>
-      <StatStrip items={years.data?.length === 0 ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />
+      {only ? null : <StatStrip items={years.data?.length === 0 ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />}
       <div className="filterbar">
-        <div className="searchbox">
-          <Icon name="search" className="sm" />
-          <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Search teacher allocation…" aria-label="Search teachers" />
-        </div>
-        <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+        {only ? null : (
+          <>
+            <div className="searchbox">
+              <Icon name="search" className="sm" />
+              <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Search teacher allocation…" aria-label="Search teachers" />
+            </div>
+            <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </>
+        )}
         <select aria-label="Academic year" value={yearId ?? ""} onChange={(e) => setYearId(Number(e.target.value))}>
           {years.data?.map((y) => (
             <option key={y.id} value={y.id}>
@@ -107,8 +114,9 @@ export function TeacherAllocation() {
           columns={COLUMNS}
           rows={rows}
           selectable={false}
+          rowAction={!only}
           onView={(i) => router.push(`${routeOf(82)}?id=${list[i].staff_id}`)}
-          empty={workload.loading ? "Loading teachers…" : "No teachers match."}
+          empty={workload.loading ? "Loading teachers…" : only ? `No subjects or periods are allocated to ${only.name}.` : "No teachers match."}
         />
       </Panel>
       <div className="gap" />

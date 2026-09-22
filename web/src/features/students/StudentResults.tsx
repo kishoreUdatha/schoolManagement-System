@@ -17,7 +17,7 @@ import type { StudentProfile } from "./types";
  * apart from nought), /exams/{exam}/sections/{section}/remarks, /profile.
  */
 export function StudentResults() {
-  return <StudentFrame active={61}>{(s) => <Body s={s} />}</StudentFrame>;
+  return <StudentFrame active={61}>{(s) => <ResultsBody s={s} />}</StudentFrame>;
 }
 
 /** The Print button in the page head. */
@@ -30,7 +30,8 @@ export function PrintButton({ children = "Print" }: { children?: string }) {
   );
 }
 
-function Body({ s }: { s: StudentProfile }) {
+/** The screen's content under the banner; the profile's tab renders it too. */
+export function ResultsBody({ s }: { s: StudentProfile }) {
   const history = useApi<ExamHistory>(`/api/v1/school/student-detail/${s.id}/exams`);
   const school = useApi<{ name: string; address: string | null }>("/api/v1/school/profile");
   const exams = history.data?.exams ?? [];

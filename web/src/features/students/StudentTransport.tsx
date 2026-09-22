@@ -18,10 +18,11 @@ import type { StudentProfile } from "./types";
  * (boarding). The map is drawn from the stops' coordinates, to scale.
  */
 export function StudentTransport() {
-  return <StudentFrame active={66}>{(s) => <Body s={s} />}</StudentFrame>;
+  return <StudentFrame active={66}>{(s) => <TransportBody s={s} />}</StudentFrame>;
 }
 
-function Body({ s }: { s: StudentProfile }) {
+/** The screen's content under the banner; the profile's tab renders it too. */
+export function TransportBody({ s }: { s: StudentProfile }) {
   // The list has no student filter; search by admission number and match the id.
   const seats = useApi<TransportAssignment[]>("/api/v1/school/transport/assignments", { search: s.admission_no });
   const seat = seats.data?.find((a) => a.student_id === s.id && !a.end_date);

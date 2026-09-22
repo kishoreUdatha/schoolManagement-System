@@ -129,7 +129,7 @@ function Body({ s }: { s: StudentProfile }) {
           </span>
           <span className={`badge ${p?.allergies ? "warn" : ""}`}>{p?.updated_at ? `Updated ${date(p.updated_at)}` : "No health profile yet"}</span>
         </div>
-        <StudentTabs id={String(s.id)} active={65} />
+        <StudentTabs id={String(s.id)} tab={null} />
       </div>
       <StatStrip items={stats} compact />
       <ErrorNote>{error ?? rec.error}</ErrorNote>

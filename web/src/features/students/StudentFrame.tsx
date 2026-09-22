@@ -3,13 +3,15 @@
 import type { ReactNode } from "react";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { routeOf } from "@/lib/screens";
-import { StudentBanner, useStudent } from "./StudentProfile";
+import { StudentBanner, tabOfScreen, useStudent } from "./StudentProfile";
 import type { StudentProfile } from "./types";
 
 /**
  * The frame every per-student screen shares: pick a student first, wait for
  * the record, then the banner with the profile tabs and the screen body.
  * `banner={false}` keeps the checks but lets the screen draw its own header.
+ * `active` is the screen id; the matching profile tab is highlighted (none
+ * for screens that are not a tab).
  */
 export function StudentFrame({
   active,
@@ -26,7 +28,7 @@ export function StudentFrame({
   if (!s) return <ErrorNote>{error ?? "Student not found."}</ErrorNote>;
   return (
     <>
-      {banner ? <StudentBanner s={s} active={active} /> : null}
+      {banner ? <StudentBanner s={s} tab={tabOfScreen(active)} /> : null}
       {children(s)}
     </>
   );

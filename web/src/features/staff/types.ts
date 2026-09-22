@@ -53,6 +53,12 @@ export type Staff = {
   last_login_at: string | null;
 } & StaffExtra;
 
+/**
+ * One member of staff: the staff profile passes it to the school-wide screens
+ * it shows as tabs (allocation, workload, attendance, leave) to narrow them.
+ */
+export type OnlyStaff = { staffId: number; userId: number; name: string };
+
 export type Department = { id: number; name: string; code?: string | null; is_active?: boolean };
 
 export type Workload = {
