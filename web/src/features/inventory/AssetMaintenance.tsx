@@ -111,10 +111,11 @@ export function AssetMaintenance() {
   const inRepair = all.filter((a) => a.status === "under_repair").length;
   const spent = all.reduce((n, a) => n + Number(a.maintenance_cost || 0), 0);
 
-  // Not wired: the mock's "Issue" column — an asset has no open fault record. The
-  // "Due date" lives in the service schedule panel below (/ops/assets/service-due).
+  // "Issue" is the fault given when it was last sent for repair, until it is
+  // marked repaired. The "Due date" lives in the service schedule panel below.
   const rows: Row[] = shown.map((a) => [
     { name: a.name, sub: a.asset_tag },
+    a.open_issue ? { name: a.open_issue, sub: a.issue_reported_on ? `Reported ${date(a.issue_reported_on)}` : undefined } : "—",
     a.location ?? "—",
     Number(a.maintenance_cost) > 0 ? money(a.maintenance_cost) : "—",
     a.assigned_to_name ?? "—",
@@ -143,7 +144,7 @@ export function AssetMaintenance() {
       ) : null}
       <Panel title="Records" sub={`${inRepair} under repair · ${money(spent)} spent on repairs so far${list.loading ? " · Loading…" : ""}`} flush>
         <DataTable
-          columns={["Asset", "Location", "Spent on repairs", "Assigned to", "Warranty", "Status"]}
+          columns={["Asset", "Issue", "Location", "Spent on repairs", "Assigned to", "Warranty", "Status"]}
           rows={rows}
           onView={(i) => setOpen(shown[i].id)}
           empty={list.loading ? "Loading assets…" : s || status ? "No assets match these filters." : "No assets have been registered yet."}

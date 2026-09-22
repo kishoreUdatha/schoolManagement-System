@@ -124,6 +124,18 @@ class Borrower(BaseModel):
 class IssueRequest(Borrower):
     accession_no: str = Field(..., min_length=1, max_length=40)
     due_on: Optional[date] = None
+    remarks: Optional[str] = Field(None, max_length=300)
+
+
+class CopyLookup(BaseModel):
+    copy_id: int
+    accession_no: str
+    book_id: int
+    title: str
+    author: Optional[str] = None
+    status: str
+    is_reference: bool = False
+    held_for: Optional[str] = None  # who it is on hold for, if anyone
 
 
 class ReturnRequest(BaseModel):
@@ -141,6 +153,9 @@ class LostRequest(BaseModel):
 class FineAction(BaseModel):
     action: str = Field(..., pattern=r"^(paid|waived|bill)$")
     note: Optional[str] = Field(None, max_length=300)
+    # when collecting: what was handed over (defaults to the fine) and how
+    amount_received: Optional[Decimal] = Field(None, ge=0)
+    payment_method: Optional[str] = Field(None, pattern=r"^(cash|upi|card|cheque|bank_transfer|other)$")
 
 
 class LoanRead(BaseModel):
@@ -161,6 +176,7 @@ class LoanRead(BaseModel):
     renew_count: int
     overdue_days: int
     fine_amount: Decimal
+    remarks: Optional[str] = None
     accruing_fine: Decimal  # for open overdue loans: fine if returned today
     fine_status: FineStatus
     fine_note: Optional[str] = None
@@ -168,6 +184,8 @@ class LoanRead(BaseModel):
 
 class ReservationCreate(Borrower):
     book_id: int
+    reserved_on: Optional[date] = None  # defaults to today
+    notify_channel: Optional[str] = Field(None, pattern=r"^(in_app|sms|email|whatsapp|phone)$")
 
 
 class ReservationRead(BaseModel):
@@ -179,6 +197,8 @@ class ReservationRead(BaseModel):
     queue_position: Optional[int] = None
     hold_until: Optional[date] = None
     held_accession_no: Optional[str] = None
+    reserved_on: Optional[date] = None
+    notify_channel: Optional[str] = None
     created_at: datetime
 
 
@@ -215,6 +235,8 @@ class FineRead(BaseModel):
     amount: Decimal
     status: FineStatus
     note: Optional[str] = None
+    received: Optional[Decimal] = None
+    payment_method: Optional[str] = None
 
 
 class FineSummary(BaseModel):

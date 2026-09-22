@@ -20,6 +20,7 @@ class VisitIn(BaseModel):
     vehicle_no: Optional[str] = Field(None, max_length=20)
     expected_at: Optional[datetime] = None  # set → pre-registration, else walk-in check-in
     notes: Optional[str] = Field(None, max_length=500)
+    valid_until: Optional[datetime] = None  # the pass's expiry; None = until check-out
 
 
 class VisitRead(BaseModel):
@@ -46,6 +47,34 @@ class VisitRead(BaseModel):
     notes: Optional[str] = None
     host_approved_at: Optional[datetime] = None
     host_declined_reason: Optional[str] = None
+    valid_until: Optional[datetime] = None
+    pass_returned: Optional[bool] = None
+    checked_in_by_name: Optional[str] = None
+    checked_out_by_name: Optional[str] = None
+
+
+class CheckOutIn(BaseModel):
+    pass_returned: Optional[bool] = None
+
+
+class StaffGateEntryIn(BaseModel):
+    user_id: int
+    direction: str = Field(..., pattern=r"^(in|out)$")
+    at: Optional[datetime] = None  # defaults to now
+    vehicle_no: Optional[str] = Field(None, max_length=20)
+    note: Optional[str] = Field(None, max_length=300)
+
+
+class StaffGateEntryRead(BaseModel):
+    id: int
+    user_id: int
+    staff_name: str
+    role: Optional[str] = None
+    direction: str
+    at: datetime
+    vehicle_no: Optional[str] = None
+    note: Optional[str] = None
+    recorded_by_name: Optional[str] = None
 
 
 class GatePassIn(BaseModel):
@@ -156,6 +185,7 @@ class VisitUpdate(BaseModel):
     people_count: Optional[int] = Field(None, ge=1, le=50)
     vehicle_no: Optional[str] = Field(None, max_length=20)
     expected_at: Optional[datetime] = None
+    valid_until: Optional[datetime] = None
     notes: Optional[str] = Field(None, max_length=500)
 
 

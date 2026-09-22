@@ -47,6 +47,7 @@ export function StockIssue() {
         kind,
         qty: String(f.get("qty") ?? ""),
         issued_to: orNull(f.get("issued_to")),
+        location: orNull(f.get("location")),
         moved_on: orNull(f.get("moved_on")),
         reference: orNull(f.get("reference")),
         notes: orNull(f.get("notes")),
@@ -100,7 +101,9 @@ export function StockIssue() {
                 <Field label={kind === "issue" ? "Issued to" : kind === "return_in" ? "Returned by" : "Reported by"} required={kind === "issue"}>
                   <input name="issued_to" required={kind === "issue"} placeholder="Staff room, Class 5A, Mr. Rao" />
                 </Field>
-                {/* Not wired: the mock's "Location" — a stock move has no location field. */}
+                <Field label="Location">
+                  <input name="location" maxLength={80} placeholder={item?.location ? `e.g. ${item.location}` : "Main store, Lab shelf 2"} />
+                </Field>
                 <Field label="Date">
                   <input type="date" name="moved_on" defaultValue={today()} />
                 </Field>
@@ -161,7 +164,7 @@ export function StockIssue() {
               <div className="event-row" key={m.id}>
                 <div className="event-content">
                   <h4>{`${m.item_name} · ${m.direction > 0 ? "+" : "−"}${qty(m.qty)}`}</h4>
-                  <p>{[date(m.moved_on), MOVE_LABEL[m.kind], m.issued_to].filter(Boolean).join(" · ")}</p>
+                  <p>{[date(m.moved_on), MOVE_LABEL[m.kind], m.issued_to, m.location].filter(Boolean).join(" · ")}</p>
                 </div>
               </div>
             ))

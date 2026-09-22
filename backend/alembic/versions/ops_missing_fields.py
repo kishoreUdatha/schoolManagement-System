@@ -52,6 +52,21 @@ COLUMNS: list[tuple[str, sa.Column]] = [
     ("hostel_attendance", sa.Column("checked_in_at", sa.Time(), nullable=True)),
     ("hostel_attendance", sa.Column("is_late", sa.Boolean(), server_default=sa.false(), nullable=False)),
     ("hostel_attendance", sa.Column("remark", sa.String(300), nullable=True)),
+    # #70/#71 where stock went in or out
+    ("stock_moves", sa.Column("location", sa.String(80), nullable=True)),
+    # #72 supplier category
+    ("suppliers", sa.Column("category", sa.String(80), nullable=True)),
+    # #73 library issue remarks; #75 fine received and how
+    ("library_loans", sa.Column("issue_remarks", sa.String(300), nullable=True)),
+    ("library_loans", sa.Column("fine_received", sa.Numeric(10, 2), nullable=True)),
+    ("library_loans", sa.Column("fine_payment_method", sa.String(20), nullable=True)),
+    # #74 reservation date and notification channel
+    ("library_reservations", sa.Column("reserved_on", sa.Date(), nullable=True)),
+    ("library_reservations", sa.Column("notify_channel", sa.String(20), nullable=True)),
+    # #135 visit pass expiry; #136 pass returned at check-out, and by whom
+    ("visits", sa.Column("valid_until", sa.DateTime(timezone=True), nullable=True)),
+    ("visits", sa.Column("pass_returned", sa.Boolean(), nullable=True)),
+    ("visits", sa.Column("checked_out_by_user_id", sa.BigInteger(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)),
 ]
 
 
@@ -76,6 +91,17 @@ def _tables() -> dict[str, list]:
             sa.Column("class_id", sa.BigInteger(), sa.ForeignKey("school_classes.id", ondelete="CASCADE"), nullable=False),
             sa.Column("name", sa.String(160), nullable=False),
             sa.UniqueConstraint("school_id", "academic_year_id", "class_id", name="uq_fee_structure_name"),
+        ],
+        # #137 staff logged in / out at the gate
+        "staff_gate_entries": [
+            *_school_cols(),
+            sa.Column("user_id", sa.BigInteger(), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+            sa.Column("direction", sa.String(3), nullable=False),
+            sa.Column("at", sa.DateTime(timezone=True), nullable=False),
+            sa.Column("vehicle_no", sa.String(20), nullable=True),
+            sa.Column("note", sa.String(300), nullable=True),
+            sa.Column("recorded_by_user_id", sa.BigInteger(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True),
+            sa.Index("ix_staff_gate_entries_school_at", "school_id", "at"),
         ],
     }
 

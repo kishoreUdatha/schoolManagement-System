@@ -22,11 +22,10 @@ export function SupplierManagement() {
   const s = search.trim().toLowerCase();
   const shown = (list.data ?? []).filter(
     (x) =>
-      (!s || [x.name, x.contact_person, x.phone, x.email, x.gstin].some((v) => v?.toLowerCase().includes(s))) &&
+      (!s || [x.name, x.contact_person, x.phone, x.email, x.gstin, x.category].some((v) => v?.toLowerCase().includes(s))) &&
       (status === "active" ? x.is_active : status === "inactive" ? !x.is_active : true),
   );
-  // Not wired: the mock's "Category" column — suppliers carry no category; GSTIN is shown instead.
-  const rows: Row[] = shown.map((x) => [x.name, x.contact_person ?? "—", x.phone ?? "—", x.email ?? "—", x.gstin ?? "—", x.is_active ? "Active" : "Inactive"]);
+  const rows: Row[] = shown.map((x) => [{ name: x.name, sub: x.gstin ? `GSTIN ${x.gstin}` : undefined }, x.category ?? "—", x.contact_person ?? "—", x.phone ?? "—", x.email ?? "—", x.is_active ? "Active" : "Inactive"]);
   const active = (list.data ?? []).filter((x) => x.is_active).length;
 
   return (
@@ -55,7 +54,7 @@ export function SupplierManagement() {
         flush
       >
         <DataTable
-          columns={["Supplier", "Contact", "Phone", "Email address", "GSTIN", "Status"]}
+          columns={["Supplier", "Category", "Contact", "Phone", "Email address", "Status"]}
           rows={rows}
           onView={(i) => setEditing(shown[i])}
           empty={list.loading ? "Loading suppliers…" : s || status ? "No suppliers match these filters." : "No suppliers yet. Add the first one."}
@@ -81,6 +80,7 @@ function SupplierDialog({ existing, onClose, onSaved }: { existing: Supplier | n
       email: orNull(f.get("email")),
       gstin: orNull(f.get("gstin"))?.toUpperCase() ?? null,
       address: orNull(f.get("address")),
+      category: orNull(f.get("category")),
       is_active: existing ? f.get("is_active") === "on" : true,
     };
     setSaving(true);
@@ -104,6 +104,18 @@ function SupplierDialog({ existing, onClose, onSaved }: { existing: Supplier | n
         <div className="form-grid">
           <Field label="Supplier name" required>
             <input name="name" required defaultValue={existing?.name} placeholder="Enter supplier name" />
+          </Field>
+          <Field label="Category">
+            <input name="category" maxLength={80} defaultValue={existing?.category ?? ""} list="supplier-categories" placeholder="e.g. Stationery, Lab equipment" />
+            <datalist id="supplier-categories">
+              <option value="Stationery" />
+              <option value="Lab equipment" />
+              <option value="IT & electronics" />
+              <option value="Furniture" />
+              <option value="Sports" />
+              <option value="Uniforms" />
+              <option value="Maintenance" />
+            </datalist>
           </Field>
           <Field label="Contact person">
             <input name="contact_person" defaultValue={existing?.contact_person ?? ""} />

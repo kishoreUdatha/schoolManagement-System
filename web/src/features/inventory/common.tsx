@@ -11,7 +11,7 @@ import { Icon } from "@/components/ui/Icon";
 
 export const INV = "/api/v1/school/inventory";
 
-export type Supplier = { id: number; name: string; contact_person: string | null; phone: string | null; email: string | null; gstin: string | null; address: string | null; is_active: boolean };
+export type Supplier = { id: number; name: string; contact_person: string | null; phone: string | null; email: string | null; gstin: string | null; address: string | null; category: string | null; is_active: boolean };
 
 export type Item = {
   id: number;
@@ -44,6 +44,7 @@ export type Move = {
   supplier_name: string | null;
   reference: string | null;
   issued_to: string | null;
+  location: string | null;
   notes: string | null;
   recorded_by_name: string | null;
   balance_after: string | null;
@@ -70,6 +71,8 @@ export type Asset = {
   warranty_active: boolean;
   maintenance_cost: string;
   notes: string | null;
+  open_issue?: string | null;
+  issue_reported_on?: string | null;
   events?: AssetEvent[];
 };
 

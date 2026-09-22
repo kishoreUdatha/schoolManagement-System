@@ -152,6 +152,11 @@ class Loan(Base, PrimaryKeyMixin, TimestampMixin):
         SAEnum(FineStatus, name="library_fine_status"), default=FineStatus.none, nullable=False
     )
     fine_note: Mapped[Optional[str]] = mapped_column(String(300))
+    # What was handed over at the desk when a fine was collected, and how.
+    fine_received: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 2))
+    fine_payment_method: Mapped[Optional[str]] = mapped_column(String(20))
+    # The librarian's note when the book went out ("spine loose", "for project").
+    issue_remarks: Mapped[Optional[str]] = mapped_column(String(300))
     student_fee_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("student_fees.id", ondelete="SET NULL")
     )
@@ -195,3 +200,7 @@ class Reservation(Base, PrimaryKeyMixin, TimestampMixin):
     )
     hold_until: Mapped[Optional[date]] = mapped_column(Date)
     closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    # The day the member asked (a request taken by phone yesterday is entered
+    # today), and how they want to hear that it is ready.
+    reserved_on: Mapped[Optional[date]] = mapped_column(Date)
+    notify_channel: Mapped[Optional[str]] = mapped_column(String(20))
