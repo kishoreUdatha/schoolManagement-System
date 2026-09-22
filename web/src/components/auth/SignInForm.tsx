@@ -58,7 +58,7 @@ export function SignInForm() {
       // as unknown, so say which workspace this was and how to change it.
       setError(
         (err as { status?: number }).status === 401 && !student
-          ? `Email or password not recognised for the ${ROLE_LABEL[role]} workspace. If you are not ${role === "school_admin" ? "a" : "the"} ${ROLE_LABEL[role]}, choose your workspace using "Change workspace" above.`
+          ? `Email or password not recognised for the ${ROLE_LABEL[role]} workspace. If you are not ${role === "school_admin" ? "a" : "the"} ${ROLE_LABEL[role]}, pick your workspace above and sign in again.`
           : errorText(err),
       );
     } finally {
@@ -133,6 +133,25 @@ export function SignInForm() {
     <form className="auth-form" onSubmit={submit}>
       <h1>Welcome back</h1>
       <p>{`Sign in to your ${ROLE_LABEL[role]} workspace.`}</p>
+      <label className="field">
+        <span>Workspace</span>
+        <select
+          value={role}
+          onChange={(e) => {
+            const q = new URLSearchParams(search.toString());
+            q.set("role", e.target.value);
+            q.delete("expired");
+            setError(null);
+            router.replace(`${routeOf(3)}?${q.toString()}`);
+          }}
+        >
+          {ROLES.map((r) => (
+            <option key={r} value={r}>
+              {ROLE_LABEL[r]}
+            </option>
+          ))}
+        </select>
+      </label>
       {student ? (
         <>
           <label className="field">
