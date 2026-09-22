@@ -5,8 +5,8 @@
 .tenant-switch{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border:1px solid var(--line);border-radius:11px;background:#fff;font:inherit;color:inherit;cursor:pointer;text-align:left;flex-shrink:0}
 .tenant-switch:hover{border-color:#bcd2f3}
 .tenant-switch .avatar{width:32px;height:32px}
-.tenant-name{font-size:12px;font-weight:800;line-height:1.3;white-space:nowrap}
-.tenant-name small{display:block;color:var(--muted);font-size:10px;font-weight:500}
+.tenant-name{font-size:12px;font-weight:800;line-height:1.3;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.tenant-name small{display:block;color:var(--muted);font-size:10px;font-weight:500;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:700px){.tenant-name{display:none}.tenant-switch{padding:4px 8px 4px 4px}}
 
 /* ------------------------------------------------------------------
@@ -122,3 +122,13 @@ option{background:#fff}
 .modal.modal-wide{max-width:760px}
 .modal .dialog-body{display:grid;gap:14px;max-height:65vh;overflow:auto;padding:2px}
 .modal .dialog-body .form-grid{gap:14px}
+
+/* Dashboard greeting: a slim strip, not a banner. The date, greeting, one
+   line of what needs attention and the button, without the illustration. */
+.hero{min-height:0;grid-template-columns:minmax(0,1fr);margin-bottom:18px}
+.hero .hero-art{display:none}
+.hero .hero-content{padding:16px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.hero .hero-content>*{margin:0}
+.hero .eyebrow{width:100%;font-size:11px;margin:0}
+.hero h2{font-size:20px;letter-spacing:-.4px}
+.hero p{margin:0;flex:1;min-width:220px}

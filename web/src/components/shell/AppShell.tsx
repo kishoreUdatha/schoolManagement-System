@@ -203,7 +203,9 @@ function initials(name: string) {
 function TenantSwitch({ role, school }: { role: string; school: Branding | null }) {
   const platform = role === "Super Admin";
   const name = platform ? "BrightCampus Platform" : (school?.name ?? "Bright International");
-  const sub = platform ? "All organizations" : school ? (school.address ?? `School code ${school.code ?? ""}`) : "Main Campus, Hyderabad";
+  // One short line under the name: the school code, not the full address
+  // (a long address squeezed the search box out of the top bar).
+  const sub = platform ? "All organizations" : school ? (school.code ? `School code ${school.code}` : "") : "Main Campus, Hyderabad";
   return (
     <button type="button" className="tenant-switch" aria-label="Switch school">
       <span className="avatar">{platform ? "BC" : initials(name)}</span>
@@ -266,7 +268,7 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
     }
   }, [hydrated, sess, router]);
 
-  const schoolName = school?.name ?? "Bright International";
+  const schoolName = sess?.user.role === "super_admin" ? "BrightCampus Platform" : (school?.name ?? "Bright International");
   const home = useHome();
   return (
     <div className="app">
