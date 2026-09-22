@@ -46,6 +46,7 @@ export function ExamSetup() {
   }, [existing.data, years.data, yearId, id]);
 
   const terms = useApi<Term[]>(yearId ? `/api/v1/school/academic-years/${yearId}/terms` : null);
+  const yearClasses = useApi<SchoolClass[]>(yearId ? "/api/v1/school/classes" : null, { academic_year_id: yearId });
 
   if (id && existing.loading && !existing.data) return <Loading what="Loading the exam…" />;
   const ex = existing.data;
@@ -56,9 +57,22 @@ export function ExamSetup() {
     const text = (k: string) => String(f.get(k) ?? "").trim() || null;
     const typeId = text("exam_type_id") ? Number(text("exam_type_id")) : null;
     const termId = text("term_id") ? Number(text("term_id")) : null;
-    const body = { name: text("name"), kind: text("kind"), start_date: text("start_date"), end_date: text("end_date"), term_id: termId };
+    const classIds = f.getAll("class_ids").map((v) => Number(v));
+    const body = {
+      name: text("name"),
+      kind: text("kind"),
+      start_date: text("start_date"),
+      end_date: text("end_date"),
+      term_id: termId,
+      class_ids: classIds.length ? classIds : null,
+      result_date: text("result_date"),
+    };
     if (body.start_date && body.end_date && body.end_date < body.start_date) {
       setError("The end date is before the start date.");
+      return;
+    }
+    if (body.result_date && body.end_date && body.result_date < body.end_date) {
+      setError("The result date is before the exam ends.");
       return;
     }
     setSaving(true);
@@ -170,7 +184,19 @@ export function ExamSetup() {
                   )}
                   {field("Start date", <input type="date" name="start_date" required defaultValue={ex?.start_date} />, true)}
                   {field("End date", <input type="date" name="end_date" required defaultValue={ex?.end_date} />, true)}
-                  {/* Not wired: Classes and Result date — an exam has no class list or result date; classes come from its papers, below. */}
+                  {field("Result date", <input type="date" name="result_date" defaultValue={ex?.result_date ?? ""} />)}
+                  <div className="field full">
+                    <span>Classes</span>
+                    <div className="row" style={{ flexWrap: "wrap", gap: 8 }} key={`${yearId}-${yearClasses.data?.length ?? 0}`}>
+                      {yearClasses.data?.map((c) => (
+                        <label className="check-item" key={c.id}>
+                          <input type="checkbox" name="class_ids" value={c.id} defaultChecked={ex?.class_ids.includes(c.id)} />
+                          <span>{c.name}</span>
+                        </label>
+                      ))}
+                      {yearClasses.data && !yearClasses.data.length ? <span className="muted small">No classes in this year.</span> : null}
+                    </div>
+                  </div>
                 </div>
               </section>
             </div>

@@ -25,6 +25,20 @@ from app.models.student import Student
 
 
 # Weighting for attendance %: late counts as full present, half_day as 0.5.
+def _session(r) -> Optional[str]:
+    """Which part of the day the child was in school, from the status and
+    any times on the row: a half day that ended early was the morning."""
+    if r.status == AttendanceStatus.absent:
+        return None
+    if r.status == AttendanceStatus.half_day:
+        if r.left_at and not r.arrived_at:
+            return "Morning"
+        if r.arrived_at and not r.left_at:
+            return "Afternoon"
+        return "Half day"
+    return "Full day"
+
+
 def _attendance_pct(present: int, late: int, half_day: int, absent: int) -> float:
     marked = present + late + half_day + absent
     if marked == 0:
@@ -331,7 +345,8 @@ def student_history(
         "percent": _attendance_pct(counts["present"], counts["late"], counts["half_day"], counts["absent"]),
         "months": sorted(months.values(), key=lambda m: m["month"], reverse=True),
         "days": [
-            {"date": r.date, "status": r.status, "remark": r.remark}
+            {"date": r.date, "status": r.status, "remark": r.remark,
+             "session": _session(r), "arrived_at": r.arrived_at, "left_at": r.left_at}
             for r in rows[:400]
         ],
     }

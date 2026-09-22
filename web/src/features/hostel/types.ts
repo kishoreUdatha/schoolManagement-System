@@ -6,6 +6,7 @@ export type Hostel = {
   kind: "boys" | "girls" | "mixed";
   warden_user_id: number | null;
   warden_name: string | null;
+  warden_phone?: string | null;
   address: string | null;
   monthly_fee: string;
   curfew: string | null;
@@ -21,6 +22,8 @@ export type Room = { id: number; room_no: string; floor: string | null; room_typ
 
 export type RollStatus = "present" | "absent" | "on_leave";
 
+export type RollDetail = { checked_in_at: string | null; is_late: boolean; remark: string | null };
+
 export type Resident = {
   allocation_id: number;
   student_id: number;
@@ -31,6 +34,7 @@ export type Resident = {
   bed_label: string;
   since: string;
   today: Partial<Record<"morning" | "night", RollStatus>>;
+  today_details: Partial<Record<"morning" | "night", RollDetail>>;
   out_now: boolean;
 };
 
@@ -72,7 +76,7 @@ export type Complaint = {
   created_at: string;
 };
 
-export type Duty = { duty_id: number; hostel_id: number; hostel_name: string; user_id: number; warden_name: string; shift: "day" | "night" | "weekend"; note: string | null };
+export type Duty = { duty_id: number; hostel_id: number; hostel_name: string; user_id: number; warden_name: string; warden_phone: string | null; shift: "day" | "night" | "weekend"; note: string | null };
 
 export type Rota = {
   from_date: string;

@@ -127,6 +127,7 @@ class ConcessionIn(BaseModel):
     valid_to: Optional[date] = None
     notes: Optional[str] = Field(None, max_length=1000)
     apply_to_pending: bool = False  # also reduce this student's unpaid fees already raised
+    for_approval: bool = False  # ask for it: saved as pending, applied only once approved
 
     @model_validator(mode="after")
     def _check(self):
@@ -153,6 +154,12 @@ class ConcessionRead(BaseModel):
     notes: Optional[str] = None
     is_active: bool
     applied_to_pending: int = 0
+    approval_status: str = "approved"
+    requested_by_name: Optional[str] = None
+
+
+class ConcessionDecision(BaseModel):
+    note: Optional[str] = Field(None, max_length=500)
 
 
 class CollectionRead(BaseModel):

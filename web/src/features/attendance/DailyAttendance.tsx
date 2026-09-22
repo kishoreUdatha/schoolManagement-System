@@ -17,7 +17,8 @@ const TONES = ["mint", "", "peach", "lilac"];
 /**
  * SCR-110, live: the class teacher's daily register.
  * GET /teacher/my-classes, GET /teacher/attendance?section_id&date,
- * POST /teacher/attendance/save. The day defaults to the school's day.
+ * POST /teacher/attendance/save (status, remark and check-in time per child).
+ * The day defaults to the school's day.
  */
 export function DailyAttendance() {
   const initialSection = useSearchParams().get("section_id");
@@ -63,7 +64,7 @@ export function DailyAttendance() {
       setError(v.is_locked ? "The office has locked this register." : v.is_holiday ? "No attendance is expected on a holiday." : `This day is outside the ${v.edit_window_days}-day edit window.`);
       return;
     }
-    const entries = rows.filter((r) => r.status).map((r) => ({ student_id: r.student_id, status: r.status, remark: r.remark?.trim() || null }));
+    const entries = rows.filter((r) => r.status).map((r) => ({ student_id: r.student_id, status: r.status, remark: r.remark?.trim() || null, arrived_at: r.arrived_at || null }));
     if (!entries.length) {
       setError("Mark at least one student before saving.");
       return;
@@ -162,7 +163,7 @@ export function DailyAttendance() {
                 <th>Student</th>
                 <th>Roll no.</th>
                 <th>Status</th>
-                {/* Not wired: Check-in time — the register has no arrival time for the teacher portal. */}
+                <th>Check-in</th>
                 <th>Remarks</th>
               </tr>
             </thead>
@@ -194,6 +195,17 @@ export function DailyAttendance() {
                         </option>
                       ))}
                     </select>
+                  </td>
+                  <td>
+                    <input
+                      type="time"
+                      className="marks-input"
+                      style={{ width: "110px", textAlign: "left" }}
+                      aria-label={`Check-in time for ${r.full_name}`}
+                      value={r.arrived_at ? r.arrived_at.slice(0, 5) : ""}
+                      disabled={!canEdit || r.status === "absent"}
+                      onChange={(e) => set(r.student_id, { arrived_at: e.target.value || null })}
+                    />
                   </td>
                   <td>
                     <input

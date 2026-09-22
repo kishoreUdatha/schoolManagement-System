@@ -8,6 +8,7 @@ from app.core.deps import SchoolAdminOrAccountant
 from app.core.enums import ChequeStatus, MoneyMode
 from app.database import get_db
 from app.schemas.accounts import (
+    ConcessionDecision,
     ConcessionUpdate,
     ExpenseUpdate,
     CashBook,
@@ -132,6 +133,20 @@ def update_concession(concession_id: int, payload: ConcessionUpdate, current_use
     return ConcessionRead.model_validate(
         svc.concession_to_read(db, svc.update_concession(db, concession_id, current_user, payload))
     )
+
+
+@router.post("/concessions/{concession_id}/approve", response_model=ConcessionRead,
+             summary="Approve a requested concession — it comes into force")
+def approve_concession(concession_id: int, payload: ConcessionDecision, current_user: Actor, db: Db):
+    c, applied = svc.decide_concession(db, concession_id, current_user, True, payload.note)
+    return ConcessionRead.model_validate(svc.concession_to_read(db, c, applied))
+
+
+@router.post("/concessions/{concession_id}/reject", response_model=ConcessionRead,
+             summary="Turn down a requested concession")
+def reject_concession(concession_id: int, payload: ConcessionDecision, current_user: Actor, db: Db):
+    c, _ = svc.decide_concession(db, concession_id, current_user, False, payload.note)
+    return ConcessionRead.model_validate(svc.concession_to_read(db, c))
 
 
 @router.post("/concessions/{concession_id}/end", response_model=ConcessionRead)

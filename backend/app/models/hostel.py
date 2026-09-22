@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Optional
 
@@ -15,6 +15,7 @@ from sqlalchemy import (
     SmallInteger,
     String,
     Text,
+    Time,
     UniqueConstraint,
     text,
 )
@@ -124,6 +125,10 @@ class HostelAttendance(Base, PrimaryKeyMixin, TimestampMixin):
     status: Mapped[HostelAttendanceStatus] = mapped_column(
         SAEnum(HostelAttendanceStatus, name="hostel_attendance_status"), nullable=False
     )
+    # When a present resident checked in, whether that was late, and a note.
+    checked_in_at: Mapped[Optional[time]] = mapped_column(Time)
+    is_late: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
+    remark: Mapped[Optional[str]] = mapped_column(String(300))
     marked_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )

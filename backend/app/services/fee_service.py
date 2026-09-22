@@ -194,6 +194,48 @@ def create_structure(
     return s
 
 
+def structure_names(db: Session, school_id: int, academic_year_id: Optional[int] = None) -> list[dict]:
+    from app.models.fee import FeeStructureName
+
+    stmt = select(FeeStructureName).where(FeeStructureName.school_id == school_id)
+    if academic_year_id:
+        stmt = stmt.where(FeeStructureName.academic_year_id == academic_year_id)
+    return [
+        {"academic_year_id": n.academic_year_id, "class_id": n.class_id, "name": n.name}
+        for n in db.execute(stmt).scalars()
+    ]
+
+
+def set_structure_name(db: Session, tenant_id: int, school_id: int, academic_year_id: int,
+                       class_id: int, name: Optional[str]) -> dict:
+    """Name (or, with an empty name, un-name) one class's structure for a year."""
+    from app.models.fee import FeeStructureName
+
+    year = db.get(AcademicYear, academic_year_id)
+    cls = db.get(SchoolClass, class_id)
+    if not year or year.school_id != school_id or not cls or cls.school_id != school_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class or academic year not found")
+    row = db.execute(select(FeeStructureName).where(
+        FeeStructureName.school_id == school_id,
+        FeeStructureName.academic_year_id == academic_year_id,
+        FeeStructureName.class_id == class_id,
+    )).scalar_one_or_none()
+    name = (name or "").strip()
+    if not name:
+        if row:
+            db.delete(row)
+            db.commit()
+        return {"academic_year_id": academic_year_id, "class_id": class_id, "name": None}
+    if row is None:
+        row = FeeStructureName(tenant_id=tenant_id, school_id=school_id,
+                               academic_year_id=academic_year_id, class_id=class_id, name=name)
+        db.add(row)
+    else:
+        row.name = name
+    db.commit()
+    return {"academic_year_id": academic_year_id, "class_id": class_id, "name": name}
+
+
 def list_structures(
     db: Session,
     school_id: int,

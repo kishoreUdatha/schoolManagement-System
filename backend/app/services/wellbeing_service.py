@@ -79,6 +79,10 @@ def medication_to_dict(db: Session, row: MedicationAdministration) -> dict:
         "dose": row.dose,
         "reason": row.reason,
         "given_by": _name(db, row.given_by_user_id),
+        "given_by_user_id": row.given_by_user_id,
+        "recorded_by": _name(db, row.recorded_by_user_id) if row.recorded_by_user_id else None,
+        "prescribed_by": row.prescribed_by,
+        "consent_reference": row.consent_reference,
         "parent_informed": row.parent_informed,
         "notes": row.notes,
         "corrects_id": row.corrects_id,
@@ -93,8 +97,14 @@ def give_medication(db: Session, school_id: int, tenant_id: int, user_id: int,
                     student_id: int, *, given_on: date, given_at: time,
                     medicine: str, dose: str, reason: Optional[str] = None,
                     parent_informed: bool = False,
-                    notes: Optional[str] = None) -> dict:
+                    notes: Optional[str] = None, prescribed_by: Optional[str] = None,
+                    consent_reference: Optional[str] = None,
+                    given_by_user_id: Optional[int] = None) -> dict:
     _child(db, student_id, school_id)
+    if given_by_user_id and given_by_user_id != user_id:
+        giver = db.get(User, given_by_user_id)
+        if not giver or giver.school_id != school_id:
+            raise _400("That member of staff is not at this school.")
     if not medicine.strip() or not dose.strip():
         raise _400("A dose record needs the medicine and the amount given.")
     if given_on > date.today():
@@ -103,8 +113,10 @@ def give_medication(db: Session, school_id: int, tenant_id: int, user_id: int,
     row = MedicationAdministration(
         tenant_id=tenant_id, school_id=school_id, student_id=student_id,
         given_on=given_on, given_at=given_at, medicine=medicine.strip(),
-        dose=dose.strip(), reason=reason, given_by_user_id=user_id,
-        parent_informed=parent_informed, notes=notes,
+        dose=dose.strip(), reason=reason, given_by_user_id=given_by_user_id or user_id,
+        recorded_by_user_id=user_id, parent_informed=parent_informed, notes=notes,
+        prescribed_by=(prescribed_by or "").strip() or None,
+        consent_reference=(consent_reference or "").strip() or None,
     )
     db.add(row)
     db.commit()
@@ -136,6 +148,8 @@ def correct_medication(db: Session, school_id: int, tenant_id: int, user_id: int
         given_on=given_on, given_at=given_at, medicine=medicine.strip(),
         dose=dose.strip(), reason=reason, given_by_user_id=user_id,
         parent_informed=original.parent_informed, notes=notes,
+        prescribed_by=original.prescribed_by, consent_reference=original.consent_reference,
+        recorded_by_user_id=user_id,
         corrects_id=original.id, correction_reason=correction_reason.strip(),
     )
     db.add(replacement)
@@ -424,6 +438,7 @@ def escalation_to_dict(row: EmergencyEscalation) -> dict:
         "relationship": row.relationship,
         "phone": row.phone,
         "notes": row.notes,
+        "availability": row.availability,
     }
 
 
@@ -452,7 +467,7 @@ def escalation_chain(db: Session, school_id: int, student_id: int) -> dict:
 
 def add_escalation(db: Session, school_id: int, tenant_id: int, student_id: int, *,
                    contact_name: str, relationship: str, phone: str,
-                   notes: Optional[str] = None) -> dict:
+                   notes: Optional[str] = None, availability: Optional[str] = None) -> dict:
     _child(db, student_id, school_id)
     if not contact_name.strip() or not phone.strip():
         raise _400("A contact needs a name and a number.")
@@ -464,6 +479,7 @@ def add_escalation(db: Session, school_id: int, tenant_id: int, student_id: int,
         tenant_id=tenant_id, school_id=school_id, student_id=student_id,
         sequence=highest + 1, contact_name=contact_name.strip(),
         relationship=relationship.strip(), phone=phone.strip(), notes=notes,
+        availability=(availability or "").strip() or None,
     )
     db.add(row)
     db.commit()
@@ -528,11 +544,16 @@ def missing_chains(db: Session, school_id: int) -> dict:
     students = list(db.execute(
         select(Student).where(Student.school_id == school_id, Student.is_active.is_(True))
     ).scalars())
-    counts = dict(db.execute(
-        select(EmergencyEscalation.student_id, func.count(EmergencyEscalation.id))
+    counts: dict[int, int] = {}
+    reachable: dict[int, list[str]] = {}
+    for sid, avail in db.execute(
+        select(EmergencyEscalation.student_id, EmergencyEscalation.availability)
         .where(EmergencyEscalation.school_id == school_id)
-        .group_by(EmergencyEscalation.student_id)
-    ).all())
+        .order_by(EmergencyEscalation.student_id, EmergencyEscalation.sequence)
+    ).all():
+        counts[sid] = counts.get(sid, 0) + 1
+        if avail:
+            reachable.setdefault(sid, []).append(avail)
     profiles = {
         p.student_id: p for p in db.execute(
             select(MedicalProfile).where(MedicalProfile.school_id == school_id)
@@ -550,7 +571,8 @@ def missing_chains(db: Session, school_id: int) -> dict:
             why = "only one number"
         else:
             continue
-        thin.append({**_student_label(db, s), "contacts": chain, "why": why})
+        thin.append({**_student_label(db, s), "contacts": chain, "why": why,
+                     "availability": "; ".join(reachable.get(s.id, [])) or None})
 
     return {
         "students": sorted(thin, key=lambda r: r["student_name"]),

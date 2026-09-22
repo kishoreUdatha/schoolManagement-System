@@ -41,7 +41,7 @@ export type AttendanceReport = {
   half_day: number;
   percent: number | null;
   months: { month: string; present: number; absent: number; late: number; half_day: number; percent: number | null }[];
-  days: { date: string; status: string; remark: string | null }[];
+  days: { date: string; status: string; remark: string | null; session: string | null; arrived_at: string | null; left_at: string | null }[];
 };
 
 export type Ledger = {

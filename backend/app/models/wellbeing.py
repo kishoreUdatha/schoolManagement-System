@@ -81,6 +81,14 @@ class MedicationAdministration(Base, _School, PrimaryKeyMixin, TimestampMixin):
     )
     parent_informed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    # Who prescribed it (a doctor, "parent's instruction"), the parent's
+    # written consent it was given under, and — when a nurse writes up a dose
+    # another member of staff gave — who typed the entry.
+    prescribed_by: Mapped[Optional[str]] = mapped_column(String(160))
+    consent_reference: Mapped[Optional[str]] = mapped_column(String(120))
+    recorded_by_user_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="SET NULL")
+    )
 
     # A correction is a new row, not an edit. Both stay readable.
     corrects_id: Mapped[Optional[int]] = mapped_column(
@@ -201,3 +209,5 @@ class EmergencyEscalation(Base, _School, PrimaryKeyMixin, TimestampMixin):
     relationship: Mapped[str] = mapped_column(String(60), nullable=False)
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
     notes: Mapped[Optional[str]] = mapped_column(String(300))
+    # When this person can be reached ("any time", "weekdays after 6 pm").
+    availability: Mapped[Optional[str]] = mapped_column(String(120))

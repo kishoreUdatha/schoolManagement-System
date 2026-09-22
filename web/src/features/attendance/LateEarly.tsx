@@ -52,17 +52,18 @@ export function LateEarly() {
     date(e.row.date),
     clock(e.time),
     [e.row.remark, e.row.times_in_window > 1 ? `${e.row.times_in_window} times in this window` : null].filter(Boolean).join(" · ") || "—",
+    { name: e.row.authorised_by ?? "—", sub: e.row.recorded_by_name ? `Logged by ${e.row.recorded_by_name}` : undefined },
   ]);
 
   // Recording
   const [open, setOpen] = useState(false);
   const [student, setStudent] = useState<StudentHit | null>(null);
-  const [f, setF] = useState({ date: "", arrived_at: "", left_at: "", remark: "" });
+  const [f, setF] = useState({ date: "", arrived_at: "", left_at: "", remark: "", authorised_by: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   usePageAction(EV.recordTime, () => {
     setStudent(null);
-    setF({ date: today ?? "", arrived_at: "", left_at: "", remark: "" });
+    setF({ date: today ?? "", arrived_at: "", left_at: "", remark: "", authorised_by: "" });
     setError(null);
     setOpen(true);
   });
@@ -78,6 +79,7 @@ export function LateEarly() {
         arrived_at: f.arrived_at || null,
         left_at: f.left_at || null,
         remark: f.remark.trim() || null,
+        authorised_by: f.authorised_by.trim() || null,
       });
       notify("Recorded on that day's register entry.");
       setOpen(false);
@@ -91,7 +93,7 @@ export function LateEarly() {
 
   usePageAction(EV.exportTimes, () => {
     const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const csv = [["Student", "Admission no.", "Class", "Type", "Date", "Time", "Remark", "Times in window"], ...shown.map((e) => [e.row.student_name, e.row.admission_no, e.row.section_label ?? "", e.kind, e.row.date, e.time.slice(0, 5), e.row.remark ?? "", String(e.row.times_in_window)])]
+    const csv = [["Student", "Admission no.", "Class", "Type", "Date", "Time", "Remark", "Authorised by", "Times in window"], ...shown.map((e) => [e.row.student_name, e.row.admission_no, e.row.section_label ?? "", e.kind, e.row.date, e.time.slice(0, 5), e.row.remark ?? "", e.row.authorised_by ?? "", String(e.row.times_in_window)])]
       .map((r) => r.map(esc).join(","))
       .join("\n");
     const a = document.createElement("a");
@@ -124,9 +126,8 @@ export function LateEarly() {
       </div>
       <ErrorNote>{win.error ?? (!open ? error : null)}</ErrorNote>
       <Panel title="All records" sub={from && to ? `${date(from)} – ${date(to)} · ${win.data?.count ?? "…"} register entries${win.loading ? " · Loading…" : ""}` : "Loading…"} flush>
-        {/* Not wired: "Authorised by" — the API records no authoriser for a late entry or early exit. */}
         <DataTable
-          columns={["Student", "Class", "Type", "Date", "Time", "Reason"]}
+          columns={["Student", "Class", "Type", "Date", "Time", "Reason", "Authorised by"]}
           rows={rows}
           selectable={false}
           rowAction={false}
@@ -172,6 +173,10 @@ export function LateEarly() {
         <label className="field full">
           <span>Reason</span>
           <input value={f.remark} maxLength={300} onChange={(e) => setF({ ...f, remark: e.target.value })} placeholder="e.g. Doctor's appointment" />
+        </label>
+        <label className="field full">
+          <span>Authorised by</span>
+          <input value={f.authorised_by} maxLength={120} onChange={(e) => setF({ ...f, authorised_by: e.target.value })} placeholder="e.g. Principal, or the parent's note" />
         </label>
       </Modal>
     </>

@@ -310,34 +310,75 @@ def list_cheques(db: Session, school_id: int, *, status_: Optional[ChequeStatus]
 # --- Concessions ---
 
 def add_concession(db: Session, user: User, data: ConcessionIn) -> tuple[Concession, int]:
+    """Give a concession now, or (for_approval) ask for one: a request is kept
+    as pending and changes no fee until someone approves it."""
     student = get_school_student(db, data.student_id, user.school_id)
     _scoped(db, FeeHead, data.fee_head_id, user.school_id, "Fee head")
+    fields = data.model_dump(exclude={"apply_to_pending", "for_approval"})
+    if data.for_approval:
+        c = Concession(tenant_id=user.tenant_id, school_id=user.school_id, requested_by_user_id=user.id,
+                       is_active=False, approval_status="pending",
+                       apply_to_pending_on_approval=data.apply_to_pending, **fields)
+        db.add(c)
+        db.commit()
+        db.refresh(c)
+        return c, 0
     c = Concession(tenant_id=user.tenant_id, school_id=user.school_id, approved_by_user_id=user.id,
-                   is_active=True, **data.model_dump(exclude={"apply_to_pending"}))
+                   requested_by_user_id=user.id, is_active=True, approval_status="approved", **fields)
     db.add(c)
     db.flush()
+    applied = _apply_to_pending(db, c, student.id) if data.apply_to_pending else 0
+    db.commit()
+    db.refresh(c)
+    return c, applied
+
+
+def _apply_to_pending(db: Session, c: Concession, student_id: int) -> int:
+    """Reduce this student's untouched unpaid fees in the concession's period."""
     applied = 0
-    if data.apply_to_pending:
-        # Only untouched fees (nothing paid yet, no concession already noted).
-        stmt = select(StudentFee).where(
-            StudentFee.student_id == student.id, StudentFee.status == FeeStatus.pending,
-            StudentFee.amount_paid == 0, StudentFee.fee_structure_id.is_not(None),
-            StudentFee.due_date >= data.valid_from,
-        )
-        if data.fee_head_id:
-            stmt = stmt.where(StudentFee.fee_head_id == data.fee_head_id)
-        if data.valid_to:
-            stmt = stmt.where(StudentFee.due_date <= data.valid_to)
-        for sf in db.execute(stmt).scalars():
-            if sf.notes and sf.notes.startswith("Concession"):
-                continue
-            amount, note = ledger_service.discounted(db, student.id, sf.fee_head_id, sf.amount_due, sf.due_date)
-            if note and amount < sf.amount_due:
-                sf.amount_due = amount
-                sf.notes = note
-                if amount == 0:
-                    sf.status = FeeStatus.waived
-                applied += 1
+    # Only untouched fees (nothing paid yet, no concession already noted).
+    stmt = select(StudentFee).where(
+        StudentFee.student_id == student_id, StudentFee.status == FeeStatus.pending,
+        StudentFee.amount_paid == 0, StudentFee.fee_structure_id.is_not(None),
+        StudentFee.due_date >= c.valid_from,
+    )
+    if c.fee_head_id:
+        stmt = stmt.where(StudentFee.fee_head_id == c.fee_head_id)
+    if c.valid_to:
+        stmt = stmt.where(StudentFee.due_date <= c.valid_to)
+    for sf in db.execute(stmt).scalars():
+        if sf.notes and sf.notes.startswith("Concession"):
+            continue
+        amount, note = ledger_service.discounted(db, student_id, sf.fee_head_id, sf.amount_due, sf.due_date)
+        if note and amount < sf.amount_due:
+            sf.amount_due = amount
+            sf.notes = note
+            if amount == 0:
+                sf.status = FeeStatus.waived
+            applied += 1
+    return applied
+
+
+def decide_concession(db: Session, concession_id: int, user: User, approve: bool,
+                      note: Optional[str] = None) -> tuple[Concession, int]:
+    """Approve (it comes into force, and reduces unpaid fees if the request
+    asked for that) or reject a pending concession request."""
+    c = _scoped(db, Concession, concession_id, user.school_id, "Concession")
+    if c.approval_status != "pending":
+        raise _400("This concession is not waiting for approval")
+    c.approved_by_user_id = user.id
+    if note:
+        c.notes = f"{c.notes} · {note}" if c.notes else note
+    applied = 0
+    if approve:
+        c.approval_status = "approved"
+        c.is_active = True
+        db.flush()
+        if c.apply_to_pending_on_approval:
+            applied = _apply_to_pending(db, c, c.student_id)
+    else:
+        c.approval_status = "rejected"
+        c.is_active = False
     db.commit()
     db.refresh(c)
     return c, applied
@@ -348,7 +389,7 @@ def update_concession(db: Session, concession_id: int, user: User, data: Concess
     covers, or why it was given. Ending it is a separate action, because that
     is a decision rather than a correction."""
     c = _scoped(db, Concession, concession_id, user.school_id, "Concession")
-    if not c.is_active:
+    if not c.is_active and c.approval_status != "pending":
         raise _400("This concession has ended — add a new one instead")
     fields = data.model_dump(exclude_unset=True)
     if fields.get("kind") == ConcessionKind.percent and Decimal(str(fields.get("value", c.value))) > 100:
@@ -366,6 +407,8 @@ def update_concession(db: Session, concession_id: int, user: User, data: Concess
 
 def end_concession(db: Session, concession_id: int, user: User) -> Concession:
     c = _scoped(db, Concession, concession_id, user.school_id, "Concession")
+    if c.approval_status != "approved":
+        raise _400("Only a concession in force can be ended — approve or reject a request")
     c.is_active = False
     if not c.valid_to or c.valid_to > date.today():
         c.valid_to = date.today()
@@ -384,6 +427,8 @@ def concession_to_read(db: Session, c: Concession, applied: int = 0) -> dict:
         "fee_head_name": head.name if head else "All fees",
         "approved_by_name": _name(db, c.approved_by_user_id),
         "applied_to_pending": applied,
+        "approval_status": c.approval_status,
+        "requested_by_name": _name(db, c.requested_by_user_id),
     }
 
 

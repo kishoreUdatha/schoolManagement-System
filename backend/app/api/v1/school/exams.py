@@ -102,6 +102,15 @@ def marks_window(
     return ExamRead.model_validate(exam_service._exam_to_read_dict(db, e))
 
 
+@router.get("/papers/{paper_id}/marks", summary="One paper's marks, student by student, for checking")
+def paper_marks(
+    paper_id: int,
+    current_user: SchoolAdminOrPrincipal,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return exam_service.paper_marks(db, paper_id, current_user.school_id)
+
+
 @router.post("/papers/{paper_id}/verify", response_model=ExamPaperRead,
              summary="Sign off a paper's marks (not the person who entered them)")
 def verify_paper(

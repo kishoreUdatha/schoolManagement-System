@@ -46,6 +46,9 @@ export type Exam = {
   marks_open: boolean;
   marks_closed_at: string | null;
   revision_no: number;
+  class_ids: number[];
+  class_names: string[];
+  result_date: string | null;
   created_at: string;
   papers: Paper[];
   papers_count: number;

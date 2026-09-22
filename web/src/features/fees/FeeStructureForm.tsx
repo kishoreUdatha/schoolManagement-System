@@ -21,6 +21,7 @@ const EMPTY: Draft = { id: null, fee_head_id: "", amount: "", due_day_of_month: 
  * SCR-156, live. A class's fee structure is one line per fee head for the
  * year: POST /school/fees/structures adds a head, PATCH changes its amount
  * or due day, DELETE removes it. Opens on ?year=&class= from SCR-155.
+ * The structure's name is PUT /school/fees/structure-names (saved on leaving the field).
  */
 export function FeeStructureForm() {
   const params = useSearchParams();
@@ -38,6 +39,22 @@ export function FeeStructureForm() {
 
   const classes = useApi<SchoolClass[]>(yearId ? "/api/v1/school/classes" : null, { academic_year_id: yearId });
   const lines = useApi<FeeStructure[]>(yearId && classId ? "/api/v1/school/fees/structures" : null, { academic_year_id: yearId, class_id: classId });
+  const names = useApi<{ academic_year_id: number; class_id: number; name: string }[]>(yearId ? "/api/v1/school/fees/structure-names" : null, { academic_year_id: yearId });
+  const savedName = names.data?.find((n) => n.class_id === classId)?.name ?? "";
+  const [name, setName] = useState("");
+  useEffect(() => setName(savedName), [savedName, classId]);
+
+  async function saveName() {
+    if (!yearId || !classId || name.trim() === savedName) return;
+    setError(null);
+    try {
+      await api.put("/api/v1/school/fees/structure-names", { academic_year_id: yearId, class_id: classId, name: name.trim() || null });
+      notify(name.trim() ? "Structure name saved." : "Structure name cleared.");
+      names.reload();
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }
 
   const used = useMemo(() => new Set((lines.data ?? []).map((l) => l.fee_head_id)), [lines.data]);
   const available = (heads.data ?? []).filter((h) => !used.has(h.id) || h.id === Number(draft.fee_head_id));
@@ -96,7 +113,22 @@ export function FeeStructureForm() {
         <div className="panel-body">
           <ErrorNote>{error ?? years.error ?? heads.error ?? lines.error}</ErrorNote>
           <div className="form-grid">
-            {/* Not wired: "Structure name" — the API keeps no name; a structure is its class, year and heads. */}
+            <Field label="Structure name">
+              <input
+                value={name}
+                maxLength={160}
+                disabled={!classId}
+                placeholder={classId ? "e.g. Day scholar 2026-27" : "Choose the class first"}
+                onChange={(e) => setName(e.target.value)}
+                onBlur={saveName}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    saveName();
+                  }
+                }}
+              />
+            </Field>
             <Field label="Academic year" required>
               <select
                 value={yearId ?? ""}

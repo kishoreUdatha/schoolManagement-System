@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Optional
 
@@ -28,6 +28,7 @@ class HostelIn(BaseModel):
 class HostelRead(HostelIn):
     id: int
     warden_name: Optional[str] = None
+    warden_phone: Optional[str] = None
     rooms: int
     beds: int
     occupied: int
@@ -86,12 +87,17 @@ class Resident(BaseModel):
     bed_label: str
     since: date
     today: dict = {}  # {"morning": status, "night": status}
+    # {"morning": {"checked_in_at", "is_late", "remark"}, ...}
+    today_details: dict = {}
     out_now: bool = False
 
 
 class RollCallMark(BaseModel):
     student_id: int
     status: HostelAttendanceStatus
+    checked_in_at: Optional[time] = None
+    is_late: bool = False  # only meaningful when present
+    remark: Optional[str] = Field(None, max_length=300)
 
 
 class RollCallIn(BaseModel):

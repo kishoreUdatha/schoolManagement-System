@@ -52,7 +52,7 @@ def meetings(current_user: ParentUser, db: Db):
 
 @router.post("/ptm/book", response_model=list[ParentPtm])
 def book(payload: BookIn, current_user: ParentUser, db: Db):
-    svc.book_slot(db, current_user.id, payload.slot_id, payload.student_id, payload.note)
+    svc.book_slot(db, current_user.id, payload.slot_id, payload.student_id, payload.note, payload.meeting_mode)
     return svc.parent_sessions(db, current_user.id)
 
 

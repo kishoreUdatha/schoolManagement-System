@@ -171,6 +171,8 @@ export type Concession = {
   notes: string | null;
   is_active: boolean;
   applied_to_pending: number;
+  approval_status: "approved" | "pending" | "rejected";
+  requested_by_name: string | null;
 };
 
 export type LateFeeRule = {

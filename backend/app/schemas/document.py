@@ -106,6 +106,7 @@ class CertificateIssueCreate(BaseModel):
     template_id: int
     student_id: int
     purpose: Optional[str] = Field(None, max_length=300)
+    signatory: Optional[str] = Field(None, max_length=120)
     fields: dict[str, Any] = {}
     tc: Optional[TCFields] = None  # required when the template kind is 'transfer'
 
@@ -118,6 +119,7 @@ class CertificateRequestCreate(BaseModel):
 class CertificateDecision(BaseModel):
     approve: bool
     remarks: Optional[str] = Field(None, max_length=500)
+    signatory: Optional[str] = Field(None, max_length=120)
     fields: dict[str, Any] = {}
     tc: Optional[TCFields] = None
 
@@ -145,6 +147,7 @@ class CertificateRead(BaseModel):
     issued_by_name: Optional[str] = None
     requested_by_name: Optional[str] = None
     remarks: Optional[str] = None
+    signatory: Optional[str] = None
     print_count: int
     created_at: datetime
 

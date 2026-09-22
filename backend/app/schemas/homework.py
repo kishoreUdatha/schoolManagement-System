@@ -17,6 +17,7 @@ class HomeworkBase(BaseModel):
 class HomeworkCreate(HomeworkBase):
     class_subject_id: int
     rubric_id: Optional[int] = None
+    publish_on: Optional[date] = None
     notify_parents: bool = Field(
         default=False,
         description="If true, also post a Notice to parents of the section(s) for this class",
@@ -29,6 +30,7 @@ class HomeworkUpdate(BaseModel):
     attachment_url: Optional[str] = Field(None, max_length=500)
     due_date: Optional[date] = None
     rubric_id: Optional[int] = None
+    publish_on: Optional[date] = None
 
 
 class CloseIn(BaseModel):
@@ -57,6 +59,8 @@ class HomeworkRead(BaseModel):
     is_closed: bool = False
     closed_at: Optional[datetime] = None
     closed_by_name: Optional[str] = None
+    publish_on: Optional[date] = None
+    is_scheduled: bool = False  # not yet visible to children and parents
 
 
 # --- Story 9.3 — Submissions ---

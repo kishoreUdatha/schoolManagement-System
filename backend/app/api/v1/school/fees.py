@@ -2,6 +2,7 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.deps import FeeHeadReader, SchoolAdminOrAccountant
@@ -132,6 +133,32 @@ def list_structures(
     return [
         FeeStructureRead.model_validate(_structure_to_read(s, h)) for s, h in items
     ]
+
+
+class StructureNameIn(BaseModel):
+    academic_year_id: int
+    class_id: int
+    name: Optional[str] = Field(None, max_length=160)
+
+
+@router.get("/structure-names", summary="Names given to class fee structures")
+def structure_names(
+    current_user: SchoolAdminOrAccountant,
+    db: Annotated[Session, Depends(get_db)],
+    academic_year_id: Optional[int] = Query(None),
+):
+    return fee_service.structure_names(db, current_user.school_id, academic_year_id)
+
+
+@router.put("/structure-names", summary="Name one class's fee structure for a year (empty name clears it)")
+def set_structure_name(
+    payload: StructureNameIn,
+    current_user: SchoolAdminOrAccountant,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return fee_service.set_structure_name(
+        db, current_user.tenant_id, current_user.school_id, payload.academic_year_id, payload.class_id, payload.name
+    )
 
 
 @router.patch("/structures/{structure_id}", response_model=FeeStructureRead)

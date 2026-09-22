@@ -76,6 +76,10 @@ class DoseIn(BaseModel):
     reason: Optional[str] = Field(None, max_length=300)
     parent_informed: bool = False
     notes: Optional[str] = Field(None, max_length=4000)
+    prescribed_by: Optional[str] = Field(None, max_length=160)
+    consent_reference: Optional[str] = Field(None, max_length=120)
+    # the member of staff who gave the dose; left out = whoever is signed in
+    given_by_user_id: Optional[int] = None
 
 
 class DoseCorrectionIn(BaseModel):
@@ -123,6 +127,7 @@ class EscalationIn(BaseModel):
     relationship: str = Field(..., min_length=1, max_length=60)
     phone: str = Field(..., min_length=4, max_length=20)
     notes: Optional[str] = Field(None, max_length=300)
+    availability: Optional[str] = Field(None, max_length=120)
 
 
 class ReorderIn(BaseModel):
@@ -165,6 +170,8 @@ def give_medication(payload: DoseIn, current_user: Health, db: Db):
         payload.student_id, given_on=payload.given_on, given_at=payload.given_at,
         medicine=payload.medicine, dose=payload.dose, reason=payload.reason,
         parent_informed=payload.parent_informed, notes=payload.notes,
+        prescribed_by=payload.prescribed_by, consent_reference=payload.consent_reference,
+        given_by_user_id=payload.given_by_user_id,
     )
 
 
@@ -275,7 +282,7 @@ def add_contact(student_id: int, payload: EscalationIn, current_user: Health, db
     return svc.add_escalation(
         db, current_user.school_id, current_user.tenant_id, student_id,
         contact_name=payload.contact_name, relationship=payload.relationship,
-        phone=payload.phone, notes=payload.notes,
+        phone=payload.phone, notes=payload.notes, availability=payload.availability,
     )
 
 

@@ -167,6 +167,9 @@ class CounsellingSession(Base, PrimaryKeyMixin, TimestampMixin, _School):
     minutes: Mapped[Optional[int]] = mapped_column(Integer)
     attendees: Mapped[Optional[str]] = mapped_column(String(300))
     notes: Mapped[str] = mapped_column(Text, nullable=False)
+    # What was agreed to support the child until next time — kept apart from
+    # the observation so it can be read (and followed) on its own.
+    support_plan: Mapped[Optional[str]] = mapped_column(Text)
     next_session_on: Mapped[Optional[date]] = mapped_column(Date)
     recorded_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")

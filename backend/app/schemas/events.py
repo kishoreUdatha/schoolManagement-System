@@ -1,6 +1,6 @@
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -28,6 +28,8 @@ class EventIn(_AudienceIn):
     requires_consent: bool = False
     consent_deadline: Optional[date] = None
     fee_amount: Optional[Decimal] = Field(None, ge=0, le=10_000_000)
+    coordinator: Optional[str] = Field(None, max_length=160)
+    capacity: Optional[int] = Field(None, ge=1, le=100_000)
 
     @model_validator(mode="after")
     def _check(self):
@@ -66,6 +68,8 @@ class EventRead(BaseModel):
     requires_consent: bool
     consent_deadline: Optional[date]
     fee_amount: Optional[Decimal]
+    coordinator: Optional[str] = None
+    capacity: Optional[int] = None
     is_published: bool
     published_at: Optional[datetime]
     is_cancelled: bool
@@ -168,6 +172,7 @@ class SlotRead(BaseModel):
     class_label: Optional[str] = None
     parent_name: Optional[str] = None
     parent_note: Optional[str] = None
+    meeting_mode: Optional[str] = None
     teacher_notes: Optional[str] = None
 
 
@@ -185,6 +190,7 @@ class BookIn(BaseModel):
     slot_id: int
     student_id: int
     note: Optional[str] = Field(None, max_length=300)
+    meeting_mode: Literal["in_person", "video", "phone"] = "in_person"
 
 
 class SlotOutcomeIn(BaseModel):
@@ -200,6 +206,7 @@ class ParentSlot(BaseModel):
     state: str
     student_id: Optional[int] = None
     status: Optional[PtmSlotStatus] = None
+    meeting_mode: Optional[str] = None
     teacher_notes: Optional[str] = None
 
 

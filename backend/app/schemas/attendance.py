@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -10,6 +10,8 @@ class AttendanceEntry(BaseModel):
     student_id: int
     status: AttendanceStatus
     remark: Optional[str] = Field(None, max_length=300)
+    # Check-in time. Left out = keep what is stored; null = clear it.
+    arrived_at: Optional[time] = None
 
 
 class AttendanceSaveRequest(BaseModel):
@@ -29,6 +31,8 @@ class AttendanceRow(BaseModel):
     photo_url: Optional[str] = None
     status: Optional[AttendanceStatus] = None  # None = not yet marked
     remark: Optional[str] = None
+    arrived_at: Optional[time] = None
+    left_at: Optional[time] = None
     # e.g. "Sick leave" when the parent's leave request was approved for this date
     on_leave: Optional[str] = None
     marked_by_user_id: Optional[int] = None

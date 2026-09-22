@@ -16,6 +16,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, addDays, formText, time12, today, useDebounced, type PickedStudent } from "@/features/transport/kit";
+import type { StaffOption } from "./types";
 import type { Alert, Appointment, Dose, Due, FirstAid, HealthDashboard, HealthRecord, ProfileRow, Visit, VisitOutcome } from "./types";
 
 export const HEALTH = "/api/v1/school/health";
@@ -671,6 +672,8 @@ export function MedicationFirstAid() {
   const [student, setStudent] = useState<PickedStudent | null>(null);
   const doses = useApi<Dose[]>(`${WELL}/medication`, { from, to: today() });
   const aid = useApi<FirstAid[]>(`${WELL}/first-aid`, { from, to: today() });
+  const staff = useApi<StaffOption[]>("/api/v1/school/directory/staff");
+  const me = useSession();
   const [correcting, setCorrecting] = useState<Dose | null>(null);
   const [addingAid, setAddingAid] = useState(false);
   const [aidStudent, setAidStudent] = useState<PickedStudent | null>(null);
@@ -703,7 +706,7 @@ export function MedicationFirstAid() {
     }
     const f = new FormData(e.currentTarget);
     const ok = await run(
-      () => api.post(`${WELL}/medication`, { student_id: student.id, given_on: formText(f, "given_on"), given_at: formText(f, "given_at"), medicine: formText(f, "medicine"), dose: formText(f, "dose"), reason: formText(f, "reason"), parent_informed: f.get("parent_informed") === "on", notes: formText(f, "notes") }),
+      () => api.post(`${WELL}/medication`, { student_id: student.id, given_on: formText(f, "given_on"), given_at: formText(f, "given_at"), medicine: formText(f, "medicine"), dose: formText(f, "dose"), reason: formText(f, "reason"), parent_informed: f.get("parent_informed") === "on", notes: formText(f, "notes"), prescribed_by: formText(f, "prescribed_by"), consent_reference: formText(f, "consent_reference"), given_by_user_id: formText(f, "given_by_user_id") ? Number(formText(f, "given_by_user_id")) : null }),
       "Dose recorded.",
     );
     if (ok) {
@@ -788,6 +791,24 @@ export function MedicationFirstAid() {
                   <Field label="Reason">
                     <input name="reason" placeholder="e.g. As prescribed, after lunch" />
                   </Field>
+                  <Field label="Prescribed by">
+                    <input name="prescribed_by" maxLength={160} placeholder="e.g. Dr. Rao, or parent's instruction" />
+                  </Field>
+                  <Field label="Staff member">
+                    <select name="given_by_user_id" defaultValue="">
+                      <option value="">{me?.user ? `Me (${me.user.full_name})` : "Me"}</option>
+                      {(staff.data ?? [])
+                        .filter((s) => s.user_id !== me?.user.id)
+                        .map((s) => (
+                          <option key={s.user_id} value={s.user_id}>
+                            {s.full_name}
+                          </option>
+                        ))}
+                    </select>
+                  </Field>
+                  <Field label="Consent reference">
+                    <input name="consent_reference" maxLength={120} placeholder="e.g. consent form no. / date" />
+                  </Field>
                   <Field label="Notes" full>
                     <input name="notes" />
                   </Field>
@@ -799,7 +820,6 @@ export function MedicationFirstAid() {
                     </span>
                   </label>
                 </div>
-                {/* Not wired: prescribed by, staff member and consent reference — the API records the signed-in user as the giver and has no prescription or consent fields. */}
               </section>
             </div>
           </div>
@@ -834,7 +854,7 @@ export function MedicationFirstAid() {
       <Panel title="Medication log" sub={`${date(from)} – ${date(today())}`} flush>
         <DataTable
           columns={["Student", "Medication", "Dosage", "Given", "Given by", "Status"]}
-          rows={list.map((d) => [{ name: d.student_name ?? `Student #${d.student_id}`, sub: d.section_label ?? undefined }, d.medicine, d.dose, `${date(d.given_on)} ${time12(d.given_at)}`, d.given_by ?? "—", d.is_superseded ? "Superseded" : d.corrects_id ? "Correction" : "Recorded"])}
+          rows={list.map((d) => [{ name: d.student_name ?? `Student #${d.student_id}`, sub: d.section_label ?? undefined }, d.medicine, d.dose, `${date(d.given_on)} ${time12(d.given_at)}`, { name: d.given_by ?? "—", sub: [d.prescribed_by ? `Rx: ${d.prescribed_by}` : null, d.consent_reference ? `Consent: ${d.consent_reference}` : null].filter(Boolean).join(" · ") || undefined }, d.is_superseded ? "Superseded" : d.corrects_id ? "Correction" : "Recorded"])}
           selectable={false}
           onView={(i) => (list[i].is_superseded ? notify(`Superseded${list[i].correction_reason ? `: ${list[i].correction_reason}` : ""}.`) : setCorrecting(list[i]))}
           empty={doses.loading ? "Loading…" : doses.error ?? "No medication given in this period."}

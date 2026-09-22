@@ -12,7 +12,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
-import { type ParentPtm, type PtmDetail, type PtmSession, type PtmSlot, SLOT_STATUS, type TeacherPtm, hhmm, useRole } from "./shared";
+import { MEETING_MODE, type MeetingMode, type ParentPtm, type PtmDetail, type PtmSession, type PtmSlot, SLOT_STATUS, type TeacherPtm, hhmm, useRole } from "./shared";
 
 type Child = { id: number; full_name: string; section_label?: string | null };
 
@@ -90,11 +90,13 @@ function ParentBooking() {
     e.preventDefault();
     if (!m || !m.booking_open) return setError("Booking is closed for this meeting.");
     if (!slotId || child === undefined) return setError("Choose a free time first.");
-    const note = String(new FormData(e.currentTarget).get("note") ?? "").trim();
+    const form = new FormData(e.currentTarget);
+    const note = String(form.get("note") ?? "").trim();
+    const meeting_mode = String(form.get("meeting_mode") ?? "in_person");
     setSaving(true);
     setError(null);
     try {
-      const r = await api.post<ParentPtm[]>("/api/v1/parent/me/ptm/book", { slot_id: slotId, student_id: child, note: note || null });
+      const r = await api.post<ParentPtm[]>("/api/v1/parent/me/ptm/book", { slot_id: slotId, student_id: child, note: note || null, meeting_mode });
       setItems(r);
       setSlotId(null);
       notify("Booked. The teacher can see your booking.");
@@ -163,7 +165,16 @@ function ParentBooking() {
                 </select>,
                 true,
               )}
-              {/* Not wired: meeting mode — the PTM API has no mode; meetings are in person at the venue. */}
+              {field(
+                "Meeting mode",
+                <select name="meeting_mode" defaultValue="in_person">
+                  {(Object.keys(MEETING_MODE) as MeetingMode[]).map((k) => (
+                    <option key={k} value={k}>
+                      {MEETING_MODE[k]}
+                    </option>
+                  ))}
+                </select>,
+              )}
             </div>
             <div className="gap" />
             <h3>{m ? `Available times · ${date(m.meeting_date)}` : "Available times"}</h3>
@@ -221,7 +232,7 @@ function ParentBooking() {
                 </span>
                 <div>
                   <h4>{`${teacher.teacher_name} · ${hhmm(slot.start_time)}`}</h4>
-                  <p>{`${nameOf(slot.student_id)} · ${date(meeting.meeting_date)}${slot.teacher_notes ? ` · Notes: ${slot.teacher_notes}` : ""}`}</p>
+                  <p>{`${nameOf(slot.student_id)} · ${date(meeting.meeting_date)}${slot.meeting_mode ? ` · ${MEETING_MODE[slot.meeting_mode]}` : ""}${slot.teacher_notes ? ` · Notes: ${slot.teacher_notes}` : ""}`}</p>
                 </div>
                 {slot.status === "booked" && meeting.booking_open ? (
                   <button type="button" className="btn" onClick={() => cancel(slot)}>
@@ -270,6 +281,7 @@ function SlotFacts({ slot }: { slot: PtmSlot | undefined }) {
     ["Parent", slot.parent_name ?? "—"],
     ["Time", `${hhmm(slot.start_time)}–${hhmm(slot.end_time)}`],
     ["Status", SLOT_STATUS[slot.status]],
+    ["Meeting mode", slot.meeting_mode ? MEETING_MODE[slot.meeting_mode] : "—"],
     ["Parent’s note", slot.parent_note ?? "—"],
   ]);
 }

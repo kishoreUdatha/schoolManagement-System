@@ -136,6 +136,7 @@ class SessionIn(BaseModel):
     minutes: Optional[int] = Field(None, ge=1, le=600)
     attendees: Optional[str] = Field(None, max_length=300)
     notes: str = Field(..., min_length=3, max_length=10000)
+    support_plan: Optional[str] = Field(None, max_length=10000)
     next_session_on: Optional[date] = None
 
 
@@ -145,6 +146,7 @@ class SessionRead(BaseModel):
     minutes: Optional[int]
     attendees: Optional[str]
     notes: str
+    support_plan: Optional[str] = None
     next_session_on: Optional[date]
     recorded_by_name: Optional[str]
 

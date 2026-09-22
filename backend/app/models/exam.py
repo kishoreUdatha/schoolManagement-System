@@ -15,6 +15,7 @@ from sqlalchemy import (
     Time,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import ExamKind
@@ -83,6 +84,11 @@ class Exam(Base, PrimaryKeyMixin, TimestampMixin):
     revised_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
+    # The classes that sit this exam (ids of school_classes) and the day the
+    # school means to announce results. Both are the plan; papers remain
+    # what is actually set, class by class.
+    class_ids: Mapped[Optional[list]] = mapped_column(JSONB)
+    result_date: Mapped[Optional[date]] = mapped_column(Date)
 
     created_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")

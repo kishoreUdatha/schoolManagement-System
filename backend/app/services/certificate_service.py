@@ -400,6 +400,7 @@ def issue(db: Session, tenant_id: int, school_id: int, actor_id: int, data: Cert
         student_id=student.id,
         status=CertificateStatus.requested,
         purpose=(data.purpose or "").strip() or None,
+        signatory=(data.signatory or "").strip() or None,
         fields=fields,
     )
     db.add(c)
@@ -436,6 +437,7 @@ def decide(db: Session, cert_id: int, school_id: int, actor_id: int, data: Certi
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Template was deleted")
     c.fields = _fields_for(t, {**c.fields, **data.fields}, data.tc)
     c.remarks = (data.remarks or "").strip() or None
+    c.signatory = (data.signatory or "").strip() or c.signatory
     student = db.get(Student, c.student_id)
     return _issue(db, c, t, student, actor_id, data.tc)
 
@@ -493,6 +495,7 @@ def to_read(db: Session, c: CertificateIssue) -> dict:
         "issued_by_name": issuer.full_name if issuer else None,
         "requested_by_name": requester.full_name if requester else None,
         "remarks": c.remarks,
+        "signatory": c.signatory,
         "print_count": c.print_count,
         "created_at": c.created_at,
     }
@@ -648,7 +651,7 @@ def pdf(db: Session, c: CertificateIssue, *, count_print: bool = True) -> tuple[
         )
         els += [Spacer(1, 0.3 * cm), t]
 
-    sig = Table([["", "Principal"]], colWidths=[9 * cm, 7.6 * cm])
+    sig = Table([["", c.signatory or "Principal"]], colWidths=[9 * cm, 7.6 * cm])
     sig.setStyle(TableStyle([("ALIGN", (1, 0), (1, 0), "CENTER"), ("LINEABOVE", (1, 0), (1, 0), 0.8, colors.black), ("TOPPADDING", (0, 0), (-1, -1), 4)]))
     els += [Spacer(1, 2.2 * cm), sig]
     if c.print_count >= 1 and count_print:

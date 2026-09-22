@@ -37,6 +37,8 @@ export type Homework = {
   rubric_id: number | null;
   rubric_name: string | null;
   is_closed: boolean;
+  publish_on: string | null;
+  is_scheduled: boolean;
   closed_at: string | null;
   closed_by_name: string | null;
 };

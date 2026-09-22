@@ -129,6 +129,8 @@ def get_view(
                 "photo_url": s.photo_url,
                 "status": a.status if a else None,
                 "remark": a.remark if a else None,
+                "arrived_at": a.arrived_at if a else None,
+                "left_at": a.left_at if a else None,
                 "marked_by_user_id": a.marked_by_user_id if a else None,
                 "marked_at": a.updated_at if a else None,
                 "on_leave": on_leave.get(s.id),
@@ -225,6 +227,9 @@ def save(
         student_id = e.get("student_id") if isinstance(e, dict) else e.student_id
         status_val = e.get("status") if isinstance(e, dict) else e.status
         remark = e.get("remark") if isinstance(e, dict) else e.remark
+        # Only touch the check-in time when the caller sent one (or null).
+        has_arrival = ("arrived_at" in e) if isinstance(e, dict) else ("arrived_at" in e.model_fields_set)
+        arrived_at = (e.get("arrived_at") if isinstance(e, dict) else e.arrived_at) if has_arrival else None
 
         if student_id not in valid_student_ids:
             errors.append({"student_id": student_id, "error": "Not in this section"})
@@ -255,6 +260,7 @@ def save(
                 date=on_date,
                 status=status_value,
                 remark=remark,
+                arrived_at=arrived_at,
                 marked_by_user_id=teacher_user_id,
             )
             .on_conflict_do_update(
@@ -264,6 +270,7 @@ def save(
                     "remark": remark,
                     "marked_by_user_id": teacher_user_id,
                     "updated_at": datetime.now(timezone.utc),
+                    **({"arrived_at": arrived_at} if has_arrival else {}),
                 },
             )
         )

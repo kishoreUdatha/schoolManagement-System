@@ -443,7 +443,7 @@ export function WardenRota() {
 
   const duties = (rota.data?.days ?? []).flatMap((d) => d.duties.map((duty) => ({ date: d.date, duty }))).filter((x) => !hostelId || String(x.duty.hostel_id) === hostelId);
   const uncovered = (rota.data?.uncovered ?? []).filter((u) => !hostelId || String(u.hostel_id) === hostelId);
-  const rows: Row[] = duties.map(({ date: d, duty }) => [duty.warden_name, duty.hostel_name, date(d), SHIFTS[duty.shift], duty.note ?? "—", "On duty"]);
+  const rows: Row[] = duties.map(({ date: d, duty }) => [{ name: duty.warden_name, sub: duty.warden_phone ?? undefined }, duty.hostel_name, date(d), SHIFTS[duty.shift], duty.note ?? "—", "On duty"]);
   const close = () => {
     setError(null);
     if (viewing) setViewing(null);
@@ -499,8 +499,7 @@ export function WardenRota() {
           <span>{`${uncovered.length} hostel-night(s) have nobody on the rota in these two weeks: ${uncovered.slice(0, 6).map((u) => `${u.hostel_name} ${date(u.date)}`).join(", ")}${uncovered.length > 6 ? "…" : ""}`}</span>
         </div>
       ) : null}
-      <Panel title="Warden rota" sub={`${date(from)} – ${date(to)} · resident wardens: ${(hostels.data ?? []).map((h) => `${h.name}: ${h.warden_name ?? "none"}`).join(" · ") || "—"}`} flush>
-        {/* Not wired: warden phone numbers — the rota and staff directory do not return them. */}
+      <Panel title="Warden rota" sub={`${date(from)} – ${date(to)} · resident wardens: ${(hostels.data ?? []).map((h) => `${h.name}: ${h.warden_name ? `${h.warden_name}${h.warden_phone ? ` (${h.warden_phone})` : ""}` : "none"}`).join(" · ") || "—"}`} flush>
         <DataTable columns={["Warden", "Hostel", "Date", "Shift", "Note", "Status"]} rows={rows} onView={(i) => setViewing(duties[i])} empty={rota.loading ? "Loading the rota…" : "Nobody is on the rota for these two weeks."} />
       </Panel>
       {add.open || viewing ? (
@@ -508,7 +507,7 @@ export function WardenRota() {
           {viewing ? (
             <>
               <ErrorNote>{error}</ErrorNote>
-              <Kv rows={[["Hostel", viewing.duty.hostel_name], ["Shift", SHIFTS[viewing.duty.shift]], ["Note", viewing.duty.note ?? "—"]]} />
+              <Kv rows={[["Hostel", viewing.duty.hostel_name], ["Phone", viewing.duty.warden_phone ?? "—"], ["Shift", SHIFTS[viewing.duty.shift]], ["Note", viewing.duty.note ?? "—"]]} />
               <div className="actions row">
                 <button type="button" className="btn" onClick={remove}>
                   Remove duty
