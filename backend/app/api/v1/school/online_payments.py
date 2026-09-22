@@ -19,7 +19,7 @@ Db = Annotated[Session, Depends(get_db)]
 @router.get("/reconciliation", response_model=Reconciliation,
             summary="Gateway orders against the fees they settled")
 def reconciliation(
-    current_user: SchoolAdminUser,
+    current_user: SchoolAdminOrAccountant,
     db: Db,
     frm: Optional[date] = Query(None, alias="from"),
     to: Optional[date] = Query(None),

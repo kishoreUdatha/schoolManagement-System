@@ -47,7 +47,7 @@ def create(
     summary="List exams (filter by academic year)",
 )
 def list_(
-    current_user: SchoolAdminUser,
+    current_user: SchoolAdminOrPrincipal,
     db: Annotated[Session, Depends(get_db)],
     academic_year_id: Optional[int] = Query(None),
 ):
@@ -62,7 +62,7 @@ def list_(
 @router.get("/{exam_id}", response_model=ExamRead)
 def get(
     exam_id: int,
-    current_user: SchoolAdminUser,
+    current_user: SchoolAdminOrPrincipal,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.get_exam(db, exam_id, current_user.school_id)

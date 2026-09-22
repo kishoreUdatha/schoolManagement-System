@@ -231,6 +231,33 @@ SchoolAdminOrAccountant = Annotated[
 ]
 
 
+def require_school_structure_reader(current_user: CurrentUser) -> User:
+    """Read-only access to the school's classes and subjects. Principals,
+    teachers and accountants need them to pick a class or subject on their
+    own screens; changing them stays with the school admin."""
+    if current_user.role not in (
+        UserRole.school_admin,
+        UserRole.principal,
+        UserRole.teacher,
+        UserRole.accountant,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="School staff access required",
+        )
+    if current_user.tenant_id is None or current_user.school_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User must be linked to a tenant and school",
+        )
+    return current_user
+
+
+SchoolStructureReader = Annotated[
+    User, Depends(require_school_structure_reader)
+]
+
+
 def require_front_desk(current_user: CurrentUser) -> User:
     """Gate / reception work: school admin, principal, or non-teaching staff
     (security guard, receptionist)."""

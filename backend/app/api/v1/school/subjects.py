@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import SchoolAdminUser, SchoolStructureReader
 from app.database import get_db
 from app.schemas.subject import (
     SubjectBulkCreate,
@@ -38,7 +38,7 @@ def create(
 
 @router.get("", response_model=list[SubjectRead], summary="List subjects")
 def list_(
-    current_user: SchoolAdminUser,
+    current_user: SchoolStructureReader,
     db: Annotated[Session, Depends(get_db)],
     active_only: bool = Query(True),
 ):
@@ -51,7 +51,7 @@ def list_(
 @router.get("/{subject_id}", response_model=SubjectRead)
 def get(
     subject_id: int,
-    current_user: SchoolAdminUser,
+    current_user: SchoolStructureReader,
     db: Annotated[Session, Depends(get_db)],
 ):
     return SubjectRead.model_validate(

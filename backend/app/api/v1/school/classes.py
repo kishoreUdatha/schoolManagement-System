@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import SchoolAdminUser, SchoolStructureReader
 from app.database import get_db
 from app.schemas.class_section import (
     ClassCreate,
@@ -46,7 +46,7 @@ def create_class(
     summary="List classes for a given academic year (with sections)",
 )
 def list_classes(
-    current_user: SchoolAdminUser,
+    current_user: SchoolStructureReader,
     db: Annotated[Session, Depends(get_db)],
     academic_year_id: int = Query(..., description="Required — which year to list"),
 ):
@@ -57,7 +57,7 @@ def list_classes(
 @router.get("/{class_id}", response_model=ClassRead)
 def get_class(
     class_id: int,
-    current_user: SchoolAdminUser,
+    current_user: SchoolStructureReader,
     db: Annotated[Session, Depends(get_db)],
 ):
     return ClassRead.model_validate(

@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser
 from app.database import get_db
 from app.schemas.staff import (
     StaffCreate,
@@ -44,7 +44,7 @@ def create(
     summary="List staff with filters (role / designation / status / search)",
 )
 def list_(
-    current_user: SchoolAdminUser,
+    current_user: SchoolAdminOrPrincipal,
     db: Annotated[Session, Depends(get_db)],
     role: Optional[str] = Query(None, description="'teacher' or 'staff'"),
     designation: Optional[str] = Query(None),
@@ -69,7 +69,7 @@ def list_(
 @router.get("/{staff_id}", response_model=StaffRead)
 def get(
     staff_id: int,
-    current_user: SchoolAdminUser,
+    current_user: SchoolAdminOrPrincipal,
     db: Annotated[Session, Depends(get_db)],
 ):
     s = staff_service.get_staff(db, staff_id, current_user.school_id)
