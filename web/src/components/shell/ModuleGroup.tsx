@@ -12,7 +12,7 @@ import { MODULES, SCREENS } from "@/lib/screens";
  * only lists, dashboards, calendars and setup pages. While you are on one, the
  * list it belongs to is highlighted instead (PARENT).
  */
-const NOT_IN_MENU = new Set([
+export const NOT_IN_MENU = new Set([
   11, 12, 23, 24, 26, 27, // add / details: organisation, school, branch
   45, 46, 49, 50, // add enquiry, enquiry details, new application, application details
   56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, // add / edit student and the per-student tabs
@@ -26,6 +26,8 @@ const NOT_IN_MENU = new Set([
   110, 114, 128, 131, 132, 134, 145, 147, // teacher / parent / student portal screens
   21, 22, 23, // organisation profile, schools list, add school: the platform's, not a school's
 ]);
+
+const OPEN_KEY = "bc_nav_open";
 
 /** The menu entry to highlight while on a screen that is not in the menu. */
 const PARENT: Record<number, number> = {
@@ -65,11 +67,33 @@ export function ModuleGroup({
   const currentN = SCREENS.find((x) => x.id === currentId)?.n;
   const activeN = currentN !== undefined ? (PARENT[currentN] ?? currentN) : undefined;
   const here = mods.includes(MODULES.indexOf(currentModule));
-  const [open, setOpen] = useState(here);
+  const [open, setOpenState] = useState(here);
 
+  // Groups the user opened stay open as they move between screens (each screen
+  // draws its own sidebar, so this state would otherwise reset on every click).
   useEffect(() => {
-    if (here) setOpen(true);
-  }, [here, currentId]);
+    let remembered = false;
+    try {
+      remembered = (JSON.parse(sessionStorage.getItem(OPEN_KEY) ?? "[]") as string[]).includes(label);
+    } catch {
+      /* storage unavailable */
+    }
+    if (here || remembered) setOpenState(true);
+  }, [here, currentId, label]);
+
+  const setOpen = (fn: (o: boolean) => boolean) =>
+    setOpenState((o) => {
+      const next = fn(o);
+      try {
+        const set = new Set(JSON.parse(sessionStorage.getItem(OPEN_KEY) ?? "[]") as string[]);
+        if (next) set.add(label);
+        else set.delete(label);
+        sessionStorage.setItem(OPEN_KEY, JSON.stringify([...set]));
+      } catch {
+        /* storage unavailable */
+      }
+      return next;
+    });
 
   return (
     <div className={`nav-group tone-${tone % 6} ${open ? "open" : ""}`}>

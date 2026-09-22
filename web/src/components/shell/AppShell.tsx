@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Avatar, Person } from "@/components/ui/primitives";
-import { ModuleGroup } from "./ModuleGroup";
+import { ModuleGroup, NOT_IN_MENU } from "./ModuleGroup";
 import { MODULES, SCREENS, screen, routeOf, type Screen } from "@/lib/screens";
-import { ROLE_LABEL, session } from "@/lib/session";
+import { HOME_SCREEN, ROLE_LABEL, session } from "@/lib/session";
 import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
 
@@ -70,6 +70,19 @@ function useViewer(s: Screen): Viewer {
   return sess ? { who: sess.user.full_name, role: ROLE_LABEL[sess.user.role] ?? sess.user.role } : viewerFor(s.n);
 }
 
+/** The signed-in person's home dashboard (the school admin's before sign-in is known). */
+function useHome(): string {
+  const sess = useSession();
+  return routeOf(sess ? HOME_SCREEN[sess.user.role] : 33);
+}
+
+/** A module's first screen that appears in the menu: where its breadcrumb link goes. */
+function moduleHome(module: string): string {
+  return (SCREENS.find((x) => x.module === module && !NOT_IN_MENU.has(x.n)) ?? SCREENS.find((x) => x.module === module))!.route;
+}
+
+const SCROLL_KEY = "bc_nav_scroll";
+
 function signOut() {
   session.clear();
   window.location.href = routeOf(3);
@@ -78,10 +91,29 @@ function signOut() {
 function Sidebar({ s, viewer }: { s: Screen; viewer: Viewer }) {
   const { who, role } = viewer;
   const roleNav = ROLE_NAV[role];
+  const home = useHome();
+  const scroller = useRef<HTMLDivElement>(null);
+
+  // Keep the menu where it was between screens, and the current item in view.
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    try {
+      el.scrollTop = Number(sessionStorage.getItem(SCROLL_KEY) ?? 0);
+    } catch {
+      /* storage unavailable */
+    }
+    const active = el.querySelector<HTMLElement>(".subnav.active, a.nav.active");
+    if (active) {
+      const a = active.getBoundingClientRect();
+      const box = el.getBoundingClientRect();
+      if (a.top < box.top || a.bottom > box.bottom) active.scrollIntoView({ block: "center" });
+    }
+  }, [s.id]);
 
   return (
     <aside className="sidebar">
-      <Link href="/screens" className="brand">
+      <Link href={home} className="brand">
         <span className="brand-mark">
           <Icon name="book" />
         </span>
@@ -89,7 +121,17 @@ function Sidebar({ s, viewer }: { s: Screen; viewer: Viewer }) {
           BrightCampus<small>SCHOOL ERP</small>
         </span>
       </Link>
-      <div className="nav-scroll">
+      <div
+        className="nav-scroll"
+        ref={scroller}
+        onScroll={(e) => {
+          try {
+            sessionStorage.setItem(SCROLL_KEY, String(e.currentTarget.scrollTop));
+          } catch {
+            /* storage unavailable */
+          }
+        }}
+      >
         {roleNav ? (
           <>
             <div className="nav-label">{`${role.toUpperCase()} WORKSPACE`}</div>
@@ -194,7 +236,6 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
 
 export function AppShell({ screen: id, actions, children }: { screen: string; actions?: ReactNode; children: ReactNode }) {
   const s = screen(id);
-  const mi = MODULES.indexOf(s.module);
   const viewer = useViewer(s);
   const school = useSchool(viewer.role);
   const sess = useSession();
@@ -209,6 +250,7 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
   }, [hydrated, sess, router]);
 
   const schoolName = school?.name ?? "Bright International";
+  const home = useHome();
   return (
     <div className="app">
       <Sidebar s={s} viewer={viewer} />
@@ -217,9 +259,9 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
         <Topbar who={viewer.who} role={viewer.role} school={school} />
         <main className="main">
           <div className="crumb">
-            <Link href={routeOf(33)}>{schoolName}</Link>
+            <Link href={home}>{schoolName}</Link>
             <span>/</span>
-            <Link href={`/screens?module=${mi}`}>{s.moduleShort}</Link>
+            <Link href={moduleHome(s.module)}>{s.moduleShort}</Link>
             <span>/</span>
             {` ${s.layout.includes("dashboard") ? "Overview" : "Workspace"}`}
           </div>
@@ -232,10 +274,7 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
           {children}
           <footer className="screen-note">
             <span>{`BrightCampus · ${schoolName}`}</span>
-            <span>
-              {`${s.id}   `}
-              <Link href="/screens">Browse all screens</Link>
-            </span>
+            <span>{s.id}</span>
           </footer>
         </main>
       </div>
