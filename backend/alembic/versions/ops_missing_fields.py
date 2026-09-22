@@ -67,6 +67,12 @@ COLUMNS: list[tuple[str, sa.Column]] = [
     ("visits", sa.Column("valid_until", sa.DateTime(timezone=True), nullable=True)),
     ("visits", sa.Column("pass_returned", sa.Boolean(), nullable=True)),
     ("visits", sa.Column("checked_out_by_user_id", sa.BigInteger(), sa.ForeignKey("users.id", ondelete="SET NULL"), nullable=True)),
+    # #134 report builder group-by
+    ("report_definitions", sa.Column("group_by", sa.String(60), nullable=True)),
+    # #139 audit log result (refused writes are logged as "failed")
+    ("audit_logs", sa.Column("result", sa.String(20), server_default="success", nullable=False)),
+    # #172 route distance
+    ("transport_routes", sa.Column("distance_km", sa.Numeric(6, 1), nullable=True)),
 ]
 
 

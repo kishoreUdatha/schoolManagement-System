@@ -14,6 +14,7 @@ class ReportIn(BaseModel):
     filters: dict[str, Any] = {}
     columns: list[str] = []
     sort_by: Optional[str] = Field(None, max_length=60)
+    group_by: Optional[str] = Field(None, max_length=60)
 
 
 class ReportUpdate(BaseModel):
@@ -23,6 +24,7 @@ class ReportUpdate(BaseModel):
     filters: Optional[dict[str, Any]] = None
     columns: Optional[list[str]] = None
     sort_by: Optional[str] = Field(None, max_length=60)
+    group_by: Optional[str] = Field(None, max_length=60)
     is_active: Optional[bool] = None
 
 
@@ -36,6 +38,7 @@ class ReportRead(BaseModel):
     filters: dict[str, Any]
     columns: list[str]
     sort_by: Optional[str]
+    group_by: Optional[str] = None
     is_active: bool
     created_by_name: Optional[str]
     last_run_at: Optional[datetime]
@@ -56,6 +59,8 @@ class ReportResult(BaseModel):
     row_count: int
     rows: list[dict[str, Any]]
     truncated: bool
+    group_by: Optional[str] = None
+    groups: list[dict[str, Any]] = []  # [{"value": ..., "count": n}] in row order
 
 
 class ExportRead(BaseModel):
@@ -76,6 +81,7 @@ class ImportRowError(BaseModel):
     row: Optional[int] = None
     value: Optional[str] = None
     error: Optional[str] = None
+    duplicate: bool = False
 
 
 class ImportRead(BaseModel):

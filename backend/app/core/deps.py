@@ -54,6 +54,7 @@ def get_current_user(
         "tenant_id": user.tenant_id,
         "school_id": user.school_id,
         "request_path": request.url.path if request else None,
+        "request_method": request.method if request else None,
     }
     return user
 

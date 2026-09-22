@@ -18,6 +18,8 @@ class AuditLogRead(BaseModel):
     user_email: Optional[str] = None
     user_role: Optional[str] = None
     request_path: Optional[str] = None
+    result: str = "success"
+    scope: Optional[str] = None
     old_values: Optional[dict] = None
     new_values: Optional[dict] = None
     created_at: datetime

@@ -328,6 +328,21 @@ def _stop_counts(db: Session, route_id: int, on: date) -> dict[int, int]:
     )
 
 
+def _stops_km(stops) -> Optional[float]:
+    """Stop-to-stop distance as the crow flies, when every stop has a position."""
+    from math import asin, cos, radians, sin, sqrt
+
+    pts = [(s.lat, s.lng) for s in stops]
+    if len(pts) < 2 or any(a is None or b is None for a, b in pts):
+        return None
+    total = 0.0
+    for (la1, lo1), (la2, lo2) in zip(pts, pts[1:]):
+        dla, dlo = radians(la2 - la1), radians(lo2 - lo1)
+        h = sin(dla / 2) ** 2 + cos(radians(la1)) * cos(radians(la2)) * sin(dlo / 2) ** 2
+        total += 2 * 6371.0 * asin(sqrt(h))
+    return round(total, 1)
+
+
 def route_to_read_dict(db: Session, r: TransportRoute) -> dict:
     stops = db.execute(
         select(TransportStop).where(TransportStop.route_id == r.id).order_by(TransportStop.sequence)
@@ -342,6 +357,8 @@ def route_to_read_dict(db: Session, r: TransportRoute) -> dict:
         "vehicle_label": (vehicle.label or vehicle.registration_no) if vehicle else None,
         "vehicle_capacity": vehicle.capacity if vehicle else None,
         "monthly_fee": r.monthly_fee,
+        "distance_km": r.distance_km,
+        "stops_distance_km": _stops_km(stops),
         "is_active": r.is_active,
         "stops": [
             {
@@ -423,6 +440,7 @@ def create_route(db: Session, tenant_id: int, school_id: int, data: RouteCreate)
         code=data.code.strip().upper(),
         vehicle_id=data.vehicle_id,
         monthly_fee=data.monthly_fee,
+        distance_km=data.distance_km,
         is_active=True,
     )
     db.add(r)

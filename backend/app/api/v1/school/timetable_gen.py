@@ -21,6 +21,12 @@ class GenerateIn(BaseModel):
     # A seed makes a run repeatable, which matters when somebody asks why a
     # lesson moved between two attempts.
     seed: Optional[int] = None
+    # Most periods in a row a teacher may be given (counting their lessons in
+    # every section); None = no limit.
+    max_consecutive: Optional[int] = Field(None, ge=1, le=12)
+    # "none" leaves the room empty (the class stays in its own room), "home"
+    # puts lessons in the section's home room, or a room's id as a string.
+    room_preference: Optional[str] = Field(None, max_length=20)
 
 
 class PeriodsIn(BaseModel):
@@ -48,7 +54,9 @@ def requirements(section_id: int, user: SchoolAdminOrPrincipal, db: Db):
              summary="Fill the week in, and say what could not be placed")
 def generate(section_id: int, payload: GenerateIn, user: SchoolAdminUser, db: Db):
     return svc.generate(db, user.school_id, section_id,
-                        replace=payload.replace, seed=payload.seed)
+                        replace=payload.replace, seed=payload.seed,
+                        max_consecutive=payload.max_consecutive,
+                        room_preference=payload.room_preference)
 
 
 @router.put("/class-subjects/{class_subject_id}/periods",

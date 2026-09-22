@@ -202,6 +202,21 @@ def assign(db: Session, user: User, target_user_id: int, role_id: int, branch_id
     return a
 
 
+def bulk_assign(db: Session, user: User, user_ids: list[int], role_id: int, branch_id: Optional[int]) -> dict:
+    """One role for several people. Anyone who already has it, or isn't at
+    this school, is reported back rather than failing the rest."""
+    assigned: list[int] = []
+    skipped: list[dict] = []
+    for uid in dict.fromkeys(user_ids):
+        try:
+            assign(db, user, uid, role_id, branch_id)
+            assigned.append(uid)
+        except HTTPException as e:
+            db.rollback()
+            skipped.append({"user_id": uid, "reason": e.detail})
+    return {"assigned": assigned, "skipped": skipped}
+
+
 def unassign(db: Session, user: User, assignment_id: int) -> None:
     a = db.get(UserRoleAssignment, assignment_id)
     if not a or a.school_id != user.school_id:

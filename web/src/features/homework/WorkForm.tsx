@@ -202,7 +202,7 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
                     />
                     <small className="muted">{editing && !existing.data?.is_scheduled ? "Already published." : "Leave empty to publish on saving. Scheduled work is not announced to parents."}</small>
                   </label>
-                ) : null}
+                ) : null /* Not wired: publish date for assignments — scheduled publishing exists for homework only; an assignment is published when saved. */}
               </div>
             </section>
             <section>

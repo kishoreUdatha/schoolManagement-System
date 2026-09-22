@@ -35,6 +35,7 @@ def list_(
     to_date: Optional[date] = Query(None, alias="to"),
     limit: int = Query(200, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    result: Optional[str] = Query(None, pattern="^(success|failed)$"),
 ):
     rows = audit_service.list_for_school(
         db,
@@ -47,6 +48,7 @@ def list_(
         to_date=to_date,
         limit=limit,
         offset=offset,
+        result=result,
     )
     return [
         AuditLogRead.model_validate(audit_service.to_read_dict(db, a))

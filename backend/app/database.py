@@ -23,5 +23,12 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception as exc:
+        # A write a signed-in user attempted and the server refused goes on
+        # the audit trail as a failed attempt (see app.core.audit).
+        from app.core.audit import record_refused_write
+
+        record_refused_write(db, exc)
+        raise
     finally:
         db.close()

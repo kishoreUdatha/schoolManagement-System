@@ -76,6 +76,8 @@ class ReportDefinition(Base, PrimaryKeyMixin, TimestampMixin, _School):
     filters: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
     columns: Mapped[list[Any]] = mapped_column(JSONB, default=list, nullable=False)
     sort_by: Mapped[Optional[str]] = mapped_column(String(60))
+    # Rows come out grouped by this column (with a count per group).
+    group_by: Mapped[Optional[str]] = mapped_column(String(60))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")

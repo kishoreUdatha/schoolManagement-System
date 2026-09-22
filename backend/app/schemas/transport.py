@@ -155,6 +155,7 @@ class RouteCreate(BaseModel):
     code: str = Field(..., min_length=1, max_length=20)
     vehicle_id: Optional[int] = None
     monthly_fee: Decimal = Field(Decimal("0"), ge=0)
+    distance_km: Optional[Decimal] = Field(None, ge=0, le=1000)
     stops: list[StopIn] = []
 
 
@@ -163,6 +164,7 @@ class RouteUpdate(BaseModel):
     code: Optional[str] = Field(None, min_length=1, max_length=20)
     vehicle_id: Optional[int] = None
     monthly_fee: Optional[Decimal] = Field(None, ge=0)
+    distance_km: Optional[Decimal] = Field(None, ge=0, le=1000)
     is_active: Optional[bool] = None
     # When present, replaces the stop list (order = sequence). Stops that are
     # dropped but still have students assigned block the update.
@@ -190,6 +192,9 @@ class RouteRead(BaseModel):
     vehicle_label: Optional[str] = None
     vehicle_capacity: Optional[int] = None
     monthly_fee: Decimal
+    distance_km: Optional[Decimal] = None
+    # straight-line stop-to-stop length from the stops' coordinates, when set
+    stops_distance_km: Optional[float] = None
     is_active: bool
     stops: list[StopRead]
     student_count: int

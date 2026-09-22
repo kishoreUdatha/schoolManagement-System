@@ -172,8 +172,27 @@ def requirements(db: Session, school_id: int, section_id: int) -> dict:
 # ---------- filling it in ----------
 
 
+def _preferred_room(db: Session, school_id: int, section_id: int, pref: Optional[str]) -> Optional[Room]:
+    if not pref or pref == "none":
+        return None
+    if pref == "home":
+        room = db.execute(
+            select(Room).where(Room.school_id == school_id, Room.section_id == section_id).limit(1)
+        ).scalar_one_or_none()
+        if room is None:
+            raise _400("This section has no home room. Set one under Rooms, or choose a room.")
+        return room
+    if not pref.isdigit():
+        raise _400("Room preference must be none, home or a room")
+    room = db.get(Room, int(pref))
+    if not room or room.school_id != school_id:
+        raise _404("Room")
+    return room
+
+
 def generate(db: Session, school_id: int, section_id: int, *,
-             replace: bool = False, seed: Optional[int] = None) -> dict:
+             replace: bool = False, seed: Optional[int] = None,
+             max_consecutive: Optional[int] = None, room_preference: Optional[str] = None) -> dict:
     """Place each subject its required number of times, and report the rest.
 
     Deliberately simple: shuffle the slots, walk the subjects hardest-first
@@ -186,6 +205,7 @@ def generate(db: Session, school_id: int, section_id: int, *,
     or where they have said they are unavailable.
     """
     sec = _section(db, section_id, school_id)
+    room = _preferred_room(db, school_id, section_id, room_preference)
 
     # Clear first, then count. Asking what is still needed while last term's
     # timetable is still in the table says everything is already placed, so
@@ -228,6 +248,39 @@ def generate(db: Session, school_id: int, section_id: int, *,
     ).all():
         if cs.teacher_user_id:
             busy[cs.teacher_user_id].add(entry.period_id)
+    # This section's own kept lessons count against the teacher's run too.
+    for entry, cs in db.execute(
+        select(TimetableEntry, ClassSubject)
+        .join(ClassSubject, ClassSubject.id == TimetableEntry.class_subject_id)
+        .where(TimetableEntry.section_id == section_id)
+    ).all():
+        if cs.teacher_user_id:
+            busy[cs.teacher_user_id].add(entry.period_id)
+
+    # Which room is taken when, so the preferred room is not double-booked.
+    room_busy: set[int] = set()
+    if room is not None:
+        room_busy = set(db.execute(
+            select(TimetableEntry.period_id).where(TimetableEntry.room_id == room.id)
+        ).scalars())
+    by_id = {p.id: p for p in db.execute(select(Period).where(Period.school_id == school_id)).scalars()}
+    # teaching periods per day, in order, for counting a run
+    day_numbers: dict[int, list[int]] = defaultdict(list)
+    for p in periods:
+        day_numbers[p.day_of_week].append(p.period_number)
+
+    def run_ok(teacher_id: Optional[int], p: Period) -> bool:
+        """Would this slot give the teacher more than max_consecutive in a row?"""
+        if not max_consecutive or teacher_id is None:
+            return True
+        mine = {(by_id[x].day_of_week, by_id[x].period_number) for x in busy[teacher_id] if x in by_id}
+        mine.add((p.day_of_week, p.period_number))
+        order = day_numbers[p.day_of_week]
+        run = best = 0
+        for n in order:  # breaks are not in the list, so a break does not end a run
+            run = run + 1 if (p.day_of_week, n) in mine else 0
+            best = max(best, run)
+        return best <= max_consecutive
 
     # And the hours they have said they cannot teach.
     blocked: dict[int, set[tuple[int, Optional[int]]]] = defaultdict(set)
@@ -253,6 +306,7 @@ def generate(db: Session, school_id: int, section_id: int, *,
     todo.sort(key=lambda r: (-r["short_by"], r["has_teacher"]))
 
     placed_rows, unplaced = [], []
+    no_room = 0  # lessons placed without the preferred room (it was taken)
     # one lesson of a subject per day where possible, so a subject is not
     # stacked into a single morning
     per_day: dict[tuple[int, int], int] = defaultdict(int)
@@ -270,10 +324,18 @@ def generate(db: Session, school_id: int, section_id: int, *,
                     continue
                 if not free_for(cs.teacher_user_id, p):
                     continue
+                if not run_ok(cs.teacher_user_id, p):
+                    continue
+                room_id = room.id if room is not None and p.id not in room_busy else None
                 db.add(TimetableEntry(
                     tenant_id=sec.tenant_id, school_id=school_id,
                     section_id=section_id, period_id=p.id, class_subject_id=cs.id,
+                    room_id=room_id,
                 ))
+                if room_id:
+                    room_busy.add(p.id)
+                else:
+                    no_room += 1 if room is not None else 0
                 if cs.teacher_user_id:
                     busy[cs.teacher_user_id].add(p.id)
                 per_day[(cs.id, p.day_of_week)] += 1
@@ -293,8 +355,9 @@ def generate(db: Session, school_id: int, section_id: int, *,
                 # Why, in the terms somebody can act on.
                 "because": (
                     "no free slot left in the week" if not open_slots
-                    else f"{row['teacher_name'] or 'the teacher'} is busy or unavailable "
-                         "in every remaining slot"
+                    else f"{row['teacher_name'] or 'the teacher'} is busy, unavailable"
+                         + (f" or past {max_consecutive} periods in a row" if max_consecutive else "")
+                         + " in every remaining slot"
                 ),
             })
 
@@ -305,6 +368,8 @@ def generate(db: Session, school_id: int, section_id: int, *,
         "entries": placed_rows,
         "unplaced": unplaced,
         "left_empty": len(open_slots),
+        "room_name": room.name if room is not None else None,
+        "without_room": no_room,
         # The honest headline: a generator that reports success while leaving
         # a subject short is one nobody checks afterwards.
         "complete": not unplaced,
