@@ -41,6 +41,8 @@ export function DepartmentSetup() {
       code: String(f.get("code") ?? "").trim().toUpperCase(),
       head_user_id: head ? Number(head) : null,
       is_active: f.get("status") !== "inactive",
+      email: orNull(f.get("email")),
+      phone: orNull(f.get("phone")),
     };
     setSaving(true);
     setError(null);
@@ -87,7 +89,12 @@ export function DepartmentSetup() {
                     ))}
                   </select>
                 </Field>
-                {/* Not wired: Email address and Phone — departments have no contact fields; no endpoint */}
+                <Field label="Email address">
+                  <input type="email" name="email" placeholder="Enter email address" defaultValue={dept?.email ?? ""} />
+                </Field>
+                <Field label="Phone">
+                  <input type="tel" name="phone" maxLength={20} placeholder="Enter phone" defaultValue={dept?.phone ?? ""} />
+                </Field>
                 <Field label="Status">
                   <select name="status" aria-label="Status" defaultValue={dept && !dept.is_active ? "inactive" : "active"}>
                     <option value="active">Active</option>

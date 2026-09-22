@@ -72,3 +72,23 @@ export const orNull = (v: FormDataEntryValue | null) => {
 };
 
 export const count = (v: number | undefined | null) => (v === undefined || v === null ? "…" : v.toLocaleString("en-IN"));
+
+const BOARDS = ["CBSE", "ICSE", "State Board", "IB", "Cambridge (IGCSE)"];
+
+/** Board picker (name="board"). The API keeps free text, so a saved value outside the list is still offered. */
+export function BoardSelect({ value }: { value?: string | null }) {
+  const options = value && !BOARDS.includes(value) ? [...BOARDS, value] : BOARDS;
+  return (
+    <select name="board" aria-label="Board" defaultValue={value ?? ""}>
+      <option value="">Not set</option>
+      {options.map((b) => (
+        <option key={b} value={b}>
+          {b}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** "HH:MM" from the API's "HH:MM:SS" (or "" when unset), for time inputs. */
+export const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : "");

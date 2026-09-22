@@ -11,7 +11,15 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, DialogActions, Field, Kv, SearchBox, downloadCsv, usePageAction, useSearch } from "./setupKit";
 import type { AcademicYear, Term } from "./types";
 
-const COLUMNS = ["Academic year", "Start date", "End date", "Terms", "Status"];
+const COLUMNS = ["Academic year", "Start date", "End date", "Terms", "Admissions", "Status"];
+
+/** Open or closed, and when a closed year's admissions are due to open. */
+const admissionsOf = (y: AcademicYear) =>
+  y.admissions_open
+    ? "Open"
+    : y.admission_opens_on && y.admission_opens_on > new Date().toISOString().slice(0, 10)
+      ? `Opens ${date(y.admission_opens_on)}`
+      : "Closed";
 
 const statusOf = (y: AcademicYear) => (y.is_archived ? "Archived" : y.is_current ? "Current" : "Active");
 
@@ -50,7 +58,7 @@ export function AcademicYears() {
   const { q, setQ, shown } = useSearch(filtered, (y) => y.name);
   const rows: Row[] = shown.map((y) => {
     const n = terms.get(y.id);
-    return [y.name, date(y.start_date), date(y.end_date), n === undefined ? "…" : `${n} term${n === 1 ? "" : "s"}`, statusOf(y)];
+    return [y.name, date(y.start_date), date(y.end_date), n === undefined ? "…" : `${n} term${n === 1 ? "" : "s"}`, admissionsOf(y), statusOf(y)];
   });
 
   usePageAction("add", useCallback(() => setAdding(true), []));
@@ -76,7 +84,6 @@ export function AcademicYears() {
       </div>
       <ErrorNote>{list.error}</ErrorNote>
       <Panel title="All records" sub={`${years.length} academic year${years.length === 1 ? "" : "s"}${list.loading ? " · Loading…" : ""}`} flush>
-        {/* Not wired: the mock's "Admissions" open/closed column — the API keeps no admissions flag on a year. */}
         <DataTable
           columns={COLUMNS}
           rows={rows}
@@ -96,7 +103,13 @@ function YearForm({ y, onClose, onSaved }: { y?: AcademicYear; onClose: () => vo
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const body = { name: String(f.get("name")).trim(), start_date: String(f.get("start_date")), end_date: String(f.get("end_date")) };
+    const body = {
+      name: String(f.get("name")).trim(),
+      start_date: String(f.get("start_date")),
+      end_date: String(f.get("end_date")),
+      admissions_open: f.get("admissions_open") === "on",
+      admission_opens_on: String(f.get("admission_opens_on") ?? "") || null,
+    };
     setSaving(true);
     setError(null);
     try {
@@ -124,6 +137,13 @@ function YearForm({ y, onClose, onSaved }: { y?: AcademicYear; onClose: () => vo
           <Field label="End date" required>
             <input type="date" name="end_date" required defaultValue={y?.end_date} />
           </Field>
+          <Field label="Admission opens">
+            <input type="date" name="admission_opens_on" defaultValue={y?.admission_opens_on ?? ""} />
+          </Field>
+          <label className="row" style={{ fontSize: 13, alignSelf: "end" }}>
+            <input type="checkbox" name="admissions_open" defaultChecked={y?.admissions_open ?? false} />
+            Admissions are open
+          </label>
           {!y ? (
             <label className="row full" style={{ gridColumn: "1/-1", fontSize: 13 }}>
               <input type="checkbox" name="is_current" />
@@ -167,6 +187,7 @@ function YearDialog({ y, terms, onClose, onChanged }: { y: AcademicYear; terms?:
           ["Start date", date(y.start_date)],
           ["End date", date(y.end_date)],
           ["Terms", terms === undefined ? "…" : String(terms)],
+          ["Admissions", admissionsOf(y)],
           ["Status", statusOf(y)],
         ]}
       />

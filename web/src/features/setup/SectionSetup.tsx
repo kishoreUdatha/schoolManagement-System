@@ -11,7 +11,36 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { Field, KV, SectionTitle, orNull } from "./bits";
 import { useSetupYear } from "./ClassSetup";
+import type { Room } from "@/features/academics/planTypes";
 import type { Branch, Section, StaffMember } from "./types";
+
+/**
+ * Room picker (name="room_id") from GET /rooms. A room seats one section, so
+ * rooms another section already has are shown but can't be picked.
+ */
+export function RoomSelect({ section }: { section?: Section }) {
+  const rooms = useApi<Room[]>("/api/v1/school/rooms");
+  const list = (rooms.data ?? []).filter((r) => r.is_active || r.id === section?.room_id);
+  return (
+    <select name="room_id" aria-label="Room" defaultValue={section?.room_id ?? ""} key={rooms.data ? "ready" : "loading"}>
+      <option value="">{rooms.loading ? "Loading rooms…" : list.length ? "No room" : "No rooms set up (Facilities)"}</option>
+      {list.map((r) => {
+        const taken = r.section_id !== null && r.section_id !== section?.id;
+        return (
+          <option key={r.id} value={r.id} disabled={taken}>
+            {`${r.name}${r.building ? ` · ${r.building}` : ""}${taken ? ` (${r.section_label ?? "taken"})` : ""}`}
+          </option>
+        );
+      })}
+    </select>
+  );
+}
+
+/** The picked room as the API wants it: an id, or null for none. */
+export const roomOf = (f: FormData) => {
+  const v = orNull(f.get("room_id"));
+  return v === null ? null : Number(v);
+};
 
 /**
  * SCR-030, live. POST /classes/{class_id}/sections creates a section (name
@@ -57,12 +86,12 @@ export function SectionSetup() {
     setError(null);
     try {
       if (section) {
-        await api.patch(`/api/v1/school/sections/${section.id}`, { name, capacity, class_teacher_user_id });
+        await api.patch(`/api/v1/school/sections/${section.id}`, { name, capacity, class_teacher_user_id, room_id: roomOf(f) });
         notify(`Section ${name} saved.`);
         await classes.reload();
         return;
       }
-      const created = await api.post<Section>(`/api/v1/school/classes/${classId}/sections`, { name, capacity });
+      const created = await api.post<Section>(`/api/v1/school/classes/${classId}/sections`, { name, capacity, room_id: roomOf(f) });
       if (class_teacher_user_id) {
         try {
           await api.patch(`/api/v1/school/sections/${created.id}`, { class_teacher_user_id });
@@ -149,7 +178,9 @@ export function SectionSetup() {
                     ))}
                   </select>
                 </Field>
-                {/* Not wired: Room — a section has no room; no endpoint */}
+                <Field label="Room">
+                  <RoomSelect section={section} />
+                </Field>
                 <Field label="Student capacity">
                   <input type="number" name="capacity" min={1} max={200} defaultValue={section?.capacity ?? 40} />
                 </Field>
@@ -194,7 +225,7 @@ export function SectionSetup() {
             all.map((s) => (
               <div className="spread" key={s.id} style={{ padding: "6px 0" }}>
                 <Link href={`${routeOf(30)}?id=${s.id}&year=${yearId}`}>{`${s.class_name} ${s.name}`}</Link>
-                <small className="muted">{teacherName(s.class_teacher_user_id) ?? "No class teacher"}</small>
+                <small className="muted">{`${teacherName(s.class_teacher_user_id) ?? "No class teacher"}${s.room_name ? ` · ${s.room_name}` : ""}`}</small>
               </div>
             ))
           ) : (

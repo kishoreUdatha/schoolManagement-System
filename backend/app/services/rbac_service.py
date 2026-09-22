@@ -309,6 +309,7 @@ def create_branch(db: Session, user: User, data: BranchIn) -> Branch:
     if _branch_code_taken(db, user.school_id, data.code):
         raise _400("A branch with that code already exists")
     b = Branch(tenant_id=user.tenant_id, school_id=user.school_id, **data.model_dump())
+    b.email = (data.email or "").strip() or None
     if data.is_main:
         _clear_main(db, user.school_id, None)
     db.add(b)
@@ -332,8 +333,11 @@ def update_branch(db: Session, user: User, branch_id: int, data: BranchIn) -> Br
     _check_head(db, user.school_id, data.head_user_id)
     if _branch_code_taken(db, user.school_id, data.code, except_id=b.id):
         raise _400("A branch with that code already exists")
+    optional = {"email", "capacity"}  # older callers don't send these; keep what is saved
     for k, v in data.model_dump().items():
-        setattr(b, k, v)
+        if k in optional and k not in data.model_fields_set:
+            continue
+        setattr(b, k, (v or "").strip() or None if k == "email" else v)
     if data.is_main:
         _clear_main(db, user.school_id, b.id)
     try:
@@ -392,5 +396,6 @@ def branch_to_read(db: Session, b: Branch) -> dict:
     head = db.get(User, b.head_user_id) if b.head_user_id else None
     return dict(id=b.id, name=b.name, code=b.code, address=b.address, phone=b.phone,
                 head_user_id=b.head_user_id, head_name=head.full_name if head else None,
-                is_main=b.is_main, is_active=b.is_active, sections=len(sections), staff=staff_n, students=students,
+                is_main=b.is_main, is_active=b.is_active, email=b.email, capacity=b.capacity,
+                sections=len(sections), staff=staff_n, students=students,
                 section_ids=sections)

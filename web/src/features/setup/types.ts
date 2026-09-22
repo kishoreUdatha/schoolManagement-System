@@ -2,7 +2,18 @@
 
 export type { AcademicYear, SchoolClass, Section } from "@/features/students/types";
 
-export type Term = { id: number; academic_year_id: number; name: string; start_date: string; end_date: string; sequence: number };
+export type Term = {
+  id: number;
+  academic_year_id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+  sequence: number;
+  working_days: number | null;
+  school_days: number | null;
+};
+
+export type AttendanceMode = "daily" | "period" | "daily_period";
 
 /** GET/PATCH /api/v1/school/profile */
 export type SchoolProfile = {
@@ -26,6 +37,14 @@ export type SchoolProfile = {
   school_end_time: string | null;
   break_start_time: string | null;
   break_end_time: string | null;
+  board: string | null;
+  school_type: string | null;
+  website: string | null;
+  accent_color: string | null;
+  attendance_mode: AttendanceMode;
+  promotion_threshold: number | null;
+  quiet_hours_start: string | null;
+  quiet_hours_end: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -41,6 +60,8 @@ export type Branch = {
   head_name: string | null;
   is_main: boolean;
   is_active: boolean;
+  email: string | null;
+  capacity: number | null;
   sections: number;
   staff: number;
   students: number;
@@ -54,6 +75,8 @@ export type Department = {
   head_user_id: number | null;
   head_name: string | null;
   is_active: boolean;
+  email: string | null;
+  phone: string | null;
   staff_count: number;
   subject_count: number;
 };
@@ -112,6 +135,9 @@ export type TenantSchool = {
   status: "active" | "inactive";
   is_active: boolean;
   created_at: string;
+  board: string | null;
+  school_type: string | null;
+  branch_count: number;
 };
 
 export type Subscription = { id: number; plan_id: number; billing_cycle: "monthly" | "yearly"; status: string; expires_at: string | null };

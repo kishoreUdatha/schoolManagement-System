@@ -104,6 +104,8 @@ export function BranchForm() {
       code: String(f.get("code") ?? "").trim().toUpperCase(),
       address: orNull(f.get("address")),
       phone: orNull(f.get("phone")),
+      email: orNull(f.get("email")),
+      capacity: orNull(f.get("capacity")) === null ? null : Number(f.get("capacity")),
       head_user_id: head ? Number(head) : null,
       is_main: f.get("is_main") === "on",
       is_active: f.get("status") !== "inactive",
@@ -154,7 +156,12 @@ export function BranchForm() {
                 <Field label="Phone">
                   <input type="tel" name="phone" placeholder="Enter phone" defaultValue={branch?.phone ?? ""} />
                 </Field>
-                {/* Not wired: Email address and Capacity — a branch has neither; no endpoint */}
+                <Field label="Email address">
+                  <input type="email" name="email" placeholder="Enter email address" defaultValue={branch?.email ?? ""} />
+                </Field>
+                <Field label="Capacity">
+                  <input type="number" name="capacity" min={0} placeholder="Students the campus can take" defaultValue={branch?.capacity ?? ""} />
+                </Field>
                 <Field label="Status">
                   <select name="status" aria-label="Status" defaultValue={branch && !branch.is_active ? "inactive" : "active"}>
                     <option value="active">Active</option>
@@ -331,7 +338,8 @@ export function BranchDetails() {
                 ["Branch code", branch.code],
                 ["Coordinator", branch.head_name ?? "—"],
                 ["Phone", branch.phone ?? "—"],
-                ["Students", count(branch.students)],
+                ["Email address", branch.email ?? "—"],
+                ["Students", branch.capacity ? `${count(branch.students)} of ${count(branch.capacity)}` : count(branch.students)],
                 ["Address", branch.address ?? "—"],
               ]}
             />

@@ -8,7 +8,9 @@ import { api, errorText } from "@/lib/api";
 import { label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
-import { Field, orNull } from "@/features/setup/bits";
+import { Field, hhmm, orNull } from "@/features/setup/bits";
+import type { SchoolProfile } from "@/features/setup/types";
+import { PROFILE } from "./GeneralSettings";
 import { SettingsNav } from "./SettingsNav";
 import type { Integration, NotificationCatalogue, NotificationTemplate, TemplatePreview } from "./types";
 
@@ -40,10 +42,34 @@ export function NotificationSettings() {
   const cat = useApi<NotificationCatalogue>("/api/v1/school/settings/notifications/categories");
   const integrations = useApi<Integration[]>("/api/v1/school/integrations");
   const templates = useApi<NotificationTemplate[]>(TEMPLATES);
+  const profile = useApi<SchoolProfile>(PROFILE);
+  const [quietSaving, setQuietSaving] = useState(false);
   const [editing, setEditing] = useState<NotificationTemplate | "new" | null>(null);
   const [preview, setPreview] = useState<(TemplatePreview & { name: string }) | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function saveQuiet(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    const start = orNull(f.get("quiet_hours_start"));
+    const end = orNull(f.get("quiet_hours_end"));
+    if ((start === null) !== (end === null)) {
+      setError("Give quiet hours both a start and an end, or clear both.");
+      return;
+    }
+    setQuietSaving(true);
+    setError(null);
+    try {
+      await api.patch(PROFILE, { quiet_hours_start: start, quiet_hours_end: end });
+      notify(start ? "Quiet hours saved." : "Quiet hours turned off.");
+      await profile.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setQuietSaving(false);
+    }
+  }
 
   if (cat.loading && !cat.data) return <Loading what="Loading notification settings…" />;
   const c = cat.data;
@@ -141,10 +167,37 @@ export function NotificationSettings() {
                 </span>
               </div>
             ))}
-            {/* Not wired: Push notifications and Quiet hours — the API has neither setting; no endpoint */}
+            <div className="toggle-row">
+              <div>
+                <strong>Push notifications</strong>
+                <p>Alerts on a phone&apos;s lock screen. No push provider is connected, so the apps show new notices when opened instead.</p>
+              </div>
+              <label className="switch">
+                <input type="checkbox" aria-label="Push notifications" checked={false} disabled readOnly />
+                <i />
+              </label>
+            </div>
+            <form className="toggle-row" key={profile.data?.updated_at} onSubmit={saveQuiet}>
+              <div>
+                <strong>Quiet hours</strong>
+                <p>
+                  {profile.data?.quiet_hours_start && profile.data.quiet_hours_end
+                    ? `The school's quiet hours are ${hhmm(profile.data.quiet_hours_start)} to ${hhmm(profile.data.quiet_hours_end)}, for SMS, WhatsApp and email once a provider is connected. In-app notices are never held.`
+                    : "Pause non-urgent SMS, WhatsApp and email overnight (once a provider is connected). Leave both times blank for none."}
+                </p>
+              </div>
+              <div className="row" style={{ gap: 6 }}>
+                <input type="time" name="quiet_hours_start" aria-label="Quiet hours start" defaultValue={hhmm(profile.data?.quiet_hours_start)} />
+                <span className="muted">to</span>
+                <input type="time" name="quiet_hours_end" aria-label="Quiet hours end" defaultValue={hhmm(profile.data?.quiet_hours_end)} />
+                <button type="submit" className="btn" disabled={quietSaving || !profile.data}>
+                  {quietSaving ? "Saving…" : "Save"}
+                </button>
+              </div>
+            </form>
           </div>
           <div className="form-footer">
-            <span>Channel and category rules are fixed by the server</span>
+            <span>Channel and category rules are fixed by the server; quiet hours are the school&apos;s own</span>
           </div>
         </div>
         <Panel

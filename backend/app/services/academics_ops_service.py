@@ -61,6 +61,10 @@ def group_to_dict(db: Session, g: SubjectGroup) -> dict:
         "code": g.code,
         "description": g.description,
         "is_active": g.is_active,
+        "class_id": g.class_id,
+        "class_name": db.get(SchoolClass, g.class_id).name if g.class_id else None,
+        "min_picks": g.min_picks,
+        "max_picks": g.max_picks,
         "subjects": [
             {
                 "member_id": m.id,
@@ -74,6 +78,15 @@ def group_to_dict(db: Session, g: SubjectGroup) -> dict:
         "subject_count": len(rows),
         "elective_count": sum(1 for m, _ in rows if m.is_elective),
     }
+
+
+def _check_picks(db: Session, school_id: int, class_id, lo, hi) -> None:
+    if class_id is not None:
+        c = db.get(SchoolClass, class_id)
+        if not c or c.school_id != school_id:
+            raise _404("Class")
+    if lo is not None and hi is not None and lo > hi:
+        raise _400("The minimum can't be more than the maximum.")
 
 
 def list_groups(db: Session, school_id: int) -> list[dict]:
@@ -94,11 +107,15 @@ def create_group(db: Session, school_id: int, tenant_id: int, data: dict) -> dic
     ).scalar_one_or_none()
     if clash:
         raise _400(f"A group with the code {code} already exists.")
+    _check_picks(db, school_id, data.get("class_id"), data.get("min_picks"), data.get("max_picks"))
     g = SubjectGroup(
         tenant_id=tenant_id, school_id=school_id,
         name=str(data["name"]).strip(), code=code,
         description=data.get("description"),
         is_active=bool(data.get("is_active", True)),
+        class_id=data.get("class_id"),
+        min_picks=data.get("min_picks"),
+        max_picks=data.get("max_picks"),
     )
     db.add(g)
     db.commit()
@@ -110,6 +127,11 @@ def update_group(db: Session, school_id: int, group_id: int, data: dict) -> dict
     for field in ("name", "description", "is_active"):
         if field in data and data[field] is not None:
             setattr(g, field, data[field])
+    nullable = ("class_id", "min_picks", "max_picks")
+    merged = {f: data[f] if f in data else getattr(g, f) for f in nullable}
+    _check_picks(db, school_id, merged["class_id"], merged["min_picks"], merged["max_picks"])
+    for f in nullable:
+        setattr(g, f, merged[f])
     db.commit()
     return group_to_dict(db, g)
 

@@ -29,12 +29,19 @@ class GroupIn(BaseModel):
     code: str = Field(..., min_length=1, max_length=20)
     description: Optional[str] = Field(None, max_length=300)
     is_active: bool = True
+    class_id: Optional[int] = Field(None, description="Class it is offered to; null = every class")
+    min_picks: Optional[int] = Field(None, ge=0, le=20, description="Fewest subjects a student takes from it")
+    max_picks: Optional[int] = Field(None, ge=0, le=20, description="Most subjects a student takes from it")
 
 
 class GroupUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=120)
     description: Optional[str] = Field(None, max_length=300)
     is_active: Optional[bool] = None
+    # These three may be sent as null to clear them.
+    class_id: Optional[int] = None
+    min_picks: Optional[int] = Field(None, ge=0, le=20)
+    max_picks: Optional[int] = Field(None, ge=0, le=20)
 
 
 class GroupMemberIn(BaseModel):

@@ -13,6 +13,7 @@ from sqlalchemy import (
     Enum as SAEnum,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -123,3 +124,5 @@ class Branch(Base, PrimaryKeyMixin, TimestampMixin, _School):
     )
     is_main: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String(255))
+    capacity: Mapped[Optional[int]] = mapped_column(Integer)  # students the campus can take

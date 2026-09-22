@@ -8,9 +8,13 @@ import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Dialog, DialogActions, Field, Kv, SearchBox, YearSelect, downloadCsv, usePageAction, useSearch, useStudentCounts, useYears } from "./setupKit";
+import { ClassDetailFields, classDetails } from "@/features/setup/ClassSetup";
 import type { SchoolClass } from "./types";
 
-const COLUMNS = ["Class", "Sections", "Students", "Capacity", "Order"];
+const COLUMNS = ["Class", "School level", "Sections", "Students", "Coordinator", "Capacity", "Status"];
+
+/** The class's own planned capacity, else what its sections add up to. */
+const capacityOf = (c: SchoolClass) => c.capacity ?? c.sections.reduce((s, x) => s + x.capacity, 0);
 
 /**
  * SCR-094, live: GET /classes?academic_year_id, POST /classes,
@@ -31,10 +35,20 @@ export function Classes() {
     setVersion((v) => v + 1);
   };
 
-  const { q, setQ, shown } = useSearch(classes, (c) => c.name);
+  const [status, setStatus] = useState("");
+  const filtered = classes.filter((c) => !status || (status === "active") === c.is_active);
+  const { q, setQ, shown } = useSearch(filtered, (c) => `${c.name} ${c.code ?? ""} ${c.school_level ?? ""} ${c.coordinator_name ?? ""}`);
   const rows: Row[] = shown.map((c) => {
     const n = counts.get(c.id);
-    return [c.name, String(c.sections.length), n === undefined ? "…" : String(n), String(c.sections.reduce((s, x) => s + x.capacity, 0)), String(classes.indexOf(c) + 1)];
+    return [
+      c.code ? `${c.name} (${c.code})` : c.name,
+      c.school_level ?? "—",
+      String(c.sections.length),
+      n === undefined ? "…" : String(n),
+      c.coordinator_name ?? "—",
+      String(capacityOf(c)),
+      c.is_active ? "Active" : "Inactive",
+    ];
   });
 
   usePageAction("add", useCallback(() => setAdding(true), []));
@@ -57,10 +71,14 @@ export function Classes() {
       <div className="filterbar">
         <SearchBox value={q} onChange={setQ} placeholder="Search grades or classes…" />
         <YearSelect years={years} yearId={yearId} onChange={setYearId} />
+        <select aria-label="Filter status" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
       </div>
       <ErrorNote>{yearsError ?? list.error}</ErrorNote>
       <Panel title="All records" sub={`${year ? `Academic year ${year.name}` : "Current academic year"}${list.loading ? " · Loading…" : ""}`} flush>
-        {/* Not wired: "School level", "Coordinator" and "Status" — the API keeps none of these on a class. */}
         <DataTable
           columns={COLUMNS}
           rows={rows}
@@ -89,13 +107,14 @@ function ClassForm({ yearId, c, onClose, onSaved }: { yearId: number; c?: School
   const [error, setError] = useState<string | null>(null);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const name = String(new FormData(e.currentTarget).get("name")).trim();
+    const f = new FormData(e.currentTarget);
+    const name = String(f.get("name")).trim();
     setSaving(true);
     setError(null);
     try {
-      if (c) await api.patch(`/api/v1/school/classes/${c.id}`, { name });
-      else await api.post("/api/v1/school/classes", { academic_year_id: yearId, name });
-      notify(c ? "Class renamed." : `${name} created.`);
+      if (c) await api.patch(`/api/v1/school/classes/${c.id}`, { name, ...classDetails(f) });
+      else await api.post("/api/v1/school/classes", { academic_year_id: yearId, name, ...classDetails(f) });
+      notify(c ? "Class saved." : `${name} created.`);
       onSaved();
       onClose();
     } catch (err) {
@@ -105,12 +124,13 @@ function ClassForm({ yearId, c, onClose, onSaved }: { yearId: number; c?: School
     }
   }
   return (
-    <Dialog title={c ? `Rename ${c.name}` : "Add class"} onClose={onClose} error={error}>
+    <Dialog title={c ? `Edit ${c.name}` : "Add class"} onClose={onClose} error={error}>
       <form onSubmit={submit}>
         <div className="form-grid">
-          <Field label="Class name" required full>
+          <Field label="Class name" required>
             <input name="name" required defaultValue={c?.name} placeholder="e.g. Grade 8" />
           </Field>
+          <ClassDetailFields c={c} />
         </div>
         <DialogActions onCancel={onClose} saving={saving} submit={c ? "Save" : "Create class"} />
       </form>
@@ -183,9 +203,13 @@ function ClassDialog({
     <Dialog title={c.name} onClose={onClose} error={error}>
       <Kv
         rows={[
+          ["Class code", c.code ?? "—"],
+          ["School level", c.school_level ?? "—"],
+          ["Coordinator", c.coordinator_name ?? "—"],
           ["Sections", c.sections.map((s) => s.name).join(", ") || "None yet"],
           ["Students", students === undefined ? "…" : String(students)],
-          ["Capacity", String(c.sections.reduce((s, x) => s + x.capacity, 0))],
+          ["Capacity", String(capacityOf(c))],
+          ["Status", c.is_active ? "Active" : "Inactive"],
         ]}
       />
       <DialogActions onCancel={onClose} submit={null}>
@@ -196,7 +220,7 @@ function ClassDialog({
           Move down
         </button>
         <button type="button" className="btn" disabled={busy} onClick={() => setMode("rename")}>
-          Rename
+          Edit
         </button>
         <button type="button" className="btn" disabled={busy} onClick={() => setMode("section")}>
           Add section

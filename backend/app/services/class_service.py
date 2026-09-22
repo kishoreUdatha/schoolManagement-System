@@ -3,7 +3,10 @@ from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.enums import UserRole
 from app.models.academic import AcademicYear, SchoolClass, Section
+from app.models.facility import Room
+from app.models.user import User
 from app.schemas.class_section import (
     ClassCreate,
     ClassReorderRequest,
@@ -45,6 +48,63 @@ def _get_section(db: Session, section_id: int, school_id: int) -> Section:
     return sec
 
 
+def _check_coordinator(db: Session, user_id, school_id: int) -> None:
+    """A class coordinator is an active staff member of this school."""
+    if user_id is None:
+        return
+    u = db.get(User, user_id)
+    if not u or u.school_id != school_id or u.role in (UserRole.parent, UserRole.student, UserRole.super_admin):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coordinator not found")
+    if not u.is_active:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="That staff member is inactive")
+
+
+def _clean_code(code):
+    code = (code or "").strip().upper()
+    return code or None
+
+
+def _class_code_taken(db: Session, school_id: int, year_id: int, code, except_id=None) -> bool:
+    if not code:
+        return False
+    stmt = select(SchoolClass.id).where(
+        SchoolClass.school_id == school_id,
+        SchoolClass.academic_year_id == year_id,
+        func.upper(SchoolClass.code) == code,
+    )
+    if except_id:
+        stmt = stmt.where(SchoolClass.id != except_id)
+    return db.execute(stmt.limit(1)).first() is not None
+
+
+def _place_room(db: Session, section: Section, room_id) -> None:
+    """Seat a section in a room (rooms.section_id), freeing whichever room it
+    had. A room holds one section; taking another section's room is refused."""
+    for r in db.execute(select(Room).where(Room.section_id == section.id)).scalars():
+        if r.id != room_id:
+            r.section_id = None
+    if room_id is None:
+        return
+    room = db.get(Room, room_id)
+    if not room or room.school_id != section.school_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room not found")
+    if room.section_id and room.section_id != section.id:
+        other = db.get(Section, room.section_id)
+        who = f"{other.school_class.name} {other.name}" if other else "another section"
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"{room.name} is already the room of {who}",
+        )
+    room.section_id = section.id
+
+
+def _eager():
+    return (
+        selectinload(SchoolClass.sections).selectinload(Section.room),
+        selectinload(SchoolClass.coordinator),
+    )
+
+
 # --- Classes ---
 
 def create_class(
@@ -63,12 +123,25 @@ def create_class(
     else:
         order = data.display_order
 
+    _check_coordinator(db, data.coordinator_user_id, school_id)
+    code = _clean_code(data.code)
+    if _class_code_taken(db, school_id, data.academic_year_id, code):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Another class this year already uses the code {code}",
+        )
+
     cls = SchoolClass(
         tenant_id=tenant_id,
         school_id=school_id,
         academic_year_id=data.academic_year_id,
         name=data.name.strip(),
         display_order=order,
+        code=code,
+        school_level=(data.school_level or "").strip() or None,
+        capacity=data.capacity,
+        coordinator_user_id=data.coordinator_user_id,
+        is_active=data.is_active,
     )
     db.add(cls)
     try:
@@ -92,7 +165,7 @@ def list_classes(
             SchoolClass.school_id == school_id,
             SchoolClass.academic_year_id == academic_year_id,
         )
-        .options(selectinload(SchoolClass.sections))
+        .options(*_eager())
         .order_by(SchoolClass.display_order, SchoolClass.name)
     )
     return list(db.execute(stmt).scalars().all())
@@ -102,7 +175,7 @@ def get_class(db: Session, class_id: int, school_id: int) -> SchoolClass:
     cls = db.execute(
         select(SchoolClass)
         .where(SchoolClass.id == class_id, SchoolClass.school_id == school_id)
-        .options(selectinload(SchoolClass.sections))
+        .options(*_eager())
     ).scalar_one_or_none()
     if not cls:
         raise HTTPException(
@@ -116,6 +189,20 @@ def update_class(
 ) -> SchoolClass:
     cls = _get_class(db, class_id, school_id)
     updates = data.model_dump(exclude_unset=True)
+    for f in ("name", "display_order", "is_active"):
+        if f in updates and updates[f] is None:
+            updates.pop(f)  # not nullable
+    if "coordinator_user_id" in updates:
+        _check_coordinator(db, updates["coordinator_user_id"], school_id)
+    if "code" in updates:
+        updates["code"] = _clean_code(updates["code"])
+        if _class_code_taken(db, school_id, cls.academic_year_id, updates["code"], except_id=cls.id):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Another class this year already uses the code {updates['code']}",
+            )
+    if "school_level" in updates:
+        updates["school_level"] = (updates["school_level"] or "").strip() or None
     for field, value in updates.items():
         setattr(cls, field, value)
     try:
@@ -203,6 +290,9 @@ def create_section(
     )
     db.add(section)
     try:
+        db.flush()
+        if data.room_id is not None:
+            _place_room(db, section, data.room_id)
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -230,6 +320,8 @@ def update_section(
         staff_service.validate_teacher_for_school(
             db, updates["class_teacher_user_id"], school_id
         )
+    if "room_id" in updates:
+        _place_room(db, sec, updates.pop("room_id"))
     for field, value in updates.items():
         setattr(sec, field, value)
     try:

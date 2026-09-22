@@ -18,12 +18,16 @@ class AcademicYearBase(BaseModel):
 
 class AcademicYearCreate(AcademicYearBase):
     is_current: bool = False
+    admissions_open: bool = False
+    admission_opens_on: Optional[date] = None
 
 
 class AcademicYearUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=40)
     start_date: Optional[date] = None
     end_date: Optional[date] = None
+    admissions_open: Optional[bool] = None
+    admission_opens_on: Optional[date] = None
 
     @model_validator(mode="after")
     def _check_dates(self):
@@ -47,5 +51,7 @@ class AcademicYearRead(BaseModel):
     end_date: date
     is_current: bool
     is_archived: bool
+    admissions_open: bool = False
+    admission_opens_on: Optional[date] = None
     created_at: datetime
     updated_at: datetime

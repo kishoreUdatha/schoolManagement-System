@@ -8,7 +8,7 @@ import { api, errorText } from "@/lib/api";
 import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
-import { Field, orNull } from "@/features/setup/bits";
+import { BoardSelect, Field, orNull } from "@/features/setup/bits";
 import type { SchoolProfile } from "@/features/setup/types";
 import { SettingsNav } from "./SettingsNav";
 import type { Integration, SecurityPolicy, SettingEntry, TwoFactorScope } from "./types";
@@ -70,6 +70,7 @@ export function SchoolSettings() {
     try {
       await api.patch(PROFILE, {
         name: String(f.get("name") ?? "").trim(),
+        board: orNull(f.get("board")),
         timezone: String(f.get("timezone") ?? "").trim() || s!.timezone,
         working_days: days,
         email: orNull(f.get("email")),
@@ -107,7 +108,9 @@ export function SchoolSettings() {
                 <Field label="School code">
                   <input type="text" value={s.code} readOnly aria-label="School code" />
                 </Field>
-                {/* Not wired: Board — the school record has no board; no endpoint */}
+                <Field label="Board">
+                  <BoardSelect value={s.board} />
+                </Field>
                 <Field label="Academic year">
                   <select aria-label="Academic year" value={current?.id ?? ""} disabled>
                     {!current ? <option value="">None is current</option> : null}

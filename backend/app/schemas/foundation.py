@@ -97,6 +97,9 @@ class TermIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=60)
     start_date: date
     end_date: date
+    # The school's own count of teaching days; leave out to keep what is
+    # saved, null to fall back to the calendar count (school_days).
+    working_days: Optional[int] = Field(None, ge=0, le=366)
 
 
 class TermRead(TermIn):
@@ -104,6 +107,8 @@ class TermRead(TermIn):
     id: int
     academic_year_id: int
     sequence: int
+    # Working weekdays in the term less school holidays, from the calendar.
+    school_days: Optional[int] = None
 
 
 class DepartmentIn(BaseModel):
@@ -111,6 +116,9 @@ class DepartmentIn(BaseModel):
     code: str = Field(..., min_length=1, max_length=20, pattern=r"^[A-Za-z0-9-]+$")
     head_user_id: Optional[int] = None
     is_active: bool = True
+    # Leave out to keep what is saved; null clears.
+    email: Optional[str] = Field(None, max_length=255)
+    phone: Optional[str] = Field(None, max_length=20)
 
 
 class DepartmentRead(DepartmentIn):

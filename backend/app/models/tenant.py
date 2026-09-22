@@ -1,7 +1,7 @@
 from datetime import time
 from typing import Optional
 
-from sqlalchemy import BigInteger, Enum as SAEnum, ForeignKey, String, Text, Time
+from sqlalchemy import BigInteger, Enum as SAEnum, ForeignKey, SmallInteger, String, Text, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import SchoolStatus, TenantStatus
@@ -64,5 +64,23 @@ class School(Base, PrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     school_end_time: Mapped[Optional[time]] = mapped_column(Time)
     break_start_time: Mapped[Optional[time]] = mapped_column(Time)
     break_end_time: Mapped[Optional[time]] = mapped_column(Time)
+
+    # --- Identity shown on the profile and the platform's schools list ---
+    board: Mapped[Optional[str]] = mapped_column(String(40))  # CBSE, ICSE, State Board, ...
+    school_type: Mapped[Optional[str]] = mapped_column(String(60))
+    website: Mapped[Optional[str]] = mapped_column(String(255))
+    accent_color: Mapped[Optional[str]] = mapped_column(String(7))  # '#RRGGBB'
+
+    # --- Academic policy (Settings > Academic) ---
+    # 'daily' | 'period' | 'daily_period' — how the school takes attendance
+    attendance_mode: Mapped[str] = mapped_column(
+        String(20), default="daily", server_default="daily", nullable=False
+    )
+    # Overall % a student needs to be promoted; null = no school-wide rule
+    promotion_threshold: Mapped[Optional[int]] = mapped_column(SmallInteger)
+
+    # --- Notifications: non-urgent messages are held between these times ---
+    quiet_hours_start: Mapped[Optional[time]] = mapped_column(Time)
+    quiet_hours_end: Mapped[Optional[time]] = mapped_column(Time)
 
     tenant: Mapped[Tenant] = relationship(back_populates="schools")
