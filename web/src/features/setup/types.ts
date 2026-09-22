@@ -156,4 +156,6 @@ export type TenantCreated = {
   school_admin_user_id: number;
   school_admin_email: string;
   school_admin_temporary_password: string | null;
+  // sign-in details sent to the admin's mobile on WhatsApp and SMS
+  credentials_sent?: { channel: string; to: string; status: string; error: string | null }[];
 };

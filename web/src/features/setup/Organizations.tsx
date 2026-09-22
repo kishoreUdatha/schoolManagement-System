@@ -12,6 +12,7 @@ import { date, dateTime, initials, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { SentList } from "@/features/platform/Messaging";
 import { useSession } from "@/lib/useSession";
 import { BoardSelect, Field, KV, SectionTitle, count, orNull } from "./bits";
 import type { ActivityItem } from "../dashboards/types";
@@ -409,6 +410,12 @@ export function AddSchool() {
                   <b className="mono">{created.school_admin_temporary_password}</b>
                   {`. It is shown only once — send it to ${created.school_admin_email} before leaving this page.`}
                 </span>
+              </div>
+            ) : null}
+            {created.credentials_sent ? (
+              <div style={{ marginTop: 16 }}>
+                <h3 style={{ fontSize: 15, marginBottom: 8 }}>Sent to their mobile</h3>
+                <SentList sent={created.credentials_sent} />
               </div>
             ) : null}
           </div>

@@ -11,6 +11,7 @@ import { date, dateTime, initials, label, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { SignInDetailsPanel } from "./Messaging";
 import type { Meter, Payment, Plan, Subscription, TenantDetail, TenantStatus, TenantUsage } from "./types";
 
 const num = (v: number | null | undefined) => (v === null || v === undefined ? "—" : v.toLocaleString("en-IN"));
@@ -324,6 +325,7 @@ export function OrganizationDetails() {
               </button>
             )}
           </Panel>
+          <SignInDetailsPanel tenantId={id} />
           <Panel title="Subscription" sub={subscription.data ? `#${subscription.data.id} · assigned ${date(subscription.data.created_at)}` : undefined}>
             {subscription.data ? (
               <Kv

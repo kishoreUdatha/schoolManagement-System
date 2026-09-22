@@ -10,6 +10,7 @@ import { money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { SentList, type Sent } from "./Messaging";
 import type { Plan, SchoolRow, Tenant } from "./types";
 
 type Created = {
@@ -18,6 +19,7 @@ type Created = {
   school_admin_user_id: number;
   school_admin_email: string;
   school_admin_temporary_password: string | null;
+  credentials_sent: Sent[];
 };
 
 /**
@@ -62,8 +64,8 @@ export function AddOrganization() {
           setPlanNote(`The organization was created, but the plan was not assigned: ${errorText(err)}`);
         }
       }
-      if (res.school_admin_temporary_password) {
-        // The password is shown once and cannot be fetched again: stay here.
+      if (res.school_admin_temporary_password || res.credentials_sent.length) {
+        // The password is shown once and cannot be fetched again, and what was sent is worth seeing: stay here.
         setCreated(res);
       } else {
         notify("Organization created.");
@@ -86,7 +88,9 @@ export function AddOrganization() {
             <span>{`${created.tenant.name} was created, with ${created.school.name} as its first school.`}</span>
           </div>
           <p style={{ marginBottom: 12 }}>
-            Share these sign-in details with the school admin <strong>once</strong>. The password is not stored in plain text and cannot be shown again.
+            {created.credentials_sent.some((x) => x.status === "sent")
+              ? "The sign-in details were sent to the school admin’s mobile. They are also shown here once; the password cannot be shown again."
+              : "Share these sign-in details with the school admin. The password is not stored in plain text and cannot be shown again."}
           </p>
           <dl className="kv">
             <div>
@@ -98,6 +102,8 @@ export function AddOrganization() {
               <dd className="mono">{created.school_admin_temporary_password}</dd>
             </div>
           </dl>
+          <h3 style={{ margin: "16px 0 8px", fontSize: 15 }}>Sent to their mobile</h3>
+          <SentList sent={created.credentials_sent} />
           <div className="gap" />
           <Link href={`${routeOf(12)}?id=${created.tenant.id}`} className="btn primary">
             <Icon name="arrow" className="sm" />
@@ -206,7 +212,7 @@ export function AddOrganization() {
             </div>
             <div>
               <dt>School admin</dt>
-              <dd>Gets a generated password, shown to you once</dd>
+              <dd>Gets a generated password on WhatsApp and SMS (admin phone and mobile number), also shown to you once</dd>
             </div>
           </dl>
           <div className="gap" />

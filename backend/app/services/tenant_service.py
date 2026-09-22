@@ -108,6 +108,8 @@ def create_tenant_with_school_admin(db: Session, data: TenantCreate) -> tuple[Te
         password_hash=hash_password(raw_password),
         role=UserRole.school_admin,
         is_active=True,
+        # a generated password is sent by WhatsApp / SMS: they choose their own at first sign-in
+        must_change_password=not data.school_admin_password,
     )
     db.add(user)
     db.commit()

@@ -20,6 +20,7 @@ from app.api.v1.public import payments as public_payments
 from app.api.v1.public import whatsapp as public_whatsapp
 from app.api.v1.school import whatsapp as school_whatsapp
 from app.api.v1.super_admin import integrations as super_admin_integrations
+from app.api.v1.super_admin import messaging as super_admin_messaging
 from app.api.v1.public import transport as public_transport
 from app.api.v1.school import (
     academic_years as school_academic_years,
@@ -809,6 +810,11 @@ app.include_router(
 )
 app.include_router(
     super_admin_integrations.router,
+    prefix="/api/v1/super-admin",
+    tags=["super-admin / integrations"],
+)
+app.include_router(
+    super_admin_messaging.router,
     prefix="/api/v1/super-admin",
     tags=["super-admin / integrations"],
 )

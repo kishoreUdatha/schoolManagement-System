@@ -7,9 +7,11 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { useApi } from "@/lib/useApi";
+import { PlatformMessaging } from "./Messaging";
 
 /**
- * NEW-083, live: GET /super-admin/integrations. Every school's own payment
+ * NEW-083, live. The platform's own WhatsApp and SMS (sign-in details for new
+ * schools; features/platform/Messaging), then GET /super-admin/integrations: every school's own payment
  * gateway (Razorpay) and WhatsApp Business connection, as each school set it
  * up; secrets never leave the school's settings.
  */
@@ -62,6 +64,7 @@ export function TenantIntegrations() {
   ]);
   return (
     <>
+      <PlatformMessaging />
       <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">

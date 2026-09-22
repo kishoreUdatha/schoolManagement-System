@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     # for providers that call back with delivery reports (Twilio needs it on
     # each message). Empty: no callback is requested.
     public_api_base_url: str = ""
+    # Where people open the web app (the sign-in link in welcome messages).
+    web_app_url: str = "http://localhost:3100"
     # How often queued WhatsApp messages are sent, in seconds (0 turns it off).
     whatsapp_dispatch_interval_seconds: int = 15
 

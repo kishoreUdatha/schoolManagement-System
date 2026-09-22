@@ -92,6 +92,8 @@ class TenantCreateResponse(BaseModel):
     school_admin_temporary_password: Optional[str] = Field(
         None, description="Only returned when password was auto-generated"
     )
+    # Sign-in details sent to the admin's and the contact's mobile (WhatsApp, SMS)
+    credentials_sent: list[dict] = []
 
 
 # Forward ref import to avoid circular at module load

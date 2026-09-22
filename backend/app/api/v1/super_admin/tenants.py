@@ -16,7 +16,7 @@ from app.schemas.tenant import (
     TenantStatusUpdate,
     TenantUpdate,
 )
-from app.services import tenant_service
+from app.services import platform_messaging_service, tenant_service
 
 
 router = APIRouter()
@@ -35,6 +35,11 @@ def create_tenant(
 ):
     tenant, school, admin_user, temp_password = tenant_service.create_tenant_with_school_admin(
         db, payload
+    )
+    # Username and password to the admin's mobile on WhatsApp and SMS; a
+    # channel that isn't set up or fails is reported, never undoes the tenant.
+    sent = platform_messaging_service.send_login(
+        db, tenant, admin_user, payload.school_admin_password or temp_password
     )
     return TenantCreateResponse(
         tenant=TenantRead.model_validate(tenant),
@@ -56,6 +61,7 @@ def create_tenant(
         school_admin_user_id=admin_user.id,
         school_admin_email=admin_user.email,
         school_admin_temporary_password=temp_password,
+        credentials_sent=sent,
     )
 
 
