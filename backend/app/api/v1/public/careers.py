@@ -49,7 +49,7 @@ def apply(tenant_code: str, school_code: str, opening_id: int, payload: PublicAp
     opening = svc.get_opening(db, opening_id, school.id)
     if not opening.is_public:
         raise svc._404("Opening")
-    svc.apply(db, school.tenant_id, school.id, opening_id, payload.candidate, payload.message)
+    svc.apply(db, school.tenant_id, school.id, opening_id, payload.candidate, payload.message, public=True)
     return ApplyAck(message=f"Thank you. The school will be in touch about {opening.title}.")
 
 
@@ -77,16 +77,19 @@ def apply_with_resume(
     if resume is not None and resume.filename:
         info = storage.save_upload(school.id, "resumes", resume, allowed=storage.RESUME_TYPES, max_mb=RESUME_MAX_MB)
     try:
-        a = svc.apply(db, school.tenant_id, school.id, opening_id, data.candidate, data.message)
+        a = svc.apply(db, school.tenant_id, school.id, opening_id, data.candidate, data.message, public=True)
     except Exception:
         if info:
             storage.delete(info["key"])
         raise
     if info:
         c = db.get(Candidate, a.candidate_id)
-        old = c.resume_key
-        c.resume_key, c.resume_name = info["key"], info["original_name"]
-        db.commit()
-        if old:
-            storage.delete(old)
+        if c.resume_key:
+            # This form is public and a candidate is matched by email, so it
+            # never replaces a résumé the school already holds; the office can
+            # swap it from the Candidate Pool.
+            storage.delete(info["key"])
+        else:
+            c.resume_key, c.resume_name = info["key"], info["original_name"]
+            db.commit()
     return ApplyAck(message=f"Thank you. The school will be in touch about {opening.title}.")

@@ -185,15 +185,20 @@ def get_candidate(db: Session, candidate_id: int, school_id: int) -> Candidate:
     return c
 
 
-def upsert_candidate(db: Session, tenant_id: int, school_id: int, data: CandidateIn) -> Candidate:
+def upsert_candidate(db: Session, tenant_id: int, school_id: int, data: CandidateIn, *, public: bool = False) -> Candidate:
     email = data.email.strip().lower()
     c = db.execute(
         select(Candidate).where(Candidate.school_id == school_id, func.lower(Candidate.email) == email)
     ).scalar_one_or_none()
+    known = c is not None
     if not c:
         c = Candidate(tenant_id=tenant_id, school_id=school_id, email=email)
         db.add(c)
     for k, v in data.model_dump(exclude={"email"}).items():
+        # From the public form, anyone can type an existing candidate's email:
+        # fill in what the school doesn't have, never overwrite what it does.
+        if public and known and (getattr(c, k) not in (None, "") or k == "notes"):
+            continue
         if v is not None or k == "notes":
             setattr(c, k, v)
     db.flush()
@@ -241,13 +246,13 @@ def get_application(db: Session, application_id: int, school_id: int) -> Candida
 
 
 def apply(db: Session, tenant_id: int, school_id: int, opening_id: int, data: CandidateIn,
-          notes: Optional[str] = None) -> CandidateApplication:
+          notes: Optional[str] = None, *, public: bool = False) -> CandidateApplication:
     o = get_opening(db, opening_id, school_id)
     if o.status != OpeningStatus.open:
         raise _400("This opening isn't taking applications")
     if o.closes_on and o.closes_on < school_today(db, school_id):
         raise _400("Applications for this opening have closed")
-    c = upsert_candidate(db, tenant_id, school_id, data)
+    c = upsert_candidate(db, tenant_id, school_id, data, public=public)
     existing = db.execute(
         select(CandidateApplication).where(CandidateApplication.opening_id == o.id, CandidateApplication.candidate_id == c.id)
     ).scalar_one_or_none()
