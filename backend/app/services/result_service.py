@@ -13,6 +13,7 @@ from app.models.parent import ParentStudent
 from app.models.student import Student
 from app.models.subject import ClassSubject, Subject
 from app.models.tenant import School
+from app.models.user import User
 from app.services import grading_service
 
 
@@ -86,6 +87,13 @@ def _build_result(
         ).scalars().all()
         marks_by_paper = {m.exam_subject_id: m for m in marks}
 
+    teacher_ids = {cs.teacher_user_id for _, cs, _ in paper_rows if cs.teacher_user_id}
+    teacher_names = (
+        dict(db.execute(select(User.id, User.full_name).where(User.id.in_(teacher_ids))).all())
+        if teacher_ids
+        else {}
+    )
+
     subjects = []
     total_max = 0
     total_obtained = 0
@@ -95,7 +103,7 @@ def _build_result(
     subjects_exempt = 0
     subjects_pending = 0
 
-    for paper, _, subj in paper_rows:
+    for paper, paper_cs, subj in paper_rows:
         m = marks_by_paper.get(paper.id)
         if m is None:
             subjects_pending += 1
@@ -137,6 +145,7 @@ def _build_result(
                 "grade": grade,
                 "is_pass": is_pass,
                 "remark": m.remark if m else None,
+                "teacher_name": teacher_names.get(paper_cs.teacher_user_id),
             }
         )
 
@@ -273,7 +282,59 @@ def get_child_exam_result(
     db: Session, parent_user_id: int, student_id: int, exam_id: int
 ) -> dict:
     student = _verify_parent_link(db, parent_user_id, student_id)
-    return get_published_result_for_student(db, student, exam_id)
+    result = get_published_result_for_student(db, student, exam_id)
+    ack = _acknowledgement(db, exam_id, student_id, parent_user_id)
+    # A card re-issued after a correction needs acknowledging again.
+    current = ack is not None and ack.result_version >= result.get("result_version", 1)
+    result["acknowledged_at"] = ack.acknowledged_at if current else None
+    return result
+
+
+def _acknowledgement(db: Session, exam_id: int, student_id: int, parent_user_id: int):
+    from app.models.result_override import ReportCardAcknowledgement
+
+    return db.execute(
+        select(ReportCardAcknowledgement).where(
+            ReportCardAcknowledgement.exam_id == exam_id,
+            ReportCardAcknowledgement.student_id == student_id,
+            ReportCardAcknowledgement.parent_user_id == parent_user_id,
+        )
+    ).scalar_one_or_none()
+
+
+def acknowledge_report_card(
+    db: Session, parent_user_id: int, student_id: int, exam_id: int
+) -> dict:
+    """Record that this parent has seen this child's report card. Only a
+    published result can be acknowledged; doing it twice keeps the first time
+    unless the card has been re-issued since."""
+    from datetime import datetime, timezone
+
+    from app.models.result_override import ReportCardAcknowledgement
+
+    result = get_child_exam_result(db, parent_user_id, student_id, exam_id)
+    if result.get("acknowledged_at"):
+        return result
+    version = result.get("result_version", 1)
+    now = datetime.now(timezone.utc)
+    ack = _acknowledgement(db, exam_id, student_id, parent_user_id)
+    student = db.get(Student, student_id)
+    if ack is None:
+        ack = ReportCardAcknowledgement(
+            tenant_id=student.tenant_id,
+            school_id=student.school_id,
+            exam_id=exam_id,
+            student_id=student_id,
+            parent_user_id=parent_user_id,
+            result_version=version,
+            acknowledged_at=now,
+        )
+        db.add(ack)
+    else:
+        ack.result_version, ack.acknowledged_at = version, now
+    db.commit()
+    result["acknowledged_at"] = now
+    return result
 
 
 def get_published_result_for_student(db: Session, student: Student, exam_id: int) -> dict:
@@ -285,7 +346,11 @@ def get_published_result_for_student(db: Session, student: Student, exam_id: int
             detail="Exam not found or not published",
         )
     result = apply_override(db, _build_result(db, exam, student), for_parent=True)
-    return add_report_card_extras(db, exam, student, result)
+    result = add_report_card_extras(db, exam, student, result)
+    school = db.get(School, student.school_id)
+    result["school_name"] = school.name if school else None
+    result["school_logo_url"] = school.logo_url if school else None
+    return result
 
 
 def build_student_result_for_admin(

@@ -5,6 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.enums import NotificationCategory
 from app.core.enums import (
     NoticeAudience,
     NoticeChannel,
@@ -133,6 +134,8 @@ def _maybe_notify_parents(
         ),
         audience=NoticeAudience.class_parents,
         audience_class_id=cls.id if cls else None,
+        category=NotificationCategory.homework,
+        link=f"/parent/homework-detail?id={h.id}",
         channels=[NoticeChannel.in_app.value],
         attachment_url=h.attachment_url,
         status=NoticeStatus.draft,

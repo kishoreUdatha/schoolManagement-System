@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import notify
+from app.core.enums import NotificationCategory
 from app.core.enums import StaffLeaveStatus, StudentLeaveStatus, UserRole
 from app.core.scoping import require_linked_child, school_today, section_labels
 from app.models.academic import Section
@@ -523,7 +524,8 @@ def decide(db: Session, user: User, leave_id: int, data: DecideIn) -> StudentLea
     st = db.get(Student, lv.student_id)
     verb = "approved" if data.approve else "not approved"
     notify.student_parents(db, st, f"Leave {verb}: {st.full_name}",
-                           f"{lv.from_date:%d %b} to {lv.to_date:%d %b} was {verb}." + (f" {data.note}" if data.note else ""))
+                           f"{lv.from_date:%d %b} to {lv.to_date:%d %b} was {verb}." + (f" {data.note}" if data.note else ""),
+                           category=NotificationCategory.attendance, link=f"/parent/leave-request-detail?id={lv.id}")
     db.commit()
     db.refresh(lv)
     return lv

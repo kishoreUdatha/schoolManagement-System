@@ -2,7 +2,7 @@
 // Parent app · Module: Communication · Release: MVP · ERP: SCR-252 / SCR-255
 // Feature: Read full circular and acknowledge when the school requires it.
 // Mock: Parent_Mobile_58_Screens/screens/PM-034_notice_detail.html
-// Wired: GET /api/v1/parent/me/notices, POST /api/v1/parent/me/notices/{recipient_id}/mark-read (?id=). Hand-maintained.
+// Wired: GET /api/v1/parent/me/notices, POST /api/v1/parent/me/notices/{recipient_id}/mark-read (?id=); event date/time/venue and the notice link. Hand-maintained.
 
 import { Suspense } from "react";
 import { ParentShell } from "@/components/parent/ParentShell";

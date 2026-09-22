@@ -20,6 +20,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import notify
+from app.core.enums import NotificationCategory
 from app.core.enums import (
     AttemptStatus,
     BloomLevel,
@@ -407,7 +408,8 @@ def publish(db: Session, user: User, test_id: int) -> OnlineTest:
     notify.broadcast(db, tenant_id=t.tenant_id, school_id=t.school_id, audience=aud, class_id=class_id, section_id=section_id,
                      title=f"Online test: {t.title}",
                      body=f"{subj} test, {t.duration_minutes} minutes. Opens {t.starts_at:%d %b %H:%M} UTC and closes {t.ends_at:%d %b %H:%M} UTC. "
-                          "Your child can take it from the parent app.")
+                          "Your child can take it from the parent app.",
+                     category=NotificationCategory.exams, link="/parent/online-tests")
     db.commit()
     db.refresh(t)
     return t

@@ -84,8 +84,7 @@ export function Results() {
             <div className="item" key={s.exam_paper_id}>
               <span>
                 <strong>{s.subject_name}</strong>
-                {/* Not wired: subject teacher's name — not in the result response. */}
-                <small>{[s.grade ? `Grade ${s.grade}` : null, s.remark].filter(Boolean).join(" · ") || s.subject_code}</small>
+                <small>{[s.teacher_name, s.grade ? `Grade ${s.grade}` : null, s.remark].filter(Boolean).join(" · ") || s.subject_code}</small>
               </span>
               <span className={`value ${s.is_pass === false ? "bad" : ""}`}>{subjectValue(s)}</span>
             </div>

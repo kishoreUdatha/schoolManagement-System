@@ -43,7 +43,10 @@ function ProfileFor({ childId }: { childId: number }) {
           <dt>Academic year</dt>
           <dd>{s.academic_year_name ?? "—"}</dd>
         </div>
-        {/* Not wired: class teacher — the profile endpoint does not return one. */}
+        <div>
+          <dt>Class teacher</dt>
+          <dd>{s.class_teacher_name ?? "Not assigned yet"}</dd>
+        </div>
         {s.dob ? (
           <div>
             <dt>Date of birth</dt>

@@ -6,23 +6,17 @@
  * one child, so these lists do not change with the child bar.
  */
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useParent } from "@/components/parent/ParentShell";
 import { api, errorText } from "@/lib/api";
 import { date, dateTime } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
+import { categoryLabel, clock, longDate, NOTICE_CATEGORIES, noticeTarget } from "../home/parts";
+import type { Notice } from "../home/types";
 import { PmEmpty, PmError, PmLoading, useGoTo, useQueryId } from "./ui";
 
-export type InboxNotice = {
-  recipient_id: number;
-  notice_id: number;
-  title: string;
-  body: string;
-  attachment_url: string | null;
-  sent_at: string | null;
-  read_at: string | null;
-  status: string;
-};
+export type InboxNotice = Notice;
 
 const NOTICES = "/api/v1/parent/me/notices";
 const COLORS = ["blue", "purple", "green", "amber"];
@@ -38,7 +32,8 @@ const Chevron = () => (
 export function NoticeBoard() {
   const goTo = useGoTo();
   const [unread, setUnread] = useState(false);
-  const list = useApi<InboxNotice[]>(NOTICES, { unread_only: unread || undefined, limit: 100 });
+  const [category, setCategory] = useState("");
+  const list = useApi<InboxNotice[]>(NOTICES, { unread_only: unread || undefined, category: category || undefined, limit: 100 });
 
   return (
     <>
@@ -47,17 +42,29 @@ export function NoticeBoard() {
         <h2>Stay in the loop.</h2>
         <p>Announcements for your child’s school day.</p>
       </div>
-      {/* Not wired: category filter — notices carry no category. Filter by read state instead. */}
+      <label className="field">
+        Category
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <option value="">All notices</option>
+          {NOTICE_CATEGORIES.map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="field">
         Show
         <select value={unread ? "unread" : "all"} onChange={(e) => setUnread(e.target.value === "unread")}>
-          <option value="all">All notices</option>
+          <option value="all">Read and unread</option>
           <option value="unread">Unread only</option>
         </select>
       </label>
       <PmError>{list.error}</PmError>
       {list.loading && !list.data ? <PmLoading /> : null}
-      {list.data && !list.data.length ? <PmEmpty title={unread ? "All caught up" : "No notices yet"}>{unread ? "You have read every notice." : "School announcements will appear here."}</PmEmpty> : null}
+      {list.data && !list.data.length ? (
+        <PmEmpty title={unread ? "All caught up" : "No notices yet"}>{unread ? "You have read every notice." : category ? `Nothing under ${categoryLabel(category)}.` : "School announcements will appear here."}</PmEmpty>
+      ) : null}
       {list.data?.length ? (
         <div className="row-group">
           {list.data.map((n, i) => (
@@ -70,7 +77,7 @@ export function NoticeBoard() {
               </span>
               <span className="v-row-copy">
                 <strong>{n.title}</strong>
-                <small>{date(n.sent_at)}</small>
+                <small>{`${date(n.sent_at)} · ${categoryLabel(n.category)}`}</small>
               </span>
               <span className="v-row-value">{n.read_at ? "" : "New"}</span>
               <Chevron />
@@ -85,7 +92,8 @@ export function NoticeBoard() {
 const safeUrl = (u: string) => /^(https?:\/\/|\/)/i.test(u);
 
 export function NoticeDetail() {
-  const { notify } = useParent();
+  const { notify, children, childId, setChild } = useParent();
+  const router = useRouter();
   const goTo = useGoTo();
   const id = useQueryId("id");
   const list = useApi<InboxNotice[]>(NOTICES, { limit: 200 });
@@ -120,13 +128,47 @@ export function NoticeDetail() {
     }
   }
 
+  const target = noticeTarget(n.link);
+  const time = n.event_start_time ? (n.event_end_time ? `${clock(n.event_start_time)}–${clock(n.event_end_time)}` : clock(n.event_start_time)) : null;
+  function openTarget() {
+    if (!target) return;
+    if (n!.student_id && n!.student_id !== childId && children.some((c) => c.id === n!.student_id)) setChild(n!.student_id);
+    router.push(target);
+  }
+
   return (
     <>
-      <span className="eyebrow">SCHOOL CIRCULAR</span>
+      <span className="eyebrow">{n.category === "general" ? "SCHOOL CIRCULAR" : categoryLabel(n.category).toUpperCase()}</span>
       <h1>{n.title}</h1>
-      <p className="lead">{date(n.sent_at)}</p>
+      <p className="lead">{`${date(n.sent_at)} · ${categoryLabel(n.category)}`}</p>
       <p style={{ whiteSpace: "pre-wrap" }}>{n.body}</p>
-      {/* Not wired: event date, time and venue rows — notices are free text with no structured fields. */}
+      {n.event_date || time || n.event_venue ? (
+        <dl>
+          {n.event_date ? (
+            <div>
+              <dt>Date</dt>
+              <dd>{longDate(n.event_date)}</dd>
+            </div>
+          ) : null}
+          {time ? (
+            <div>
+              <dt>Time</dt>
+              <dd>{time}</dd>
+            </div>
+          ) : null}
+          {n.event_venue ? (
+            <div>
+              <dt>Venue</dt>
+              <dd>{n.event_venue}</dd>
+            </div>
+          ) : null}
+        </dl>
+      ) : null}
+      {target ? (
+        <button className="action" onClick={openTarget}>
+          {n.category === "fees" ? "View fees" : n.category === "homework" ? "Open homework" : n.category === "attendance" ? "View attendance" : "Open"}
+        </button>
+      ) : null}
       {n.attachment_url && safeUrl(n.attachment_url) ? (
         <p>
           <a className="quiet-link" href={n.attachment_url} target="_blank" rel="noopener noreferrer">

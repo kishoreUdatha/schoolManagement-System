@@ -7,8 +7,8 @@ import { parentRoute } from "@/lib/parentScreens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import type { Homework } from "../learning/types";
-import { BRANDING_PATH, Chevron, childPath, ChildScoped, dueLabel, PmError, shortDate, todayIso, type Branding } from "./parts";
-import type { ChildTransport, FeeRow, ParentPtm, StudentProfile } from "./types";
+import { BRANDING_PATH, Chevron, childPath, ChildScoped, clock, dueLabel, PmError, shortDate, todayIso, type Branding } from "./parts";
+import type { AttendanceDay, ChildTransport, FeeRow, ParentPtm, StudentProfile } from "./types";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -33,6 +33,7 @@ function HomeFor({ childId, child }: { childId: number; child: Child }) {
   const transport = useApi<ChildTransport | null>(childPath(childId, "/transport"));
   const ptm = useApi<ParentPtm[]>("/api/v1/parent/me/ptm");
   const school = useApi<Branding>(BRANDING_PATH);
+  const todayMark = useApi<AttendanceDay>(childPath(childId, "/attendance/day"), { date: todayIso() });
 
   const now = new Date();
   const first = child.full_name.split(/\s+/)[0];
@@ -91,7 +92,7 @@ function HomeFor({ childId, child }: { childId: number; child: Child }) {
             </span>
             <span className="chevron">⌄</span>
           </button>
-          {/* Not wired: "At school · Checked in" — no gate check-in endpoint for parents. */}
+          <TodayStatus day={todayMark.data} />
         </div>
         <div className="identity-stats">
           <button onClick={() => go(9)}>
@@ -229,5 +230,39 @@ function HomeFor({ childId, child }: { childId: number; child: Child }) {
         </>
       ) : null}
     </>
+  );
+}
+
+/** "At school · Checked in 8:24 AM", from today's register (nothing until it is marked). */
+function TodayStatus({ day }: { day: AttendanceDay | null }) {
+  if (!day?.status) return null;
+  if (day.status === "absent") {
+    return (
+      <div className="school-status">
+        <span className="presence">
+          <i />
+          Absent today
+        </span>
+        <small>Marked by school</small>
+      </div>
+    );
+  }
+  const left = Boolean(day.left_at);
+  return (
+    <div className="school-status">
+      <span className="presence">
+        <i />
+        {left ? "Left school" : "At school"}
+      </span>
+      {left || day.arrived_at ? (
+        <small>
+          {left ? "Checked out" : "Checked in"}
+          <br />
+          <b>{clock(left ? day.left_at : day.arrived_at)}</b>
+        </small>
+      ) : (
+        <small>Marked present</small>
+      )}
+    </div>
   );
 }

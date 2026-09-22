@@ -27,11 +27,14 @@ export type StudentProfile = {
   class_name: string | null;
   academic_year_id: number;
   academic_year_name: string | null;
+  class_teacher_name: string | null;
   parents: { user_id: number; full_name: string; email: string | null; phone: string | null; relation: string }[];
   attendance: AttendanceSummary;
   homework_recent: HomeworkSnapshot[];
   fees_pending_amount: number;
 };
+
+export type NoticeCategory = "attendance" | "fees" | "exams" | "homework" | "events" | "general";
 
 export type Notice = {
   recipient_id: number;
@@ -39,9 +42,41 @@ export type Notice = {
   title: string;
   body: string;
   attachment_url: string | null;
+  category: NoticeCategory;
+  /** In-app path to the record the notice is about, e.g. "/parent/fees". */
+  link: string | null;
+  /** The child it is about, when it is about one child. */
+  student_id: number | null;
+  event_date: string | null;
+  event_start_time: string | null;
+  event_end_time: string | null;
+  event_venue: string | null;
   sent_at: string | null;
   read_at: string | null;
   status: string;
+};
+
+/** GET …/children/{id}/attendance/day — one day's register mark and lessons. */
+export type AttendanceStatus = "present" | "absent" | "late" | "half_day";
+export type AttendanceDay = {
+  date: string;
+  status: AttendanceStatus | null;
+  remark: string | null;
+  arrived_at: string | null;
+  left_at: string | null;
+  marked_by_name: string | null;
+  marked_at: string | null;
+  holiday_name: string | null;
+  on_approved_leave: boolean;
+  periods: { period_id: number; period_number: number; label: string | null; start_time: string; end_time: string; subject_name: string | null; status: AttendanceStatus; remark: string | null }[];
+};
+
+/** GET …/children/{id}/attendance/month — day-by-day marks for a month. */
+export type AttendanceMonth = {
+  month: string;
+  days: { date: string; status: AttendanceStatus; remark: string | null; arrived_at: string | null; left_at: string | null }[];
+  holidays: { date: string; name: string }[];
+  totals: { present: number; absent: number; late: number; half_day: number; marked: number; attendance_percent: number | null };
 };
 
 export type ChildTransport = {

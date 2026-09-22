@@ -229,6 +229,12 @@ export type Notice = {
   channels: Channel[];
   attachment_url: string | null;
   scheduled_at: string | null;
+  /** What it is about (parents filter and mute by it). */
+  category?: string;
+  event_date?: string | null;
+  event_start_time?: string | null;
+  event_end_time?: string | null;
+  event_venue?: string | null;
   sent_at: string | null;
   status: "draft" | "scheduled" | "sent" | "failed";
   created_at: string;

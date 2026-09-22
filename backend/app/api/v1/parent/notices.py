@@ -1,10 +1,11 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.deps import ParentUser
+from app.core.enums import NotificationCategory
 from app.database import get_db
 from app.schemas.notice import InboxNotice
 from app.services import notice_service
@@ -23,9 +24,10 @@ def list_inbox(
     db: Annotated[Session, Depends(get_db)],
     unread_only: bool = Query(False),
     limit: int = Query(50, ge=1, le=200),
+    category: Optional[NotificationCategory] = Query(None),
 ):
     items = notice_service.list_inbox(
-        db, current_user.id, unread_only=unread_only, limit=limit
+        db, current_user.id, unread_only=unread_only, limit=limit, category=category
     )
     return [InboxNotice.model_validate(i) for i in items]
 

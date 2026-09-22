@@ -178,6 +178,11 @@ def build_profile(db: Session, student: Student) -> dict:
     section = db.get(Section, student.section_id)
     cls = db.get(SchoolClass, section.class_id) if section else None
     year = db.get(AcademicYear, student.academic_year_id)
+    class_teacher = (
+        db.get(User, section.class_teacher_user_id)
+        if section and section.class_teacher_user_id
+        else None
+    )
 
     return {
         "id": student.id,
@@ -196,6 +201,7 @@ def build_profile(db: Session, student: Student) -> dict:
         "class_name": cls.name if cls else None,
         "academic_year_id": student.academic_year_id,
         "academic_year_name": year.name if year else None,
+        "class_teacher_name": class_teacher.full_name if class_teacher else None,
         "parents": _parents(db, student.id),
         "attendance": _attendance_summary(db, student.id),
         "behaviour_recent": _recent_behaviour(db, student.id),

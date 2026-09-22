@@ -63,6 +63,7 @@ def _paper_to_read_dict(db: Session, p: ExamSubject) -> dict:
         "exam_date": p.exam_date,
         "start_time": p.start_time,
         "duration_minutes": p.duration_minutes,
+        "syllabus": p.syllabus,
         "marks_entered_count": _marks_entered_for_paper(db, p.id),
         "marks_verified_at": p.marks_verified_at,
         "marks_verified_by_name": (
@@ -97,6 +98,7 @@ def _exam_to_read_dict(db: Session, e: Exam) -> dict:
         "revision_no": e.revision_no,
         "revised_at": e.revised_at,
         "revision_reason": e.revision_reason,
+        "instructions": e.instructions,
         "created_at": e.created_at,
         "papers": paper_dicts,
         "papers_count": len(papers),
@@ -135,6 +137,7 @@ def create_exam(
         kind=data.kind,
         start_date=data.start_date,
         end_date=data.end_date,
+        instructions=data.instructions,
         is_published=False,
         created_by_user_id=actor_user_id,
     )
@@ -407,6 +410,7 @@ def create_paper(
         exam_date=data.exam_date,
         start_time=data.start_time,
         duration_minutes=data.duration_minutes,
+        syllabus=data.syllabus,
     )
     db.add(p)
     try:

@@ -2,7 +2,7 @@
 // Parent app · Module: Communication · Release: MVP · ERP: SCR-252
 // Feature: Read targeted school announcements and attachments.
 // Mock: Parent_Mobile_58_Screens/screens/PM-033_notice_board.html
-// Wired: GET /api/v1/parent/me/notices (?unread_only). Hand-maintained.
+// Wired: GET /api/v1/parent/me/notices (?unread_only, category). Hand-maintained.
 
 import { Suspense } from "react";
 import { ParentShell } from "@/components/parent/ParentShell";

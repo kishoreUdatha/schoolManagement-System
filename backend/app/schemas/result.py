@@ -18,6 +18,7 @@ class SubjectResult(BaseModel):
     grade: Optional[str] = None
     is_pass: Optional[bool] = None
     remark: Optional[str] = None
+    teacher_name: Optional[str] = None  # who teaches this subject to the class
 
 
 class ResultSummary(BaseModel):
@@ -77,6 +78,11 @@ class ExamResultRead(BaseModel):
     attendance_percent: Optional[int] = None
     teacher_remark: Optional[str] = None
     principal_remark: Optional[str] = None
+    # set on the family's copy (parent / student portals)
+    school_name: Optional[str] = None
+    school_logo_url: Optional[str] = None
+    # when the signed-in parent acknowledged this card (parent portal only)
+    acknowledged_at: Optional[datetime] = None
 
 
 class ExamSummaryForList(BaseModel):

@@ -17,6 +17,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core import notify
+from app.core.enums import NotificationCategory
 from app.core.enums import FeeStatus, LateFeeBasis, MoneyMode, RefundStatus, UserRole
 from app.core.scoping import school_today, section_labels
 from app.models.accounts import FeeCollection
@@ -200,6 +201,7 @@ def apply_late_fees(db: Session, user: User, on: Optional[date] = None, notify_p
                         db, st, "Late fee added",
                         f"A late fee of {row['charge']} was added because the {row['head_name']} fee for "
                         f"{row['period']} was due on {fee.due_date}.",
+                        category=NotificationCategory.fees, link="/parent/fees",
                     )
     db.commit()
     return dict(date=on, created=created, updated=updated, total=plan["total"])
@@ -302,7 +304,8 @@ def process_refund(db: Session, user: User, refund_id: int, data: RefundProcessI
     st = db.get(Student, r.student_id)
     if st:
         notify.student_parents(db, st, "Fee refund processed",
-                               f"A refund of {r.amount} was processed on {data.processed_on:%d %b %Y}. {r.reason}")
+                               f"A refund of {r.amount} was processed on {data.processed_on:%d %b %Y}. {r.reason}",
+                               category=NotificationCategory.fees, link="/parent/payments-receipts")
     db.commit()
     db.refresh(r)
     return r

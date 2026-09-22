@@ -8,7 +8,13 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.enums import NoticeAudience, NoticeChannel, NoticeStatus, RecipientStatus
+from app.core.enums import (
+    NoticeAudience,
+    NoticeChannel,
+    NoticeStatus,
+    NotificationCategory,
+    RecipientStatus,
+)
 from app.models.notice import Notice, NoticeRecipient
 from app.models.parent import ParentStudent
 from app.models.student import Student
@@ -18,7 +24,8 @@ log = logging.getLogger("notify")
 
 
 def _send(db: Session, *, tenant_id: int, school_id: int, user_ids: list[int], title: str, body: str,
-          audience: NoticeAudience, student_id=None) -> int:
+          audience: NoticeAudience, student_id=None,
+          category: NotificationCategory = NotificationCategory.general, link=None) -> int:
     if not user_ids:
         return 0
     now = datetime.now(timezone.utc)
@@ -31,6 +38,8 @@ def _send(db: Session, *, tenant_id: int, school_id: int, user_ids: list[int], t
                 body=body,
                 audience=audience,
                 audience_student_id=student_id,
+                category=category,
+                link=link,
                 channels=[NoticeChannel.in_app.value],
                 status=NoticeStatus.sent,
                 sent_at=now,
@@ -55,8 +64,12 @@ def _send(db: Session, *, tenant_id: int, school_id: int, user_ids: list[int], t
         return 0
 
 
-def student_parents(db: Session, student: Student, title: str, body: str) -> int:
-    """Notify every parent linked to the student. Caller commits."""
+def student_parents(db: Session, student: Student, title: str, body: str, *,
+                    category: NotificationCategory = NotificationCategory.general, link=None) -> int:
+    """Notify every parent linked to the student. Caller commits.
+
+    `category` lets the parent filter (and mute) it; `link` is the in-app path
+    the parent app opens when the notice is tapped."""
     parents = list(
         db.execute(select(ParentStudent.parent_user_id).where(ParentStudent.student_id == student.id)).scalars()
     )
@@ -69,6 +82,8 @@ def student_parents(db: Session, student: Student, title: str, body: str) -> int
         body=body,
         audience=NoticeAudience.single_parent,
         student_id=student.id,
+        category=category,
+        link=link,
     )
 
 
@@ -81,7 +96,8 @@ def staff_users(db: Session, *, tenant_id: int, school_id: int, user_ids: list[i
 
 
 def broadcast(db: Session, *, tenant_id: int, school_id: int, audience: NoticeAudience, title: str, body: str,
-              class_id=None, section_id=None, student_id=None) -> int:
+              class_id=None, section_id=None, student_id=None,
+              category: NotificationCategory = NotificationCategory.general, link=None) -> int:
     """Send to a notice audience (all parents, a class, a section...) using the
     notices module's own recipient rules. Caller commits."""
     from app.services.notice_service import _resolve_recipients
@@ -91,4 +107,4 @@ def broadcast(db: Session, *, tenant_id: int, school_id: int, audience: NoticeAu
                    channels=[NoticeChannel.in_app.value], status=NoticeStatus.sent)
     users = [u.id for u in _resolve_recipients(db, probe)]
     return _send(db, tenant_id=tenant_id, school_id=school_id, user_ids=users, title=title, body=body,
-                 audience=audience, student_id=student_id) if users else 0
+                 audience=audience, student_id=student_id, category=category, link=link) if users else 0

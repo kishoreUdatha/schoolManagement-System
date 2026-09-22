@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import notify, storage
+from app.core.enums import NotificationCategory
 from app.core.enums import (
     ConsentResponse,
     EventAudience,
@@ -90,7 +91,8 @@ def _audience_labels(db: Session, rows) -> dict[int, str]:
 
 
 def _notify_audience(db: Session, obj, title: str, body: str) -> None:
-    kw = dict(tenant_id=obj.tenant_id, school_id=obj.school_id, title=title, body=body)
+    kw = dict(tenant_id=obj.tenant_id, school_id=obj.school_id, title=title, body=body,
+              category=NotificationCategory.events, link="/parent/school-calendar")
     a = obj.audience
     if a in (EventAudience.everyone, EventAudience.parents):
         notify.broadcast(db, audience=NoticeAudience.all_parents, **kw)
@@ -592,6 +594,7 @@ def publish_session(db: Session, s: PtmSession) -> PtmSession:
         db, tenant_id=s.tenant_id, school_id=s.school_id, audience=_session_parents_audience(s),
         class_id=s.class_id, section_id=s.section_id, title=f"Parent-teacher meeting: {s.title}",
         body=f"Book a slot with your child's teachers for {when}" + (f" at {s.venue}" if s.venue else "") + ".",
+        category=NotificationCategory.events, link="/parent/book-a-ptm",
     )
     teacher_ids = list(db.execute(select(PtmSlot.teacher_user_id).where(PtmSlot.session_id == s.id).distinct()).scalars())
     notify.staff_users(db, tenant_id=s.tenant_id, school_id=s.school_id, user_ids=teacher_ids,
@@ -611,6 +614,7 @@ def admin_cancel_booking(db: Session, s: PtmSession, slot_id: int) -> None:
             notify.student_parents(
                 db, st, f"Meeting slot cancelled: {s.title}",
                 f"The school cancelled the {x.start_time.strftime('%I:%M %p').lstrip('0')} slot. Please book another.",
+                category=NotificationCategory.events, link="/parent/book-a-ptm",
             )
     _free(x)
     db.commit()

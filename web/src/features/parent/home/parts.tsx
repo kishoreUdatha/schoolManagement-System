@@ -150,3 +150,20 @@ export function ActionLink({ href, secondary, children }: { href: string; second
     </button>
   );
 }
+
+/** Notice categories as the parent app names them (the API's `category`). */
+export const NOTICE_CATEGORIES = [
+  ["attendance", "Attendance"],
+  ["homework", "Homework"],
+  ["fees", "Fees"],
+  ["exams", "Exams"],
+  ["events", "Events"],
+  ["general", "School updates"],
+] as const;
+
+export const categoryLabel = (c: string | null | undefined) => NOTICE_CATEGORIES.find(([k]) => k === c)?.[1] ?? "School updates";
+
+/** Where a notice leads: its own link, and only ever to a screen inside the parent app. */
+export function noticeTarget(link: string | null | undefined): string | null {
+  return link && /^\/parent\/[\w\-/?=&.%]*$/.test(link) ? link : null;
+}

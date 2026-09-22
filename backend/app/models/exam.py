@@ -12,6 +12,7 @@ from sqlalchemy import (
     Integer,
     SmallInteger,
     String,
+    Text,
     Time,
     UniqueConstraint,
 )
@@ -84,6 +85,10 @@ class Exam(Base, PrimaryKeyMixin, TimestampMixin):
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
 
+    # What families are told before the exam: reporting time, what to
+    # bring. Shown on the parent's exam schedule under the papers.
+    instructions: Mapped[Optional[str]] = mapped_column(Text)
+
     created_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
@@ -131,6 +136,8 @@ class ExamSubject(Base, PrimaryKeyMixin, TimestampMixin):
     # guess the hour. Nullable, because every existing paper predates it.
     start_time: Mapped[Optional[time]] = mapped_column(Time)
     duration_minutes: Mapped[Optional[int]] = mapped_column(SmallInteger)
+    # The portion this paper covers ("Ch. 1-5"), as the datesheet prints it.
+    syllabus: Mapped[Optional[str]] = mapped_column(String(500))
     # a second pair of eyes on this paper's marks before results go out
     marks_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     marks_verified_by_user_id: Mapped[Optional[int]] = mapped_column(

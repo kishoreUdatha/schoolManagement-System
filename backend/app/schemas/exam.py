@@ -35,6 +35,7 @@ class ExamPaperBase(BaseModel):
     exam_date: date
     start_time: Optional[time] = None
     duration_minutes: Optional[int] = Field(None, ge=1, le=600)
+    syllabus: Optional[str] = Field(None, max_length=500)
 
     @model_validator(mode="after")
     def _pass_le_max(self):
@@ -53,6 +54,7 @@ class ExamPaperUpdate(BaseModel):
     exam_date: Optional[date] = None
     start_time: Optional[time] = None
     duration_minutes: Optional[int] = Field(None, ge=1, le=600)
+    syllabus: Optional[str] = Field(None, max_length=500)
 
 
 class ExamPaperRead(BaseModel):
@@ -69,6 +71,7 @@ class ExamPaperRead(BaseModel):
     exam_date: date
     start_time: Optional[time] = None
     duration_minutes: Optional[int] = None
+    syllabus: Optional[str] = None
     marks_entered_count: int = 0
     marks_verified_at: Optional[datetime] = None
     marks_verified_by_name: Optional[str] = None
@@ -93,6 +96,7 @@ class ExamBase(BaseModel):
 class ExamCreate(ExamBase):
     academic_year_id: int
     term_id: Optional[int] = None
+    instructions: Optional[str] = Field(None, max_length=4000)
 
 
 class ExamUpdate(BaseModel):
@@ -103,6 +107,7 @@ class ExamUpdate(BaseModel):
     term_id: Optional[int] = None
     exam_type_id: Optional[int] = None
     grade_scale_id: Optional[int] = None
+    instructions: Optional[str] = Field(None, max_length=4000)
 
 
 class ExamRead(BaseModel):
@@ -127,6 +132,7 @@ class ExamRead(BaseModel):
     revision_no: int = 1
     revised_at: Optional[datetime] = None
     revision_reason: Optional[str] = None
+    instructions: Optional[str] = None
     created_at: datetime
     papers: list[ExamPaperRead] = []
     papers_count: int = 0
