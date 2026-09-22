@@ -242,3 +242,20 @@ option{background:#fff}
 .stat-strip.stat-strip .stat-value{font-size:20px;letter-spacing:-.5px;line-height:1.25;margin:3px 0 2px}
 .stat-strip.stat-strip .stat-note{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:700px){.stat-strip.stat-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-strip.stat-strip .stat:nth-child(2n){border-right:0}}
+/* Profile headers (student, staff, parent…): one compact band instead of the
+   mock's tall banner */
+.profile-banner.profile-banner{margin-bottom:16px}
+.profile-banner .profile-hero{padding:14px 20px;gap:14px}
+.profile-banner .profile-hero .row{gap:14px}
+.profile-banner .profile-hero .avatar.large{width:52px;height:52px;min-width:52px;font-size:20px;border-radius:12px}
+.profile-banner .profile-hero h2{font-size:20px;margin-bottom:2px;line-height:1.25}
+.profile-banner .profile-meta{margin-top:6px;gap:6px 14px;flex-wrap:wrap;align-items:center}
+.profile-banner .profile-badge{width:auto;height:auto;display:flex;align-items:baseline;gap:6px;padding:7px 14px;border-radius:999px}
+.profile-banner .profile-badge strong{font-size:18px}
+.profile-banner .profile-tabs a{padding:11px 0}
+.profile-hero{padding:14px 20px}
+.profile-hero h2{font-size:20px}
+.profile-hero .avatar.large{width:52px;height:52px;min-width:52px;font-size:20px;border-radius:12px}
+.profile-hero .profile-badge{width:auto;height:auto;display:flex;align-items:baseline;gap:6px;padding:7px 14px;border-radius:999px}
+.profile-hero .profile-badge strong{font-size:18px}
+.profile-hero .profile-meta{margin-top:6px}
