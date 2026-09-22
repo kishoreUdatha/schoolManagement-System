@@ -42,7 +42,8 @@ function useQuery() {
  * GET/PUT/DELETE /gallery/{id}, POST …/publish, POST …/photos (multipart),
  * PATCH/DELETE /gallery/photos/{id}, GET …/file for the pictures. Videos:
  * the office lists and removes (GET /school/videos, DELETE /school/videos/{id});
- * a teacher adds their own (POST /teacher/videos), which the school API does not offer.
+ * a teacher adds their own (POST /teacher/videos), which the school API does not offer,
+ * edits them (PATCH /teacher/videos/{id}) and sees who watched (GET /teacher/videos/{id}/completions).
  */
 export function GalleryVideos() {
   const role = useRole();
@@ -553,11 +554,13 @@ function SchoolVideos({ canRemove }: { canRemove: boolean }) {
   );
 }
 
-/** A teacher's own videos: GET/POST /teacher/videos, DELETE /teacher/videos/{id}. */
+/** A teacher's own videos: GET/POST /teacher/videos, PATCH/DELETE /teacher/videos/{id}, GET /teacher/videos/{id}/completions. */
 function TeacherVideos() {
   const videos = useApi<Video[]>("/api/v1/teacher/videos");
   const mine = useApi<TeacherClasses>("/api/v1/teacher/my-classes");
   const [adding, closeAdd] = useNewFlag();
+  const [editing, setEditing] = useState<Video | null>(null);
+  const [watching, setWatching] = useState<Video | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const subjects = (mine.data?.subject_teacher_of ?? []).filter((s) => s.is_current_year);
@@ -608,16 +611,35 @@ function TeacherVideos() {
               <a className="btn" href={items[i].youtube_url} target="_blank" rel="noreferrer">
                 Watch
               </a>
+              <button type="button" className="btn" onClick={() => setWatching(items[i])}>
+                Who watched
+              </button>
               {items[i].is_active ? (
-                <button type="button" className="btn" onClick={() => remove(items[i])}>
-                  Remove
-                </button>
+                <>
+                  <button type="button" className="btn" onClick={() => setEditing(items[i])}>
+                    Edit
+                  </button>
+                  <button type="button" className="btn" onClick={() => remove(items[i])}>
+                    Remove
+                  </button>
+                </>
               ) : null}
             </>
           )}
           empty={videos.loading ? "Loading videos…" : "You have not shared any videos yet."}
         />
       </Panel>
+      {editing ? (
+        <VideoEdit
+          video={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            videos.reload();
+          }}
+        />
+      ) : null}
+      {watching ? <VideoCompletions video={watching} onClose={() => setWatching(null)} /> : null}
       <Dialog
         open={adding}
         title="Share a video"
@@ -660,6 +682,111 @@ function TeacherVideos() {
         </div>
       </Dialog>
     </>
+  );
+}
+
+type CompletionRoster = {
+  video_id: number;
+  completion_count: number;
+  eligible_student_count: number;
+  rows: { student_id: number; admission_no: string; roll_no: number; full_name: string; section_label: string; completed: boolean; completed_at: string | null }[];
+};
+
+/** PATCH /teacher/videos/{id}: title, description and the YouTube link. */
+function VideoEdit({ video, onClose, onSaved }: { video: Video; onClose: () => void; onSaved: () => void }) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function save(e: FormEvent<HTMLFormElement>) {
+    const f = new FormData(e.currentTarget);
+    setSaving(true);
+    setError(null);
+    try {
+      await api.patch(`/api/v1/teacher/videos/${video.id}`, {
+        title: formText(f, "title"),
+        // Always sent: an emptied description clears it.
+        description: String(f.get("description") ?? "").trim(),
+        youtube_url: formText(f, "youtube_url"),
+      });
+      notify("Video updated.");
+      onSaved();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      title={`Edit video · ${video.title}`}
+      onClose={onClose}
+      onSubmit={save}
+      actions={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="btn primary" disabled={saving}>
+            <Icon name="check" className="sm" />
+            {saving ? "Saving…" : "Save changes"}
+          </button>
+        </>
+      }
+    >
+      <ErrorNote>{error}</ErrorNote>
+      <p className="small muted" style={{ marginBottom: 14 }}>{`${[video.class_name, video.subject_name].filter(Boolean).join(" · ") || "—"}. To share it with another class, add it again there.`}</p>
+      <div className="form-grid">
+        <Field label="Title" required full>
+          <input name="title" required maxLength={200} defaultValue={video.title} />
+        </Field>
+        <Field label="YouTube link" required full>
+          <input name="youtube_url" type="url" required defaultValue={video.youtube_url} />
+        </Field>
+        <Field label="Description" full>
+          <textarea name="description" defaultValue={video.description ?? ""} />
+        </Field>
+      </div>
+    </Dialog>
+  );
+}
+
+/** GET /teacher/videos/{id}/completions: which students in the class marked the video watched. */
+function VideoCompletions({ video, onClose }: { video: Video; onClose: () => void }) {
+  const roster = useApi<CompletionRoster>(`/api/v1/teacher/videos/${video.id}/completions`);
+  const [show, setShow] = useState("");
+  const all = roster.data?.rows ?? [];
+  const items = all.filter((r) => (show === "done" ? r.completed : show === "not" ? !r.completed : true));
+  return (
+    <Dialog
+      open
+      wide
+      title={`Who watched · ${video.title}`}
+      onClose={onClose}
+      actions={
+        <button type="button" className="btn primary" onClick={onClose}>
+          Close
+        </button>
+      }
+    >
+      <ErrorNote>{roster.error}</ErrorNote>
+      <div className="spread" style={{ marginBottom: 12, gap: 12 }}>
+        <span className="small muted">{roster.data ? `${roster.data.completion_count} of ${roster.data.eligible_student_count} students have watched it.` : "Loading…"}</span>
+        <select aria-label="Show" value={show} onChange={(e) => setShow(e.target.value)}>
+          <option value="">Everyone</option>
+          <option value="done">Watched</option>
+          <option value="not">Not watched yet</option>
+        </select>
+      </div>
+      <DataTable
+        columns={["Student", "Section", "Roll no", "Watched on", "Status"]}
+        rows={items.map((r) => [{ name: r.full_name, sub: r.admission_no }, r.section_label, String(r.roll_no), r.completed_at ? date(r.completed_at) : "—", r.completed ? "Watched" : "Not watched (pending)"])}
+        selectable={false}
+        rowAction={false}
+        empty={roster.loading ? "Loading…" : all.length ? "No student matches." : "No students in this class."}
+      />
+    </Dialog>
   );
 }
 

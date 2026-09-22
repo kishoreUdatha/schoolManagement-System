@@ -114,7 +114,18 @@ function StaffRoleDashboard({ panel: key, permission, job, cta, actions }: Confi
             ) : (
               <Empty>{me.loading ? "Loading…" : (me.error ?? "—")}</Empty>
             )}
-            <div style={{ marginTop: 12 }}>
+            <div className="row" style={{ marginTop: 12, gap: 8, flexWrap: "wrap" }}>
+              <Link href={routeOf(1090)} className="btn">
+                {me.data && !me.data.is_holiday && !me.data.check_in_at ? "Check in" : "My attendance"}
+              </Link>
+              <Link href={routeOf(1091)} className="btn">
+                My leave
+              </Link>
+              <Link href={routeOf(1092)} className="btn">
+                My payslips
+              </Link>
+            </div>
+            <div style={{ marginTop: 8 }}>
               <Link href={routeOf(179)} className="btn text">
                 Staff attendance
               </Link>

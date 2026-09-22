@@ -1,7 +1,7 @@
 // SCR-134 · Assignment List
 // Module: Homework & Assignments · Role: Teacher · Release: Phase 2 · Stories: US-0267 / US-0268
 // Mock: screens/SCR-134_Assignment_List.html
-// Wired: GET /api/v1/teacher/projects, /teacher/projects/{id}/progress, /teacher/my-classes. Hand-maintained.
+// Wired: GET /api/v1/teacher/projects, /teacher/projects/{id}/progress, /teacher/my-classes; PATCH/DELETE /teacher/projects/{id}. Hand-maintained.
 
 import { Suspense } from "react";
 import Link from "next/link";

@@ -8,9 +8,12 @@ import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
+import { errorText } from "@/lib/api";
 import { date } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
+import { ProjectEditDialog, deleteProject } from "@/features/teacher/ProjectEdit";
 import { daysUntil, shortDate, teacherState, todayIso, useEach } from "./shared";
 import type { Homework, MyClasses, Progress, Project, Submission } from "./types";
 
@@ -34,6 +37,8 @@ const AVATARS = ["", "mint", "lilac", "peach"];
  * SCR-128 Homework List (GET /teacher/homework, per-item submissions) and
  * SCR-134 Assignment List (GET /teacher/projects, per-item progress).
  * Both are the teacher's own work, with the mock's list, tracker and figures.
+ * On SCR-134 the author can also edit (PATCH /teacher/projects/{id}) and
+ * delete (DELETE /teacher/projects/{id}) an assignment from the tracker.
  */
 export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
   const router = useRouter();
@@ -44,6 +49,9 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [includePast, setIncludePast] = useState(true);
+  const me = useSession()?.user.id;
+  const [editing, setEditing] = useState<Project | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const homework = useApi<Homework[]>(isHw ? "/api/v1/teacher/homework" : null, { class_subject_id: csId, include_past: includePast, limit: 200 });
   const projects = useApi<Project[]>(isHw ? null : "/api/v1/teacher/projects");
@@ -128,7 +136,17 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
     teacherState(i.closed, i.pastDue, i.due),
   ]);
 
-  const error = classes.error ?? homework.error ?? projects.error;
+  const error = actionError ?? classes.error ?? homework.error ?? projects.error;
+  const projectOf = (id: number) => projects.data?.find((p) => p.id === id) ?? null;
+
+  async function remove(p: Project) {
+    setActionError(null);
+    try {
+      if (await deleteProject(p)) projects.reload();
+    } catch (e) {
+      setActionError(errorText(e));
+    }
+  }
 
   return (
     <>
@@ -188,10 +206,45 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
         <DataTable
           columns={[isHw ? "Homework" : "Assignment", "Subject", "Class", "Due date", "Submissions", "Status"]}
           rows={rows}
-          onView={(k) => router.push(detail(shown[k].id))}
+          onView={isHw ? (k) => router.push(detail(shown[k].id)) : undefined}
+          actions={
+            isHw
+              ? undefined
+              : (k) => {
+                  const p = projectOf(shown[k].id);
+                  const mine = p !== null && p.created_by_user_id === me;
+                  return (
+                    <>
+                      <button type="button" className="btn" onClick={() => router.push(detail(shown[k].id))}>
+                        View
+                      </button>
+                      {mine ? (
+                        <>
+                          <button type="button" className="btn" onClick={() => setEditing(p)}>
+                            Edit
+                          </button>
+                          <button type="button" className="btn" onClick={() => remove(p)}>
+                            Delete
+                          </button>
+                        </>
+                      ) : null}
+                    </>
+                  );
+                }
+          }
           empty={loading ? "Loading…" : cards.length === 0 ? "You aren't assigned as a subject teacher anywhere yet." : search || status || csId ? "Nothing matches these filters." : `No ${noun} set yet.`}
         />
       </Panel>
+      {editing ? (
+        <ProjectEditDialog
+          project={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            projects.reload();
+          }}
+        />
+      ) : null}
     </>
   );
 }
