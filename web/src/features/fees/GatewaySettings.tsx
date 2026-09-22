@@ -105,10 +105,23 @@ export function GatewaySettings() {
   const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="two-col">
+    <div>
       <form id="gateway-form" className="panel" onSubmit={save} autoComplete="off">
         <div className="panel-pad">
           <ErrorNote>{error}</ErrorNote>
+          {g.configured ? (
+            <div className={`gateway-conn ${checking && !check ? "" : check?.connected ? "ok" : "bad"}`} role="status">
+              <div>
+                <strong>{checking && !check ? "Checking with Razorpay…" : check?.connected ? "Connected to Razorpay" : "Not connected"}</strong>
+                <span>{[status, check ? `${check.connected ? "keys accepted" : check.message} · checked ${time(check.checked_at)}` : null].filter(Boolean).join(" · ")}</span>
+              </div>
+              <button type="button" className="btn sm" disabled={checking} onClick={runCheck}>
+                {checking ? "Checking…" : "Check connection"}
+              </button>
+            </div>
+          ) : g.test_mode_available ? (
+            <p className="muted small" style={{ marginBottom: 14 }}>Not set up. On this development server parents get a simulated checkout until keys are saved.</p>
+          ) : null}
           <div className="form-sections">
             <section>
               <div className="form-section-title">
@@ -187,43 +200,6 @@ export function GatewaySettings() {
           </button>
         </div>
       </form>
-      <aside className="stack">
-        <div className="aside-panel">
-          <h3>Status</h3>
-          {g.configured ? (
-            <div className={`gateway-conn ${checking && !check ? "" : check?.connected ? "ok" : "bad"}`} role="status">
-              <strong>{checking && !check ? "Checking with Razorpay…" : check?.connected ? "Connected to Razorpay" : "Not connected"}</strong>
-              {check ? <span>{`${check.connected ? "Razorpay accepted the keys" : check.message} · checked ${time(check.checked_at)}`}</span> : null}
-              <button type="button" className="btn sm" disabled={checking} onClick={runCheck}>
-                {checking ? "Checking…" : "Check connection"}
-              </button>
-            </div>
-          ) : null}
-          <dl className="kv">
-            <div>
-              <dt>Provider</dt>
-              <dd>Razorpay</dd>
-            </div>
-            <div>
-              <dt>Online payments</dt>
-              <dd>{status}</dd>
-            </div>
-            <div>
-              <dt>Key ID</dt>
-              <dd className="mono">{g.key_id ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Key secret</dt>
-              <dd>{g.configured ? "Stored (hidden)" : "Not stored"}</dd>
-            </div>
-            <div>
-              <dt>Webhook secret</dt>
-              <dd>{g.has_webhook_secret ? "Stored (hidden)" : "Not set · payments are confirmed only while the parent stays on the page"}</dd>
-            </div>
-          </dl>
-          {!g.configured && g.test_mode_available ? <p style={{ marginTop: 12 }}>This is a development server: without keys, parents get a simulated checkout for testing.</p> : null}
-        </div>
-      </aside>
     </div>
   );
 }
