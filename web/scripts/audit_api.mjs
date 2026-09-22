@@ -44,12 +44,20 @@ function constValue(name, sf, seen = new Set()) {
   if (seen.has(name)) return null;
   seen.add(name);
   let found;
+  let local = false;
   sf.forEachChild(function walk(n) {
     if (found !== undefined) return;
-    if (ts.isVariableDeclaration(n) && n.name.getText(sf) === name && n.initializer) found = pathOf(n.initializer, sf, seen);
+    if (ts.isVariableDeclaration(n) && n.name.getText(sf) === name) {
+      local = true;
+      if (n.initializer) found = pathOf(n.initializer, sf, seen);
+    }
+    if ((ts.isParameter(n) || ts.isBindingElement(n)) && n.name.getText(sf) === name) local = true;
     n.forEachChild(walk);
   });
   if (found !== undefined && found !== null) return found;
+  // A name declared in this file but not readable (a conditional, a prop) is
+  // unknown; another file's constant of the same name says nothing about it.
+  if (local) return null;
   return GLOBAL_CONSTS.get(name) ?? null;
 }
 
@@ -81,6 +89,7 @@ function objectKeys(node) {
   const keys = [];
   for (const p of node.properties) {
     if (ts.isSpreadAssignment(p)) spread = true;
+    else if (p.name && ts.isComputedPropertyName(p.name)) spread = true; // [key]: unknown name
     else if (p.name) keys.push(p.name.getText().replace(/^["']|["']$/g, ""));
   }
   return { keys, spread };
@@ -120,7 +129,8 @@ for (const file of files(ROOT)) {
         calls++;
         const where = `${rel}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1}`;
         const raw = pathOf(n.arguments[0], sf);
-        if (raw === null) {
+        // a path whose start is unknown (`${base}/x`) cannot be matched: unchecked
+        if (raw === null || raw.startsWith("\u0000")) {
           unchecked.push(`${where}  ${method.toUpperCase()} ${n.arguments[0].getText(sf).slice(0, 60)}`);
         } else {
           const clean = raw.split("?")[0];
