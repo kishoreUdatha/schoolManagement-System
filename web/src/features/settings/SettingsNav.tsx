@@ -5,7 +5,6 @@ const LINKS: [number, string][] = [
   [289, "School profile"],
   [290, "Academic settings"],
   [291, "Notifications"],
-  [285, "Roles & permissions"],
   [292, "Integrations"],
   [1082, "WhatsApp"],
   [293, "Security"],

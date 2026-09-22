@@ -25,6 +25,8 @@ export const NOT_IN_MENU = new Set([
   34, 35, 36, 37, 38, 39, 40, 41, 42, // the other roles' dashboards
   110, 114, 128, 131, 132, 134, 145, 147, // teacher / parent / student portal screens
   21, 22, 23, // organisation profile, schools list, add school: the platform's, not a school's
+  // School Settings' tabs: the menu lists School Settings once and the tabs do the rest.
+  290, 291, 292, 293, 294, 1082,
 ]);
 
 const OPEN_KEY = "bc_nav_open";
@@ -38,6 +40,7 @@ export const PARENT: Record<number, number> = {
   81: 80, 82: 80, 83: 80,
   99: 98, 103: 102, 129: 128, 130: 128, 135: 134, 156: 155, 175: 174,
   187: 186, 188: 186, 190: 189, 199: 198, 200: 198, 247: 246, 248: 246,
+  290: 289, 291: 289, 292: 289, 293: 289, 294: 289, 1082: 289,
 };
 
 /**
