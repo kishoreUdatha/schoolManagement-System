@@ -191,3 +191,33 @@ option{background:#fff}
 .setup-chip:has(input:checked){border-color:var(--blue);background:#eef4ff;color:var(--blue)}
 .setup-chip.has{opacity:.7;cursor:default}
 @media(max-width:700px){.setup-strip{flex-wrap:wrap}.setup-strip-bar{flex-basis:100%}.setup-body{padding-left:18px}}
+/* setup wizard */
+.wizard-top{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+.wizard-meter{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:12.5px;color:#56698a}
+.wizard-meter .setup-strip-bar{flex:0 0 180px}
+.wizard-rail{list-style:none;margin:0;padding:0;display:flex;gap:4px;overflow-x:auto}
+.wizard-rail li{flex:1;min-width:64px}
+.wizard-dot{width:100%;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:6px 2px;border-radius:10px;cursor:pointer;font:inherit;color:#56698a}
+.wizard-dot:hover{background:#f4f8ff}
+.wizard-dot.done .setup-num{background:#dcf5e8;color:#0f8a57}
+.wizard-dot.on .setup-num{background:var(--blue);color:#fff;box-shadow:0 0 0 4px #dbe8ff}
+.wizard-dot.on{color:var(--ink);font-weight:700}
+.wizard-dot-label{font-size:11.5px;white-space:nowrap}
+.wizard-card{padding:22px 24px}
+.wizard-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.wizard-card-head h2{font-size:20px;margin:2px 0 4px}
+.wizard-card-head p{margin:0;color:#56698a;font-size:13.5px}
+.wizard-done-note{display:flex;align-items:center;gap:8px;background:#effaf4;border:1px solid #cdeedd;color:#0f6e46;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+.wizard-body .row{flex-wrap:wrap;gap:10px;align-items:center}
+.wizard-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:16px}
+.wizard-foot{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);margin-top:20px;padding-top:16px}
+.wizard-passwords{background:#fff8e6;border:1px solid #f3dfa6;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px;display:grid;gap:4px}
+.wizard-passwords code{background:#fff;border:1px solid #ecd9a0;border-radius:6px;padding:1px 6px;font-weight:700}
+.wizard-fee-table input{width:110px;height:34px;border:1px solid #dce5f2;border-radius:8px;padding:0 8px}
+.wizard-fee-table th .link-btn{display:block;background:none;border:0;padding:0;margin-top:2px;color:var(--blue);font-size:11.5px;cursor:pointer}
+.wizard-summary{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.wizard-summary li{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.wizard-summary li.done .setup-num{background:#dcf5e8;color:#0f8a57}
+.wizard-summary strong{display:block;font-size:14px}
+.wizard-summary small{display:block;font-size:12px;color:#56698a}
+@media(max-width:700px){.wizard-card{padding:16px}.wizard-meter .setup-strip-bar{flex-basis:100px}.wizard-card-head{flex-direction:column}}

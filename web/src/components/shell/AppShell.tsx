@@ -217,6 +217,12 @@ function initials(name: string) {
  */
 function YearSelect({ admin }: { admin: boolean }) {
   const years = useApi<{ id: number; name: string; is_current: boolean }[]>("/api/v1/school/academic-years");
+  const reload = years.reload;
+  // a screen that creates the year (the setup guide) says so
+  useEffect(() => {
+    window.addEventListener("bc:years-changed", reload);
+    return () => window.removeEventListener("bc:years-changed", reload);
+  }, [reload]);
   if (!years.data) return null;
   const current = years.data.find((y) => y.is_current);
   async function change(id: number) {
