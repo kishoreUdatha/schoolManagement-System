@@ -9,7 +9,7 @@ import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { PICK_PARENT, useParent } from "./ParentShell";
+import { AddNote, NotesPanel, PICK_PARENT, useParent, useParentNotes } from "./ParentShell";
 import type { PtmSession, PtmSessionDetail, PtmSlot } from "./types";
 
 type Meeting = { session: PtmSession; teacher: string; slot: PtmSlot };
@@ -21,10 +21,12 @@ const hm = (t: string) => t.slice(0, 5);
  * lists the sessions; GET /ptm/{id} gives each teacher's slots, kept where the
  * booked student is one of this parent's children (GET /parents/{id}).
  * Messages are teacher-to-parent only and have no school-side endpoint.
+ * Office notes: GET/POST/DELETE /parents/{id}/notes.
  */
 export function ParentInteractions() {
   const { id, data: p, error, loading } = useParent();
   const sessions = useApi<PtmSession[]>(id ? "/api/v1/school/ptm" : null);
+  const notes = useParentNotes(id);
   const [meetings, setMeetings] = useState<Meeting[] | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
 
@@ -115,14 +117,17 @@ export function ParentInteractions() {
               : "No published parent-teacher meeting is coming up."}
           </p>
           <div className="gap" />
-          {/* Not wired: "Add note" — there is no endpoint for a school-side note on a parent. */}
-          {first ? (
-            <Link href={`${routeOf(57)}?id=${first.student_id}`} className="btn">
-              <Icon name="arrow" className="sm" />
-              {`Open ${first.full_name.split(/\s+/)[0]}’s profile`}
-            </Link>
-          ) : null}
+          <div className="actions">
+            <AddNote id={String(p.user_id)} onAdded={notes.reload} />
+            {first ? (
+              <Link href={`${routeOf(57)}?id=${first.student_id}`} className="btn">
+                <Icon name="arrow" className="sm" />
+                {`Open ${first.full_name.split(/\s+/)[0]}’s profile`}
+              </Link>
+            ) : null}
+          </div>
         </Panel>
+        <NotesPanel id={String(p.user_id)} notes={notes.data} loading={notes.loading} onChange={notes.reload} />
       </aside>
     </div>
   );

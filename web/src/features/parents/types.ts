@@ -11,6 +11,8 @@ export type ChildLink = {
   section_id: number;
   section_label: string | null;
   relation: ParentRelation;
+  /** This parent is the child's primary contact. */
+  is_primary_contact: boolean;
 };
 
 /** ParentRead: one parent login and the children it can see. */
@@ -21,7 +23,20 @@ export type Parent = {
   phone: string | null;
   is_active: boolean;
   last_login_at: string | null;
+  /** Kept on the guardian record that mirrors this login. */
+  occupation: string | null;
+  address: string | null;
   children: ChildLink[];
+};
+
+/** GET /api/v1/school/parents/{id}/notes: office notes the parent never sees. */
+export type ParentNote = {
+  id: number;
+  parent_user_id: number;
+  body: string;
+  created_by_user_id: number | null;
+  created_by_name: string | null;
+  created_at: string;
 };
 
 export type ParentCreateResponse = { parent: Parent; temporary_password: string };

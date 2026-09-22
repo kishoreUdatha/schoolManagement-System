@@ -23,6 +23,7 @@ class ApplicationIn(BaseModel):
     gender: Optional[Gender] = None
     previous_school: Optional[str] = Field(None, max_length=200)
     sibling_in_school: bool = False
+    transport_required: bool = False
     category: Optional[str] = Field(None, max_length=60)
     father_name: Optional[str] = Field(None, max_length=160)
     mother_name: Optional[str] = Field(None, max_length=160)
@@ -67,6 +68,8 @@ class AdmitIn(BaseModel):
     admission_no: Optional[str] = Field(None, min_length=1, max_length=40)
     create_parent_login: bool = True
     relation: ParentRelation = ParentRelation.guardian
+    # The day the child is taken on roll; starts their enrolment. Defaults to today.
+    admission_date: Optional[date] = None
 
 
 class AdmitResult(BaseModel):
@@ -150,6 +153,7 @@ class ApplicationRead(BaseModel):
     gender: Optional[Gender]
     previous_school: Optional[str]
     sibling_in_school: bool
+    transport_required: bool = False
     category: Optional[str]
     father_name: Optional[str]
     mother_name: Optional[str]

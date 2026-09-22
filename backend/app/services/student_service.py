@@ -542,7 +542,9 @@ def transfer_out(db: Session, student_id: int, school_id: int, user, data: Trans
     if data.reason:
         note += f" — {data.reason.strip()}"
     s.address = s.address  # untouched; the note belongs on the enrolment
-    foundation_service.close_enrollment(db, s, outcome=EnrollmentOutcome.left, end_date=left_on, note=note)
+    closed = foundation_service.close_enrollment(db, s, outcome=EnrollmentOutcome.left, end_date=left_on, note=note)
+    if data.remarks and data.remarks.strip():
+        closed.exit_remarks = data.remarks.strip()
     db.commit()
     db.refresh(s)
     return {

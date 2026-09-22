@@ -9,13 +9,15 @@ import { api, errorText, type Paginated } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import type { SectionResults } from "./records";
 import type { AcademicYear, SchoolClass, Student } from "./types";
 
 /**
  * SCR-069, live: pick a section in one year and a section in the next, review
  * the active roster, then POST /students/promote {source_section_id,
  * target_section_id, student_ids}. A section change inside a year is an edit
- * of the student (SCR-058).
+ * of the student (SCR-058). Each child's result across the year's published
+ * exams from GET /student-detail/section-results?section_id=.
  */
 export function StudentPromotion() {
   const years = useApi<AcademicYear[]>("/api/v1/school/academic-years");
@@ -47,6 +49,14 @@ export function StudentPromotion() {
     status: "active",
     page_size: 200,
   });
+  const results = useApi<SectionResults>(fromSection ? "/api/v1/school/student-detail/section-results" : null, { section_id: fromSection });
+  const resultOf = new Map((results.data?.students ?? []).map((r) => [r.student_id, r]));
+  const resultText = (id: number) => {
+    const r = resultOf.get(id);
+    if (!r) return results.loading ? "…" : "—";
+    if (r.result === "no_marks") return "No marks";
+    return `${r.result === "pass" ? "Pass" : `Fail (${r.papers_failed} paper${r.papers_failed === 1 ? "" : "s"})`}${r.percent !== null ? ` · ${r.percent}%` : ""}`;
+  };
   useEffect(() => setHeld(new Set()), [fromSection]);
 
   const srcClass = srcClasses.data?.find((c) => c.id === fromClass);
@@ -195,6 +205,7 @@ export function StudentPromotion() {
                 <th>Current class</th>
                 <th>Section</th>
                 <th>Roll no.</th>
+                <th>Result</th>
                 <th>Next class</th>
                 <th>Decision</th>
               </tr>
@@ -211,6 +222,9 @@ export function StudentPromotion() {
                   <td>{srcClass?.name ?? "—"}</td>
                   <td>{srcSection?.name ?? "—"}</td>
                   <td>{s.roll_no ?? "—"}</td>
+                  <td>
+                    <Badge>{resultText(s.id)}</Badge>
+                  </td>
                   <td>{tgtClass ? `${tgtClass.name}${tgtSection ? ` ${tgtSection.name}` : ""}` : "—"}</td>
                   <td>
                     <Badge>{held.has(s.id) ? "Hold back" : "Promote"}</Badge>
@@ -220,12 +234,11 @@ export function StudentPromotion() {
             </tbody>
           </table>
         </div>
-        {/* Not wired: Result — exam outcomes are per exam (promotion preview needs an exam), not per student here. */}
         <div className="table-empty" hidden={students.length > 0}>
           {!fromSection ? "Choose a class and section to review." : roster.loading ? "Loading students…" : "No active students in this section."}
         </div>
         <div className="table-footer">
-          <span>{`${students.length} students · ${moving.length} selected`}</span>
+          <span>{`${students.length} students · ${moving.length} selected${results.data ? ` · results from ${results.data.exams_counted} published exam${results.data.exams_counted === 1 ? "" : "s"}` : ""}`}</span>
         </div>
       </Panel>
     </>

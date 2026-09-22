@@ -21,6 +21,10 @@ class ProfileIn(BaseModel):
     insurance_provider: Optional[str] = Field(None, max_length=160)
     insurance_policy_no: Optional[str] = Field(None, max_length=60)
     notes: Optional[str] = Field(None, max_length=2000)
+    # Guardian consent for first aid and medicine at school. None = not asked yet.
+    guardian_consent: Optional[bool] = None
+    consent_given_by: Optional[str] = Field(None, max_length=160)
+    consent_on: Optional[date] = None
 
 
 class ProfileRead(ProfileIn):

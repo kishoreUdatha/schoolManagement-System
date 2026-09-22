@@ -4,7 +4,7 @@ import Link from "next/link";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
-import { label, pct } from "@/lib/format";
+import { date, label, pct } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { Kv, StudentFrame } from "./StudentFrame";
@@ -12,7 +12,8 @@ import type { Academic, ExamHistory, StaffMember } from "./records";
 import type { SchoolClass, StudentProfile } from "./types";
 
 /**
- * SCR-059, live: GET /student-detail/{id}/academic (subjects and years),
+ * SCR-059, live: GET /student-detail/{id}/academic (subjects and years; board
+ * from the class's curriculum, term from the year's terms),
  * /student-detail/{id}/exams (latest average), /classes + /staff (class teacher).
  */
 export function StudentAcademic() {
@@ -47,7 +48,15 @@ function Body({ s }: { s: StudentProfile }) {
               ["Class teacher", section ? (teacher ?? (section.class_teacher_user_id ? "…" : "Not assigned")) : "—"],
               ["Roll no.", s.roll_no ? String(s.roll_no) : "—"],
               ["Subjects", academic.data ? String(subjects.length) : "…"],
-              // Not wired: Board and Term — the school record has no board or term field.
+              ["Board", academic.data ? (academic.data.board ?? (academic.data.curriculum_name ? `${academic.data.curriculum_name} (no board set)` : "No curriculum set")) : "…"],
+              [
+                "Term",
+                academic.data
+                  ? academic.data.term_name
+                    ? `${academic.data.term_name} · ${date(academic.data.term_start)} to ${date(academic.data.term_end)}`
+                    : "No terms set for this year"
+                  : "…",
+              ],
             ]}
           />
         </Panel>

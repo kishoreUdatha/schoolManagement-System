@@ -54,6 +54,11 @@ class MedicalProfile(Base, PrimaryKeyMixin, TimestampMixin, _StudentScoped):
     insurance_provider: Mapped[Optional[str]] = mapped_column(String(160))
     insurance_policy_no: Mapped[Optional[str]] = mapped_column(String(60))
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    # Guardian consent for the school to act on this record (first aid, medicine).
+    # Null means nobody has been asked yet; False is a recorded refusal.
+    guardian_consent: Mapped[Optional[bool]] = mapped_column(Boolean)
+    consent_given_by: Mapped[Optional[str]] = mapped_column(String(160))
+    consent_on: Mapped[Optional[date]] = mapped_column(Date)
     updated_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )

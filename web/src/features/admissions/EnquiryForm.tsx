@@ -10,14 +10,14 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { ENQ, useYears } from "./shared";
-import { SOURCES, type EnquiryDetail, type StaffOption } from "./types";
+import { SOURCES, type BranchOption, type EnquiryDetail, type StaffOption } from "./types";
 
 type Campaign = { id: number; name: string };
 
 /**
  * SCR-045, live: POST /admissions/enquiries (or PATCH /enquiries/{id} with
  * ?id=). Counsellors from GET /directory/staff, campaigns from
- * GET /admissions/campaigns?active_only=true.
+ * GET /admissions/campaigns?active_only=true, campuses from GET /admissions/branches.
  */
 export function EnquiryForm() {
   const router = useRouter();
@@ -25,7 +25,9 @@ export function EnquiryForm() {
   const existing = useApi<EnquiryDetail>(id ? `${ENQ}/${id}` : null);
   const staff = useApi<StaffOption[]>("/api/v1/school/directory/staff");
   const campaigns = useApi<Campaign[]>("/api/v1/school/admissions/campaigns", { active_only: true });
+  const branches = useApi<BranchOption[]>("/api/v1/school/admissions/branches");
   const { current } = useYears();
+  const [branchId, setBranchId] = useState<string | null>(null);
   const [source, setSource] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +35,8 @@ export function EnquiryForm() {
   if (id && existing.loading && !existing.data) return <Loading what="Loading the enquiry…" />;
   const e = existing.data;
   const src = source ?? e?.source ?? "walk_in";
+  // A new enquiry starts at the main campus when the school has more than one.
+  const branch = branchId ?? (e ? (e.branch_id ? String(e.branch_id) : "") : String(branches.data?.find((b) => b.is_main)?.id ?? ""));
 
   async function submit(ev: FormEvent<HTMLFormElement>) {
     ev.preventDefault();
@@ -48,6 +52,7 @@ export function EnquiryForm() {
       parent_email: text("parent_email"),
       source: src,
       campaign_id: src === "campaign" && text("campaign_id") ? Number(text("campaign_id")) : null,
+      branch_id: text("branch_id") ? Number(text("branch_id")) : null,
       assigned_to_user_id: text("assigned_to_user_id") ? Number(text("assigned_to_user_id")) : null,
       next_follow_up_date: text("next_follow_up_date"),
     };
@@ -129,6 +134,19 @@ export function EnquiryForm() {
                     ))}
                   </select>,
                 )}
+                {branches.data?.length
+                  ? field(
+                      "Branch",
+                      <select name="branch_id" value={branch} onChange={(x) => setBranchId(x.target.value)}>
+                        <option value="">Not specified</option>
+                        {branches.data.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name}
+                          </option>
+                        ))}
+                      </select>,
+                    )
+                  : null}
                 {field("Follow-up date", <input type="date" name="next_follow_up_date" defaultValue={e?.next_follow_up_date ?? ""} />)}
               </div>
             </section>
@@ -155,7 +173,10 @@ export function EnquiryForm() {
               <dt>Academic year</dt>
               <dd>{current?.name ?? "—"}</dd>
             </div>
-            {/* Not wired: Branch — no endpoint gives a campus for an enquiry */}
+            <div>
+              <dt>Branch</dt>
+              <dd>{branches.data?.find((b) => String(b.id) === branch)?.name ?? (branches.data && !branches.data.length ? "Single campus" : "—")}</dd>
+            </div>
             <div>
               <dt>Status</dt>
               <dd>{e ? label(e.stage) : "New enquiry"}</dd>

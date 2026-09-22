@@ -11,10 +11,10 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Kv, StudentFrame } from "./StudentFrame";
 import { StudentTabs } from "./StudentProfile";
-import type { HealthProfile, HealthRecord } from "./records";
+import type { HealthRecord, HealthTextKey } from "./records";
 import type { StudentProfile } from "./types";
 
-const FIELDS: [keyof HealthProfile, string][] = [
+const FIELDS: [HealthTextKey, string][] = [
   ["allergies", "Allergies"],
   ["chronic_conditions", "Medical conditions"],
   ["current_medications", "Current medication"],
@@ -53,7 +53,13 @@ function Body({ s }: { s: StudentProfile }) {
 
   const r = rec.data;
   const p = r?.profile;
-  const v = (k: keyof HealthProfile) => (p?.[k] as string | null | undefined) || "—";
+  const v = (k: HealthTextKey) => p?.[k] || "—";
+  const consent =
+    p?.guardian_consent === true
+      ? `Given${p.consent_given_by ? ` by ${p.consent_given_by}` : ""}${p.consent_on ? ` on ${date(p.consent_on)}` : ""}`
+      : p?.guardian_consent === false
+        ? `Refused${p.consent_given_by ? ` by ${p.consent_given_by}` : ""}${p.consent_on ? ` on ${date(p.consent_on)}` : ""}`
+        : "Not recorded";
   const emergency = p?.emergency_contact_name || p?.emergency_contact_phone ? [p?.emergency_contact_name, p?.emergency_contact_relation ? `(${p.emergency_contact_relation})` : null, p?.emergency_contact_phone].filter(Boolean).join(" · ") : "—";
   const lastCheckup = r?.checkups.map((c) => c.checked_on).sort().at(-1);
 
@@ -74,7 +80,14 @@ function Body({ s }: { s: StudentProfile }) {
   async function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const body = Object.fromEntries(FIELDS.map(([k]) => [k, String(f.get(k) ?? "").trim() || null]));
+    const text = (k: string) => String(f.get(k) ?? "").trim() || null;
+    const c = text("guardian_consent");
+    const body = {
+      ...Object.fromEntries(FIELDS.map(([k]) => [k, text(k)])),
+      guardian_consent: c === "yes" ? true : c === "no" ? false : null,
+      consent_given_by: text("consent_given_by"),
+      consent_on: text("consent_on"),
+    };
     setBusy(true);
     setError(null);
     try {
@@ -100,7 +113,9 @@ function Body({ s }: { s: StudentProfile }) {
               <p>{`${r?.section_label ?? `${s.class_name ?? ""} ${s.section_name ?? ""}`} · Health record`}</p>
             </div>
           </div>
-          {/* Not wired: guardian consent — the health record does not store consent. */}
+          <span className={`badge ${p?.guardian_consent === true ? "" : "warn"}`} title="Guardian consent for first aid and medicine at school">
+            {`Consent: ${p?.guardian_consent === true ? "given" : p?.guardian_consent === false ? "refused" : "not recorded"}`}
+          </span>
           <span className={`badge ${p?.allergies ? "warn" : ""}`}>{p?.updated_at ? `Updated ${date(p.updated_at)}` : "No health profile yet"}</span>
         </div>
         <StudentTabs id={String(s.id)} active={65} />
@@ -116,6 +131,22 @@ function Body({ s }: { s: StudentProfile }) {
                   {k === "notes" ? <textarea name={k} defaultValue={p?.[k] ?? ""} /> : <input name={k} defaultValue={p?.[k] ?? ""} />}
                 </label>
               ))}
+              <label className="field">
+                <span>Guardian consent</span>
+                <select name="guardian_consent" defaultValue={p?.guardian_consent === true ? "yes" : p?.guardian_consent === false ? "no" : ""}>
+                  <option value="">Not recorded</option>
+                  <option value="yes">Given</option>
+                  <option value="no">Refused</option>
+                </select>
+              </label>
+              <label className="field">
+                <span>Consent given by</span>
+                <input name="consent_given_by" maxLength={160} defaultValue={p?.consent_given_by ?? ""} placeholder="Guardian's name" />
+              </label>
+              <label className="field">
+                <span>Consent date</span>
+                <input type="date" name="consent_on" max={new Date().toISOString().slice(0, 10)} defaultValue={p?.consent_on ?? ""} />
+              </label>
             </div>
             <div className="form-footer">
               <span>Leave a field blank to clear it</span>
@@ -143,6 +174,7 @@ function Body({ s }: { s: StudentProfile }) {
                 ["Current medication", v("current_medications")],
                 ["Primary physician", [p?.doctor_name, p?.doctor_phone].filter(Boolean).join(" · ") || "—"],
                 ["Emergency contact", emergency],
+                ["Guardian consent", consent],
                 ["Last check-up", date(lastCheckup)],
               ]}
             />

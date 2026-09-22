@@ -113,6 +113,8 @@ class TransferOut(BaseModel):
     to_school: str = Field(..., min_length=2, max_length=200)
     left_on: Optional[date] = None  # defaults to today
     reason: Optional[str] = Field(None, max_length=300)
+    # Longer remarks kept on the closed enrolment (the reason stays short).
+    remarks: Optional[str] = Field(None, max_length=4000)
     # the office confirming they know money is still owed
     ignore_dues: bool = False
 

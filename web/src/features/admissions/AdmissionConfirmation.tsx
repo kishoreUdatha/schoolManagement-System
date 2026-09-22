@@ -12,15 +12,20 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { SchoolClass } from "@/features/students/types";
-import { APPS, emitChange, todayIso, useYears } from "./shared";
+import { APPS, emitChange, seatText, todayIso, useSeats, useYears } from "./shared";
 import type { Application } from "./types";
+
+type FeeStructure = { id: number; fee_head_name: string; amount: string; is_recurring?: boolean };
 
 type AdmitResult = { student_id: number; admission_no: string; parent_temporary_password?: string | null; parent_login_note?: string | null };
 
 /**
  * SCR-054, live: GET /applications/{id} (?id=, or pick from the approved
  * ones), POST /applications/{id}/fee when the fee is due, then
- * POST /applications/{id}/admit to create the student and parent login.
+ * POST /applications/{id}/admit (with the admission date) to create the
+ * student and parent login. Seats from GET /admissions/seats; the class fee
+ * structure (GET /fees/structures?class_id=) is shown, since its one-time
+ * fees are raised on admission.
  */
 export function AdmissionConfirmation() {
   const router = useRouter();
@@ -33,6 +38,7 @@ export function AdmissionConfirmation() {
   const years = useYears();
   const yearId = a?.academic_year_id ?? years.current?.id ?? null;
   const classes = useApi<SchoolClass[]>(yearId ? "/api/v1/school/classes" : null, { academic_year_id: yearId });
+  const seats = useSeats(yearId);
   const [classId, setClassId] = useState<number | null>(null);
   const [sectionId, setSectionId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -43,6 +49,7 @@ export function AdmissionConfirmation() {
     if (a && classId === null) setClassId(a.class_id);
   }, [a, classId]);
   const sections = useMemo(() => classes.data?.find((c) => c.id === classId)?.sections ?? [], [classes.data, classId]);
+  const structures = useApi<FeeStructure[]>(classId && yearId ? "/api/v1/school/fees/structures" : null, { academic_year_id: yearId, class_id: classId });
 
   if (!idParam && ready.loading && !ready.data) return <Loading what="Loading approved applications…" />;
   if (!id)
@@ -86,6 +93,7 @@ export function AdmissionConfirmation() {
         academic_year_id: yearId,
         section_id: sectionId,
         admission_no: text("admission_no"),
+        admission_date: text("admission_date"),
         create_parent_login: f.get("login") === "on",
         relation: text("relation") ?? "guardian",
       });
@@ -108,6 +116,11 @@ export function AdmissionConfirmation() {
       {control}
     </label>
   );
+  const seatsBySection = new Map((seats.data ?? []).flatMap((c) => c.sections.map((x) => [x.section_id, x] as const)));
+  const chosen = sectionId ? seatsBySection.get(sectionId) : undefined;
+  const classSeats = classId ? seats.data?.find((c) => c.class_id === classId) : undefined;
+  const seatOk = chosen ? !chosen.capacity || (chosen.available ?? 0) > 0 : Boolean(classSeats && (!classSeats.capacity || (classSeats.available ?? 0) > 0));
+  const seatSub = chosen ? `Section ${chosen.name}: ${seatText(chosen)}` : classSeats ? `${classSeats.class_name}: ${seatText(classSeats)}` : classId ? "…" : "Choose a class";
   const docsOk = a.documents_total > 0 && a.documents_verified === a.documents_total;
   const tests = (a.assessments ?? []).filter((t) => t.status !== "cancelled");
   const testsOk = tests.length > 0 && tests.every((t) => t.status === "done");
@@ -194,15 +207,35 @@ export function AdmissionConfirmation() {
                   "Section",
                   <select required value={sectionId ?? ""} disabled={!classId || !canAdmit} onChange={(e) => setSectionId(e.target.value ? Number(e.target.value) : null)}>
                     <option value="">Select section</option>
-                    {sections.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {`${s.name} · capacity ${s.capacity}`}
-                      </option>
-                    ))}
+                    {sections.map((s) => {
+                      const x = seatsBySection.get(s.id);
+                      return (
+                        <option key={s.id} value={s.id}>
+                          {`${s.name} · ${x ? seatText(x) : `capacity ${s.capacity}`}`}
+                        </option>
+                      );
+                    })}
                   </select>,
                   true,
                 )}
-                {/* Not wired: Admission date and Fee structure — admit takes neither; the admission no. is asked instead */}
+                {field("Admission date", <input type="date" name="admission_date" defaultValue={todayIso()} disabled={!canAdmit} required />, true)}
+                {field(
+                  "Fee structure",
+                  <input
+                    type="text"
+                    readOnly
+                    value={
+                      !classId
+                        ? "Choose a class"
+                        : structures.loading && !structures.data
+                          ? "Loading…"
+                          : structures.data?.length
+                            ? structures.data.map((x) => `${x.fee_head_name} ${money(x.amount)}${x.is_recurring ? " a month" : " once"}`).join(" · ")
+                            : "No fee structure for this class"
+                    }
+                    title="The class's fee structure applies; its one-time fees are raised when the student is created."
+                  />,
+                )}
                 {field("Admission no.", <input type="text" name="admission_no" placeholder="Leave blank to number automatically" disabled={!canAdmit} />)}
                 {field(
                   "Parent is the",
@@ -246,6 +279,7 @@ export function AdmissionConfirmation() {
               ["Assessment completed", testsOk, tests.length ? `${tests.filter((t) => t.status === "done").length} of ${tests.length} marked` : "None scheduled"],
               ["Admission approved", approved, a.decided_at ? `By ${a.decided_by_name ?? "the school"}` : "Pending"],
               ["Admission fee", !feeOwed, a.fee_paid_on ? `${money(a.application_fee)} paid` : feeOwed ? "Due" : "Not required"],
+              ["Class seat available", seatOk, seatSub],
             ].map(([t, ok, sub]) => (
               <div className="check-item" key={String(t)}>
                 {ok ? <Icon name="check" /> : <Icon name="clock" />}
@@ -255,7 +289,6 @@ export function AdmissionConfirmation() {
                 </label>
               </div>
             ))}
-            {/* Not wired: Class seat available — no endpoint counts seats taken per section */}
           </div>
         </Panel>
       </aside>

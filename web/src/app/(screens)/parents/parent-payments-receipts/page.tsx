@@ -2,7 +2,7 @@
 // Module: Parents & Guardians · Role: School Admin · Release: Phase 3 · Stories: US-0155 / US-0156
 // Mock: screens/SCR-078_Parent_Payments_Receipts.html
 // Backend: the old frontend served this at /school/parents/[id]/payments — Across all their children, not one at a time
-// Wired: GET /api/v1/school/parents/{id} (?id=), /fees/student-fees, /accounts/collections per child. Hand-maintained.
+// Wired: GET /api/v1/school/parents/{id} (?id=), /fees/student-fees, /accounts/collections per child, /parents/{id}/receipts/{collection}/pdf, /parents/{id}/ledger.pdf (api.open). Hand-maintained.
 
 import { Suspense } from "react";
 import { Icon } from "@/components/ui/Icon";
@@ -11,7 +11,6 @@ import { ParentPayments } from "@/features/parents/ParentPayments";
 
 export const metadata = { title: "SCR-078 · Parent Payments & Receipts · BrightCampus" };
 
-// Not wired: "Download receipt" and "Print ledger" — the school API has no receipt PDF (only the parent portal's per-order receipt.pdf).
 export default function Page() {
   return (
     <AppShell screen="SCR-078" actions={<button type="button" className="btn" data-export="">

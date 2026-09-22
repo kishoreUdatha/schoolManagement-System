@@ -8,6 +8,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText, type Paginated } from "@/lib/api";
 import { date, initials, label, money } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { childNames, PICK_PARENT, useParent } from "./ParentShell";
 import type { Receipt, StudentFee } from "./types";
 
@@ -18,7 +19,9 @@ const fiveYearsBack = () => `${new Date().getFullYear() - 5}-04-01`;
 /**
  * SCR-078, live, across all of a parent's children: GET /parents/{id}, then per
  * child GET /fees/student-fees?student_id= (charges, waivers, balance) and
- * GET /accounts/collections?student_id=&from=&to= (receipts).
+ * GET /accounts/collections?student_id=&from=&to= (receipts). Each receipt
+ * prints from GET /parents/{id}/receipts/{collection}/pdf, and the family
+ * ledger from GET /parents/{id}/ledger.pdf (?student_id=&from=&to=).
  */
 export function ParentPayments() {
   const { id, data: p, error, loading } = useParent();
@@ -27,6 +30,7 @@ export function ParentPayments() {
   const [fees, setFees] = useState<StudentFee[] | null>(null);
   const [receipts, setReceipts] = useState<Receipt[] | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  const [printing, setPrinting] = useState(false);
 
   const childKey = p?.children.map((c) => c.student_id).join(",");
   useEffect(() => {
@@ -79,6 +83,18 @@ export function ParentPayments() {
     { label: "Closing balance", value: v(balance), note: overdue ? `${overdue} overdue` : `As of ${date(today())}` },
   ];
 
+  async function openPdf(path: string, params?: Record<string, string>) {
+    setPrinting(true);
+    try {
+      await api.open(path, params);
+    } catch (e) {
+      notify(errorText(e));
+    } finally {
+      setPrinting(false);
+    }
+  }
+  const ledger = () => openPdf(`/api/v1/school/parents/${p.user_id}/ledger.pdf`, { from, to: today(), ...(child ? { student_id: child } : {}) });
+
   const admissionOf = new Map(p.children.map((c) => [c.student_id, c.admission_no]));
   const rows: Row[] = r.map((x) => [
     date(x.collected_on),
@@ -118,6 +134,10 @@ export function ParentPayments() {
           <span>From</span>
           <input type="date" value={from} max={today()} onChange={(e) => e.target.value && setFrom(e.target.value)} aria-label="Receipts from" style={{ border: 0, background: "transparent", font: "inherit" }} />
         </label>
+        <button type="button" className="btn" disabled={printing} onClick={ledger}>
+          <Icon name="file" className="sm" />
+          Print ledger
+        </button>
       </div>
       <ErrorNote>{failed}</ErrorNote>
       <Panel title="Account transactions" sub={`Amounts in INR · Receipts from ${date(from)} to ${date(today())}`} flush>
@@ -125,7 +145,12 @@ export function ParentPayments() {
           columns={["Date", "Receipt", "Student", "Description", "Amount", "Status"]}
           rows={rows}
           selectable={false}
-          rowAction={false}
+          actions={(i) => (
+            <button type="button" className="btn" disabled={printing} onClick={() => openPdf(`/api/v1/school/parents/${p.user_id}/receipts/${r[i].id}/pdf`)}>
+              <Icon name="download" className="sm" />
+              Receipt
+            </button>
+          )}
           empty={ready ? "No payments recorded in this period." : "Loading payments…"}
         />
       </Panel>

@@ -24,6 +24,8 @@ export type Enquiry = {
   source: AdmissionSource;
   campaign_id: number | null;
   campaign_name: string | null;
+  branch_id: number | null;
+  branch_name: string | null;
   stage: AdmissionStage;
   assigned_to_user_id: number | null;
   assigned_to_name: string | null;
@@ -107,6 +109,7 @@ export type Application = {
   gender: "male" | "female" | "other" | null;
   previous_school: string | null;
   sibling_in_school: boolean;
+  transport_required: boolean;
   category: string | null;
   father_name: string | null;
   mother_name: string | null;
@@ -153,3 +156,10 @@ export type Campaign = {
 
 /** GET /api/v1/school/admissions/public-link: the codes in the public form URLs. */
 export type PublicLink = { tenant_code: string; code: string };
+
+/** GET /api/v1/school/admissions/branches: campuses an enquiry can be for. */
+export type BranchOption = { id: number; name: string; code: string; is_main: boolean };
+
+/** GET /api/v1/school/admissions/seats?academic_year_id=: capacity against children placed. */
+export type SectionSeats = { section_id: number; name: string; capacity: number; taken: number; available: number | null };
+export type ClassSeats = { class_id: number; class_name: string; capacity: number; taken: number; available: number | null; sections: SectionSeats[] };

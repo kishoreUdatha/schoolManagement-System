@@ -77,6 +77,7 @@ class EnquiryBase(BaseModel):
 class EnquiryCreate(EnquiryBase):
     source: AdmissionSource = AdmissionSource.walk_in
     campaign_id: Optional[int] = None
+    branch_id: Optional[int] = None
     assigned_to_user_id: Optional[int] = None
     next_follow_up_date: Optional[date] = None
     notes: Optional[str] = Field(None, max_length=4000)
@@ -102,6 +103,7 @@ class EnquiryUpdate(BaseModel):
     address: Optional[str] = Field(None, max_length=2000)
     source: Optional[AdmissionSource] = None
     campaign_id: Optional[int] = None
+    branch_id: Optional[int] = None
     assigned_to_user_id: Optional[int] = None
     next_follow_up_date: Optional[date] = None
     notes: Optional[str] = Field(None, max_length=4000)
@@ -123,6 +125,8 @@ class EnquiryRead(BaseModel):
     source: AdmissionSource
     campaign_id: Optional[int] = None
     campaign_name: Optional[str] = None
+    branch_id: Optional[int] = None
+    branch_name: Optional[str] = None
     stage: AdmissionStage
     assigned_to_user_id: Optional[int] = None
     assigned_to_name: Optional[str] = None
@@ -206,3 +210,29 @@ class PublicSchoolInfo(BaseModel):
     address: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
+
+
+# --- Campuses and seats, for placing a child ---
+
+class BranchOption(BaseModel):
+    id: int
+    name: str
+    code: str
+    is_main: bool
+
+
+class SectionSeats(BaseModel):
+    section_id: int
+    name: str
+    capacity: int
+    taken: int
+    available: Optional[int] = None  # None when no capacity is set
+
+
+class ClassSeats(BaseModel):
+    class_id: int
+    class_name: str
+    capacity: int
+    taken: int
+    available: Optional[int] = None
+    sections: list[SectionSeats] = []

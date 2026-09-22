@@ -69,6 +69,10 @@ class AdmissionApplication(Base, PrimaryKeyMixin, TimestampMixin, _School):
     gender: Mapped[Optional[Gender]] = mapped_column(SAEnum(Gender, name="gender"))
     previous_school: Mapped[Optional[str]] = mapped_column(String(200))
     sibling_in_school: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Asked on the form so transport can plan routes before the child starts.
+    transport_required: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
     category: Mapped[Optional[str]] = mapped_column(String(60))  # quota / category, school defined
 
     father_name: Mapped[Optional[str]] = mapped_column(String(160))

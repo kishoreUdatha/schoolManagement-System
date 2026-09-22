@@ -4,6 +4,20 @@ export type Academic = {
   student_id: number;
   subjects: { class_subject_id: number; subject_name: string; subject_code: string | null; kind: string | null; teacher_name: string | null }[];
   history: { enrollment_id: number; academic_year_name: string | null; class_name: string | null; section_name: string | null; roll_no: number | null; outcome: string | null }[];
+  /** From the class's curriculum (class-specific first, then school-wide). */
+  board: string | null;
+  curriculum_name: string | null;
+  /** The term running today, else the next one, else the year's last. */
+  term_name: string | null;
+  term_start: string | null;
+  term_end: string | null;
+};
+
+/** GET /student-detail/section-results?section_id=: each child's result this year, for promotion. */
+export type SectionResults = {
+  section_id: number;
+  exams_counted: number;
+  students: { student_id: number; obtained: number; out_of: number; percent: number | null; papers_marked: number; papers_failed: number; result: "pass" | "fail" | "no_marks" }[];
 };
 
 export type ExamPaper = {
@@ -118,7 +132,18 @@ export type HealthProfile = Record<
   | "insurance_policy_no"
   | "notes",
   string | null
-> & { blood_group: string | null; updated_at: string | null; updated_by_name: string | null };
+> & {
+  blood_group: string | null;
+  updated_at: string | null;
+  updated_by_name: string | null;
+  /** Guardian consent for first aid and medicine at school; null = not asked yet. */
+  guardian_consent: boolean | null;
+  consent_given_by: string | null;
+  consent_on: string | null;
+};
+
+/** The free-text fields of a health profile (what the edit form lists). */
+export type HealthTextKey = Exclude<keyof HealthProfile, "blood_group" | "updated_at" | "updated_by_name" | "guardian_consent" | "consent_given_by" | "consent_on">;
 
 export type HealthRecord = {
   student_id: number;
@@ -188,6 +213,9 @@ export type Leaver = {
   last_class_name: string | null;
   last_section_name: string | null;
   outcome: string | null;
+  left_on: string | null;
+  exit_note: string | null;
+  exit_remarks: string | null;
   certificate_id: number | null;
   certificate_no: string | null;
   certificate_status: string | null;

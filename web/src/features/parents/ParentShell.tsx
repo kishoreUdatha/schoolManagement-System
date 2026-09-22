@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { Icon } from "@/components/ui/Icon";
-import { Badge } from "@/components/ui/primitives";
+import { Badge, Panel } from "@/components/ui/primitives";
+import { ErrorNote } from "@/components/ui/states";
+import { api, errorText } from "@/lib/api";
 import { dateTime, initials, label } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import type { AuditEntry, Parent } from "./types";
+import type { AuditEntry, Parent, ParentNote } from "./types";
 
 /** Load the parent named by ?id= (their user id). */
 export function useParent() {
@@ -144,3 +147,104 @@ export function AuditItem({ e }: { e: AuditEntry }) {
 
 /** Parent record screens opened without ?id=. */
 export const PICK_PARENT = { what: "parent or guardian", href: routeOf(71), cta: "Open the parent directory" };
+
+/** Office notes on a parent: GET /parents/{id}/notes. */
+export function useParentNotes(id: string | null) {
+  return useApi<ParentNote[]>(id ? `/api/v1/school/parents/${id}/notes` : null);
+}
+
+/** "Add note": a button that opens a short form, POST /parents/{id}/notes. */
+export function AddNote({ id, onAdded }: { id: string; onAdded: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const body = String(new FormData(form).get("body") ?? "").trim();
+    if (!body) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.post(`/api/v1/school/parents/${id}/notes`, { body });
+      notify("Note added.");
+      form.reset();
+      setOpen(false);
+      onAdded();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open)
+    return (
+      <button type="button" className="btn" onClick={() => setOpen(true)}>
+        <Icon name="plus" className="sm" />
+        Add note
+      </button>
+    );
+  return (
+    <form onSubmit={submit} style={{ width: "100%" }}>
+      <ErrorNote>{error}</ErrorNote>
+      <label className="field">
+        <span>Note</span>
+        <textarea name="body" required maxLength={4000} rows={3} placeholder="A call, a visit, something to follow up" autoFocus />
+      </label>
+      <div className="gap" />
+      <div className="actions">
+        <button type="button" className="btn" onClick={() => setOpen(false)}>
+          Cancel
+        </button>
+        <button type="submit" className="btn primary" disabled={busy}>
+          <Icon name="check" className="sm" />
+          {busy ? "Saving…" : "Save note"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/** The office notes, newest first, each removable. Parents never see these. */
+export function NotesPanel({ id, notes, loading, onChange }: { id: string; notes: ParentNote[] | null; loading: boolean; onChange: () => void }) {
+  const [error, setError] = useState<string | null>(null);
+  async function remove(n: ParentNote) {
+    if (!window.confirm("Delete this note?")) return;
+    setError(null);
+    try {
+      await api.delete(`/api/v1/school/parents/${id}/notes/${n.id}`);
+      notify("Note deleted.");
+      onChange();
+    } catch (err) {
+      setError(errorText(err));
+    }
+  }
+  return (
+    <Panel title="Office notes" sub="Only school staff see these">
+      <ErrorNote>{error}</ErrorNote>
+      {notes?.length ? (
+        notes.map((n) => (
+          <div className="timeline-item" key={n.id}>
+            <span className="timeline-dot">
+              <Icon name="file" />
+            </span>
+            <div>
+              <h4>{n.body}</h4>
+              <p>
+                {`${n.created_by_name ?? "School office"} · `}
+                <button type="button" className="btn text" onClick={() => remove(n)}>
+                  Delete
+                </button>
+              </p>
+            </div>
+            <time>{dateTime(n.created_at)}</time>
+          </div>
+        ))
+      ) : (
+        <p className="muted">{loading ? "Loading…" : "No notes yet."}</p>
+      )}
+    </Panel>
+  );
+}

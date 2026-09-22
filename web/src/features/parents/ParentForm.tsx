@@ -17,7 +17,9 @@ import { RELATIONS, type Parent, type ParentCreateResponse } from "./types";
  * SCR-072, live. Without ?id=: POST /api/v1/school/parents, which creates the
  * login, links one child and returns a temporary password to hand over once.
  * With ?id= (from "Edit guardian" on the profile): PATCH /parents/{id}, which
- * takes only name and phone — email is the login and cannot change.
+ * takes name, phone, occupation, address and primary contact — email is the
+ * login and cannot change. Occupation and address are kept on the guardian
+ * record that mirrors the login; primary contact on the child's guardian link.
  */
 export function ParentForm() {
   const router = useRouter();
@@ -39,8 +41,15 @@ export function ParentForm() {
     setSaving(true);
     setError(null);
     try {
+      const primary = f.get("primary_contact") === "yes" ? true : undefined;
       if (editing) {
-        await api.patch(`/api/v1/school/parents/${id}`, { full_name: text("full_name"), phone: text("phone") });
+        await api.patch(`/api/v1/school/parents/${id}`, {
+          full_name: text("full_name"),
+          phone: text("phone"),
+          occupation: text("occupation"),
+          address: text("address"),
+          primary_contact: primary,
+        });
         notify("Parent updated.");
         router.push(`${routeOf(73)}?id=${id}`);
         return;
@@ -51,6 +60,9 @@ export function ParentForm() {
         phone: text("phone"),
         relation: text("relation") ?? "guardian",
         student_id: Number(text("student_id")),
+        occupation: text("occupation"),
+        address: text("address"),
+        primary_contact: primary,
       });
       notify("Parent created.");
       setCreated(res);
@@ -147,7 +159,14 @@ export function ParentForm() {
                     <input type="email" name="email" placeholder="Enter email address" aria-label="Email address" required />
                   )}
                 </label>
-                {/* Not wired: occupation, address and primary contact — ParentCreate takes none of them (they live on a student's guardian record, under Siblings & Family). */}
+                <label className="field">
+                  <span>Occupation</span>
+                  <input type="text" name="occupation" placeholder="Enter occupation" aria-label="Occupation" maxLength={120} defaultValue={p?.occupation ?? ""} />
+                </label>
+                <label className="field">
+                  <span>Address</span>
+                  <input type="text" name="address" placeholder="Enter address" aria-label="Address" maxLength={2000} defaultValue={p?.address ?? ""} />
+                </label>
                 {editing ? null : (
                   <label className="field">
                     <span>
@@ -164,6 +183,17 @@ export function ParentForm() {
                     </select>
                   </label>
                 )}
+                <label className="field">
+                  <span>Primary contact</span>
+                  {editing && p && p.children.length > 0 && p.children.every((c) => c.is_primary_contact) ? (
+                    <input type="text" aria-label="Primary contact" value={`${p.full_name}, for every linked child`} readOnly />
+                  ) : (
+                    <select name="primary_contact" aria-label="Primary contact" defaultValue={editing ? "keep" : "yes"}>
+                      <option value="yes">{editing ? `Make ${p?.full_name ?? "this guardian"} the primary contact` : "This guardian"}</option>
+                      <option value="keep">{editing ? "Keep the current primary contact" : "Keep the child’s current primary contact"}</option>
+                    </select>
+                  )}
+                </label>
               </div>
             </section>
           </div>

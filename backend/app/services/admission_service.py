@@ -151,11 +151,69 @@ def _check_assignee(db: Session, user_id: Optional[int], school_id: int) -> None
         )
 
 
+def _check_branch(db: Session, branch_id: Optional[int], school_id: int) -> None:
+    if branch_id is None:
+        return
+    from app.models.rbac import Branch
+
+    b = db.get(Branch, branch_id)
+    if not b or b.school_id != school_id or not b.is_active:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Branch not found")
+
+
+def list_branches(db: Session, school_id: int) -> list[dict]:
+    from app.models.rbac import Branch
+
+    rows = db.execute(
+        select(Branch).where(Branch.school_id == school_id, Branch.is_active.is_(True))
+        .order_by(Branch.is_main.desc(), Branch.name)
+    ).scalars()
+    return [{"id": b.id, "name": b.name, "code": b.code, "is_main": b.is_main} for b in rows]
+
+
+def seats(db: Session, school_id: int, academic_year_id: int) -> list[dict]:
+    """Capacity against children placed, per class and section, for one year."""
+    from app.models.academic import SchoolClass, Section
+    from app.models.student import Student
+
+    classes = list(db.execute(
+        select(SchoolClass).where(SchoolClass.school_id == school_id, SchoolClass.academic_year_id == academic_year_id)
+        .order_by(SchoolClass.display_order, SchoolClass.name)
+    ).scalars())
+    sections = list(db.execute(
+        select(Section).where(Section.class_id.in_([c.id for c in classes] or [-1])).order_by(Section.name)
+    ).scalars())
+    taken = dict(db.execute(
+        select(Student.section_id, func.count()).where(
+            Student.school_id == school_id, Student.academic_year_id == academic_year_id,
+            Student.is_active.is_(True), Student.section_id.in_([s.id for s in sections] or [-1]),
+        ).group_by(Student.section_id)
+    ).all())
+    out = []
+    for c in classes:
+        rows = []
+        for s in (x for x in sections if x.class_id == c.id):
+            t = int(taken.get(s.id, 0))
+            rows.append({"section_id": s.id, "name": s.name, "capacity": s.capacity, "taken": t,
+                         "available": max(s.capacity - t, 0) if s.capacity else None})
+        cap = sum(r["capacity"] for r in rows)
+        tk = sum(r["taken"] for r in rows)
+        out.append({"class_id": c.id, "class_name": c.name, "capacity": cap, "taken": tk,
+                    "available": max(cap - tk, 0) if cap else None, "sections": rows})
+    return out
+
+
 def enquiry_to_read_dict(db: Session, e: AdmissionEnquiry) -> dict:
     campaign_name = None
     if e.campaign_id:
         c = db.get(AdmissionCampaign, e.campaign_id)
         campaign_name = c.name if c else None
+    branch_name = None
+    if e.branch_id:
+        from app.models.rbac import Branch
+
+        b = db.get(Branch, e.branch_id)
+        branch_name = b.name if b else None
     assigned_name = None
     if e.assigned_to_user_id:
         u = db.get(User, e.assigned_to_user_id)
@@ -174,6 +232,8 @@ def enquiry_to_read_dict(db: Session, e: AdmissionEnquiry) -> dict:
         "source": e.source,
         "campaign_id": e.campaign_id,
         "campaign_name": campaign_name,
+        "branch_id": e.branch_id,
+        "branch_name": branch_name,
         "stage": e.stage,
         "assigned_to_user_id": e.assigned_to_user_id,
         "assigned_to_name": assigned_name,
@@ -228,6 +288,7 @@ def create_enquiry(
     if data.campaign_id is not None:
         _get_campaign(db, data.campaign_id, school_id)
     _check_assignee(db, data.assigned_to_user_id, school_id)
+    _check_branch(db, data.branch_id, school_id)
 
     e = AdmissionEnquiry(
         tenant_id=tenant_id,
@@ -243,6 +304,7 @@ def create_enquiry(
         address=_clean(data.address),
         source=data.source,
         campaign_id=data.campaign_id,
+        branch_id=data.branch_id,
         stage=AdmissionStage.enquiry,
         assigned_to_user_id=data.assigned_to_user_id,
         next_follow_up_date=data.next_follow_up_date,
@@ -333,6 +395,8 @@ def update_enquiry(
         _get_campaign(db, updates["campaign_id"], school_id)
     if "assigned_to_user_id" in updates:
         _check_assignee(db, updates["assigned_to_user_id"], school_id)
+    if updates.get("branch_id") is not None:
+        _check_branch(db, updates["branch_id"], school_id)
     for field in ("applying_for_class", "previous_school", "parent_email", "address", "notes"):
         if field in updates:
             updates[field] = _clean(updates[field])

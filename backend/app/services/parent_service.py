@@ -10,12 +10,14 @@ from sqlalchemy.orm import Session
 from app.core.enums import ParentRelation, UserRole
 from app.core.security import hash_password
 from app.models.academic import SchoolClass, Section
-from app.models.parent import ParentStudent
+from app.models.foundation import Guardian, StudentGuardian
+from app.models.parent import ParentNote, ParentStudent
 from app.models.student import Student
 from app.models.user import User
 from app.schemas.parent import (
     LinkChildRequest,
     ParentCreate,
+    ParentNoteIn,
     ParentUpdate,
 )
 from app.services import foundation_service
@@ -59,6 +61,68 @@ def _section_label(db: Session, section_id: int) -> Optional[str]:
     return f"{cls.name} {sec.name}"
 
 
+def _guardian_of(db: Session, parent_user_id: int) -> Optional[Guardian]:
+    """The family contact that mirrors this parent login, if there is one."""
+    return db.execute(
+        select(Guardian).where(Guardian.user_id == parent_user_id)
+    ).scalar_one_or_none()
+
+
+def _primary_for(db: Session, parent_user_id: int) -> set[int]:
+    """Student ids this parent is the primary contact for."""
+    g = _guardian_of(db, parent_user_id)
+    if not g:
+        return set()
+    return set(
+        db.execute(
+            select(StudentGuardian.student_id).where(
+                StudentGuardian.guardian_id == g.id,
+                StudentGuardian.is_primary.is_(True),
+            )
+        ).scalars()
+    )
+
+
+def _make_primary(db: Session, parent_user_id: int, student_ids: list[int]) -> None:
+    """Make this parent the primary contact for these children. Flush only."""
+    parent = db.get(User, parent_user_id)
+    # Older links may predate the guardian mirror; fill it in first (idempotent).
+    for link, student in db.execute(
+        select(ParentStudent, Student)
+        .join(Student, ParentStudent.student_id == Student.id)
+        .where(ParentStudent.parent_user_id == parent_user_id, ParentStudent.student_id.in_(student_ids or [-1]))
+    ).all():
+        foundation_service.on_parent_linked(db, parent, student, link.relation)
+    g = _guardian_of(db, parent_user_id)
+    if not g:
+        return
+    for sid in student_ids:
+        link = db.execute(
+            select(StudentGuardian).where(
+                StudentGuardian.student_id == sid, StudentGuardian.guardian_id == g.id
+            )
+        ).scalar_one_or_none()
+        if link:
+            foundation_service._set_primary(db, sid, link)
+    db.flush()
+
+
+def _set_contact_details(db: Session, u: User, updates: dict) -> None:
+    """Occupation and address live on the guardian record. Flush only."""
+    if "occupation" not in updates and "address" not in updates:
+        return
+    g = _guardian_of(db, u.id)
+    if g is None:
+        g = Guardian(tenant_id=u.tenant_id, school_id=u.school_id, full_name=u.full_name,
+                     phone=u.phone, email=u.email, user_id=u.id)
+        db.add(g)
+    for k in ("occupation", "address"):
+        if k in updates:
+            v = updates[k]
+            setattr(g, k, (v.strip() or None) if isinstance(v, str) else None)
+    db.flush()
+
+
 def _children_for_parent(
     db: Session, parent_user_id: int
 ) -> list[dict]:
@@ -68,6 +132,7 @@ def _children_for_parent(
         .where(ParentStudent.parent_user_id == parent_user_id)
         .order_by(Student.full_name)
     ).all()
+    primary = _primary_for(db, parent_user_id)
     out = []
     for link, student in rows:
         out.append(
@@ -78,12 +143,14 @@ def _children_for_parent(
                 "section_id": student.section_id,
                 "section_label": _section_label(db, student.section_id),
                 "relation": link.relation,
+                "is_primary_contact": student.id in primary,
             }
         )
     return out
 
 
 def parent_to_read_dict(db: Session, u: User) -> dict:
+    g = _guardian_of(db, u.id)
     return {
         "user_id": u.id,
         "full_name": u.full_name,
@@ -91,6 +158,8 @@ def parent_to_read_dict(db: Session, u: User) -> dict:
         "phone": u.phone,
         "is_active": u.is_active,
         "last_login_at": u.last_login_at,
+        "occupation": g.occupation if g else None,
+        "address": g.address if g else None,
         "children": _children_for_parent(db, u.id),
     }
 
@@ -154,6 +223,9 @@ def create_parent(
     )
     db.add(link)
     foundation_service.on_parent_linked(db, user, student, data.relation)
+    _set_contact_details(db, user, data.model_dump(include={"occupation", "address"}, exclude_unset=True))
+    if data.primary_contact:
+        _make_primary(db, user.id, [student.id])
     db.commit()
     db.refresh(user)
     return user, raw_password
@@ -205,6 +277,12 @@ def update_parent(
     if "phone" in updates:
         v = updates["phone"]
         u.phone = v.strip() if v else None
+    _set_contact_details(db, u, updates)
+    if updates.get("primary_contact"):
+        kids = list(db.execute(
+            select(ParentStudent.student_id).where(ParentStudent.parent_user_id == u.id)
+        ).scalars())
+        _make_primary(db, u.id, kids)
     try:
         db.commit()
     except IntegrityError:
@@ -300,6 +378,52 @@ def reset_password(
     db.commit()
     db.refresh(u)
     return u, raw
+
+
+# --- School-side notes on a parent ---
+
+def _note_to_read(db: Session, n: ParentNote) -> dict:
+    who = db.get(User, n.created_by_user_id) if n.created_by_user_id else None
+    return {
+        "id": n.id,
+        "parent_user_id": n.parent_user_id,
+        "body": n.body,
+        "created_by_user_id": n.created_by_user_id,
+        "created_by_name": who.full_name if who else None,
+        "created_at": n.created_at,
+    }
+
+
+def list_notes(db: Session, user_id: int, tenant_id: int, school_id: int) -> list[dict]:
+    p = _get_parent(db, user_id, tenant_id, school_id)
+    rows = db.execute(
+        select(ParentNote)
+        .where(ParentNote.parent_user_id == p.id, ParentNote.school_id == school_id)
+        .order_by(ParentNote.created_at.desc(), ParentNote.id.desc())
+    ).scalars()
+    return [_note_to_read(db, n) for n in rows]
+
+
+def add_note(db: Session, user_id: int, actor: User, data: ParentNoteIn) -> dict:
+    p = _get_parent(db, user_id, actor.tenant_id, actor.school_id)
+    body = data.body.strip()
+    if not body:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Write the note first")
+    n = ParentNote(tenant_id=p.tenant_id, school_id=p.school_id, parent_user_id=p.id,
+                   body=body, created_by_user_id=actor.id)
+    db.add(n)
+    db.commit()
+    db.refresh(n)
+    return _note_to_read(db, n)
+
+
+def delete_note(db: Session, user_id: int, note_id: int, actor: User) -> None:
+    p = _get_parent(db, user_id, actor.tenant_id, actor.school_id)
+    n = db.get(ParentNote, note_id)
+    if not n or n.parent_user_id != p.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
+    db.delete(n)
+    db.commit()
 
 
 # --- Parent portal helpers ---

@@ -176,7 +176,6 @@ export function LinkChildren() {
         </div>
         <aside>
           <Panel title="Guardian information">
-            {/* Not wired: address — a parent login (ParentRead) has none. */}
             <dl className="kv">
               <div>
                 <dt>Guardian name</dt>
@@ -193,6 +192,10 @@ export function LinkChildren() {
               <div>
                 <dt>Email address</dt>
                 <dd>{p.email ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>Address</dt>
+                <dd>{p.address ?? "—"}</dd>
               </div>
             </dl>
           </Panel>

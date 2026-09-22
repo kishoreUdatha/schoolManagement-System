@@ -1,26 +1,41 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
+import { api, errorText } from "@/lib/api";
 import { dateTime } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { AuditItem, PICK_PARENT, useParent } from "./ParentShell";
+import { AddNote, AuditItem, NotesPanel, PICK_PARENT, useParent, useParentNotes } from "./ParentShell";
 import type { AuditEntry } from "./types";
 
 /**
  * SCR-079, live: GET /parents/{id}, and two questions put to GET /audit-log —
  * what this parent did (user_id=) and what was done to their account
  * (entity_type=User&entity_id=). Kept apart so office edits never read as the parent's own.
+ * Office notes: GET/POST/DELETE /parents/{id}/notes. Which list is shown
+ * rides on ?view= so the page-head export takes the same one.
  */
 export function ParentActivity() {
   const { id, data: p, error, loading } = useParent();
-  const [view, setView] = useState<"by" | "to">("by");
+  const params = useSearchParams();
+  const router = useRouter();
+  const path = usePathname();
+  const view: "by" | "to" = params.get("view") === "to" ? "to" : "by";
+  const setView = (v: "by" | "to") => {
+    const q = new URLSearchParams(params.toString());
+    if (v === "to") q.set("view", "to");
+    else q.delete("view");
+    router.replace(`${path}?${q.toString()}`, { scroll: false });
+  };
   const byThem = useApi<AuditEntry[]>(id ? "/api/v1/school/audit-log" : null, { user_id: id, limit: 200 });
   const toThem = useApi<AuditEntry[]>(id ? "/api/v1/school/audit-log" : null, { entity_type: "User", entity_id: id, limit: 200 });
+  const notes = useParentNotes(id);
 
   if (!id) return <PickFirst {...PICK_PARENT} />;
   if (loading && !p) return <Loading what="Loading the parent…" />;
@@ -72,15 +87,44 @@ export function ParentActivity() {
           </dl>
         </Panel>
         <Panel title="Next action">
-          <p className="muted small">Review the latest activity; portal access and passwords are managed on Login access.</p>
+          <p className="muted small">Review the latest activity and record any follow-up; portal access and passwords are managed on Login access.</p>
           <div className="gap" />
-          {/* Not wired: "Add note" — there is no endpoint for a school-side note on a parent. */}
-          <Link href={`${routeOf(76)}?id=${p.user_id}`} className="btn">
-            <Icon name="arrow" className="sm" />
-            Login access
-          </Link>
+          <div className="actions">
+            <AddNote id={String(p.user_id)} onAdded={notes.reload} />
+            <Link href={`${routeOf(76)}?id=${p.user_id}`} className="btn">
+              <Icon name="arrow" className="sm" />
+              Login access
+            </Link>
+          </div>
         </Panel>
+        <NotesPanel id={String(p.user_id)} notes={notes.data} loading={notes.loading} onChange={notes.reload} />
       </aside>
     </div>
+  );
+}
+
+/** "Export history": GET /audit-log.csv for the list on screen, fetched with the token. */
+export function ExportHistoryButton() {
+  const params = useSearchParams();
+  const id = params.get("id");
+  const view = params.get("view") === "to" ? "to" : "by";
+  const [busy, setBusy] = useState(false);
+  async function run() {
+    if (!id) return;
+    setBusy(true);
+    try {
+      const q = view === "to" ? { entity_type: "User", entity_id: id, limit: 5000 } : { user_id: id, limit: 5000 };
+      await api.download("/api/v1/school/audit-log.csv", `parent-${id}-${view === "to" ? "account" : "activity"}.csv`, q);
+    } catch (e) {
+      notify(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button type="button" className="btn primary" disabled={!id || busy} onClick={run}>
+      <Icon name="download" className="sm" />
+      {busy ? "Exporting…" : "Export history"}
+    </button>
   );
 }

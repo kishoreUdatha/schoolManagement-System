@@ -10,7 +10,7 @@ import { routeOf } from "@/lib/screens";
 import { session } from "@/lib/session";
 import { useApi } from "@/lib/useApi";
 import type { AcademicYear } from "@/features/students/types";
-import type { Application } from "./types";
+import type { Application, ClassSeats } from "./types";
 
 export const ENQ = "/api/v1/school/admissions/enquiries";
 export const APPS = "/api/v1/school/admissions/applications";
@@ -173,4 +173,16 @@ export function useDetails(ids: number[]) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, tick]);
   return { data, reload: () => setTick((t) => t + 1) };
+}
+
+/** Seats per class and section for a year: GET /admissions/seats. */
+export function useSeats(yearId: number | null | undefined) {
+  return useApi<ClassSeats[]>(yearId ? "/api/v1/school/admissions/seats" : null, { academic_year_id: yearId });
+}
+
+/** "12 of 40 seats free", or why there is no number. */
+export function seatText(x: { capacity: number; taken: number; available: number | null } | undefined): string {
+  if (!x) return "…";
+  if (!x.capacity) return `${x.taken} placed · no capacity set`;
+  return `${x.available ?? 0} of ${x.capacity} seats free`;
 }
