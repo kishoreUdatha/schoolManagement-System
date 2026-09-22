@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser
+from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser, StudentLookup
 from app.database import get_db
 from app.schemas.common import PaginatedResponse
 from app.schemas.student import (
@@ -76,7 +76,7 @@ def create(
     summary="List students with filters",
 )
 def list_(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: StudentLookup,
     db: Annotated[Session, Depends(get_db)],
     academic_year_id: Optional[int] = Query(None),
     class_id: Optional[int] = Query(None),
@@ -112,7 +112,7 @@ def list_(
 )
 def get(
     student_id: int,
-    current_user: SchoolAdminOrPrincipal,
+    current_user: StudentLookup,
     db: Annotated[Session, Depends(get_db)],
 ):
     s = student_profile_service.get_student_for_school(

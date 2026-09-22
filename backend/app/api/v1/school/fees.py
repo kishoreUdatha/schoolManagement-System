@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrAccountant
+from app.core.deps import FeeHeadReader, SchoolAdminOrAccountant
 from app.database import get_db
 from app.schemas.common import PaginatedResponse
 from app.schemas.fee import (
@@ -47,7 +47,7 @@ def create_head(
 
 @router.get("/heads", response_model=list[FeeHeadRead])
 def list_heads(
-    current_user: SchoolAdminOrAccountant,
+    current_user: FeeHeadReader,
     db: Annotated[Session, Depends(get_db)],
     active_only: bool = Query(False),
 ):

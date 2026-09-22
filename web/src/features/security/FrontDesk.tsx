@@ -955,6 +955,8 @@ export function GatePassDesk() {
 
 function GatePassModal({ g, saving, error, onClose, onDecide, onRelease }: { g: GatePass; saving: boolean; error: string | null; onClose: () => void; onDecide: (approve: boolean, note: string | null) => void; onRelease: () => void }) {
   const [note, setNote] = useState("");
+  // Approving an early pickup is the office's call; the desk releases.
+  const canDecide = useSession()?.user.role === "school_admin";
   return (
     <Modal title={`${g.student_name} · gate pass`} onClose={onClose}>
       <ErrorNote>{error}</ErrorNote>
@@ -979,7 +981,9 @@ function GatePassModal({ g, saving, error, onClose, onDecide, onRelease }: { g: 
         </>
       ) : null}
       <div className="actions row">
-        {g.status === "requested" ? (
+        {g.status === "requested" && !canDecide ? (
+          <span className="muted">Waiting for the school office to approve.</span>
+        ) : g.status === "requested" ? (
           <>
             <button type="button" className="btn" disabled={saving} onClick={() => onDecide(false, note || null)}>
               Reject
@@ -1038,6 +1042,9 @@ export function GateLog() {
 /** SCR-233, live: GET/POST /front-desk/incidents, PATCH /front-desk/incidents/{id} (action taken, close, severity). */
 export function SecurityIncidentLog() {
   const router = useRouter();
+  // Logging an incident is anyone's at the desk; recording the outcome and
+  // closing it is the school admin's.
+  const canClose = useSession()?.user.role === "school_admin";
   const params = useSearchParams();
   const id = params.get("id");
   const adding = params.get("new") === "1";
@@ -1143,6 +1150,7 @@ export function SecurityIncidentLog() {
             </Panel>
           </div>
           <aside className="stack">
+            {canClose ? (
             <form className="panel" onSubmit={update} key={`${inc.id}-${inc.action_taken}-${inc.is_closed}`}>
               <div className="panel-head">
                 <div>
@@ -1176,6 +1184,7 @@ export function SecurityIncidentLog() {
                 </button>
               </div>
             </form>
+            ) : null}
           </aside>
         </div>
       ) : (

@@ -13,6 +13,7 @@ import { money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import { Empty, Hero, QuickActions, TimelineRow } from "@/features/dashboards/parts";
 import { Field, formNum, formText, n, today, useNewFlag } from "./kit";
 import type { FeeHead, Route, TransportDashboard as Dash, Trip } from "./types";
@@ -26,6 +27,7 @@ const STATUS: Record<Trip["status"], string> = { scheduled: "Scheduled", in_prog
  * route from GET /transport/routes. Monthly fees: POST /transport/fees/generate.
  */
 export function TransportDashboard() {
+  const isAdmin = useSession()?.user.role === "school_admin";
   const dash = useApi<Dash>(`${TRANSPORT}/dashboard`);
   const trips = useApi<Trip[]>(`${TRANSPORT}/trips`, { on: today() });
   const routes = useApi<Route[]>(`${TRANSPORT}/routes`);
@@ -107,6 +109,8 @@ export function TransportDashboard() {
             )}
           </Panel>
         </div>
+        {/* Raising fees is money: the school admin's, not the transport manager's. */}
+        {isAdmin ? (
         <aside>
           <Panel title="Monthly transport fees">
             <p className="muted">Raise one transport fee for every student on a route for a month, at their stop&apos;s fee. Students already billed for that month are skipped.</p>
@@ -118,6 +122,7 @@ export function TransportDashboard() {
             </div>
           </Panel>
         </aside>
+        ) : null}
       </div>
       <TransportFeesDialog />
     </>

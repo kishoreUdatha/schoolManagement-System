@@ -237,7 +237,20 @@ def permissions_for(db: Session, user: User) -> set[str]:
     custom roles they've been given. School admins get everything."""
     if user.role == UserRole.school_admin:
         return set(CATALOGUE)
-    codes = set(SYSTEM_ROLE_PERMISSIONS.get(user.role.value, []))
+    # The base role's permissions as this school has set them in the
+    # permission matrix (its built-in role row); the defaults only until the
+    # school's built-in roles exist.
+    builtin = db.execute(
+        select(Role.id).where(Role.school_id == user.school_id, Role.is_system.is_(True), Role.code == user.role.value)
+    ).scalar_one_or_none()
+    if builtin is not None:
+        codes = set(db.execute(
+            select(Permission.code)
+            .join(RolePermission, RolePermission.permission_id == Permission.id)
+            .where(RolePermission.role_id == builtin)
+        ).scalars())
+    else:
+        codes = set(SYSTEM_ROLE_PERMISSIONS.get(user.role.value, []))
     extra = db.execute(
         select(Permission.code)
         .join(RolePermission, RolePermission.permission_id == Permission.id)

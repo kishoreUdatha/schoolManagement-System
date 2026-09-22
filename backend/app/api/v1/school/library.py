@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import LibraryManager, SchoolAdminUser
 from app.core.enums import FineStatus
 from app.database import get_db
 from app.schemas.library import (
@@ -39,17 +39,17 @@ Db = Annotated[Session, Depends(get_db)]
 
 
 @router.get("/dashboard", response_model=LibraryDashboard)
-def dashboard(current_user: SchoolAdminUser, db: Db):
+def dashboard(current_user: LibraryManager, db: Db):
     return LibraryDashboard.model_validate(svc.dashboard(db, current_user.tenant_id, current_user.school_id))
 
 
 @router.get("/settings", response_model=LibrarySettingsRead)
-def get_settings(current_user: SchoolAdminUser, db: Db):
+def get_settings(current_user: LibraryManager, db: Db):
     return LibrarySettingsRead.model_validate(svc.get_settings(db, current_user.tenant_id, current_user.school_id))
 
 
 @router.patch("/settings", response_model=LibrarySettingsRead)
-def update_settings(payload: LibrarySettingsUpdate, current_user: SchoolAdminUser, db: Db):
+def update_settings(payload: LibrarySettingsUpdate, current_user: LibraryManager, db: Db):
     return LibrarySettingsRead.model_validate(
         svc.update_settings(db, current_user.tenant_id, current_user.school_id, payload)
     )
@@ -58,13 +58,13 @@ def update_settings(payload: LibrarySettingsUpdate, current_user: SchoolAdminUse
 # --- Catalogue ---
 
 @router.get("/categories", response_model=list[str])
-def categories(current_user: SchoolAdminUser, db: Db):
+def categories(current_user: LibraryManager, db: Db):
     return svc.categories(db, current_user.school_id)
 
 
 @router.get("/books", response_model=list[BookRead])
 def search_books(
-    current_user: SchoolAdminUser,
+    current_user: LibraryManager,
     db: Db,
     q: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
@@ -87,30 +87,30 @@ def search_books(
 
 
 @router.post("/books", response_model=BookDetail, status_code=status.HTTP_201_CREATED)
-def create_book(payload: BookCreate, current_user: SchoolAdminUser, db: Db):
+def create_book(payload: BookCreate, current_user: LibraryManager, db: Db):
     b = svc.create_book(db, current_user.tenant_id, current_user.school_id, payload)
     return BookDetail.model_validate(svc.book_detail(db, b.id, current_user.school_id))
 
 
 @router.get("/books/{book_id}", response_model=BookDetail)
-def get_book(book_id: int, current_user: SchoolAdminUser, db: Db):
+def get_book(book_id: int, current_user: LibraryManager, db: Db):
     return BookDetail.model_validate(svc.book_detail(db, book_id, current_user.school_id))
 
 
 @router.patch("/books/{book_id}", response_model=BookDetail)
-def update_book(book_id: int, payload: BookUpdate, current_user: SchoolAdminUser, db: Db):
+def update_book(book_id: int, payload: BookUpdate, current_user: LibraryManager, db: Db):
     svc.update_book(db, book_id, current_user.school_id, payload)
     return BookDetail.model_validate(svc.book_detail(db, book_id, current_user.school_id))
 
 
 @router.post("/books/{book_id}/copies", response_model=BookDetail, status_code=status.HTTP_201_CREATED)
-def add_copies(book_id: int, payload: CopiesAdd, current_user: SchoolAdminUser, db: Db):
+def add_copies(book_id: int, payload: CopiesAdd, current_user: LibraryManager, db: Db):
     svc.add_copies(db, book_id, current_user.school_id, payload)
     return BookDetail.model_validate(svc.book_detail(db, book_id, current_user.school_id))
 
 
 @router.patch("/copies/{copy_id}", response_model=CopyRead)
-def update_copy(copy_id: int, payload: CopyUpdate, current_user: SchoolAdminUser, db: Db):
+def update_copy(copy_id: int, payload: CopyUpdate, current_user: LibraryManager, db: Db):
     return CopyRead.model_validate(svc.update_copy(db, copy_id, current_user.school_id, payload))
 
 
@@ -118,7 +118,7 @@ def update_copy(copy_id: int, payload: CopyUpdate, current_user: SchoolAdminUser
 
 @router.get("/loans", response_model=list[LoanRead])
 def list_loans(
-    current_user: SchoolAdminUser,
+    current_user: LibraryManager,
     db: Db,
     open_only: bool = Query(True),
     overdue_only: bool = Query(False),
@@ -142,13 +142,13 @@ def list_loans(
 
 
 @router.post("/loans", response_model=LoanRead, status_code=status.HTTP_201_CREATED, summary="Issue a copy by accession number")
-def issue(payload: IssueRequest, current_user: SchoolAdminUser, db: Db):
+def issue(payload: IssueRequest, current_user: LibraryManager, db: Db):
     l = svc.issue(db, current_user.tenant_id, current_user.school_id, current_user.id, payload)
     return LoanRead.model_validate(svc.loan_to_read(db, l))
 
 
 @router.post("/loans/{loan_id}/return", response_model=LoanRead)
-def return_copy(loan_id: int, payload: ReturnRequest, current_user: SchoolAdminUser, db: Db):
+def return_copy(loan_id: int, payload: ReturnRequest, current_user: LibraryManager, db: Db):
     return LoanRead.model_validate(
         svc.loan_to_read(db, svc.return_copy(db, loan_id, current_user.school_id, current_user.id, payload))
     )
@@ -156,17 +156,17 @@ def return_copy(loan_id: int, payload: ReturnRequest, current_user: SchoolAdminU
 
 @router.patch("/loans/{loan_id}", response_model=LoanRead,
               summary="Override when a book is due back")
-def set_due_date(loan_id: int, payload: DueDateUpdate, current_user: SchoolAdminUser, db: Db):
+def set_due_date(loan_id: int, payload: DueDateUpdate, current_user: LibraryManager, db: Db):
     return LoanRead.model_validate(svc.loan_to_read(db, svc.set_due_date(db, loan_id, current_user.school_id, payload)))
 
 
 @router.post("/loans/{loan_id}/renew", response_model=LoanRead)
-def renew(loan_id: int, current_user: SchoolAdminUser, db: Db):
+def renew(loan_id: int, current_user: LibraryManager, db: Db):
     return LoanRead.model_validate(svc.loan_to_read(db, svc.renew(db, loan_id, current_user.school_id)))
 
 
 @router.post("/loans/{loan_id}/lost", response_model=LoanRead)
-def lost(loan_id: int, payload: LostRequest, current_user: SchoolAdminUser, db: Db):
+def lost(loan_id: int, payload: LostRequest, current_user: LibraryManager, db: Db):
     return LoanRead.model_validate(
         svc.loan_to_read(db, svc.mark_lost(db, loan_id, current_user.school_id, current_user.id, payload))
     )
@@ -175,7 +175,7 @@ def lost(loan_id: int, payload: LostRequest, current_user: SchoolAdminUser, db: 
 @router.get("/members", response_model=list[MemberRead],
             summary="Who can borrow, and what they are holding")
 def members(
-    current_user: SchoolAdminUser,
+    current_user: LibraryManager,
     db: Db,
     q: Optional[str] = Query(None, description="Name, admission number or section"),
     with_books_only: bool = False,
@@ -185,7 +185,7 @@ def members(
 
 @router.get("/fines", response_model=FineSummary, summary="Every fine raised, and what is still owed")
 def list_fines(
-    current_user: SchoolAdminUser,
+    current_user: LibraryManager,
     db: Db,
     fine_status: Optional[FineStatus] = Query(None, alias="status"),
     student_id: Optional[int] = None,
@@ -197,24 +197,24 @@ def list_fines(
 
 
 @router.get("/fines/{loan_id}", response_model=FineRead)
-def get_fine(loan_id: int, current_user: SchoolAdminUser, db: Db):
+def get_fine(loan_id: int, current_user: LibraryManager, db: Db):
     return svc.get_fine(db, loan_id, current_user.school_id)
 
 
 @router.patch("/fines/{loan_id}", response_model=FineRead, summary="Correct a fine that hasn't been settled")
-def correct_fine(loan_id: int, payload: FineCorrection, current_user: SchoolAdminUser, db: Db):
+def correct_fine(loan_id: int, payload: FineCorrection, current_user: LibraryManager, db: Db):
     return svc.correct_fine(db, loan_id, current_user.school_id, payload)
 
 
 @router.post("/loans/{loan_id}/fine", response_model=LoanRead, summary="Collect, waive or add a fine to the student's fees")
-def fine(loan_id: int, payload: FineAction, current_user: SchoolAdminUser, db: Db):
+def fine(loan_id: int, payload: FineAction, current_user: LibraryManager, db: Db):
     return LoanRead.model_validate(svc.loan_to_read(db, svc.fine_action(db, loan_id, current_user.school_id, payload)))
 
 
 # --- Reservations ---
 
 @router.get("/reservations", response_model=list[ReservationRead])
-def list_reservations(current_user: SchoolAdminUser, db: Db, active_only: bool = Query(True)):
+def list_reservations(current_user: LibraryManager, db: Db, active_only: bool = Query(True)):
     return [
         ReservationRead.model_validate(svc.reservation_to_read(db, r))
         for r in svc.list_reservations(db, current_user.school_id, active_only=active_only)
@@ -222,20 +222,20 @@ def list_reservations(current_user: SchoolAdminUser, db: Db, active_only: bool =
 
 
 @router.post("/reservations", response_model=ReservationRead, status_code=status.HTTP_201_CREATED)
-def reserve(payload: ReservationCreate, current_user: SchoolAdminUser, db: Db):
+def reserve(payload: ReservationCreate, current_user: LibraryManager, db: Db):
     return ReservationRead.model_validate(svc.reservation_to_read(db, svc.reserve(db, current_user.school_id, payload)))
 
 
 @router.patch("/reservations/{reservation_id}", response_model=ReservationRead,
               summary="Hold a reserved book a little longer")
-def extend_hold(reservation_id: int, payload: HoldUpdate, current_user: SchoolAdminUser, db: Db):
+def extend_hold(reservation_id: int, payload: HoldUpdate, current_user: LibraryManager, db: Db):
     return ReservationRead.model_validate(
         svc.reservation_to_read(db, svc.extend_hold(db, reservation_id, current_user.school_id, payload))
     )
 
 
 @router.post("/reservations/{reservation_id}/cancel", response_model=ReservationRead)
-def cancel(reservation_id: int, current_user: SchoolAdminUser, db: Db):
+def cancel(reservation_id: int, current_user: LibraryManager, db: Db):
     return ReservationRead.model_validate(
         svc.reservation_to_read(db, svc.cancel_reservation(db, reservation_id, current_user.school_id))
     )

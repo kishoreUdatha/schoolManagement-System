@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrAccountant, SchoolAdminOrPrincipal
+from app.core.deps import AssetKeeper, LibraryReports, SchoolAdminOrAccountant, SchoolAdminOrPrincipal
 from app.database import get_db
 from app.schemas.analytics import (
     ChronicAbsence,
@@ -222,7 +222,7 @@ def transport(user: SchoolAdminOrPrincipal, db: Annotated[Session, Depends(get_d
 
 @router.get("/library", response_model=LibraryUsage)
 def library(
-    user: SchoolAdminOrPrincipal,
+    user: LibraryReports,
     db: Annotated[Session, Depends(get_db)],
     frm: Optional[date] = Query(None, alias="from"),
     to: Optional[date] = None,
@@ -231,7 +231,7 @@ def library(
 
 
 @router.get("/inventory", response_model=InventoryValuation)
-def inventory(user: SchoolAdminOrAccountant, db: Annotated[Session, Depends(get_db)]):
+def inventory(user: AssetKeeper, db: Annotated[Session, Depends(get_db)]):
     return analytics_service.inventory_valuation(db, user.school_id)
 
 

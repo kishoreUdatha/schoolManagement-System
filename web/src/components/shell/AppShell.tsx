@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Avatar, Person } from "@/components/ui/primitives";
-import { ModuleGroup, NOT_IN_MENU } from "./ModuleGroup";
+import { ModuleGroup, NOT_IN_MENU, PARENT } from "./ModuleGroup";
+import { heldJobs, usePermissions } from "@/lib/jobs";
 import { MODULES, SCREENS, screen, routeOf, type Screen } from "@/lib/screens";
 import { HOME_SCREEN, ROLE_LABEL, session } from "@/lib/session";
 import { useApi } from "@/lib/useApi";
@@ -92,6 +93,13 @@ function Sidebar({ s, viewer }: { s: Screen; viewer: Viewer }) {
   const { who, role } = viewer;
   const roleNav = ROLE_NAV[role];
   const home = useHome();
+  // Jobs given through the permission matrix (library, transport, front
+  // desk…), each a section under the person's own menu; items already in
+  // their menu are not repeated.
+  const perms = usePermissions();
+  const own = new Set((roleNav ?? []).map(([n]) => n));
+  const jobs = roleNav ? heldJobs(perms).map((j) => ({ ...j, items: j.items.filter(([n]) => !own.has(n)) })).filter((j) => j.items.length) : [];
+  const here = PARENT[s.n] ?? s.n;
   const scroller = useRef<HTMLDivElement>(null);
 
   // Keep the menu where it was between screens, and the current item in view.
@@ -136,9 +144,19 @@ function Sidebar({ s, viewer }: { s: Screen; viewer: Viewer }) {
           <>
             <div className="nav-label">{`${role.toUpperCase()} WORKSPACE`}</div>
             {roleNav.map(([n, label]) => (
-              <Link key={n + label} className={`nav ${n === s.n ? "active" : ""}`} href={routeOf(n)}>
+              <Link key={n + label} className={`nav ${n === here ? "active" : ""}`} href={routeOf(n)}>
                 <span>{label}</span>
               </Link>
+            ))}
+            {jobs.map((j) => (
+              <div key={j.permission}>
+                <div className="nav-label">{j.title.toUpperCase()}</div>
+                {j.items.map(([n, label]) => (
+                  <Link key={n} className={`nav ${n === here ? "active" : ""}`} href={routeOf(n)}>
+                    <span>{label}</span>
+                  </Link>
+                ))}
+              </div>
             ))}
           </>
         ) : (

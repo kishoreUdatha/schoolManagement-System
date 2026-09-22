@@ -6,7 +6,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, HostelFeeRaiser
 from app.core.enums import UserRole
 from app.database import get_db
 from app.models.user import User
@@ -157,5 +157,5 @@ def update_complaint(complaint_id: int, payload: ComplaintUpdate, current_user: 
 
 
 @router.post("/fees/generate", summary="Raise the month's hostel fee for every resident")
-def generate_fees(payload: HostelFeeGenerate, current_user: Staff, db: Db):
+def generate_fees(payload: HostelFeeGenerate, current_user: HostelFeeRaiser, db: Db):
     return svc.generate_fees(db, current_user, payload)

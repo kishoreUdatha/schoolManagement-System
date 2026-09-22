@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Respon
 from sqlalchemy.orm import Session
 
 from app.core import storage
-from app.core.deps import CurrentUser, SchoolAdminUser, allow
+from app.core.deps import AdmissionsWorker, CurrentUser, SchoolAdminUser, allow
 from app.core.enums import ApplicationStatus, DocumentCategory, UserRole
 from app.database import get_db
 from app.models.user import User
@@ -35,7 +35,8 @@ def _admissions_staff(current_user: CurrentUser) -> User:
 
 router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
-Admissions = Annotated[User, Depends(_admissions_staff)]
+# school admin, principal, or anyone whose roles carry admissions.manage
+Admissions = AdmissionsWorker
 # deciding and admitting can be delegated with the admissions.decide permission
 Decider = Annotated[User, Depends(allow(UserRole.school_admin, permission="admissions.decide"))]
 

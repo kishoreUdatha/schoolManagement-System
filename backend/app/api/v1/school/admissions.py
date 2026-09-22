@@ -5,7 +5,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import AdmissionsWorker, PublicLinkReader, SchoolAdminUser
 from app.core.enums import AdmissionSource, AdmissionStage
 from app.database import get_db
 from app.models.tenant import School, Tenant
@@ -34,7 +34,7 @@ router = APIRouter()
 
 @router.get("/campaigns", response_model=list[CampaignRead])
 def list_campaigns(
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
     active_only: bool = Query(False),
 ):
@@ -52,7 +52,7 @@ def list_campaigns(
 )
 def create_campaign(
     payload: CampaignCreate,
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
 ):
     c = admission_service.create_campaign(
@@ -65,7 +65,7 @@ def create_campaign(
 def update_campaign(
     campaign_id: int,
     payload: CampaignUpdate,
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
 ):
     c = admission_service.update_campaign(
@@ -77,7 +77,7 @@ def update_campaign(
 @router.delete("/campaigns/{campaign_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_campaign(
     campaign_id: int,
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
 ):
     admission_service.delete_campaign(db, campaign_id, current_user.school_id)
@@ -94,7 +94,7 @@ class PublicLink(BaseModel):
     response_model=PublicLink,
     summary="Codes that make up this school's public enquiry form URL",
 )
-def public_link(current_user: SchoolAdminUser, db: Annotated[Session, Depends(get_db)]):
+def public_link(current_user: PublicLinkReader, db: Annotated[Session, Depends(get_db)]):
     school = db.get(School, current_user.school_id)
     tenant = db.get(Tenant, current_user.tenant_id)
     return PublicLink(tenant_code=tenant.code, code=school.code)
@@ -103,7 +103,7 @@ def public_link(current_user: SchoolAdminUser, db: Annotated[Session, Depends(ge
 # --- Enquiries ---
 
 @router.get("/stats", response_model=AdmissionStats)
-def stats(current_user: SchoolAdminUser, db: Annotated[Session, Depends(get_db)]):
+def stats(current_user: AdmissionsWorker, db: Annotated[Session, Depends(get_db)]):
     return AdmissionStats.model_validate(
         admission_service.stats(db, current_user.school_id)
     )
@@ -115,7 +115,7 @@ def stats(current_user: SchoolAdminUser, db: Annotated[Session, Depends(get_db)]
     summary="List enquiries with filters",
 )
 def list_enquiries(
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
     stage: Optional[AdmissionStage] = Query(None),
     source: Optional[AdmissionSource] = Query(None),
@@ -156,7 +156,7 @@ def list_enquiries(
 )
 def create_enquiry(
     payload: EnquiryCreate,
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = admission_service.create_enquiry(
@@ -172,7 +172,7 @@ def create_enquiry(
 @router.get("/enquiries/{enquiry_id}", response_model=EnquiryDetail)
 def get_enquiry(
     enquiry_id: int,
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = admission_service.get_enquiry(db, enquiry_id, current_user.school_id)
@@ -183,7 +183,7 @@ def get_enquiry(
 def update_enquiry(
     enquiry_id: int,
     payload: EnquiryUpdate,
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = admission_service.update_enquiry(
@@ -195,7 +195,7 @@ def update_enquiry(
 @router.delete("/enquiries/{enquiry_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_enquiry(
     enquiry_id: int,
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
 ):
     admission_service.delete_enquiry(db, enquiry_id, current_user.school_id)
@@ -206,7 +206,7 @@ def delete_enquiry(
 def add_activity(
     enquiry_id: int,
     payload: ActivityCreate,
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = admission_service.add_activity(
@@ -219,7 +219,7 @@ def add_activity(
 def change_stage(
     enquiry_id: int,
     payload: StageChange,
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = admission_service.change_stage(
@@ -236,7 +236,7 @@ def change_stage(
 def convert(
     enquiry_id: int,
     payload: ConvertRequest,
-    current_user: SchoolAdminUser,
+    current_user: AdmissionsWorker,
     db: Annotated[Session, Depends(get_db)],
 ):
     return ConvertResult.model_validate(

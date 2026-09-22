@@ -30,7 +30,7 @@ export const NOT_IN_MENU = new Set([
 const OPEN_KEY = "bc_nav_open";
 
 /** The menu entry to highlight while on a screen that is not in the menu. */
-const PARENT: Record<number, number> = {
+export const PARENT: Record<number, number> = {
   11: 10, 12: 10, 23: 22, 24: 22, 26: 25, 27: 25,
   45: 44, 46: 44, 49: 48, 50: 48,
   56: 55, 57: 55, 58: 55, 59: 55, 60: 55, 61: 55, 62: 55, 63: 55, 64: 55, 65: 55, 66: 55, 67: 55, 68: 55,

@@ -36,7 +36,7 @@ Locker = Annotated[
     User, Depends(allow(UserRole.school_admin, UserRole.principal, permission="attendance.correct"))
 ]
 FrontDesk = Annotated[
-    User, Depends(allow(UserRole.school_admin, UserRole.principal, UserRole.staff, permission="frontdesk.manage"))
+    User, Depends(allow(UserRole.school_admin, UserRole.principal, permission="frontdesk.manage"))
 ]
 
 

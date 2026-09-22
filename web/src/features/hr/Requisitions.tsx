@@ -38,11 +38,10 @@ export function Requisitions() {
   const [typed, setTyped] = useState("");
   const list = useApi<Requisition[]>(BASE, { state });
   const all = useApi<Requisition[]>(BASE);
-  // The principal raises and reviews requests; filling, cancelling and the
-  // department list are the school admin's (the API refuses the principal).
+  // Anyone who can open this screen (school admin, principal, or a person
+  // with the HR job) can fill and cancel requests; nobody reviews their own.
   const me = useSession()?.user;
-  const admin = me?.role === "school_admin";
-  const depts = useApi<Department[]>(admin ? "/api/v1/school/departments" : null);
+  const depts = useApi<Department[]>("/api/v1/school/departments");
   const [creating, closeCreate] = useNewFlag();
   const [deciding, setDeciding] = useState<Requisition | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
@@ -187,12 +186,12 @@ export function Requisitions() {
                     Review
                   </button>
                 ) : null}
-                {admin && r.status === "approved" ? (
+                {r.status === "approved" ? (
                   <button type="button" className="btn" onClick={() => act(() => api.post(`${BASE}/${r.id}/status`, { status: "filled" }), `${r.title} marked filled.`)}>
                     Mark filled
                   </button>
                 ) : null}
-                {admin && ["draft", "submitted", "approved"].includes(r.status) ? (
+                {["draft", "submitted", "approved"].includes(r.status) ? (
                   <button
                     type="button"
                     className="btn"

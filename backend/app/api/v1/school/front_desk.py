@@ -125,7 +125,7 @@ def list_passes(current_user: FrontDeskUser, db: Db, on: Optional[date] = Query(
 
 
 @router.post("/gate-passes", response_model=GatePassRead, status_code=status.HTTP_201_CREATED)
-def create_pass(payload: GatePassIn, current_user: SchoolAdminUser, db: Db):
+def create_pass(payload: GatePassIn, current_user: FrontDeskUser, db: Db):
     g = svc.create_pass(db, current_user.tenant_id, current_user.school_id, current_user.id, payload)
     return GatePassRead.model_validate(svc.pass_to_read(db, g))
 

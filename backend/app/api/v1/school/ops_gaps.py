@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser
+from app.core.deps import AssetKeeper, HostelManager, HrManager, SchoolAdminOrPrincipal, SchoolAdminUser
 from app.core.enums import DutyShift
 from app.database import get_db
 from app.services import ops_gaps_service as svc
@@ -37,13 +37,13 @@ class DutyIn(BaseModel):
 
 
 @router.get("/interviews", summary="Every interview in a window, in one query")
-def interviews(user: SchoolAdminOrPrincipal, db: Db,
+def interviews(user: HrManager, db: Db,
                frm: date = Query(..., alias="from"), to: date = Query(...)):
     return svc.interviews(db, user.school_id, frm=frm, to=to)
 
 
 @router.get("/assets/service-due", summary="Assets due a service or out of warranty")
-def service_due(user: SchoolAdminOrPrincipal, db: Db,
+def service_due(user: AssetKeeper, db: Db,
                 within_days: int = Query(60, ge=1, le=365)):
     return svc.service_due(db, user.school_id, within_days=within_days)
 
@@ -51,13 +51,13 @@ def service_due(user: SchoolAdminOrPrincipal, db: Db,
 @router.put("/assets/{asset_id}/service-interval",
             summary="How often this asset wants servicing")
 def set_interval(asset_id: int, payload: ServiceIntervalIn,
-                 user: SchoolAdminUser, db: Db):
+                 user: AssetKeeper, db: Db):
     return svc.set_service_interval(db, user.school_id, asset_id,
                                     payload.service_every_days)
 
 
 @router.get("/warden-rota", summary="Who is on duty, and which nights nobody is")
-def warden_rota(user: SchoolAdminOrPrincipal, db: Db,
+def warden_rota(user: HostelManager, db: Db,
                 frm: Optional[date] = Query(None, alias="from"),
                 to: Optional[date] = None):
     start = frm or date.today()
@@ -66,7 +66,7 @@ def warden_rota(user: SchoolAdminOrPrincipal, db: Db,
 
 @router.post("/warden-rota", status_code=status.HTTP_201_CREATED,
              summary="Put somebody on for a night")
-def add_duty(payload: DutyIn, user: SchoolAdminUser, db: Db):
+def add_duty(payload: DutyIn, user: HostelManager, db: Db):
     from app.models.hostel_ops import WardenDuty
 
     row = WardenDuty(
@@ -81,7 +81,7 @@ def add_duty(payload: DutyIn, user: SchoolAdminUser, db: Db):
 
 @router.delete("/warden-rota/{duty_id}", status_code=status.HTTP_204_NO_CONTENT,
                summary="Take somebody off a night")
-def remove_duty(duty_id: int, user: SchoolAdminUser, db: Db):
+def remove_duty(duty_id: int, user: HostelManager, db: Db):
     from app.models.hostel_ops import WardenDuty
 
     row = db.get(WardenDuty, duty_id)

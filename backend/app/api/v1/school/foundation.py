@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import SchoolAdminUser, StaffDirectoryReader
 from app.core.scoping import get_school_student
 from app.database import get_db
 from app.schemas.foundation import (
@@ -109,7 +109,7 @@ def delete_term(term_id: int, current_user: SchoolAdminUser, db: Db):
 # --- Departments ---
 
 @router.get("/departments", response_model=list[DepartmentRead])
-def departments(current_user: SchoolAdminUser, db: Db):
+def departments(current_user: StaffDirectoryReader, db: Db):
     return [DepartmentRead.model_validate(svc.department_to_read(db, d)) for d in svc.list_departments(db, current_user.school_id)]
 
 
