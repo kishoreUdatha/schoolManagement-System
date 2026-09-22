@@ -27,6 +27,8 @@ def create_year(
         end_date=data.end_date,
         is_current=False,  # set later via _set_current to handle the only-one invariant
         is_archived=False,
+        admissions_open=data.admissions_open,
+        admission_opens_on=data.admission_opens_on,
     )
     db.add(year)
     try:
@@ -83,6 +85,8 @@ def update_year(
             detail="end_date must be after start_date",
         )
 
+    if updates.get("admissions_open", "") is None:
+        updates.pop("admissions_open")
     for field, value in updates.items():
         setattr(year, field, value)
 

@@ -9,8 +9,66 @@ import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { Field, KV, SectionTitle } from "./bits";
-import type { AcademicYear, Branch, SchoolClass } from "./types";
+import { Field, KV, SectionTitle, orNull } from "./bits";
+import type { AcademicYear, Branch, SchoolClass, StaffPick } from "./types";
+
+export const SCHOOL_LEVELS = ["Pre-primary", "Primary", "Middle school", "Secondary", "Senior secondary"];
+
+/**
+ * Class code, school level, capacity, coordinator and status — the class's
+ * own details beyond name and order. Shared by Class Setup and Grades/Classes.
+ */
+export function ClassDetailFields({ c }: { c?: SchoolClass }) {
+  const staff = useApi<StaffPick[]>("/api/v1/school/directory/staff");
+  const levels = c?.school_level && !SCHOOL_LEVELS.includes(c.school_level) ? [...SCHOOL_LEVELS, c.school_level] : SCHOOL_LEVELS;
+  return (
+    <>
+      <Field label="Class code">
+        <input type="text" name="code" maxLength={20} placeholder="e.g. G8" defaultValue={c?.code ?? ""} />
+      </Field>
+      <Field label="School level">
+        <select name="school_level" aria-label="School level" defaultValue={c?.school_level ?? ""}>
+          <option value="">Not set</option>
+          {levels.map((l) => (
+            <option key={l}>{l}</option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Student capacity">
+        <input type="number" name="capacity" min={0} max={5000} placeholder="Whole class" defaultValue={c?.capacity ?? ""} />
+      </Field>
+      <Field label="Class coordinator">
+        <select name="coordinator_user_id" aria-label="Class coordinator" defaultValue={c?.coordinator_user_id ?? ""} key={staff.data ? "ready" : "loading"}>
+          <option value="">{staff.loading ? "Loading staff…" : "No coordinator"}</option>
+          {staff.data?.map((s) => (
+            <option key={s.user_id} value={s.user_id}>
+              {s.full_name}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Status">
+        <select name="class_status" aria-label="Status" defaultValue={c && !c.is_active ? "inactive" : "active"}>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </Field>
+    </>
+  );
+}
+
+/** Reads ClassDetailFields back into the API's shape. */
+export function classDetails(f: FormData) {
+  const capacity = orNull(f.get("capacity"));
+  const coordinator = orNull(f.get("coordinator_user_id"));
+  return {
+    code: orNull(f.get("code")),
+    school_level: orNull(f.get("school_level")),
+    capacity: capacity === null ? null : Number(capacity),
+    coordinator_user_id: coordinator === null ? null : Number(coordinator),
+    is_active: f.get("class_status") !== "inactive",
+  };
+}
 
 /** Year chosen by ?year=, else the current one. Shared by class and section setup. */
 export function useSetupYear() {
@@ -50,13 +108,14 @@ export function ClassSetup() {
     setError(null);
     try {
       if (cls) {
-        await api.patch(`/api/v1/school/classes/${cls.id}`, { name, ...(order ? { display_order: Number(order) } : {}) });
+        await api.patch(`/api/v1/school/classes/${cls.id}`, { name, ...classDetails(f), ...(order ? { display_order: Number(order) } : {}) });
         notify(`${name} saved.`);
         await classes.reload();
       } else {
         const created = await api.post<SchoolClass>("/api/v1/school/classes", {
           academic_year_id: yearId,
           name,
+          ...classDetails(f),
           ...(order ? { display_order: Number(order) } : {}),
         });
         notify(`${created.name} created.`);
@@ -100,7 +159,6 @@ export function ClassSetup() {
                 <Field label="Class name" required>
                   <input type="text" name="name" required minLength={1} placeholder="Enter class name" defaultValue={cls?.name ?? ""} />
                 </Field>
-                {/* Not wired: Class code, School level, Student capacity and Class coordinator — a class has only a name and order (capacity and teacher live on sections); no endpoint */}
                 <Field label="Academic year" required>
                   <select
                     aria-label="Academic year"
@@ -121,6 +179,7 @@ export function ClassSetup() {
                 <Field label="Display order">
                   <input type="number" name="display_order" min={0} placeholder="Position in lists" defaultValue={cls?.display_order ?? ""} />
                 </Field>
+                <ClassDetailFields c={cls} />
               </div>
             </section>
           </div>
@@ -150,11 +209,11 @@ export function ClassSetup() {
             rows={[
               ["Academic year", year?.name ?? "—"],
               ["Branch", main?.name ?? "Whole school"],
-              ["Status", cls ? `${cls.sections.length} sections` : "New class"],
+              ["Status", cls ? `${cls.is_active ? "Active" : "Inactive"} · ${cls.sections.length} sections` : "New class"],
             ]}
           />
           <div className="gap" />
-          <p>Classes belong to one academic year. Sections, capacity and class teachers are set under Section Setup.</p>
+          <p>Classes belong to one academic year. Each section&apos;s own capacity and class teacher are set under Section Setup.</p>
         </div>
         <div className="aside-panel">
           <h3>{`Classes in ${year?.name ?? "this year"} (${list.length})`}</h3>

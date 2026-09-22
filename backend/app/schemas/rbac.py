@@ -73,6 +73,9 @@ class BranchIn(BaseModel):
     head_user_id: Optional[int] = None
     is_main: bool = False
     is_active: bool = True
+    # Leave out to keep what is saved; null clears.
+    email: Optional[str] = Field(None, max_length=255)
+    capacity: Optional[int] = Field(None, ge=0, le=100000)
 
 
 class BranchRead(BaseModel):
@@ -85,6 +88,8 @@ class BranchRead(BaseModel):
     head_name: Optional[str]
     is_main: bool
     is_active: bool
+    email: Optional[str] = None
+    capacity: Optional[int] = None
     sections: int
     staff: int
     students: int

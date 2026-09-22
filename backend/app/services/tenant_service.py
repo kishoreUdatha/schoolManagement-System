@@ -90,6 +90,8 @@ def create_tenant_with_school_admin(db: Session, data: TenantCreate) -> tuple[Te
         code=code,
         logo_url=data.logo_url,
         address=data.address,
+        board=data.board,
+        school_type=data.school_type,
         status=SchoolStatus.active,
         is_active=True,
     )
@@ -160,6 +162,20 @@ def get_tenant(db: Session, tenant_id: int) -> Tenant:
     if not tenant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
     return tenant
+
+
+def branch_counts(db: Session, school_ids: list[int]) -> dict[int, int]:
+    """Branches (campuses) each school has, for the platform's schools list."""
+    from app.models.rbac import Branch
+
+    if not school_ids:
+        return {}
+    rows = db.execute(
+        select(Branch.school_id, func.count(Branch.id))
+        .where(Branch.school_id.in_(school_ids))
+        .group_by(Branch.school_id)
+    ).all()
+    return {sid: n for sid, n in rows}
 
 
 def get_current_subscription(db: Session, tenant_id: int) -> Optional[TenantSubscription]:

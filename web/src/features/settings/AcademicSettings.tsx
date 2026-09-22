@@ -8,7 +8,7 @@ import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, orNull } from "@/features/setup/bits";
-import type { AcademicYear, SchoolProfile, Term } from "@/features/setup/types";
+import type { AcademicYear, AttendanceMode, SchoolProfile, Term } from "@/features/setup/types";
 import { PROFILE, WorkingDays, readDays } from "./GeneralSettings";
 import { SettingsNav } from "./SettingsNav";
 import type { GradeScale, ReportCardSettings } from "./types";
@@ -26,8 +26,8 @@ const TOGGLES: [keyof ReportCardSettings, string][] = [
 /**
  * SCR-290, live. The year and its terms are read here (they are set under
  * Academic Year Setup). Saving sends the default grade scale (POST
- * /grade-scales/{id}/default, only when it changed), the working days
- * (PATCH /profile) and the report-card settings (PUT /report-card-settings).
+ * /grade-scales/{id}/default, only when it changed), the working days,
+ * attendance mode and promotion threshold (PATCH /profile) and the report-card settings (PUT /report-card-settings).
  */
 export function AcademicSettings() {
   const years = useApi<AcademicYear[]>("/api/v1/school/academic-years");
@@ -56,7 +56,12 @@ export function AcademicSettings() {
     try {
       const scale = String(f.get("scale") ?? "");
       if (scale && scale !== String(def?.id ?? "")) await api.post(`/api/v1/school/grade-scales/${scale}/default`);
-      await api.patch(PROFILE, { working_days: days });
+      const threshold = orNull(f.get("promotion_threshold"));
+      await api.patch(PROFILE, {
+        working_days: days,
+        attendance_mode: String(f.get("attendance_mode") ?? "daily") as AttendanceMode,
+        promotion_threshold: threshold === null ? null : Number(threshold),
+      });
       await api.put(RC, {
         ...Object.fromEntries(TOGGLES.map(([k]) => [k, f.get(k) === "on"])),
         principal_name: orNull(f.get("principal_name")),
@@ -117,7 +122,23 @@ export function AcademicSettings() {
                     ))}
                 </select>
               </Field>
-              {/* Not wired: Attendance mode and Promotion threshold — no school-level setting for either; no endpoint */}
+              <Field label="Attendance mode">
+                <select name="attendance_mode" aria-label="Attendance mode" defaultValue={profile.data?.attendance_mode ?? "daily"}>
+                  <option value="daily">Daily</option>
+                  <option value="period">Period-wise</option>
+                  <option value="daily_period">Daily + period</option>
+                </select>
+              </Field>
+              <Field label="Promotion threshold">
+                <input
+                  type="number"
+                  name="promotion_threshold"
+                  min={0}
+                  max={100}
+                  defaultValue={profile.data?.promotion_threshold ?? ""}
+                  placeholder="Overall % needed to be promoted"
+                />
+              </Field>
               <Field label="Principal name on report cards">
                 <input type="text" name="principal_name" defaultValue={r?.principal_name ?? ""} placeholder="As printed on report cards" />
               </Field>

@@ -78,7 +78,8 @@ export function SchoolDetails() {
               rows={[
                 ["School name", s.name],
                 ["School code", s.code],
-                // Not wired: Board — the school record has no board; no endpoint
+                ["Board", s.board ?? "—"],
+                ["School type", s.school_type ?? "—"],
                 ["Principal", s.principal_name ?? "—"],
                 ["Academic year", current?.name ?? "—"],
                 ["Address", s.address ?? "—"],
@@ -91,6 +92,7 @@ export function SchoolDetails() {
                 ["Email address", s.email ?? "—"],
                 ["Mobile number", s.phone_primary ?? "—"],
                 ["Alternate number", s.phone_secondary ?? "—"],
+                ["Website", s.website ?? "—"],
                 ["Address", s.address ?? "—"],
               ]}
             />
@@ -148,6 +150,7 @@ export function SchoolBranding() {
   const profile = useApi<Profile>(PROFILE);
   const [color, setColor] = useState<string | null>(null);
   const [appName, setAppName] = useState<string | null>(null);
+  const [accent, setAccent] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -156,6 +159,7 @@ export function SchoolBranding() {
   if (!s) return <ErrorNote>{profile.error ?? "School not found."}</ErrorNote>;
   const brand = color ?? s.brand_color ?? "";
   const shown = appName ?? s.app_name ?? s.name;
+  const accentShown = accent ?? s.accent_color ?? "";
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -165,6 +169,11 @@ export function SchoolBranding() {
       setError("Primary color must be a hex colour such as #2563EB.");
       return;
     }
+    const a = orNull(f.get("accent_color"));
+    if (a && !/^#[0-9a-fA-F]{6}$/.test(a)) {
+      setError("Accent color must be a hex colour such as #F59E0B.");
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -172,6 +181,8 @@ export function SchoolBranding() {
         name: String(f.get("name") ?? "").trim(),
         app_name: orNull(f.get("app_name")),
         brand_color: c,
+        accent_color: a,
+        website: orNull(f.get("website")),
         logo_url: orNull(f.get("logo_url")),
         email: orNull(f.get("email")),
         principal_name: orNull(f.get("principal_name")),
@@ -210,7 +221,13 @@ export function SchoolBranding() {
             <ErrorNote>{error}</ErrorNote>
             <div className="two-equal">
               <div>
-                <div className="colour-preview" style={/^#[0-9a-fA-F]{6}$/.test(brand) ? { background: brand } : undefined}>
+                <div
+                  className="colour-preview"
+                  style={{
+                    ...(/^#[0-9a-fA-F]{6}$/.test(brand) ? { background: brand } : {}),
+                    ...(/^#[0-9a-fA-F]{6}$/.test(accentShown) ? { boxShadow: `inset 0 -6px 0 ${accentShown}` } : {}),
+                  }}
+                >
                   {shown}
                 </div>
                 <div className="upload-zone">
@@ -236,7 +253,12 @@ export function SchoolBranding() {
                 <Field label="Primary color">
                   <input type="text" name="brand_color" placeholder="#2563EB" defaultValue={s.brand_color ?? ""} onChange={(e) => setColor(e.target.value)} />
                 </Field>
-                {/* Not wired: Accent color and Website — the profile has neither; no endpoint */}
+                <Field label="Accent color">
+                  <input type="text" name="accent_color" placeholder="#F59E0B" defaultValue={s.accent_color ?? ""} onChange={(e) => setAccent(e.target.value)} />
+                </Field>
+                <Field label="Website">
+                  <input type="url" name="website" placeholder="https://yourschool.edu" defaultValue={s.website ?? ""} />
+                </Field>
                 <Field label="Support email">
                   <input type="email" name="email" placeholder="Enter support email" defaultValue={s.email ?? ""} />
                 </Field>

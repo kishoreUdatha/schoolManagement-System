@@ -50,6 +50,8 @@ def create_tenant(
             "status": school.status,
             "is_active": school.is_active,
             "created_at": school.created_at,
+            "board": school.board,
+            "school_type": school.school_type,
         },
         school_admin_user_id=admin_user.id,
         school_admin_email=admin_user.email,
@@ -90,6 +92,9 @@ def get_tenant(
     tenant = tenant_service.get_tenant(db, tenant_id)
     current_sub = tenant_service.get_current_subscription(db, tenant_id)
     detail = TenantDetailRead.model_validate(tenant)
+    branches = tenant_service.branch_counts(db, [s.id for s in detail.schools])
+    for s in detail.schools:
+        s.branch_count = branches.get(s.id, 0)
     detail.current_subscription = (
         SubscriptionRead.model_validate(current_sub) if current_sub else None
     )

@@ -13,11 +13,12 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
-import { Field, KV, SectionTitle, count, orNull } from "./bits";
+import { BoardSelect, Field, KV, SectionTitle, count, orNull } from "./bits";
 import type { Plan, Tenant, TenantCreated, TenantDetail, TenantSchool, TenantUsage } from "./types";
 
 const TENANTS = "/api/v1/super-admin/tenants";
 const PAGE_SIZE = 20;
+const SCHOOL_TYPES = ["Co-educational day school", "Boys' school", "Girls' school", "Day and boarding school", "Residential school"];
 
 /** Organisations (tenants) are platform records: only the super admin can read them. */
 function PlatformOnly() {
@@ -83,6 +84,8 @@ export function SchoolsList() {
     { name: r.school?.name ?? "No school yet", sub: r.school?.address ?? undefined },
     r.school?.code ?? "—",
     r.tenant.name,
+    r.school?.board ?? "—",
+    r.school ? String(r.school.branch_count) : "—",
     // Students are counted per organisation; with several schools the figure covers them all.
     r.students === null ? "—" : `${r.students.toLocaleString("en-IN")}${r.many ? " (organisation)" : ""}`,
     label(r.tenant.status === "active" && r.school && !r.school.is_active ? "inactive" : r.tenant.status),
@@ -104,9 +107,8 @@ export function SchoolsList() {
       </div>
       <ErrorNote>{list.error}</ErrorNote>
       <Panel title="All schools" sub={`${list.data ? `${list.data.total} organisations` : "Organisations"}${list.loading || (list.data && !lines) ? " · Loading…" : ""}`} flush>
-        {/* Not wired: Board and Branches columns — the platform API has neither per school; no endpoint */}
         <DataTable
-          columns={["School", "School code", "Organization", "Students", "Status"]}
+          columns={["School", "School code", "Organization", "Board", "Branches", "Students", "Status"]}
           rows={rows}
           total={list.data?.total}
           page={page}
@@ -347,6 +349,8 @@ export function AddSchool() {
         name: text("name"),
         code: orNull(f.get("code")),
         address: orNull(f.get("address")),
+        board: orNull(f.get("board")),
+        school_type: orNull(f.get("school_type")),
         contact_person: orNull(f.get("contact_person")),
         contact_email: text("contact_email"),
         contact_mobile: text("contact_mobile"),
@@ -421,7 +425,17 @@ export function AddSchool() {
                 <Field label="School code">
                   <input type="text" name="code" placeholder="Leave blank to generate one" />
                 </Field>
-                {/* Not wired: Board and School type — the school record has neither; no endpoint */}
+                <Field label="Board">
+                  <BoardSelect />
+                </Field>
+                <Field label="School type">
+                  <select name="school_type" aria-label="School type" defaultValue="">
+                    <option value="">Not set</option>
+                    {SCHOOL_TYPES.map((t) => (
+                      <option key={t}>{t}</option>
+                    ))}
+                  </select>
+                </Field>
                 <Field label="Principal name">
                   <input type="text" name="contact_person" placeholder="Enter principal or contact name" />
                 </Field>

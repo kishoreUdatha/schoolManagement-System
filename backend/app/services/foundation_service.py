@@ -333,6 +333,8 @@ def save_term(db: Session, user: User, year_id: int, data, term_id: Optional[int
         t = Term(tenant_id=user.tenant_id, school_id=user.school_id, academic_year_id=year.id)
     _check_term(db, year, data.start_date, data.end_date, term_id)
     t.name, t.start_date, t.end_date = data.name.strip(), data.start_date, data.end_date
+    if "working_days" in data.model_fields_set:
+        t.working_days = data.working_days
     if term_id is None:
         t.sequence = (db.execute(select(func.coalesce(func.max(Term.sequence), 0)).where(Term.academic_year_id == year.id)).scalar_one()) + 1
         db.add(t)
@@ -347,6 +349,43 @@ def save_term(db: Session, user: User, year_id: int, data, term_id: Optional[int
     db.commit()
     db.refresh(t)
     return t
+
+
+def terms_to_read(db: Session, school_id: int, terms: list[Term]) -> list[dict]:
+    """Terms with school_days: the school's working weekdays in each term,
+    less the days its holidays cover."""
+    from datetime import timedelta
+
+    from app.models.holiday import Holiday
+    from app.models.tenant import School
+
+    if not terms:
+        return []
+    school = db.get(School, school_id)
+    codes = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+    open_days = {codes.index(c) for c in (school.working_days or "").split(",") if c in codes}
+    lo, hi = min(t.start_date for t in terms), max(t.end_date for t in terms)
+    off: set[date] = set()
+    for h in db.execute(select(Holiday).where(
+        Holiday.school_id == school_id, Holiday.start_date <= hi, Holiday.end_date >= lo,
+    )).scalars():
+        d = h.start_date
+        while d <= h.end_date:
+            off.add(d)
+            d += timedelta(days=1)
+    out = []
+    for t in terms:
+        n, d = 0, t.start_date
+        while d <= t.end_date:
+            if d.weekday() in open_days and d not in off:
+                n += 1
+            d += timedelta(days=1)
+        out.append({
+            "id": t.id, "academic_year_id": t.academic_year_id, "sequence": t.sequence,
+            "name": t.name, "start_date": t.start_date, "end_date": t.end_date,
+            "working_days": t.working_days, "school_days": n,
+        })
+    return out
 
 
 def delete_term(db: Session, user: User, term_id: int) -> None:
@@ -392,6 +431,9 @@ def save_department(db: Session, user: User, data, dept_id: Optional[int] = None
         if not u or u.school_id != user.school_id or u.role in (UserRole.parent, UserRole.student):
             raise _404("Head of department")
     d.name, d.code, d.head_user_id, d.is_active = data.name.strip(), data.code.strip().upper(), data.head_user_id, data.is_active
+    for f in ("email", "phone"):
+        if f in data.model_fields_set:
+            setattr(d, f, (getattr(data, f) or "").strip() or None)
     if dept_id is None:
         db.add(d)
     try:
@@ -419,6 +461,7 @@ def department_to_read(db: Session, d: Department) -> dict:
     return {
         "id": d.id, "name": d.name, "code": d.code, "head_user_id": d.head_user_id,
         "head_name": head.full_name if head else None, "is_active": d.is_active,
+        "email": d.email, "phone": d.phone,
         "staff_count": db.execute(select(func.count(Staff.id)).where(Staff.department_id == d.id)).scalar_one(),
         "subject_count": db.execute(select(func.count(Subject.id)).where(Subject.department_id == d.id)).scalar_one(),
     }

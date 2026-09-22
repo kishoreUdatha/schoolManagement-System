@@ -67,6 +67,13 @@ class SubjectGroup(Base, _School, PrimaryKeyMixin, TimestampMixin):
     code: Mapped[str] = mapped_column(String(20), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(300))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Which class the group is offered to (null = every class), and how many
+    # of its subjects a student picks.
+    class_id: Mapped[Optional[int]] = mapped_column(
+        BigInteger, ForeignKey("school_classes.id", ondelete="SET NULL")
+    )
+    min_picks: Mapped[Optional[int]] = mapped_column(SmallInteger)
+    max_picks: Mapped[Optional[int]] = mapped_column(SmallInteger)
 
 
 class SubjectGroupMember(Base, _School, PrimaryKeyMixin, TimestampMixin):

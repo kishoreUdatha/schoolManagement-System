@@ -8,9 +8,10 @@ import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Dialog, DialogActions, Field, SearchBox, YearSelect, downloadCsv, usePageAction, useSearch, useStudentCounts, useYears } from "./setupKit";
+import { RoomSelect, roomOf } from "@/features/setup/SectionSetup";
 import type { SchoolClass, Section, StaffMember } from "./types";
 
-const COLUMNS = ["Section", "Class", "Class teacher", "Capacity", "Enrolled"];
+const COLUMNS = ["Section", "Class", "Class teacher", "Room", "Capacity", "Enrolled"];
 
 type Line = Section & { className: string };
 
@@ -38,10 +39,10 @@ export function Sections() {
   };
 
   const filtered = lines.filter((s) => !classId || String(s.class_id) === classId);
-  const { q, setQ, shown } = useSearch(filtered, (s) => `${s.className} ${s.name} ${s.class_teacher_user_id ? teacherName.get(s.class_teacher_user_id) ?? "" : ""}`);
+  const { q, setQ, shown } = useSearch(filtered, (s) => `${s.className} ${s.name} ${s.room_name ?? ""} ${s.class_teacher_user_id ? teacherName.get(s.class_teacher_user_id) ?? "" : ""}`);
   const rows: Row[] = shown.map((s) => {
     const n = counts.get(s.id);
-    return [s.name, s.className, s.class_teacher_user_id ? teacherName.get(s.class_teacher_user_id) ?? "—" : "Not assigned", String(s.capacity), n === undefined ? "…" : String(n)];
+    return [s.name, s.className, s.class_teacher_user_id ? teacherName.get(s.class_teacher_user_id) ?? "—" : "Not assigned", s.room_name ?? "—", String(s.capacity), n === undefined ? "…" : String(n)];
   });
 
   usePageAction("add", useCallback(() => setEditing("new"), []));
@@ -66,7 +67,6 @@ export function Sections() {
       </div>
       <ErrorNote>{yearsError ?? list.error}</ErrorNote>
       <Panel title="All records" sub={`${year ? `Academic year ${year.name}` : "Current academic year"}${list.loading ? " · Loading…" : ""}`} flush>
-        {/* Not wired: "Room" — the API does not tie a room to a section. */}
         <DataTable
           columns={COLUMNS}
           rows={rows}
@@ -116,10 +116,10 @@ function SectionForm({
     try {
       if (s) {
         const teacher = String(f.get("teacher") ?? "");
-        await api.patch(`/api/v1/school/sections/${s.id}`, { name, capacity, class_teacher_user_id: teacher ? Number(teacher) : null });
+        await api.patch(`/api/v1/school/sections/${s.id}`, { name, capacity, class_teacher_user_id: teacher ? Number(teacher) : null, room_id: roomOf(f) });
         notify("Section updated.");
       } else {
-        await api.post(`/api/v1/school/classes/${f.get("class_id")}/sections`, { name, capacity });
+        await api.post(`/api/v1/school/classes/${f.get("class_id")}/sections`, { name, capacity, room_id: roomOf(f) });
         notify(`Section ${name} added.`);
       }
       onSaved();
@@ -167,6 +167,9 @@ function SectionForm({
           </Field>
           <Field label="Capacity">
             <input name="capacity" type="number" min={1} defaultValue={s?.capacity ?? 40} />
+          </Field>
+          <Field label="Room" full>
+            <RoomSelect section={s} />
           </Field>
           {s ? (
             <Field label="Class teacher" full>

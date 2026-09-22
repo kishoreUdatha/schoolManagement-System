@@ -7,10 +7,12 @@ import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
-import { Dialog, DialogActions, Field, SearchBox, downloadCsv, usePageAction, useSearch } from "./setupKit";
-import type { Subject, SubjectGroup } from "./types";
+import { Dialog, DialogActions, Field, SearchBox, downloadCsv, usePageAction, useSearch, useYears } from "./setupKit";
+import type { SchoolClass, Subject, SubjectGroup } from "./types";
 
-const COLUMNS = ["Group", "Subjects", "Code", "Selection rule", "Status"];
+const COLUMNS = ["Group", "Subjects", "Class", "Selection rule", "Minimum", "Maximum", "Status"];
+
+const picks = (n: number | null) => (n === null ? "—" : String(n));
 const BASE = "/api/v1/school/academics/groups";
 
 /** What the group asks of a student, read off its core and elective members. */
@@ -28,16 +30,24 @@ function ruleOf(g: SubjectGroup) {
 export function SubjectGroups() {
   const list = useApi<SubjectGroup[]>(BASE);
   const subjects = useApi<Subject[]>("/api/v1/school/subjects");
+  // Groups are offered to a class; classes are listed for the current year.
+  const { yearId } = useYears();
+  const classes = useApi<SchoolClass[]>(yearId ? "/api/v1/school/classes" : null, { academic_year_id: yearId });
   const [status, setStatus] = useState("");
+  const [classFilter, setClassFilter] = useState("");
   const [editing, setEditing] = useState<number | "new" | null>(null);
 
-  const groups = (list.data ?? []).filter((g) => !status || (status === "active") === g.is_active);
-  const { q, setQ, shown } = useSearch(groups, (g) => `${g.name} ${g.code} ${g.subjects.map((s) => s.subject_name).join(" ")}`);
+  const groups = (list.data ?? []).filter(
+    (g) => (!status || (status === "active") === g.is_active) && (!classFilter || (classFilter === "all" ? g.class_id === null : String(g.class_id) === classFilter)),
+  );
+  const { q, setQ, shown } = useSearch(groups, (g) => `${g.name} ${g.code} ${g.class_name ?? ""} ${g.subjects.map((s) => s.subject_name).join(" ")}`);
   const rows: Row[] = shown.map((g) => [
-    g.name,
+    `${g.name} (${g.code})`,
     g.subjects.map((s) => s.subject_name).join(", ") || "—",
-    g.code,
+    g.class_name ?? "All classes",
     ruleOf(g),
+    picks(g.min_picks),
+    picks(g.max_picks),
     g.is_active ? "Active" : "Inactive",
   ]);
 
@@ -53,6 +63,15 @@ export function SubjectGroups() {
     <>
       <div className="filterbar">
         <SearchBox value={q} onChange={setQ} placeholder="Search subject groups…" />
+        <select aria-label="Filter by class" value={classFilter} onChange={(e) => setClassFilter(e.target.value)}>
+          <option value="">All classes</option>
+          <option value="all">Offered to every class</option>
+          {classes.data?.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
         <select aria-label="Filter status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All statuses</option>
           <option value="active">Active</option>
@@ -61,7 +80,6 @@ export function SubjectGroups() {
       </div>
       <ErrorNote>{list.error}</ErrorNote>
       <Panel title="All records" sub={`${list.data?.length ?? 0} groups${list.loading ? " · Loading…" : ""}`} flush>
-        {/* Not wired: "Class", "Minimum" and "Maximum" — groups are school-wide in the API and carry no pick limits. */}
         <DataTable
           columns={COLUMNS}
           rows={rows}
@@ -70,13 +88,25 @@ export function SubjectGroups() {
         />
       </Panel>
       {editing === "new" || open ? (
-        <GroupDialog g={open} subjects={(subjects.data ?? []).filter((s) => s.is_active)} onClose={() => setEditing(null)} onSaved={list.reload} />
+        <GroupDialog g={open} subjects={(subjects.data ?? []).filter((s) => s.is_active)} classes={classes.data ?? []} onClose={() => setEditing(null)} onSaved={list.reload} />
       ) : null}
     </>
   );
 }
 
-function GroupDialog({ g, subjects, onClose, onSaved }: { g?: SubjectGroup; subjects: Subject[]; onClose: () => void; onSaved: () => void }) {
+function GroupDialog({
+  g,
+  subjects,
+  classes,
+  onClose,
+  onSaved,
+}: {
+  g?: SubjectGroup;
+  subjects: Subject[];
+  classes: SchoolClass[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pick, setPick] = useState("");
@@ -102,8 +132,17 @@ function GroupDialog({ g, subjects, onClose, onSaved }: { g?: SubjectGroup; subj
     const f = new FormData(e.currentTarget);
     const name = String(f.get("name")).trim();
     const description = String(f.get("description") ?? "").trim() || null;
-    if (g) run(() => api.patch(`${BASE}/${g.id}`, { name, description, is_active: f.get("is_active") === "on" }), "Group updated.", true);
-    else run(() => api.post(BASE, { name, code: String(f.get("code")).trim().toUpperCase(), description }), "Group created.", true);
+    const num = (k: string) => {
+      const v = String(f.get(k) ?? "").trim();
+      return v ? Number(v) : null;
+    };
+    const limits = { class_id: num("class_id"), min_picks: num("min_picks"), max_picks: num("max_picks") };
+    if (limits.min_picks !== null && limits.max_picks !== null && limits.min_picks > limits.max_picks) {
+      setError("The minimum can't be more than the maximum.");
+      return;
+    }
+    if (g) run(() => api.patch(`${BASE}/${g.id}`, { name, description, is_active: f.get("is_active") === "on", ...limits }), "Group updated.", true);
+    else run(() => api.post(BASE, { name, code: String(f.get("code")).trim().toUpperCase(), description, ...limits }), "Group created.", true);
   }
 
   const inGroup = new Set(g?.subjects.map((s) => s.subject_id));
@@ -120,6 +159,23 @@ function GroupDialog({ g, subjects, onClose, onSaved }: { g?: SubjectGroup; subj
           </Field>
           <Field label="Description" full>
             <input name="description" defaultValue={g?.description ?? ""} placeholder="What the group is for" />
+          </Field>
+          <Field label="Class" full>
+            <select name="class_id" defaultValue={g?.class_id ?? ""} key={classes.length}>
+              <option value="">Every class</option>
+              {g?.class_id && !classes.some((c) => c.id === g.class_id) ? <option value={g.class_id}>{g.class_name ?? "Another year's class"}</option> : null}
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Minimum picks">
+            <input name="min_picks" type="number" min={0} max={20} defaultValue={g?.min_picks ?? ""} placeholder="No minimum" />
+          </Field>
+          <Field label="Maximum picks">
+            <input name="max_picks" type="number" min={0} max={20} defaultValue={g?.max_picks ?? ""} placeholder="No maximum" />
           </Field>
           {g ? (
             <label className="row" style={{ fontSize: 13 }}>

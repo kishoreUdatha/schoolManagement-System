@@ -124,6 +124,9 @@ class Term(Base, PrimaryKeyMixin, TimestampMixin, _School):
     sequence: Mapped[int] = mapped_column(Integer, nullable=False)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # School days in the term as the school counts them; null = work it out
+    # from the school's working weekdays and holidays.
+    working_days: Mapped[Optional[int]] = mapped_column(Integer)
 
 
 class Department(Base, PrimaryKeyMixin, TimestampMixin, _School):
@@ -136,3 +139,5 @@ class Department(Base, PrimaryKeyMixin, TimestampMixin, _School):
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String(255))
+    phone: Mapped[Optional[str]] = mapped_column(String(20))

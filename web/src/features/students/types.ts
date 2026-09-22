@@ -1,10 +1,40 @@
 // Shapes returned by /api/v1/school/* for the Students module.
 
-export type AcademicYear = { id: number; name: string; start_date: string; end_date: string; is_current: boolean; is_archived: boolean };
+export type AcademicYear = {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+  is_archived: boolean;
+  admissions_open: boolean;
+  admission_opens_on: string | null;
+};
 
-export type Section = { id: number; class_id: number; name: string; capacity: number; class_teacher_user_id: number | null };
+export type Section = {
+  id: number;
+  class_id: number;
+  name: string;
+  capacity: number;
+  class_teacher_user_id: number | null;
+  /** The room (Facilities) the section sits in. */
+  room_id: number | null;
+  room_name: string | null;
+};
 
-export type SchoolClass = { id: number; name: string; display_order: number; academic_year_id: number; sections: Section[] };
+export type SchoolClass = {
+  id: number;
+  name: string;
+  display_order: number;
+  academic_year_id: number;
+  code: string | null;
+  school_level: string | null;
+  capacity: number | null;
+  coordinator_user_id: number | null;
+  coordinator_name: string | null;
+  is_active: boolean;
+  sections: Section[];
+};
 
 export type Student = {
   id: number;

@@ -87,17 +87,20 @@ def grant_portal(student_id: int, guardian_id: int, current_user: SchoolAdminUse
 
 @router.get("/academic-years/{year_id}/terms", response_model=list[TermRead])
 def terms(year_id: int, current_user: SchoolAdminUser, db: Db):
-    return [TermRead.model_validate(t) for t in svc.list_terms(db, current_user.school_id, year_id)]
+    terms = svc.list_terms(db, current_user.school_id, year_id)
+    return [TermRead.model_validate(t) for t in svc.terms_to_read(db, current_user.school_id, terms)]
 
 
 @router.post("/academic-years/{year_id}/terms", response_model=TermRead, status_code=status.HTTP_201_CREATED)
 def add_term(year_id: int, payload: TermIn, current_user: SchoolAdminUser, db: Db):
-    return TermRead.model_validate(svc.save_term(db, current_user, year_id, payload))
+    t = svc.save_term(db, current_user, year_id, payload)
+    return TermRead.model_validate(svc.terms_to_read(db, current_user.school_id, [t])[0])
 
 
 @router.put("/academic-years/{year_id}/terms/{term_id}", response_model=TermRead)
 def update_term(year_id: int, term_id: int, payload: TermIn, current_user: SchoolAdminUser, db: Db):
-    return TermRead.model_validate(svc.save_term(db, current_user, year_id, payload, term_id))
+    t = svc.save_term(db, current_user, year_id, payload, term_id)
+    return TermRead.model_validate(svc.terms_to_read(db, current_user.school_id, [t])[0])
 
 
 @router.delete("/terms/{term_id}", status_code=status.HTTP_204_NO_CONTENT)

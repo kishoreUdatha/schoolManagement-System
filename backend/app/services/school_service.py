@@ -41,6 +41,21 @@ def update_school_profile(
 
     _validate_time_ranges(school_start, school_end, "School day")
     _validate_time_ranges(break_start, break_end, "Break")
+
+    if updates.get("attendance_mode", "") is None:
+        updates.pop("attendance_mode")  # the column always has a mode
+    quiet_start = updates.get("quiet_hours_start", school.quiet_hours_start)
+    quiet_end = updates.get("quiet_hours_end", school.quiet_hours_end)
+    if (quiet_start is None) != (quiet_end is None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Quiet hours need both a start and an end time (or neither)",
+        )
+    if quiet_start is not None and quiet_start == quiet_end:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Quiet hours must start and end at different times",
+        )
     if (
         break_start is not None
         and school_start is not None

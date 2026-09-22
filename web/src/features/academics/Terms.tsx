@@ -11,7 +11,7 @@ import { useApi } from "@/lib/useApi";
 import { Dialog, DialogActions, Field, SearchBox, YearSelect, downloadCsv, usePageAction, useSearch, useYears } from "./setupKit";
 import type { Term } from "./types";
 
-const COLUMNS = ["Term", "Academic year", "Start date", "End date", "Days", "Status"];
+const COLUMNS = ["Term", "Academic year", "Start date", "End date", "Working days", "Status"];
 
 /** Where a term stands against today: its dates are all the API keeps. */
 function statusOf(t: Term, today: string) {
@@ -20,7 +20,8 @@ function statusOf(t: Term, today: string) {
   return "Active";
 }
 
-const days = (t: Term) => Math.round((Date.parse(t.end_date) - Date.parse(t.start_date)) / 86400000) + 1;
+/** The school's own count when set, else working weekdays less holidays as the calendar has them. */
+const days = (t: Term) => t.working_days ?? t.school_days ?? Math.round((Date.parse(t.end_date) - Date.parse(t.start_date)) / 86400000) + 1;
 
 /** SCR-093, live: GET/POST /academic-years/{id}/terms, PUT /academic-years/{id}/terms/{term}, DELETE /terms/{id}. */
 export function Terms() {
@@ -54,7 +55,6 @@ export function Terms() {
       </div>
       <ErrorNote>{yearsError ?? list.error}</ErrorNote>
       <Panel title="All records" sub={`${year ? `Academic year ${year.name}` : "Current academic year"}${list.loading ? " · Loading…" : ""}`} flush>
-        {/* Not wired: "Working days" — the API has no school-day count per term; "Days" is the calendar span. */}
         <DataTable
           columns={COLUMNS}
           rows={rows}
@@ -76,7 +76,13 @@ function TermForm({ yearId, t, onClose, onSaved }: { yearId: number; t?: Term; o
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const body = { name: String(f.get("name")).trim(), start_date: String(f.get("start_date")), end_date: String(f.get("end_date")) };
+    const wd = String(f.get("working_days") ?? "").trim();
+    const body = {
+      name: String(f.get("name")).trim(),
+      start_date: String(f.get("start_date")),
+      end_date: String(f.get("end_date")),
+      working_days: wd ? Number(wd) : null,
+    };
     setSaving(true);
     setError(null);
     try {
@@ -119,6 +125,16 @@ function TermForm({ yearId, t, onClose, onSaved }: { yearId: number; t?: Term; o
           </Field>
           <Field label="End date" required>
             <input type="date" name="end_date" required defaultValue={t?.end_date} />
+          </Field>
+          <Field label="Working days" full>
+            <input
+              type="number"
+              name="working_days"
+              min={0}
+              max={366}
+              defaultValue={t?.working_days ?? ""}
+              placeholder={t?.school_days != null ? `Leave blank to use the calendar: ${t.school_days} days` : "Leave blank to count from the calendar"}
+            />
           </Field>
         </div>
         <DialogActions onCancel={onClose} saving={saving} submit={t ? "Save changes" : "Add term"}>

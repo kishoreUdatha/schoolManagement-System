@@ -23,6 +23,9 @@ class SchoolRead(SchoolBase):
     status: SchoolStatus
     is_active: bool
     created_at: datetime
+    board: Optional[str] = None
+    school_type: Optional[str] = None
+    branch_count: int = 0
 
 
 class TenantCreate(BaseModel):
@@ -33,6 +36,8 @@ class TenantCreate(BaseModel):
     contact_person: Optional[str] = Field(None, max_length=120)
     contact_email: str = Field(..., max_length=255)
     contact_mobile: str = Field(..., max_length=20)
+    board: Optional[str] = Field(None, max_length=40, description="CBSE, ICSE, State Board, ...")
+    school_type: Optional[str] = Field(None, max_length=60)
 
     school_admin_name: str = Field(..., min_length=2, max_length=160)
     school_admin_email: str = Field(..., max_length=255)

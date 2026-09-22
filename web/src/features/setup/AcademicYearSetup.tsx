@@ -9,7 +9,7 @@ import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { Field, KV, SectionTitle } from "./bits";
+import { Field, KV, SectionTitle, orNull } from "./bits";
 import type { AcademicYear, Branch, Term } from "./types";
 
 type Status = "current" | "active" | "archived";
@@ -42,6 +42,7 @@ export function AcademicYearSetup() {
     const start = String(f.get("start_date") ?? "");
     const end = String(f.get("end_date") ?? "");
     const status = String(f.get("status") ?? "active") as Status;
+    const admissions = { admissions_open: f.get("admissions") === "open", admission_opens_on: orNull(f.get("admission_opens_on")) };
     if (start && end && end <= start) {
       setError("The end date must be after the start date.");
       return;
@@ -59,6 +60,7 @@ export function AcademicYearSetup() {
           start_date: start,
           end_date: end,
           is_current: status === "current",
+          ...admissions,
         });
         notify(`${created.name} created.`);
         await years.reload();
@@ -69,7 +71,7 @@ export function AcademicYearSetup() {
       // and archive last so the dates are saved before it locks.
       const before = statusOf(year);
       if (before === "archived" && status !== "archived") await api.post(`/api/v1/school/academic-years/${year.id}/unarchive`);
-      if (before !== "archived" || status !== "archived") await api.patch(`/api/v1/school/academic-years/${year.id}`, { start_date: start, end_date: end });
+      if (before !== "archived" || status !== "archived") await api.patch(`/api/v1/school/academic-years/${year.id}`, { start_date: start, end_date: end, ...admissions });
       if (status !== before) {
         if (status === "current") await api.post(`/api/v1/school/academic-years/${year.id}/set-current`);
         if (status === "archived") await api.post(`/api/v1/school/academic-years/${year.id}/archive`);
@@ -131,7 +133,15 @@ export function AcademicYearSetup() {
                 <Field label="End date" required>
                   <input type="date" name="end_date" required defaultValue={year?.end_date ?? ""} />
                 </Field>
-                {/* Not wired: Admission opens — the academic year has no admission date; no endpoint */}
+                <Field label="Admission opens">
+                  <input type="date" name="admission_opens_on" defaultValue={year?.admission_opens_on ?? ""} />
+                </Field>
+                <Field label="Admissions">
+                  <select name="admissions" aria-label="Admissions" defaultValue={year?.admissions_open ? "open" : "closed"}>
+                    <option value="open">Open</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                </Field>
                 <Field label="Term structure">
                   <select aria-label="Term structure" disabled={!year}>
                     {!year ? <option>Add terms after saving the year</option> : null}
