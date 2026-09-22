@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { dateTime } from "@/lib/format";
@@ -78,9 +79,17 @@ export function NotificationCenter() {
 
   const shown = items.filter((i) => (tab === "all" ? true : tab === "unread" ? !i.read_at : Boolean(i.read_at)));
   const readCount = items.filter((i) => i.read_at).length;
+  const weekAgo = Date.now() - 7 * 864e5;
+  const num = (v: number) => (list.data ? String(v) : "…");
+  const stats = [
+    { label: "Unread", value: unread.data ? String(unread.data.unread) : "…", note: "Waiting for you" },
+    { label: "This week", value: num(items.filter((i) => i.sent_at && new Date(i.sent_at).getTime() >= weekAgo).length), note: "Received in the last 7 days" },
+    { label: "With attachment", value: num(items.filter((i) => i.attachment_url).length), note: items.length >= LIMIT ? `In the latest ${LIMIT}` : "Files to open" },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <nav className="module-tabs">
         <button type="button" className={tab === "all" ? "active" : ""} onClick={() => setTab("all")}>
           {"All notifications "}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -71,11 +72,22 @@ export function LabBookingCalendar() {
   for (let i = 1; i <= last.getDate(); i++) cells.push({ d: new Date(first.getFullYear(), first.getMonth(), i), outside: false });
   for (let i = 1; cells.length % 7; i++) cells.push({ d: new Date(last.getFullYear(), last.getMonth() + 1, i), outside: true });
   const todayIso = today();
+  // For the month shown (and the lab / "mine" filter), cancelled left out.
+  const live = (list.data ?? []).filter((b) => b.status !== "cancelled");
+  const showsCancelled = status === "all" || status === "cancelled";
+  const n = (v: number, ready: unknown) => (ready ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Bookings", value: n(live.length, list.data), note: `${MONTHS[month.getMonth()]} ${month.getFullYear()}` },
+    { label: "Today", value: n(live.filter((b) => b.booking_date === todayIso).length, list.data), note: "Periods booked today" },
+    { label: "Labs booked", value: n(new Set(live.map((b) => b.lab_id)).size, list.data), note: labs.data ? `Of ${labs.data.length} active labs` : "This month" },
+    { label: "Cancelled", value: showsCancelled ? n((list.data ?? []).length - live.length, list.data) : "—", note: showsCancelled ? "This month" : "Show cancelled to count" },
+  ];
 
   const shift = (n: number) => setMonth(new Date(month.getFullYear(), month.getMonth() + n, 1));
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Filter by lab" value={labId} onChange={(e) => setLabId(e.target.value)}>
           <option value="">Every lab</option>

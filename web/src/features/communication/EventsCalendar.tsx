@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { routeOf } from "@/lib/screens";
@@ -72,6 +73,18 @@ export function EventsCalendar() {
   const today = isoDay(now);
   const staff = role !== null && role !== "parent" && role !== "student";
 
+  // The month on screen, whatever the filters: cancelled items are not counted.
+  const live = (res.data ?? []).filter((it) => !it.is_cancelled);
+  const num = (v: number) => (res.data ? String(v) : "…");
+  const kind = (t: CalendarItem["type"]) => live.filter((it) => it.type === t).length;
+  const monthName = MONTHS[ym.m];
+  const stats = [
+    { label: "Still to come", value: num(live.filter((it) => it.end_date >= today).length), note: `In ${monthName}, from today on` },
+    { label: "Events", value: num(kind("event")), note: staff ? `${live.filter((it) => it.type === "event" && it.is_draft).length} still in draft` : `In ${monthName}` },
+    { label: "Exams", value: num(kind("exam")), note: `In ${monthName}` },
+    { label: "Holidays", value: num(kind("holiday")), note: `In ${monthName}` },
+  ];
+
   function open(it: CalendarItem) {
     if (it.type === "event" && staff) router.push(`${routeOf(248)}?id=${it.id}`);
     else if (it.type === "event" && role === "parent") router.push(routeOf(249));
@@ -80,6 +93,7 @@ export function EventsCalendar() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Filter by type" value={type} onChange={(e) => setType(e.target.value)}>
           <option value="">All types</option>

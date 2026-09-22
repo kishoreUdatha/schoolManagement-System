@@ -7,6 +7,7 @@ import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { api, errorText } from "@/lib/api";
 import { date, initials, label, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -23,6 +24,9 @@ const CREW = "/api/v1/school/transport/crew";
 const vehicleName = (v: Vehicle) => v.label || v.registration_no;
 const statusOf = (v: Vehicle) => (!v.is_active ? "Inactive" : v.expiring_documents.length ? "Renewal due soon" : "Active");
 const routeFor = (routes: Route[] | null, vehicleId: number) => routes?.find((r) => r.vehicle_id === vehicleId);
+/** Log entries dated in the current month. */
+const thisMonth = <T extends { log_date: string }>(ls: T[]) => ls.filter((l) => l.log_date.slice(0, 7) === today().slice(0, 7));
+const sum = (ls: { amount: string | null }[]) => ls.reduce((s, l) => s + Number(l.amount ?? 0), 0);
 
 /** SCR-186, live: GET /transport/vehicles with the route each vehicle runs. */
 export function VehicleList() {
@@ -55,9 +59,18 @@ export function VehicleList() {
     ];
   });
   const all = vehicles.data ?? [];
+  const running = all.filter((v) => v.is_active);
+  const n = (v: number) => (vehicles.loading && !vehicles.data ? (vehicles.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "In service", value: n(running.length), note: `${all.length - running.length} inactive` },
+    { label: "Seats", value: n(running.reduce((s, v) => s + v.capacity, 0)), note: `${running.reduce((s, v) => s + v.assigned_students, 0)} student(s) assigned` },
+    { label: "Renewals due", value: n(running.filter((v) => v.expiring_documents.length).length), note: "Insurance, fitness, permit or PUC" },
+    { label: "No driver", value: n(running.filter((v) => !v.driver_id).length), note: "Vehicles without a driver" },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={search} onChange={setSearch} placeholder="Search vehicles…" />
         <select aria-label="Filter by vehicle type" value={kind} onChange={(e) => setKind(e.target.value)}>
@@ -270,6 +283,15 @@ export function VehicleDetails() {
   const driver = crew.data?.find((c) => c.id === v.driver_id);
   const first = route?.stops[0];
   const services = (logs.data ?? []).filter((l) => l.kind !== "fuel");
+  const fuel = thisMonth((logs.data ?? []).filter((l) => l.kind === "fuel"));
+  const lastService = services.reduce<string | null>((d, l) => (d && d > l.log_date ? d : l.log_date), null);
+  const loadingLogs = logs.loading && !logs.data;
+  const stats = [
+    { label: "Students", value: String(v.assigned_students), note: `Of ${v.capacity} seats` },
+    { label: "Fuel this month", value: loadingLogs ? "…" : money(sum(fuel)), note: `${fuel.reduce((s, l) => s + Number(l.litres ?? 0), 0)} L in ${fuel.length} fill(s)` },
+    { label: "Last service", value: loadingLogs ? "…" : lastService ? date(lastService) : "—", note: `${services.length} service entr(ies)` },
+    { label: "Renewals due", value: String(v.expiring_documents.length), note: v.expiring_documents.length ? v.expiring_documents.map(label).join(", ") : "All documents in date" },
+  ];
 
   // The API refuses while an active route uses the vehicle and says which one.
   async function remove() {
@@ -317,6 +339,7 @@ export function VehicleDetails() {
           </div>
         </div>
       </section>
+      <StatStrip items={stats} compact />
       <div className="two-col">
         <div className="stack">
           <Panel title="Vehicle information">
@@ -461,6 +484,16 @@ export function MaintenanceFuel() {
     l.litres ? `${Number(l.litres)} L` : "—",
     money(l.amount),
   ]);
+  // Month figures follow the vehicle filter, not the search or entry type.
+  const month = thisMonth(logs ?? []);
+  const monthFuel = month.filter((l) => l.kind === "fuel");
+  const n = (v: string) => (logs ? v : "…");
+  const stats = [
+    { label: "Fuel this month", value: n(money(sum(monthFuel))), note: `${monthFuel.reduce((s, l) => s + Number(l.litres ?? 0), 0)} L in ${monthFuel.length} fill(s)` },
+    { label: "Upkeep this month", value: n(money(sum(month.filter((l) => l.kind !== "fuel")))), note: "Service, repair, tyres, other" },
+    { label: "Services", value: n(String(month.filter((l) => l.kind === "service" || l.kind === "repair").length)), note: "Service or repair entries this month" },
+    { label: "Vehicles", value: vehicles.loading && !list ? "…" : String((list ?? []).filter((v) => v.is_active && (!vehicleId || String(v.id) === vehicleId)).length), note: vehicleId ? "The one chosen" : "In service" },
+  ];
   const fuelSpend = items.filter((l) => l.kind === "fuel").reduce((s, l) => s + Number(l.amount ?? 0), 0);
   const otherSpend = items.filter((l) => l.kind !== "fuel").reduce((s, l) => s + Number(l.amount ?? 0), 0);
 
@@ -504,6 +537,7 @@ export function MaintenanceFuel() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={search} onChange={setSearch} placeholder="Search vehicle maintenance & fuel…" />
         <select aria-label="Filter by vehicle" value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>

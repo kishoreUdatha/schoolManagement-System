@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -49,6 +50,17 @@ export function ClassroomObservation() {
 
   const teacher = teachers.data?.find((t) => String(t.id) === staffId);
   const sections = classes.data?.find((c) => c.id === classId)?.sections ?? [];
+
+  // Figures for the teacher chosen; nothing to count until one is.
+  const h = history.data;
+  const scored = (h?.observations ?? []).map((o) => o.average_score).filter((x): x is number => x != null);
+  const n = (v: number | string) => (!staffId ? "—" : history.loading && !h ? "…" : String(v));
+  const stats = [
+    { label: "Observations", value: n(h?.count ?? 0), note: teacher ? teacher.full_name : "Choose a teacher" },
+    { label: "Average score", value: n(scored.length ? (scored.reduce((t, x) => t + x, 0) / scored.length).toFixed(1) : "—"), note: "Out of 5, where rated" },
+    { label: "Not shared", value: n(h?.unshared ?? 0), note: "Not yet shown to the teacher" },
+    { label: "Follow-ups due", value: n(h?.follow_ups_due ?? 0), note: "Follow-up visits due" },
+  ];
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -99,166 +111,169 @@ export function ClassroomObservation() {
   }
 
   return (
-    <div className="two-col">
-      <form id={OBSERVATION_FORM} className="panel" onSubmit={submit}>
-        <div className="panel-pad">
-          <ErrorNote>{error ?? teachers.error ?? classes.error}</ErrorNote>
-          <div className="form-sections">
-            <section>
-              <div className="form-section-title">
-                <span className="number">01</span>
-                <h3>Details</h3>
-              </div>
-              <div className="form-grid">
-                <label className="field">
-                  <span>
-                    Teacher
-                    <span className="req">*</span>
-                  </span>
-                  <select name="staff_id" aria-label="Teacher" required value={staffId} onChange={(e) => setStaffId(e.target.value)}>
-                    <option value="">{teachers.loading ? "Loading teachers…" : "Select teacher"}</option>
-                    {teachers.data?.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.full_name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>Class</span>
-                  <select aria-label="Class" value={classId ?? ""} onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : null)}>
-                    <option value="">Select class</option>
-                    {classes.data?.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>Section</span>
-                  <select name="section_id" aria-label="Section" disabled={!classId} defaultValue="" key={`s${classId}`}>
-                    <option value="">Any section</option>
-                    {sections.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>Subject</span>
-                  <select name="class_subject_id" aria-label="Subject" disabled={!classId} defaultValue="" key={`c${classId}`}>
-                    <option value="">Not specific</option>
-                    {subjects.data?.map((cs) => (
-                      <option key={cs.id} value={cs.id}>
-                        {cs.subject.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  <span>
-                    Observation date
-                    <span className="req">*</span>
-                  </span>
-                  <input type="date" name="observed_on" aria-label="Observation date" required defaultValue={todayIso()} />
-                </label>
-                <label className="field">
-                  <span>Focus</span>
-                  <input type="text" name="focus" maxLength={200} placeholder="e.g. Questioning, group work" />
-                </label>
-                {SCORES.map(([k, t]) => (
-                  <label className="field" key={k}>
-                    <span>{t}</span>
-                    <select name={k} aria-label={t} defaultValue="">
-                      <option value="">Not rated</option>
-                      {[5, 4, 3, 2, 1].map((n) => (
-                        <option key={n} value={n}>
-                          {`${n} / 5`}
+    <>
+      <StatStrip items={stats} compact />
+      <div className="two-col">
+        <form id={OBSERVATION_FORM} className="panel" onSubmit={submit}>
+          <div className="panel-pad">
+            <ErrorNote>{error ?? teachers.error ?? classes.error}</ErrorNote>
+            <div className="form-sections">
+              <section>
+                <div className="form-section-title">
+                  <span className="number">01</span>
+                  <h3>Details</h3>
+                </div>
+                <div className="form-grid">
+                  <label className="field">
+                    <span>
+                      Teacher
+                      <span className="req">*</span>
+                    </span>
+                    <select name="staff_id" aria-label="Teacher" required value={staffId} onChange={(e) => setStaffId(e.target.value)}>
+                      <option value="">{teachers.loading ? "Loading teachers…" : "Select teacher"}</option>
+                      {teachers.data?.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.full_name}
                         </option>
                       ))}
                     </select>
                   </label>
-                ))}
-                <label className="field full">
-                  <span>Strengths</span>
-                  <textarea name="strengths" maxLength={4000} placeholder="What went well" />
-                </label>
-                <label className="field full">
-                  <span>Feedback</span>
-                  <textarea name="next_steps" maxLength={4000} placeholder="What to try next" />
-                </label>
-                <label className="field">
-                  <span>Next review</span>
-                  <input type="date" name="follow_up_on" aria-label="Next review" />
-                </label>
-                <label className="field">
-                  <span>Share with the teacher</span>
-                  <input type="checkbox" name="shared_with_staff" aria-label="Share with the teacher" />
-                </label>
-              </div>
-            </section>
-          </div>
-        </div>
-        <div className="form-footer">
-          <span>Fields marked * are required</span>
-          <div className="actions">
-            <button type="button" className="btn" onClick={() => router.back()}>
-              Cancel
-            </button>
-            <button type="submit" className="btn primary" disabled={saving || !staffId}>
-              <Icon name="check" className="sm" />
-              {saving ? "Saving…" : "Save observation"}
-            </button>
-          </div>
-        </div>
-      </form>
-      <aside className="stack">
-        <div className="aside-panel">
-          <h3>Staff</h3>
-          <dl className="kv">
-            <div>
-              <dt>Designation</dt>
-              <dd>{teacher ? (teacher.designation ?? ROLE_LABEL[teacher.role]) : "—"}</dd>
-            </div>
-            <div>
-              <dt>Employee no.</dt>
-              <dd>{teacher?.employee_no ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>{teacher ? (teacher.is_active ? "Active" : "Inactive") : "—"}</dd>
-            </div>
-            <div>
-              <dt>Observations</dt>
-              <dd>{history.data ? `${history.data.count} · ${history.data.follow_ups_due} follow-ups due` : "—"}</dd>
-            </div>
-          </dl>
-          <div className="gap" />
-          {!staffId ? (
-            <p>Choose a teacher to see earlier observations.</p>
-          ) : history.data?.observations.length ? (
-            history.data.observations.map((o) => (
-              <div className="timeline-item" key={o.id}>
-                <span className="timeline-dot">
-                  <Icon name="check" />
-                </span>
-                <div>
-                  <h4>{o.focus ?? o.subject_name ?? "Observation"}</h4>
-                  <p>{[date(o.observed_on), o.section_label, o.observer_name, o.average_score != null ? `${o.average_score} / 5` : null].filter(Boolean).join(" · ")}</p>
-                  <button type="button" className="btn" style={{ marginTop: 6 }} onClick={() => share(o.id, !o.shared_with_staff)}>
-                    {o.shared_with_staff ? "Stop sharing" : "Share with teacher"}
-                  </button>
+                  <label className="field">
+                    <span>Class</span>
+                    <select aria-label="Class" value={classId ?? ""} onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : null)}>
+                      <option value="">Select class</option>
+                      {classes.data?.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>Section</span>
+                    <select name="section_id" aria-label="Section" disabled={!classId} defaultValue="" key={`s${classId}`}>
+                      <option value="">Any section</option>
+                      {sections.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>Subject</span>
+                    <select name="class_subject_id" aria-label="Subject" disabled={!classId} defaultValue="" key={`c${classId}`}>
+                      <option value="">Not specific</option>
+                      {subjects.data?.map((cs) => (
+                        <option key={cs.id} value={cs.id}>
+                          {cs.subject.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>
+                      Observation date
+                      <span className="req">*</span>
+                    </span>
+                    <input type="date" name="observed_on" aria-label="Observation date" required defaultValue={todayIso()} />
+                  </label>
+                  <label className="field">
+                    <span>Focus</span>
+                    <input type="text" name="focus" maxLength={200} placeholder="e.g. Questioning, group work" />
+                  </label>
+                  {SCORES.map(([k, t]) => (
+                    <label className="field" key={k}>
+                      <span>{t}</span>
+                      <select name={k} aria-label={t} defaultValue="">
+                        <option value="">Not rated</option>
+                        {[5, 4, 3, 2, 1].map((n) => (
+                          <option key={n} value={n}>
+                            {`${n} / 5`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
+                  <label className="field full">
+                    <span>Strengths</span>
+                    <textarea name="strengths" maxLength={4000} placeholder="What went well" />
+                  </label>
+                  <label className="field full">
+                    <span>Feedback</span>
+                    <textarea name="next_steps" maxLength={4000} placeholder="What to try next" />
+                  </label>
+                  <label className="field">
+                    <span>Next review</span>
+                    <input type="date" name="follow_up_on" aria-label="Next review" />
+                  </label>
+                  <label className="field">
+                    <span>Share with the teacher</span>
+                    <input type="checkbox" name="shared_with_staff" aria-label="Share with the teacher" />
+                  </label>
                 </div>
-                <Badge>{o.shared_with_staff ? "Shared" : "Draft"}</Badge>
+              </section>
+            </div>
+          </div>
+          <div className="form-footer">
+            <span>Fields marked * are required</span>
+            <div className="actions">
+              <button type="button" className="btn" onClick={() => router.back()}>
+                Cancel
+              </button>
+              <button type="submit" className="btn primary" disabled={saving || !staffId}>
+                <Icon name="check" className="sm" />
+                {saving ? "Saving…" : "Save observation"}
+              </button>
+            </div>
+          </div>
+        </form>
+        <aside className="stack">
+          <div className="aside-panel">
+            <h3>Staff</h3>
+            <dl className="kv">
+              <div>
+                <dt>Designation</dt>
+                <dd>{teacher ? (teacher.designation ?? ROLE_LABEL[teacher.role]) : "—"}</dd>
               </div>
-            ))
-          ) : (
-            <p>{history.loading ? "Loading…" : "No observations recorded for this teacher yet."}</p>
-          )}
-        </div>
-      </aside>
-    </div>
+              <div>
+                <dt>Employee no.</dt>
+                <dd>{teacher?.employee_no ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd>{teacher ? (teacher.is_active ? "Active" : "Inactive") : "—"}</dd>
+              </div>
+              <div>
+                <dt>Observations</dt>
+                <dd>{history.data ? `${history.data.count} · ${history.data.follow_ups_due} follow-ups due` : "—"}</dd>
+              </div>
+            </dl>
+            <div className="gap" />
+            {!staffId ? (
+              <p>Choose a teacher to see earlier observations.</p>
+            ) : history.data?.observations.length ? (
+              history.data.observations.map((o) => (
+                <div className="timeline-item" key={o.id}>
+                  <span className="timeline-dot">
+                    <Icon name="check" />
+                  </span>
+                  <div>
+                    <h4>{o.focus ?? o.subject_name ?? "Observation"}</h4>
+                    <p>{[date(o.observed_on), o.section_label, o.observer_name, o.average_score != null ? `${o.average_score} / 5` : null].filter(Boolean).join(" · ")}</p>
+                    <button type="button" className="btn" style={{ marginTop: 6 }} onClick={() => share(o.id, !o.shared_with_staff)}>
+                      {o.shared_with_staff ? "Stop sharing" : "Share with teacher"}
+                    </button>
+                  </div>
+                  <Badge>{o.shared_with_staff ? "Shared" : "Draft"}</Badge>
+                </div>
+              ))
+            ) : (
+              <p>{history.loading ? "Loading…" : "No observations recorded for this teacher yet."}</p>
+            )}
+          </div>
+        </aside>
+      </div>
+    </>
   );
 }

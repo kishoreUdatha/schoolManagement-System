@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -54,7 +55,8 @@ function warranty(a: Asset): string {
  * repairs logged as asset events (maintenance / repaired). The service
  * schedule is GET /ops/assets/service-due (an interval per asset, counted
  * from the last maintenance or repaired event), set with
- * PUT /ops/assets/{id}/service-interval.
+ * PUT /ops/assets/{id}/service-interval. The figures on top read the
+ * unfiltered asset list, so they hold whatever the status filter says.
  */
 export function AssetMaintenance() {
   const [search, setSearch] = useState("");
@@ -62,6 +64,7 @@ export function AssetMaintenance() {
   const [open, setOpen] = useState<number | null>(null);
   const [choosing, closeChoose] = useNewFlag();
   const list = useApi<Asset[]>(`${INV}/assets`, { status: status === "soon" ? "" : status });
+  const every = useApi<Asset[]>(`${INV}/assets`);
   const [within, setWithin] = useState(60);
   const due = useApi<ServiceDue>(`${OPS}/service-due`, { within_days: within });
   const [intervalForm, setIntervalForm] = useState<{ assetId: number | null; days: string } | null>(null);
@@ -110,6 +113,18 @@ export function AssetMaintenance() {
   });
   const inRepair = all.filter((a) => a.status === "under_repair").length;
   const spent = all.reduce((n, a) => n + Number(a.maintenance_cost || 0), 0);
+  const register = every.data ?? [];
+  const ending = register.filter((a) => {
+    const d = daysUntil(a.warranty_until);
+    return d !== null && d >= 0 && d <= SOON;
+  });
+  const n = (v: number, ready: unknown) => (ready ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Under repair", value: n(register.filter((a) => a.status === "under_repair").length, every.data), note: "Away being fixed" },
+    { label: "Service overdue", value: n(due.data?.overdue ?? 0, due.data), note: "Past the service date" },
+    { label: "Warranty ending", value: n(ending.length, every.data), note: `Within ${SOON} days` },
+    { label: "Repair spend", value: every.data ? money(register.reduce((s, a) => s + Number(a.maintenance_cost || 0), 0)) : "…", note: "On all assets so far" },
+  ];
 
   // "Issue" is the fault given when it was last sent for repair, until it is
   // marked repaired. The "Due date" lives in the service schedule panel below.
@@ -125,6 +140,7 @@ export function AssetMaintenance() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

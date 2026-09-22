@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -39,6 +40,13 @@ export function LabRegister() {
   ]);
   const noRoom = all.filter((l) => !l.room_id).length;
   const noHead = all.filter((l) => !l.in_charge_user_id).length;
+  const n = (v: number, ready: unknown) => (ready ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Labs", value: n(all.filter((l) => l.is_active).length, list.data), note: list.data ? `Active, of ${all.length}` : "Active" },
+    { label: "Upcoming bookings", value: n(all.reduce((s, l) => s + (l.upcoming_bookings ?? 0), 0), list.data), note: "Across all labs" },
+    { label: "No room", value: n(noRoom, list.data), note: "Room not set" },
+    { label: "No one in charge", value: n(noHead, list.data), note: "In-charge not named" },
+  ];
   const done = () => {
     setEditing(null);
     list.reload();
@@ -46,6 +54,7 @@ export function LabRegister() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

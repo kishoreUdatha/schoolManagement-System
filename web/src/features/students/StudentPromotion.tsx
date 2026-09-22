@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel, Person } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { api, errorText, type Paginated } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
@@ -74,6 +75,15 @@ export function StudentPromotion() {
 
   const students = useMemo(() => roster.data?.items ?? [], [roster.data]);
   const moving = students.filter((s) => !held.has(s.id));
+  // The chosen section's figures; nothing to count until one is picked.
+  const n = (v: number, loading = roster.loading && !roster.data) => (!fromSection ? "—" : loading ? "…" : String(v));
+  const outcome = results.data?.students ?? [];
+  const stats = [
+    { label: "Students", value: n(students.length), note: fromSection ? `Active in ${srcClass?.name ?? ""} ${srcSection?.name ?? ""}`.trim() : "Choose a section" },
+    { label: "To promote", value: n(moving.length), note: tgtClass ? `Into ${tgtClass.name}${tgtSection ? ` ${tgtSection.name}` : ""}` : "Choose the next class" },
+    { label: "Held back", value: n(held.size), note: "Unticked in the list" },
+    { label: "Failed", value: n(outcome.filter((r) => r.result === "fail").length, results.loading && !results.data), note: `${outcome.filter((r) => r.result === "no_marks").length} with no marks yet` },
+  ];
   const yearName = (id: number | null) => years.data?.find((y) => y.id === id)?.name ?? "—";
 
   function toggle(id: number) {
@@ -131,6 +141,7 @@ export function StudentPromotion() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         {pickYear(fromYear, setFromYear, () => (setFromClass(null), setFromSection(null)), "From academic year")}
         <select aria-label="From class" value={fromClass ?? ""} onChange={(e) => (setFromClass(Number(e.target.value) || null), setFromSection(null), setToClass(null), setToSection(null))}>

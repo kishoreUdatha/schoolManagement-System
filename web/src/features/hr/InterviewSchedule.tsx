@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -79,10 +80,21 @@ export function InterviewSchedule() {
     }
   }
 
+  // Counts cover the month shown (not the spill-over days of the grid).
+  const inMonth = all.filter((i) => new Date(i.scheduled_at).getMonth() === month);
+  const n = (v: number) => (win.loading && !win.data ? (win.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "This month", value: n(inMonth.length), note: `${new Set(inMonth.map((i) => i.application_id)).size} candidates` },
+    { label: "Today", value: n(all.filter((i) => today(new Date(i.scheduled_at)) === today()).length), note: "Interviews on today's date" },
+    { label: "Coming up", value: n(inMonth.filter((i) => new Date(i.scheduled_at) > now).length), note: "Still to happen this month" },
+    { label: "Openings", value: n(new Set(inMonth.map((i) => i.opening_title).filter(Boolean)).size), note: "With interviews this month" },
+  ];
+
   const active = (apps.data ?? []).filter((a) => !["hired", "rejected", "withdrawn"].includes(a.stage));
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Filter by opening" value={opening} onChange={(e) => setOpening(e.target.value)}>
           <option value="">All openings</option>

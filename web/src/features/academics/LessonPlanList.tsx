@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { date } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
@@ -43,6 +44,15 @@ export function LessonPlanList() {
       (!q || [p.title, p.subject_name, p.teacher_name, p.section_label].some((v) => v.toLowerCase().includes(q))),
   );
 
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const approved = all.filter((p) => p.status === "approved");
+  const stats = [
+    { label: "Lesson plans", value: n(all.length), note: from ? `week of ${date(from)}` : "all dates" },
+    { label: "Pending review", value: n(all.filter((p) => p.status === "submitted").length), note: "awaiting approval" },
+    { label: "Returned", value: n(all.filter((p) => p.status === "returned").length), note: "need changes" },
+    { label: "Taught", value: n(approved.filter((p) => p.delivered_on).length), note: `of ${approved.length} approved` },
+  ];
+
   const rows: Row[] = shown.map((p) => [p.title, p.subject_name, p.section_label, p.teacher_name, `${date(p.plan_date)} · ${p.periods} period${p.periods > 1 ? "s" : ""}`, planStatusText(p)]);
 
   const exportCsv = useCallback(
@@ -58,6 +68,7 @@ export function LessonPlanList() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

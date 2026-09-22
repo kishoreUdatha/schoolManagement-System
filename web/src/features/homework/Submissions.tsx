@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, PickFirst } from "@/components/ui/states";
 import { date, label } from "@/lib/format";
@@ -82,9 +83,20 @@ function ProjectSubmissions() {
     label(r.status),
   ];
   const rows: Row[] = shown.map((r) => [{ name: r.student_name ?? "—", sub: r.student_admission_no ?? undefined }, ...cells(r)]);
+  // Every student the assignment was set for, before the search and filter.
+  const all = progress.data ?? [];
+  const n = (v: number) => (!progress.data ? (progress.loading ? "…" : "—") : String(v));
+  const handed = all.filter((r) => r.id !== 0 && (r.status === "submitted" || r.status === "reviewed"));
+  const stats = [
+    { label: "Handed in", value: n(handed.length), note: `of ${all.length} students` },
+    { label: "To review", value: n(handed.filter((r) => r.status === "submitted").length), note: "waiting for feedback" },
+    { label: "Late", value: n(p ? handed.filter((r) => r.submitted_at && r.submitted_at.slice(0, 10) > p.deadline.slice(0, 10)).length : 0), note: "handed in after the deadline" },
+    { label: "Not started", value: n(all.filter((r) => r.id === 0 || r.status === "not_started").length), note: `${all.filter((r) => r.id !== 0 && r.status === "in_progress").length} in progress` },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <Filters search={search} setSearch={setSearch} status={status} setStatus={setStatus} states={["Not started", "In progress", "Submitted", "Reviewed"]} />
       <ErrorNote>{note ?? projects.error ?? progress.error}</ErrorNote>
       <Panel
@@ -140,8 +152,20 @@ function LearnerSubmissions() {
     ];
   });
 
+  // All of the learner's homework, before the search and filter.
+  const n = (v: number) => (!list.data || subs.loading ? "…" : String(v));
+  const count = (st: string) => handed.filter((h) => learnerState(h, subOf(h)) === st).length;
+  const open = (list.data ?? []).filter((h) => !subOf(h));
+  const stats = [
+    { label: "Handed in", value: n(handed.length), note: `of ${list.data?.length ?? 0} homework` },
+    { label: "Marked", value: n(count("Marked")), note: "approved by the teacher" },
+    { label: "Returned", value: n(count("Returned")), note: "to redo" },
+    { label: "Not handed in", value: n(open.length), note: `${open.filter((h) => learnerState(h, null) === "Overdue").length} overdue` },
+  ];
+
   return (
     <>
+      <StatStrip items={stats} compact />
       <Filters search={search} setSearch={setSearch} status={status} setStatus={setStatus} states={["Submitted", "Returned", "Marked"]} extra={<ChildPicker learner={learner} />} />
       <ErrorNote>{learner.error ?? list.error}</ErrorNote>
       <Panel

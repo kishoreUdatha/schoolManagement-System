@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { label } from "@/lib/format";
@@ -69,8 +70,28 @@ export function LearningOutcomes() {
   const error = syllabus.error ?? plain.error ?? cov.error;
   const c = cov.data;
 
+  // With a section chosen the strip shows its coverage; otherwise the subject's outcome list.
+  // "—" until a subject exists and is chosen; "…" only while it loads.
+  const wait = sectionId ? cov.loading && !cov.data : plain.loading && !plain.data;
+  const n = (v: number) => (!csId ? "—" : wait ? "…" : String(v));
+  const live = outcomes.filter((o) => o.is_active);
+  const stats = sectionId
+    ? [
+        { label: "Covered", value: n(c?.covered ?? 0), note: `of ${c?.total ?? 0} outcomes` },
+        { label: "In progress", value: n(c?.in_progress ?? 0), note: "some topics taught" },
+        { label: "Not started", value: n(c?.not_started ?? 0), note: "no topic taught yet" },
+        { label: "Not mapped", value: n(c?.unmapped ?? 0), note: "linked to no topic" },
+      ]
+    : [
+        { label: "Outcomes", value: n(live.length), note: cs ? `${cs.class_name} · ${cs.subject_name}` : "this subject" },
+        { label: "Units covered", value: n(new Set(live.filter((o) => o.chapter_id).map((o) => o.chapter_id)).size), note: "chapters with outcomes" },
+        { label: "Not mapped", value: n(live.filter((o) => !o.topics.length).length), note: "linked to no topic" },
+        { label: "Retired", value: n(outcomes.length - live.length), note: "kept for history" },
+      ];
+
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

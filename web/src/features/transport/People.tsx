@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, label, money } from "@/lib/format";
@@ -51,6 +52,15 @@ export function CrewList() {
     c.phone,
     vehicleOf(c),
   ]);
+  const active = all.filter((x) => x.is_active);
+  const onVehicle = new Set((vehicles.data ?? []).flatMap((v) => [v.driver_id, v.conductor_id]));
+  const n = (v: number) => (crew.loading && !crew.data ? (crew.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Drivers", value: n(active.filter((x) => x.role === "driver").length), note: `${all.filter((x) => !x.is_active).length} crew inactive` },
+    { label: "Conductors", value: n(active.filter((x) => x.role !== "driver").length), note: "Conductors and attendants" },
+    { label: "Licence due", value: n(active.filter((x) => x.role === "driver" && soon(x.license_expiry)).length), note: "Expired or within 30 days" },
+    { label: "Not on a vehicle", value: vehicles.loading && !vehicles.data ? (vehicles.loading ? "…" : "—") : n(active.filter((x) => !onVehicle.has(x.id)).length), note: "Active crew with no vehicle" },
+  ];
 
   const dialogOpen = add.open || editing !== null;
   const close = () => {
@@ -101,6 +111,7 @@ export function CrewList() {
   const c = editing;
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={search} onChange={setSearch} placeholder="Search drivers & conductors…" />
         <select aria-label="Filter by role" value={role} onChange={(e) => setRole(e.target.value)}>
@@ -202,6 +213,17 @@ export function RouteAssignment() {
     a.route_name,
     a.end_date ? `Ended ${date(a.end_date)}` : `${money(a.monthly_fee)} / month`,
   ]);
+  // School-wide figures from the route list, so they do not move with the filters below.
+  const live = (routes.data ?? []).filter((r) => r.is_active);
+  const riders = live.reduce((s, r) => s + r.student_count, 0);
+  const seats = live.reduce((s, r) => s + (r.vehicle_capacity ?? 0), 0);
+  const n = (v: number) => (routes.loading && !routes.data ? (routes.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Students riding", value: n(riders), note: `On ${live.length} active route(s)` },
+    { label: "Seats free", value: n(Math.max(seats - riders, 0)), note: `${seats} seats on assigned vehicles` },
+    { label: "Full routes", value: n(live.filter((r) => r.vehicle_capacity !== null && r.student_count >= r.vehicle_capacity).length), note: "At or over vehicle capacity" },
+    { label: "No vehicle", value: n(live.filter((r) => !r.vehicle_id).length), note: "Active routes without a vehicle" },
+  ];
 
   const dialogOpen = add.open || editing !== null;
   const close = () => {
@@ -259,6 +281,7 @@ export function RouteAssignment() {
   const a = editing;
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={search} onChange={setSearch} placeholder="Search student route assignment…" />
         <select aria-label="Filter by route" value={routeId} onChange={(e) => setRouteId(e.target.value)}>

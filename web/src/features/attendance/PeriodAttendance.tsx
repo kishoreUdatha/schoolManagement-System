@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -129,9 +130,18 @@ export function PeriodAttendance() {
   const g = grid.data;
   const shown = show ? rows.filter((r) => r.status === show) : rows;
   const differs = rows.filter((r) => r.day_status && r.day_status !== r.status).length;
+  // The lesson on screen, updating as the teacher marks; a dash when there is no lesson.
+  const n = (x: number) => (!lesson ? "—" : !g || grid.loading ? "…" : String(x));
+  const stats = [
+    { label: "Present", value: n(counts.present), note: `of ${rows.length} students` },
+    { label: "Absent", value: n(counts.absent), note: `${differs} differ from the day` },
+    { label: "Late", value: n(counts.late), note: `${counts.half_day} half day` },
+    { label: "Not saved", value: n(changed.length), note: g ? `${g.marked} already recorded` : "for this lesson" },
+  ];
 
   return (
     <form id={LESSON_FORM} onSubmit={save}>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         {!isTeacher ? (
           <select aria-label="Section" value={sectionId ?? ""} onChange={(e) => setSectionId(Number(e.target.value))}>

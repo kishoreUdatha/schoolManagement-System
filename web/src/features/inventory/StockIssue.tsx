@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -15,6 +16,9 @@ const KINDS: [MoveKind, string][] = [
   ["return_in", "Return to the store"],
   ["damage", "Damaged / written off"],
 ];
+
+/** The first of this month, as the API's yyyy-mm-dd. */
+const monthStart = () => today().slice(0, 8) + "01";
 
 /**
  * SCR-237, live: POST /inventory/moves (issue, return_in, damage), with the
@@ -34,6 +38,14 @@ export function StockIssue() {
   const item = items.data?.find((x) => String(x.id) === itemId);
   const recent = (register.data ?? []).filter((m) => m.kind === "issue" || m.kind === "return_in" || m.kind === "damage").slice(0, 6);
   const itemOut = (ledger.data ?? []).filter((m) => m.kind === "issue").reduce((n, m) => n + Number(m.qty), 0);
+  const monthly = (k: MoveKind) => (register.data ?? []).filter((m) => m.kind === k && m.moved_on >= monthStart()).length;
+  const n = (v: number, ready: unknown) => (ready ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Issued", value: n(monthly("issue"), register.data), note: "Issues this month" },
+    { label: "Returned", value: n(monthly("return_in"), register.data), note: "Returns this month" },
+    { label: "Written off", value: n(monthly("damage"), register.data), note: "Damaged this month" },
+    { label: "Low stock", value: n((items.data ?? []).filter((i) => i.low_stock).length, items.data), note: "Below reorder level" },
+  ];
   const itemBack = (ledger.data ?? []).filter((m) => m.kind === "return_in").reduce((n, m) => n + Number(m.qty), 0);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -65,114 +77,117 @@ export function StockIssue() {
   }
 
   return (
-    <div className="two-col">
-      <form id="movement-form" key={formKey} className="panel" onSubmit={submit}>
-        <div className="panel-pad">
-          <ErrorNote>{error ?? items.error}</ErrorNote>
-          <div className="form-sections">
-            <section>
-              <div className="form-section-title">
-                <span className="number">01</span>
-                <h3>Details</h3>
-              </div>
-              <div className="form-grid">
-                <Field label="Item" required>
-                  <select value={itemId} onChange={(e) => setItemId(e.target.value)} required>
-                    <option value="">{items.loading ? "Loading items…" : "Choose an item"}</option>
-                    {items.data?.map((x) => (
-                      <option key={x.id} value={x.id}>
-                        {`${x.name} — ${qty(x.on_hand)} ${x.unit} on hand`}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Movement type" required>
-                  <select value={kind} onChange={(e) => setKind(e.target.value as MoveKind)} required>
-                    {KINDS.map(([k, l]) => (
-                      <option key={k} value={k}>
-                        {l}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label={item ? `Quantity (${item.unit})` : "Quantity"} required>
-                  <input type="number" name="qty" min={0.01} step="0.01" required placeholder="Enter quantity" />
-                </Field>
-                <Field label={kind === "issue" ? "Issued to" : kind === "return_in" ? "Returned by" : "Reported by"} required={kind === "issue"}>
-                  <input name="issued_to" required={kind === "issue"} placeholder="Staff room, Class 5A, Mr. Rao" />
-                </Field>
-                <Field label="Location">
-                  <input name="location" maxLength={80} placeholder={item?.location ? `e.g. ${item.location}` : "Main store, Lab shelf 2"} />
-                </Field>
-                <Field label="Date">
-                  <input type="date" name="moved_on" defaultValue={today()} />
-                </Field>
-                <Field label="Reference">
-                  <input name="reference" placeholder="Enter reference" />
-                </Field>
-                <Field label="Remarks" full>
-                  <textarea name="notes" placeholder="Enter remarks" />
-                </Field>
-              </div>
-            </section>
-          </div>
-        </div>
-        <div className="form-footer">
-          <span>Fields marked * are required</span>
-          <div className="actions">
-            <button type="reset" className="btn" onClick={() => setItemId("")}>
-              Cancel
-            </button>
-            <button type="submit" className="btn primary" disabled={saving}>
-              <Icon name="check" className="sm" />
-              {saving ? "Saving…" : "Record movement"}
-            </button>
-          </div>
-        </div>
-      </form>
-      <aside className="stack">
-        <div className="aside-panel">
-          <h3>{item ? item.name : "Inventory & labs"}</h3>
-          {item ? (
-            <dl className="kv">
-              <div>
-                <dt>On hand</dt>
-                <dd>{`${qty(item.on_hand)} ${item.unit}`}</dd>
-              </div>
-              <div>
-                <dt>Reorder level</dt>
-                <dd>{qty(item.reorder_level)}</dd>
-              </div>
-              <div>
-                <dt>Last 12 months</dt>
-                <dd>{ledger.loading ? "…" : `${qty(itemOut)} issued · ${qty(itemBack)} returned`}</dd>
-              </div>
-              <div>
-                <dt>Status</dt>
-                <dd>{item.low_stock ? "Below reorder level" : "In stock"}</dd>
-              </div>
-            </dl>
-          ) : (
-            <p>Choose an item to see what is on hand before it goes out.</p>
-          )}
-          <div className="gap" />
-          <p>Names typed under &ldquo;Issued to&rdquo; are not linked to staff records.</p>
-        </div>
-        <Panel title="Recent issues & returns">
-          {recent.length ? (
-            recent.map((m) => (
-              <div className="event-row" key={m.id}>
-                <div className="event-content">
-                  <h4>{`${m.item_name} · ${m.direction > 0 ? "+" : "−"}${qty(m.qty)}`}</h4>
-                  <p>{[date(m.moved_on), MOVE_LABEL[m.kind], m.issued_to, m.location].filter(Boolean).join(" · ")}</p>
+    <>
+      <StatStrip items={stats} compact />
+      <div className="two-col">
+        <form id="movement-form" key={formKey} className="panel" onSubmit={submit}>
+          <div className="panel-pad">
+            <ErrorNote>{error ?? items.error}</ErrorNote>
+            <div className="form-sections">
+              <section>
+                <div className="form-section-title">
+                  <span className="number">01</span>
+                  <h3>Details</h3>
                 </div>
-              </div>
-            ))
-          ) : (
-            <p className="muted">{register.loading ? "Loading…" : "Nothing issued or returned in the last 90 days."}</p>
-          )}
-        </Panel>
-      </aside>
-    </div>
+                <div className="form-grid">
+                  <Field label="Item" required>
+                    <select value={itemId} onChange={(e) => setItemId(e.target.value)} required>
+                      <option value="">{items.loading ? "Loading items…" : "Choose an item"}</option>
+                      {items.data?.map((x) => (
+                        <option key={x.id} value={x.id}>
+                          {`${x.name} — ${qty(x.on_hand)} ${x.unit} on hand`}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Movement type" required>
+                    <select value={kind} onChange={(e) => setKind(e.target.value as MoveKind)} required>
+                      {KINDS.map(([k, l]) => (
+                        <option key={k} value={k}>
+                          {l}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label={item ? `Quantity (${item.unit})` : "Quantity"} required>
+                    <input type="number" name="qty" min={0.01} step="0.01" required placeholder="Enter quantity" />
+                  </Field>
+                  <Field label={kind === "issue" ? "Issued to" : kind === "return_in" ? "Returned by" : "Reported by"} required={kind === "issue"}>
+                    <input name="issued_to" required={kind === "issue"} placeholder="Staff room, Class 5A, Mr. Rao" />
+                  </Field>
+                  <Field label="Location">
+                    <input name="location" maxLength={80} placeholder={item?.location ? `e.g. ${item.location}` : "Main store, Lab shelf 2"} />
+                  </Field>
+                  <Field label="Date">
+                    <input type="date" name="moved_on" defaultValue={today()} />
+                  </Field>
+                  <Field label="Reference">
+                    <input name="reference" placeholder="Enter reference" />
+                  </Field>
+                  <Field label="Remarks" full>
+                    <textarea name="notes" placeholder="Enter remarks" />
+                  </Field>
+                </div>
+              </section>
+            </div>
+          </div>
+          <div className="form-footer">
+            <span>Fields marked * are required</span>
+            <div className="actions">
+              <button type="reset" className="btn" onClick={() => setItemId("")}>
+                Cancel
+              </button>
+              <button type="submit" className="btn primary" disabled={saving}>
+                <Icon name="check" className="sm" />
+                {saving ? "Saving…" : "Record movement"}
+              </button>
+            </div>
+          </div>
+        </form>
+        <aside className="stack">
+          <div className="aside-panel">
+            <h3>{item ? item.name : "Inventory & labs"}</h3>
+            {item ? (
+              <dl className="kv">
+                <div>
+                  <dt>On hand</dt>
+                  <dd>{`${qty(item.on_hand)} ${item.unit}`}</dd>
+                </div>
+                <div>
+                  <dt>Reorder level</dt>
+                  <dd>{qty(item.reorder_level)}</dd>
+                </div>
+                <div>
+                  <dt>Last 12 months</dt>
+                  <dd>{ledger.loading ? "…" : `${qty(itemOut)} issued · ${qty(itemBack)} returned`}</dd>
+                </div>
+                <div>
+                  <dt>Status</dt>
+                  <dd>{item.low_stock ? "Below reorder level" : "In stock"}</dd>
+                </div>
+              </dl>
+            ) : (
+              <p>Choose an item to see what is on hand before it goes out.</p>
+            )}
+            <div className="gap" />
+            <p>Names typed under &ldquo;Issued to&rdquo; are not linked to staff records.</p>
+          </div>
+          <Panel title="Recent issues & returns">
+            {recent.length ? (
+              recent.map((m) => (
+                <div className="event-row" key={m.id}>
+                  <div className="event-content">
+                    <h4>{`${m.item_name} · ${m.direction > 0 ? "+" : "−"}${qty(m.qty)}`}</h4>
+                    <p>{[date(m.moved_on), MOVE_LABEL[m.kind], m.issued_to, m.location].filter(Boolean).join(" · ")}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="muted">{register.loading ? "Loading…" : "Nothing issued or returned in the last 90 days."}</p>
+            )}
+          </Panel>
+        </aside>
+      </div>
+    </>
   );
 }

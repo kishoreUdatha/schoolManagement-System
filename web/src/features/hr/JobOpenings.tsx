@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -70,6 +71,17 @@ export function JobOpenings() {
     );
   }, [list.data, deptId, typed]);
 
+  // Counts follow the status chosen (the server filters by it), not the search.
+  const all = list.data ?? [];
+  const live = all.filter((o) => o.status === "open");
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Openings", value: n(all.length), note: `${all.filter((o) => o.status === "draft").length} still in draft` },
+    { label: "Published", value: n(live.length), note: `${live.filter((o) => o.is_public).length} on the careers page` },
+    { label: "Seats to fill", value: n(live.reduce((t, o) => t + Math.max(0, o.vacancies - o.hired), 0)), note: "Across published openings" },
+    { label: "Applications", value: n(all.reduce((t, o) => t + o.applications, 0)), note: `${all.reduce((t, o) => t + o.hired, 0)} hired so far` },
+  ];
+
   const rows: Row[] = items.map((o) => [
     { name: o.title, sub: `${o.reference_no} · ${label(o.employment_type)}` },
     o.department_name ?? "—",
@@ -125,6 +137,7 @@ export function JobOpenings() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

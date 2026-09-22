@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { money } from "@/lib/format";
@@ -43,8 +44,17 @@ export function RouteList() {
     money(r.monthly_fee),
     r.is_active ? "Active" : "Inactive",
   ]);
+  const live = all.filter((r) => r.is_active);
+  const n = (v: number) => (routes.loading && !routes.data ? (routes.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Active routes", value: n(live.length), note: `${all.length - live.length} inactive` },
+    { label: "Stops", value: n(live.reduce((s, r) => s + r.stops.length, 0)), note: "On active routes" },
+    { label: "Students", value: n(live.reduce((s, r) => s + r.student_count, 0)), note: `${live.reduce((s, r) => s + (r.vehicle_capacity ?? 0), 0)} seats on their vehicles` },
+    { label: "Over capacity", value: n(live.filter((r) => r.vehicle_capacity !== null && r.student_count > r.vehicle_capacity).length), note: "More students than seats" },
+  ];
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={search} onChange={setSearch} placeholder="Search routes…" />
         <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -351,9 +361,19 @@ export function StopList() {
       const q = search.trim().toLowerCase();
       return !q || s.name.toLowerCase().includes(q) || s.route.name.toLowerCase().includes(q);
     });
+  // Figures follow the route filter, not the search box.
+  const onRoute = (routes.data ?? []).filter((r) => !routeId || String(r.id) === routeId).flatMap((r) => r.stops);
+  const n = (v: number) => (routes.loading && !routes.data ? (routes.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Stops", value: n(onRoute.length), note: routeId ? "On this route" : `On ${(routes.data ?? []).length} route(s)` },
+    { label: "Students", value: n(onRoute.reduce((s, x) => s + x.student_count, 0)), note: "Boarding at these stops" },
+    { label: "Unused stops", value: n(onRoute.filter((x) => !x.student_count).length), note: "No student boards here" },
+    { label: "No pickup time", value: n(onRoute.filter((x) => !x.pickup_time).length), note: "Set it on the route" },
+  ];
   const rows: Row[] = stops.map((s) => [s.name, `${s.route.code} · ${s.route.name}`, String(s.sequence), time12(s.pickup_time), time12(s.drop_time), String(s.student_count)]);
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={search} onChange={setSearch} placeholder="Search stops…" />
         <select aria-label="Filter by route" value={routeId} onChange={(e) => setRouteId(e.target.value)}>

@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -42,9 +43,17 @@ export function Vendors() {
     return [s.name, s.gstin ? `GSTIN ${s.gstin}` : "—", s.contact_person ?? "—", s.phone ?? "—", p ? money(p.outstanding) : money(0), statusOf(s)];
   });
   const pd = payables.data;
+  const count = (st: string) => (suppliers.data && payables.data ? suppliers.data.filter((s) => statusOf(s) === st).length.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Vendors", value: suppliers.data ? String(suppliers.data.filter((s) => s.is_active).length) : "…", note: suppliers.data ? `Active, of ${suppliers.data.length}` : "Active" },
+    { label: "Owed", value: pd ? money(pd.total_outstanding) : "…", note: pd ? `To ${pd.suppliers_owed} vendor${pd.suppliers_owed === 1 ? "" : "s"}` : "Bills less payments" },
+    { label: "Overdue", value: pd ? money(pd.total_overdue) : "…", note: "Past the bill's due date" },
+    { label: "Overdue vendors", value: count("Overdue"), note: "Need paying first" },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

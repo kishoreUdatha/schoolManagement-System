@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -38,6 +39,7 @@ type Item = {
   audienceKey: string;
   status: string;
   when: string;
+  sentAt: string | null;
   delivery: Delivery[];
   recipients: number;
   channels: string[];
@@ -73,6 +75,7 @@ export function Announcements() {
         audienceKey: n.audience,
         status: n.status,
         when: n.sent_at ? `Sent ${dateTime(n.sent_at)}` : n.scheduled_at ? `Scheduled for ${dateTime(n.scheduled_at)}` : `Written ${dateTime(n.created_at)}`,
+        sentAt: n.sent_at,
         delivery: n.delivery,
         recipients: n.recipient_count,
         channels: n.channels,
@@ -85,6 +88,7 @@ export function Announcements() {
         audienceKey: c.audience,
         status: c.status,
         when: c.sent_at ? `Sent ${dateTime(c.sent_at)}` : c.scheduled_at ? `Scheduled for ${dateTime(c.scheduled_at)}${c.overdue ? " (time has passed)" : ""}` : `Written ${dateTime(c.created_at)}`,
+        sentAt: c.sent_at,
         delivery: c.delivery,
         recipients: c.recipients,
         channels: c.channels,
@@ -93,6 +97,19 @@ export function Announcements() {
   const q = typed.trim().toLowerCase();
   const shown = items.filter((n) => (!q || n.title.toLowerCase().includes(q) || (n.body ?? "").toLowerCase().includes(q)) && (!aud || n.audienceKey === aud) && (!status || n.status === status));
   const loading = notices.loading || campaigns.loading;
+
+  // Headline figures over everything loaded, not just what the filters show.
+  const ready = Boolean(notices.data || campaigns.data);
+  const num = (v: number) => (ready ? String(v) : "…");
+  const month = new Date().toISOString().slice(0, 7);
+  const sentMonth = items.filter((i) => i.sentAt && i.sentAt.slice(0, 7) === month);
+  const failedTo = items.reduce((s, i) => s + i.delivery.reduce((t, d) => t + d.failed, 0), 0);
+  const stats = [
+    { label: "Sent this month", value: num(sentMonth.length), note: `${sentMonth.reduce((s, i) => s + i.recipients, 0)} recipient(s)` },
+    { label: "Scheduled", value: num(items.filter((i) => i.status === "scheduled").length), note: "Waiting to go out" },
+    { label: "Drafts", value: num(items.filter((i) => i.status === "draft").length), note: "Written, not sent" },
+    { label: "Failed", value: num(failedTo), note: "Messages that did not reach someone" },
+  ];
 
   async function send(n: Item) {
     if (!(await ask(`Send "${n.title}" to ${n.audience}?`))) return;
@@ -118,6 +135,7 @@ export function Announcements() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

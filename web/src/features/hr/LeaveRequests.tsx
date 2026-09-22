@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -65,6 +66,17 @@ export function LeaveRequests() {
     return (list.data ?? []).filter((l) => (!role || l.applicant_role === role) && (!q || [l.applicant_name, l.reason].some((v) => v?.toLowerCase().includes(q))));
   }, [list.data, role, typed]);
 
+  // Counts follow the status chosen (the server filters by it), not the search.
+  const all = list.data ?? [];
+  const approved = all.filter((l) => l.status === "approved");
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Requests", value: n(all.length), note: `${all.filter((l) => l.status === "rejected" || l.status === "cancelled").length} rejected or cancelled` },
+    { label: "Pending", value: n(all.filter((l) => l.status === "pending").length), note: "Waiting for a decision" },
+    { label: "On leave today", value: n(approved.filter((l) => l.from_date <= today() && l.to_date >= today()).length), note: "Approved leave covering today" },
+    { label: "Days approved", value: n(approved.reduce((t, l) => t + Number(l.days), 0)), note: `${approved.length} approved request(s)` },
+  ];
+
   const rows: Row[] = items.map((l) => [
     { name: l.applicant_name ?? "—", sub: l.filed_by_name ? `${label(l.applicant_role)} · filed by ${l.filed_by_name}` : label(l.applicant_role) },
     typeName(l),
@@ -76,6 +88,7 @@ export function LeaveRequests() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

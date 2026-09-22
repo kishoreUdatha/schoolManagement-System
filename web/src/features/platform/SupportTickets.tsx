@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -56,6 +57,15 @@ export function SupportTickets() {
     );
   });
 
+  const q = queue.data;
+  const n = (v: number | undefined) => (queue.loading && !q ? "…" : String(v ?? 0));
+  const stats = [
+    { label: "Open", value: n(q?.open), note: `${q?.urgent_open ?? 0} urgent` },
+    { label: "Waiting", value: n(q?.waiting), note: "Waiting on a reply" },
+    { label: "Unassigned", value: n(tickets.filter((t) => (t.status === "open" || t.status === "waiting") && !t.assigned_to).length), note: "Open or waiting, no owner" },
+    { label: "Resolved", value: n(q?.resolved), note: `${q?.closed ?? 0} closed` },
+  ];
+
   async function step(fn: () => Promise<Ticket | void>, done?: string) {
     setBusy(true);
     setError(null);
@@ -103,6 +113,7 @@ export function SupportTickets() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

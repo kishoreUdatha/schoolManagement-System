@@ -4,6 +4,7 @@ import { useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { date, money } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
@@ -33,10 +34,20 @@ function Body({ s }: { s: StudentProfile }) {
   const open = all.filter((l) => !l.returned_on && !l.lost_on).length;
   const fines = all.reduce((n, l) => n + Number(l.fine_amount || 0) + Number(l.accruing_fine || 0), 0);
 
+  const wait = loans.loading && !loans.data;
+  const n = (v: number) => (wait ? "…" : String(v));
+  const stats = [
+    { label: "On loan", value: n(open), note: "Books with the student now" },
+    { label: "Overdue", value: n(all.filter((l) => statusOf(l) === "Overdue").length), note: "Past the due date" },
+    { label: "Borrowed", value: n(all.length), note: `${all.filter((l) => l.lost_on).length} lost` },
+    { label: "Fines", value: wait ? "…" : money(fines), note: "Charged and still accruing" },
+  ];
+
   const rows: Row[] = list.map((l) => [l.title, l.accession_no, date(l.issued_on), date(l.due_on), String(l.renew_count), statusOf(l)]);
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

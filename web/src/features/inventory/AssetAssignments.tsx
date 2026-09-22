@@ -3,6 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -38,7 +39,16 @@ export function AssetAssignments() {
     r.user_name ?? "—",
     date(r.assigned_on),
   ]);
-  const stillOut = (list.data ?? []).filter((r) => !r.returned_on).length;
+  const out = (list.data ?? []).filter((r) => !r.returned_on);
+  const stillOut = out.length;
+  const byStatus = (st: Asset["status"]) => (assets.data ?? []).filter((a) => a.status === st).length;
+  const n = (v: number, ready: unknown) => (ready ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Out now", value: n(stillOut, list.data), note: "Assigned, not yet returned" },
+    { label: "Custodians", value: n(new Set(out.map((r) => r.user_id ?? r.user_name).filter((v) => v !== null)).size, list.data), note: "Holding an asset" },
+    { label: "In store", value: n(byStatus("in_store"), assets.data), note: "Free to assign" },
+    { label: "Under repair", value: n(byStatus("under_repair"), assets.data), note: "Cannot be transferred" },
+  ];
 
   const reload = () => {
     list.reload();
@@ -47,6 +57,7 @@ export function AssetAssignments() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

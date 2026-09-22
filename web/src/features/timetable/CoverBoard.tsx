@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { ApiError, api, errorText } from "@/lib/api";
 import { date as fmtDate } from "@/lib/format";
@@ -66,6 +67,14 @@ export function CoverBoard() {
     s.substitute_name ?? "Not covered",
   ]);
 
+  const onDay = fmtDate(date);
+  const strip = [
+    { label: "Teachers away", value: d ? String(d.absent.length) : "…", note: onDay },
+    { label: "Lessons to cover", value: d ? String(d.slots.length) : "…", note: `${d?.covered ?? 0} covered` },
+    { label: "Not covered", value: d ? String(d.uncovered) : "…", note: "need a substitute" },
+    { label: "Covers given", value: stats.data ? String(stats.data.reduce((t, x) => t + x.covers, 0)) : "…", note: `last ${rangeDays} days` },
+  ];
+
   const openFirst = useCallback(() => {
     const first = day.data?.slots.find((s) => !s.substitute_user_id) ?? day.data?.slots[0];
     if (first) setPick(first);
@@ -91,6 +100,7 @@ export function CoverBoard() {
 
   return (
     <>
+      <StatStrip items={strip} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

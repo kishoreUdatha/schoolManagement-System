@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { label } from "@/lib/format";
@@ -63,6 +64,18 @@ export function Subjects() {
     s.is_active ? "Active" : "Inactive",
   ]);
 
+  const live = (list.data ?? []).filter((s) => s.is_active);
+  const wait = list.loading && !list.data;
+  const n = (v: number) => (wait ? "…" : String(v));
+  // "Not taught" waits until every class's subject list is in.
+  const linked = !classes.loading && classList.every((c) => links.has(c.id));
+  const stats = [
+    { label: "Subjects", value: n(live.length), note: `${(list.data?.length ?? 0) - live.length} inactive` },
+    { label: "Core", value: n(live.filter((s) => s.kind === "core").length), note: "taken by every student" },
+    { label: "Electives", value: n(live.filter((s) => s.kind === "elective").length), note: "chosen by students" },
+    { label: "Not taught", value: wait || !linked ? "…" : String(live.filter((s) => !classesOf(s.id).length).length), note: `in no class in ${year?.name ?? "this year"}` },
+  ];
+
   usePageAction("add", useCallback(() => setEditing("new"), []));
   usePageAction(
     "export",
@@ -71,6 +84,7 @@ export function Subjects() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={q} onChange={setQ} placeholder="Search subjects…" />
         <select aria-label="Filter by subject type" value={kind} onChange={(e) => setKind(e.target.value)}>

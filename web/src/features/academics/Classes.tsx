@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
@@ -23,7 +24,7 @@ const capacityOf = (c: SchoolClass) => c.capacity ?? c.sections.reduce((s, x) =>
  * student counts from GET /students (class_id, page_size=1).
  */
 export function Classes() {
-  const { years, yearId, setYearId, year, error: yearsError } = useYears();
+  const { years, yearId, setYearId, year, error: yearsError, loaded } = useYears();
   const list = useApi<SchoolClass[]>(yearId ? "/api/v1/school/classes" : null, { academic_year_id: yearId });
   const [version, setVersion] = useState(0);
   const classes = useMemo(() => [...(list.data ?? [])].sort((a, b) => a.display_order - b.display_order), [list.data]);
@@ -52,6 +53,18 @@ export function Classes() {
     ];
   });
 
+  const live = classes.filter((c) => c.is_active);
+  const wait = !yearId || (list.loading && !list.data);
+  const n = (v: number) => (wait ? "…" : String(v));
+  // Students shows "…" until every class's count is in.
+  const counted = live.every((c) => counts.has(c.id));
+  const stats = [
+    { label: "Classes", value: n(live.length), note: `${classes.length - live.length} inactive` },
+    { label: "Sections", value: n(live.reduce((s, c) => s + c.sections.length, 0)), note: "across active classes" },
+    { label: "Students", value: wait || !counted ? "…" : String(live.reduce((s, c) => s + (counts.get(c.id) ?? 0), 0)), note: `of ${live.reduce((s, c) => s + capacityOf(c), 0)} seats` },
+    { label: "No coordinator", value: n(live.filter((c) => !c.coordinator_user_id).length), note: "classes to assign" },
+  ];
+
   usePageAction("add", useCallback(() => setAdding(true), []));
   usePageAction(
     "export",
@@ -69,6 +82,7 @@ export function Classes() {
 
   return (
     <>
+      <StatStrip items={loaded && !yearId ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />
       <div className="filterbar">
         <SearchBox value={q} onChange={setQ} placeholder="Search grades or classes…" />
         <YearSelect years={years} yearId={yearId} onChange={setYearId} />

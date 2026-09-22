@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Panel, Person } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
@@ -41,8 +42,23 @@ export function CertificateRegister() {
   const open = openId !== null ? (list.data?.find((c) => c.id === openId) ?? null) : null;
   const waiting = (list.data ?? []).filter((c) => c.status === "requested").length;
 
+  // The figures count the whole register; with a filter on, fetch it unfiltered beside the list.
+  const filtered = Boolean(status || kind);
+  const whole = useApi<Certificate[]>(filtered ? "/api/v1/school/certificates" : null);
+  const all = filtered ? whole.data : list.data;
+  const num = (v: number) => (all ? String(v) : "…");
+  const count = (st: string) => (all ?? []).filter((c) => c.status === st).length;
+  const month = new Date().toISOString().slice(0, 7);
+  const stats = [
+    { label: "Issued this month", value: num((all ?? []).filter((c) => c.status === "issued" && c.issued_on?.slice(0, 7) === month).length), note: `${count("issued")} valid in all` },
+    { label: "Requests waiting", value: num(count("requested")), note: "From parents, to issue or reject" },
+    { label: "Cancelled", value: num(count("cancelled")), note: "No longer valid" },
+    { label: "Rejected", value: num(count("rejected")), note: "Requests turned down" },
+  ];
+
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />
@@ -72,6 +88,7 @@ export function CertificateRegister() {
           onChanged={(m) => {
             notify(m);
             list.reload();
+            if (filtered) whole.reload();
           }}
         />
       ) : null}

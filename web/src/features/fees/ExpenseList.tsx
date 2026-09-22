@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -42,6 +43,17 @@ export function ExpenseList() {
   });
   // Whole range from the server, so this is the range's total.
   const total = sum((list.data ?? []).filter((x) => !x.is_void).map((x) => Number(x.amount) + Number(x.tax_amount)));
+  const valid = (list.data ?? []).filter((x) => !x.is_void);
+  const byCat = new Map<string, number>();
+  for (const x of valid) byCat.set(x.category_name, (byCat.get(x.category_name) ?? 0) + Number(x.amount) + Number(x.tax_amount));
+  const top = [...byCat.entries()].sort((a, b) => b[1] - a[1])[0];
+  const n = (v: number) => (list.data ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Spent", value: list.data ? money(total) : "…", note: `${date(from)} – ${date(to)}, incl. tax` },
+    { label: "Vouchers", value: n(valid.length), note: "Expenses in this range" },
+    { label: "Top head", value: list.data ? (top ? money(top[1]) : money(0)) : "…", note: top ? top[0] : "No spending yet" },
+    { label: "Void", value: n((list.data ?? []).length - valid.length), note: "Cancelled, not counted" },
+  ];
   const rows: Row[] = items.map((x) => [date(x.spent_on), x.reference ?? `EXP-${x.id}`, x.category_name, x.payee_name ?? "—", money(Number(x.amount) + Number(x.tax_amount)), x.is_void ? "Void" : "Paid"]);
 
   async function voidIt(x: Expense) {
@@ -60,6 +72,7 @@ export function ExpenseList() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

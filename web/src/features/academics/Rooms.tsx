@@ -3,6 +3,7 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { label } from "@/lib/format";
@@ -36,9 +37,18 @@ export function Rooms() {
       (!status || (status === "active" ? r.is_active : !r.is_active)) &&
       (!q || [r.name, r.code, r.building ?? "", r.section_label ?? ""].some((v) => v.toLowerCase().includes(q))),
   );
+  const live = (list.data ?? []).filter((r) => r.is_active);
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Rooms", value: n(live.length), note: `${(list.data?.length ?? 0) - live.length} inactive` },
+    { label: "Seats", value: n(live.reduce((s, r) => s + (r.capacity ?? 0), 0)), note: "total capacity" },
+    { label: "Home rooms", value: n(live.filter((r) => r.section_id).length), note: "assigned to a section" },
+    { label: "Free rooms", value: n(live.filter((r) => !r.section_id).length), note: "no section based here" },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

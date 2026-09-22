@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { errorText } from "@/lib/api";
@@ -51,6 +52,15 @@ export function AuditLogs() {
   const items = list.data ?? [];
   const full = items.length === LIMIT;
 
+  // The API returns no total, so the figures describe the page shown.
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Entries", value: n(items.length), note: full ? `Page ${page}; more on the next` : `Page ${page}` },
+    { label: "Failed attempts", value: n(items.filter((e) => e.result === "failed").length), note: "Refused, on this page" },
+    { label: "Deletions", value: n(items.filter((e) => e.action === "delete").length), note: "Records deleted, on this page" },
+    { label: "People", value: n(new Set(items.map((e) => e.user_id).filter((x) => x !== null)).size), note: "Who made these changes" },
+  ];
+
   const rows: Row[] = items.map((e) => [
     dateTime(e.created_at),
     { name: e.user_name ?? "System", sub: e.user_role ? label(e.user_role) : (e.user_email ?? undefined) },
@@ -63,6 +73,7 @@ export function AuditLogs() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

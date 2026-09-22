@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -40,6 +41,15 @@ export function ItemCatalogue() {
   ]);
   const value = items.reduce((n, i) => n + Number(i.stock_value ?? 0), 0);
   const low = items.filter((i) => i.low_stock).length;
+  // Over the whole catalogue, before the filters.
+  const every = all.data ?? [];
+  const n = (v: number, ready: unknown) => (ready ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Items", value: n(every.filter((i) => i.is_active).length, all.data), note: all.data ? `Active, of ${every.length}` : "Active" },
+    { label: "Stock value", value: all.data ? money(every.reduce((s, i) => s + Number(i.stock_value ?? 0), 0)) : "…", note: "On hand at cost" },
+    { label: "Low stock", value: n(every.filter((i) => i.low_stock).length, all.data), note: "Below reorder level" },
+    { label: "Categories", value: n(categories.length, all.data), note: "Items grouped under" },
+  ];
 
   const saved = () => {
     list.reload();
@@ -48,6 +58,7 @@ export function ItemCatalogue() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

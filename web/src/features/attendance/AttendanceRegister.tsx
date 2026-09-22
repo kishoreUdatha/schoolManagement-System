@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -83,10 +84,21 @@ export function AttendanceRegister() {
   const working = (profile.data?.working_days ?? "MON,TUE,WED,THU,FRI,SAT").split(",").map((d) => d.trim().toUpperCase());
   const isWorking = (d: string) => working.includes(DOW[weekday(d) - 1]);
   const s = summary.data;
+  // The section and month on screen.
+  const n = (v: string) => (summary.loading ? "…" : !s ? "—" : v);
+  const rated = s?.rows.filter((r) => r.attendance_pct !== null) ?? [];
+  const avg = rated.length ? rated.reduce((t, r) => t + Number(r.attendance_pct), 0) / rated.length : null;
+  const stats = [
+    { label: "Students", value: n(String(s?.rows.length ?? 0)), note: `${monthName(m)} ${y}` },
+    { label: "Average", value: n(pct(avg)), note: "attendance this month" },
+    { label: "Below 75%", value: n(String(rated.filter((r) => Number(r.attendance_pct) < 75).length)), note: "students" },
+    { label: "Absences", value: n(String(s?.rows.reduce((t, r) => t + r.absent, 0) ?? 0)), note: `${s?.rows.reduce((t, r) => t + r.late, 0) ?? 0} late marks` },
+  ];
   const label = sections.find((x) => x.id === sectionId)?.label ?? s?.section_label ?? "";
 
   return (
     <>
+      <StatStrip items={years.data?.length === 0 ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />
       <div className="filterbar">
         <select aria-label="Section" value={sectionId ?? ""} onChange={(e) => setSectionId(Number(e.target.value))}>
           {!sections.length ? <option value="">{classes.loading ? "Loading classes…" : "No classes"}</option> : null}

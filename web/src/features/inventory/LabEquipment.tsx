@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { useApi } from "@/lib/useApi";
@@ -37,9 +38,17 @@ export function LabEquipment() {
     i.low_stock ? "Below minimum" : "Active",
   ]);
   const withNotes = (labs.data ?? []).filter((l) => l.equipment);
+  const n = (v: number, ready: unknown) => (ready ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Labs", value: n((labs.data ?? []).filter((l) => l.is_active).length, labs.data), note: "Active" },
+    { label: "Equipment noted", value: n(withNotes.length, labs.data), note: "Labs with a written list" },
+    { label: "Stock items", value: n(items.data?.length ?? 0, items.data), note: "Consumables counted in store" },
+    { label: "Below minimum", value: n((items.data ?? []).filter((i) => i.low_stock).length, items.data), note: "Need reordering" },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

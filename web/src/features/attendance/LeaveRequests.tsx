@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -50,6 +51,16 @@ export function LeaveRequests() {
     () => (leaves ?? []).filter((l) => (!status || l.status === status) && (!q || `${l.student_name} ${l.kind} ${l.reason}`.toLowerCase().includes(q))),
     [leaves, status, q],
   );
+  // The chosen child (or all of them), before the status and search filters.
+  const all = leaves ?? [];
+  const n = (v: number) => (leaves === null ? (error || children.error ? "—" : "…") : String(v));
+  const of = (st: StudentLeave["status"]) => all.filter((l) => l.status === st);
+  const stats = [
+    { label: "Requests", value: n(all.length), note: childId ? "for this child" : `for ${children.data?.length ?? 0} children` },
+    { label: "Pending", value: n(of("pending").length), note: "waiting for the teacher" },
+    { label: "Approved", value: n(of("approved").length), note: `${of("approved").reduce((t, l) => t + l.days, 0)} days of leave` },
+    { label: "Rejected", value: n(of("rejected").length), note: `${of("cancelled").length} cancelled` },
+  ];
   const rows: Row[] = items.map((l) => [{ name: l.student_name, sub: l.section_label }, `${label(l.kind)} leave`, date(l.from_date), date(l.to_date), String(l.days), label(l.status)]);
 
   // Viewing one request, and cancelling it while it is pending, or approved
@@ -112,6 +123,7 @@ export function LeaveRequests() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

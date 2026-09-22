@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -45,6 +46,10 @@ export function useHostel() {
   return { hostels, hostel, select };
 }
 
+/** A figure for a stat strip: "…" until the first load lands. */
+const fig = (loading: boolean, v: number) => (loading ? "…" : String(v));
+const pct = (part: number, whole: number) => (whole ? `${Math.round((part / whole) * 100)}%` : "—");
+
 /** Shown in place of a hostel screen when the school has no hostel yet. */
 export function NoHostel({ loading }: { loading: boolean }) {
   return (
@@ -70,6 +75,15 @@ export function HostelList() {
   const items = all.filter((h) => (!kind || h.kind === kind) && (!search.trim() || `${h.name} ${h.address ?? ""} ${h.warden_name ?? ""}`.toLowerCase().includes(search.trim().toLowerCase())));
   const rows: Row[] = items.map((h) => [h.name, h.address ?? "—", KINDS[h.kind], String(h.rooms), `${h.occupied} / ${h.beds}`, h.warden_name ?? "No warden", h.is_active ? "Active" : "Inactive"]);
   const open = add.open || editing !== null;
+  const beds = all.reduce((s, x) => s + x.beds, 0);
+  const taken = all.reduce((s, x) => s + x.occupied, 0);
+  const n = (v: number) => fig(hostels.loading && !hostels.data, v);
+  const stats = [
+    { label: "Hostels", value: n(all.length), note: `${all.filter((x) => x.is_active).length} active` },
+    { label: "Rooms", value: n(all.reduce((s, x) => s + x.rooms, 0)), note: `${beds} beds in all` },
+    { label: "Beds taken", value: n(taken), note: `${pct(taken, beds)} occupied · ${beds - taken} free` },
+    { label: "No warden", value: n(all.filter((x) => !x.warden_user_id).length), note: "Hostels without a resident warden" },
+  ];
   const close = () => {
     setError(null);
     if (editing) setEditing(null);
@@ -106,6 +120,7 @@ export function HostelList() {
   const h = editing;
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={search} onChange={setSearch} placeholder="Search hostels…" />
         <select aria-label="Filter by type" value={kind} onChange={(e) => setKind(e.target.value)}>
@@ -193,6 +208,17 @@ export function RoomsBeds() {
     const freeBeds = r.beds.filter((b) => !b.student_id).length;
     return (!q || [r.room_no, r.floor, r.room_type, ...r.beds.map((b) => b.student_name)].some((x) => x?.toLowerCase().includes(q))) && (!free || (free === "free" ? freeBeds > 0 : freeBeds === 0));
   });
+  // Figures for the hostel in view; active rooms only, as the allocation screen offers.
+  const live = (rooms.data ?? []).filter((r) => r.is_active);
+  const allBeds = live.flatMap((r) => r.beds);
+  const usedBeds = allBeds.filter((b) => b.student_id).length;
+  const n = (v: number) => fig((hostels.loading && !hostels.data) || (rooms.loading && !rooms.data), v);
+  const stats = [
+    { label: "Rooms", value: n(live.length), note: hostel ? `In ${hostel.name} · ${(rooms.data ?? []).length - live.length} inactive` : "No hostel chosen" },
+    { label: "Beds", value: n(allBeds.length), note: `${pct(usedBeds, allBeds.length)} occupied` },
+    { label: "Occupied", value: n(usedBeds), note: "Beds with a student" },
+    { label: "Free beds", value: n(allBeds.length - usedBeds), note: `${live.filter((r) => r.beds.every((b) => b.student_id)).length} room(s) full` },
+  ];
   const close = () => {
     setError(null);
     if (viewing) setViewing(null);
@@ -225,6 +251,7 @@ export function RoomsBeds() {
   const r = viewing;
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={search} onChange={setSearch} placeholder="Search rooms & beds…" />
         {select}
@@ -332,6 +359,14 @@ export function HostelAllocation() {
   const items = (residents.data ?? []).filter((r) => !search.trim() || `${r.student_name} ${r.admission_no} ${r.room_no}`.toLowerCase().includes(search.trim().toLowerCase()));
   const rows: Row[] = items.map((r) => [{ name: r.student_name, sub: r.admission_no }, r.section_label ?? "—", hostel?.name ?? "—", `Room ${r.room_no}`, `${r.room_no} / ${r.bed_label}`, date(r.since)]);
   const beds = freeBedsOf(rooms.data);
+  const all = residents.data ?? [];
+  const n = (v: number) => fig((hostels.loading && !hostels.data) || (residents.loading && !residents.data), v);
+  const stats = [
+    { label: "Residents", value: n(all.length), note: hostel ? `Allocated in ${hostel.name}` : "No hostel chosen" },
+    { label: "Free beds", value: fig((hostels.loading && !hostels.data) || (rooms.loading && !rooms.data), beds.length), note: hostel ? `${pct(hostel.occupied, hostel.beds)} of ${hostel.beds} beds taken` : "—" },
+    { label: "Out now", value: n(all.filter((r) => r.out_now).length), note: "On an outing or home leave" },
+    { label: "New this month", value: n(all.filter((r) => r.since.slice(0, 7) === today().slice(0, 7)).length), note: "Allocated since the 1st" },
+  ];
   const close = () => {
     setError(null);
     setStudent(null);
@@ -379,6 +414,7 @@ export function HostelAllocation() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={search} onChange={setSearch} placeholder="Search student hostel allocation…" />
         {select}
@@ -444,6 +480,13 @@ export function WardenRota() {
 
   const duties = (rota.data?.days ?? []).flatMap((d) => d.duties.map((duty) => ({ date: d.date, duty }))).filter((x) => !hostelId || String(x.duty.hostel_id) === hostelId);
   const uncovered = (rota.data?.uncovered ?? []).filter((u) => !hostelId || String(u.hostel_id) === hostelId);
+  const n = (v: number) => fig(rota.loading && !rota.data, v);
+  const stats = [
+    { label: "Duties", value: n(duties.length), note: "Shifts on the rota, next 2 weeks" },
+    { label: "Wardens", value: n(new Set(duties.map((x) => x.duty.user_id)).size), note: "Staff with a duty" },
+    { label: "Uncovered nights", value: n(uncovered.length), note: "Hostel-nights with nobody" },
+    { label: "No warden", value: fig(hostels.loading && !hostels.data, (hostels.data ?? []).filter((h) => !h.warden_user_id && (!hostelId || String(h.id) === hostelId)).length), note: "Hostels without a resident warden" },
+  ];
   const rows: Row[] = duties.map(({ date: d, duty }) => [{ name: duty.warden_name, sub: duty.warden_phone ?? undefined }, duty.hostel_name, date(d), SHIFTS[duty.shift], duty.note ?? "—", "On duty"]);
   const close = () => {
     setError(null);
@@ -482,6 +525,7 @@ export function WardenRota() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Filter by hostel" value={hostelId} onChange={(e) => setHostelId(e.target.value)}>
           <option value="">All hostels</option>

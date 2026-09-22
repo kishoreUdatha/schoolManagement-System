@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
@@ -54,6 +55,14 @@ export function TeachingResources() {
 
   const list = useApi<Resource[]>(base, { class_subject_id: csId, kind, search, include_inactive: status === "inactive" ? true : undefined });
   const items = (list.data ?? []).filter((r) => (status === "shared" ? r.is_active && r.visible_to_parents : status === "staff" ? r.is_active && !r.visible_to_parents : status === "inactive" ? !r.is_active : true));
+  const live = (list.data ?? []).filter((r) => r.is_active);
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Resources", value: n(live.length), note: `for ${new Set(live.map((r) => r.class_subject_id)).size} class subjects` },
+    { label: "Shared with parents", value: n(live.filter((r) => r.visible_to_parents).length), note: `${live.filter((r) => !r.visible_to_parents).length} staff only` },
+    { label: "Downloads", value: n(live.reduce((s, r) => s + r.downloads, 0)), note: "across these resources" },
+    { label: "Added this month", value: n(live.filter((r) => r.created_at.slice(0, 7) === new Date().toISOString().slice(0, 7)).length), note: "new uploads and links" },
+  ];
   const canEdit = (r: Resource) => Boolean(syllabus.data?.find((s) => s.class_subject_id === r.class_subject_id)?.can_edit);
 
   usePageAction(
@@ -85,6 +94,7 @@ export function TeachingResources() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

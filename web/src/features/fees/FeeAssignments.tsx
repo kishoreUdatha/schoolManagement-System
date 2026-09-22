@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import type { AcademicYear } from "@/features/students/types";
@@ -39,6 +40,17 @@ export function FeeAssignments() {
     if (status === "ended" && a.is_active) return false;
     return !term || `${a.student_name ?? ""} ${a.admission_no ?? ""} ${a.fee_head_name ?? ""}`.toLowerCase().includes(term);
   });
+
+  // Counted over what the server returned for the year and the status filter.
+  const all = list.data ?? [];
+  const year = years.data?.find((y) => y.id === yearId);
+  const n = (v: number) => (list.data ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Assignments", value: n(all.length), note: status === "active" ? `Active in ${year?.name ?? "the year"}` : `In ${year?.name ?? "the year"}` },
+    { label: "Students", value: n(new Set(all.map((a) => a.student_id)).size), note: "Pay differently from their class" },
+    { label: "Below class", value: n(all.filter((a) => a.class_amount !== null && Number(a.amount) < Number(a.class_amount)).length), note: "Pay less than the class amount" },
+    { label: "Extra heads", value: n(all.filter((a) => a.is_extra).length), note: "Not on the class structure" },
+  ];
 
   const rows: Row[] = items.map((a) => [
     { name: a.student_name ?? `Student #${a.student_id}`, sub: a.admission_no ?? undefined },
@@ -77,6 +89,7 @@ export function FeeAssignments() {
 
   return (
     <>
+      <StatStrip items={years.data?.length === 0 ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
+import { date } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { clock, ExamSelects, useExamChoice } from "./common";
@@ -52,9 +54,18 @@ export function ExamSchedule() {
   const shift = (k: number) => setMonth({ y: view.m + k < 0 ? view.y - 1 : view.m + k > 11 ? view.y + 1 : view.y, m: (view.m + k + 12) % 12 });
 
   const clashes = sheet.data?.clashes ?? [];
+  // The whole datesheet of the chosen exam, before the class filter.
+  const n = (v: number) => (!c.examId ? "—" : !sheet.data || sheet.loading ? "…" : String(v));
+  const stats = [
+    { label: "Papers", value: n(all.length), note: `${classes.length} classes` },
+    { label: "Exam days", value: n(sheet.data?.days.filter((d) => d.papers.length).length ?? 0), note: sheet.data ? `${date(sheet.data.start_date)} – ${date(sheet.data.end_date)}` : "choose an exam" },
+    { label: "Still to come", value: n(all.filter((p) => p.exam_date >= today).length), note: "papers from today" },
+    { label: "Clashes", value: n(clashes.length), note: `${sheet.data?.papers_without_time ?? 0} papers without a time` },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <ExamSelects c={c} />
         <select aria-label="Filter class" value={cls} onChange={(e) => setCls(e.target.value)}>

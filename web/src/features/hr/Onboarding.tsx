@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -76,10 +77,18 @@ export function Onboarding() {
   const c = list.data;
   const member = staff.data?.find((s) => String(s.id) === id);
   const starters = outstanding.data?.starters ?? [];
+  const n = (v: number) => (outstanding.loading && !outstanding.data ? (outstanding.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Starters", value: n(outstanding.data?.count ?? 0), note: "Checklists with work left" },
+    { label: "Tasks left", value: n(starters.reduce((t, s) => t + s.outstanding, 0)), note: `${starters.reduce((t, s) => t + s.done, 0)} already done` },
+    { label: "Overdue tasks", value: n(starters.reduce((t, s) => t + s.overdue, 0)), note: `${outstanding.data?.with_overdue ?? 0} starter(s) behind` },
+    { label: "Active staff", value: staff.loading && !staff.data ? (staff.loading ? "…" : "—") : String(staff.data?.length ?? 0), note: "Anyone can be given a checklist" },
+  ];
   const pctDone = c && c.total ? Math.round((c.done / c.total) * 100) : 0;
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Employee" value={id ?? ""} onChange={(e) => pick(e.target.value)}>
           <option value="">Choose an employee…</option>

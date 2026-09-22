@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { ErrorNote } from "@/components/ui/states";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { date, label, pct } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { StudentFrame, today } from "./StudentFrame";
@@ -43,6 +44,14 @@ function Body({ s }: { s: StudentProfile }) {
   const grade = mine?.grade && mine.grade !== "—" ? mine.grade : null;
   const parent = s.parents[0];
 
+  const wait = history.loading && !history.data;
+  const stats = [
+    { label: "Exams", value: wait ? "…" : String(exams.length), note: "With results recorded" },
+    { label: "This exam", value: wait ? "…" : pct(exam?.percent), note: exam ? exam.exam_name : "No exam yet" },
+    { label: "Papers failed", value: wait ? "…" : String((exam?.subjects ?? []).filter((p) => p.is_pass === false).length), note: exam ? `${exam.marked} of ${exam.subjects.length} marked` : "—" },
+    { label: "Average", value: wait ? "…" : pct(exams.length ? exams.reduce((t, e) => t + Number(e.percent), 0) / exams.length : null), note: `Across ${exams.length} exam(s)` },
+  ];
+
   const rows: Row[] = (exam?.subjects ?? []).map((p) => [
     p.subject_name,
     String(p.max_marks),
@@ -53,6 +62,7 @@ function Body({ s }: { s: StudentProfile }) {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <ErrorNote>{history.error}</ErrorNote>
       {exams.length > 1 ? (
         <div className="filterbar">

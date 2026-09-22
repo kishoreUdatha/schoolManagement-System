@@ -123,7 +123,8 @@ export function useYears() {
     if (yearId === null && years.data?.length) setYearId((years.data.find((y) => y.is_current) ?? years.data[0]).id);
   }, [years.data, yearId]);
   const year = years.data?.find((y) => y.id === yearId) ?? null;
-  return { years: years.data ?? [], error: years.error, yearId, setYearId, year };
+  // loaded: the list has arrived (or failed), so no yearId means the school has no year yet
+  return { years: years.data ?? [], error: years.error, yearId, setYearId, year, loaded: years.data !== null || Boolean(years.error) };
 }
 
 /** Year picker for the filter bar. */

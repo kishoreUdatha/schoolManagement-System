@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import type { AcademicYear, SchoolClass } from "@/features/students/types";
@@ -47,6 +48,16 @@ export function FeeStructureList() {
     })
     .sort((a, b) => (className.get(a.class_id) ?? "").localeCompare(className.get(b.class_id) ?? "", undefined, { numeric: true }) || a.fee_head_name.localeCompare(b.fee_head_name));
 
+  // Over the year (and class, if one is chosen), before search and status.
+  const all = structures.data ?? [];
+  const n = (v: number) => (structures.data ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Structure lines", value: n(all.length), note: `One per class and fee head${year ? ` · ${year.name}` : ""}` },
+    { label: "Classes covered", value: n(new Set(all.map((s) => s.class_id)).size), note: classes.data ? `Of ${classes.data.length} classes` : "Have a fee structure" },
+    { label: "Fee heads", value: n(new Set(all.map((s) => s.fee_head_id)).size), note: "Used in the structures" },
+    { label: "Monthly", value: n(all.filter((s) => s.is_recurring).length), note: "Lines charged every month" },
+  ];
+
   const rows: Row[] = items.map((s) => [
     `${s.fee_head_name} · ${s.fee_head_code}`,
     year?.name ?? "—",
@@ -58,6 +69,7 @@ export function FeeStructureList() {
 
   return (
     <>
+      <StatStrip items={years.data?.length === 0 ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

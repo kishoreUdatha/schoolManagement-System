@@ -3,6 +3,7 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
@@ -52,6 +53,15 @@ export function SubjectGroups() {
     g.is_active ? "Active" : "Inactive",
   ]);
 
+  const live = (list.data ?? []).filter((g) => g.is_active);
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Groups", value: n(live.length), note: `${(list.data?.length ?? 0) - live.length} inactive` },
+    { label: "With electives", value: n(live.filter((g) => g.elective_count > 0).length), note: "students choose subjects" },
+    { label: "Every class", value: n(live.filter((g) => g.class_id === null).length), note: "not tied to one class" },
+    { label: "Empty", value: n(live.filter((g) => !g.subject_count).length), note: "no subjects added yet" },
+  ];
+
   usePageAction("add", useCallback(() => setEditing("new"), []));
   usePageAction(
     "export",
@@ -62,6 +72,7 @@ export function SubjectGroups() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={q} onChange={setQ} placeholder="Search subject groups…" />
         <select aria-label="Filter by class" value={classFilter} onChange={(e) => setClassFilter(e.target.value)}>

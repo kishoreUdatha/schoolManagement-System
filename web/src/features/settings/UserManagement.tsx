@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -44,6 +45,15 @@ export function UserManagement() {
   const open = items.find((s) => s.id === openId);
   const extraFor = (userId: number) => (extra.data ?? []).filter((a) => a.user_id === userId);
 
+  // Counts follow the filters (the server applies them).
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Staff logins", value: n(items.length), note: `${new Set(items.map((s) => s.role)).size} roles` },
+    { label: "Active", value: n(items.filter((s) => s.is_active).length), note: "Can sign in" },
+    { label: "Inactive", value: n(items.filter((s) => !s.is_active).length), note: "Sign-in turned off" },
+    { label: "Never signed in", value: n(items.filter((s) => !s.last_login_at).length), note: "No sign-in recorded" },
+  ];
+
   const rows: Row[] = items.map((s) => [
     { name: s.full_name, sub: s.employee_no },
     s.email ?? "—",
@@ -83,6 +93,7 @@ export function UserManagement() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

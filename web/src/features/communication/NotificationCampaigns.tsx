@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { dateTime } from "@/lib/format";
@@ -60,6 +61,7 @@ function Compose({ teacher }: { teacher: boolean }) {
   const mine = useApi<MyClasses>(teacher ? "/api/v1/teacher/my-classes" : null);
   const summary = useApi<Summary>(teacher ? null : "/api/v1/school/event-ops/campaigns", { limit: 1 });
   const due = useApi<Due>(teacher ? null : "/api/v1/school/ops/scheduled-notices");
+  const sentByMe = useApi<Notice[]>(teacher ? "/api/v1/teacher/notices" : null);
 
   const [audience, setAudience] = useState<NoticeAudience>(teacher ? "class_parents" : "all_parents");
   const [classId, setClassId] = useState("");
@@ -186,199 +188,220 @@ function Compose({ teacher }: { teacher: boolean }) {
   const scheduled = n?.scheduled_at ? new Date(n.scheduled_at) : null;
   const p = (x: number) => String(x).padStart(2, "0");
 
+  // Office: the campaign summary and due list above; a teacher: the notices they sent.
+  const num = (v: number | undefined) => (v === undefined ? "…" : String(v));
+  const month = new Date().toISOString().slice(0, 7);
+  const mineSent = sentByMe.data ?? [];
+  const mineMonth = mineSent.filter((x) => x.sent_at?.slice(0, 7) === month);
+  const stats = teacher
+    ? [
+        { label: "Sent by you", value: num(sentByMe.data?.length), note: "All your notices" },
+        { label: "This month", value: num(sentByMe.data ? mineMonth.length : undefined), note: "Notices sent" },
+        { label: "Parents reached", value: num(sentByMe.data ? mineMonth.reduce((t, x) => t + x.recipient_count, 0) : undefined), note: "This month" },
+      ]
+    : [
+        { label: "Sent", value: num(summary.data?.sent), note: "All campaigns" },
+        { label: "Scheduled", value: num(summary.data?.scheduled), note: `${summary.data?.overdue ?? 0} past their time` },
+        { label: "Drafts", value: num(summary.data?.draft), note: "Not sent yet" },
+        { label: "Due now", value: num(due.data?.count), note: "Ready to send" },
+      ];
+
   return (
-    <div className="two-col">
-      <form id="campaign-form" className="panel" onSubmit={submit} key={n?.id ?? "new"}>
-        <div className="panel-pad">
-          <ErrorNote>{error ?? existing.error ?? mine.error}</ErrorNote>
-          <div className="form-sections">
-            <section>
-              <div className="form-section-title">
-                <span className="number">01</span>
-                <h3>Details</h3>
-              </div>
-              <div className="form-grid">
-                {field("Campaign name", <input name="title" required maxLength={200} defaultValue={n?.title} placeholder="Enter campaign name" />, true)}
-                {teacher
-                  ? field("Channel", <input value="In-app" readOnly />, true)
-                  : field(
-                      "Channel",
-                      <div className="row" style={{ gap: 12, flexWrap: "wrap", minHeight: 43, alignItems: "center" }}>
-                        {CHANNELS.map((c) => (
-                          <label key={c} className="row" style={{ gap: 6 }}>
-                            <input
-                              type="checkbox"
-                              checked={channels.has(c)}
-                              onChange={(x) => {
-                                const next = new Set(channels);
-                                if (x.target.checked) next.add(c);
-                                else next.delete(c);
-                                setChannels(next);
-                              }}
-                            />
-                            {CHANNEL_LABEL[c]}
-                          </label>
-                        ))}
-                      </div>,
-                      true,
-                    )}
-                {field(
-                  "Audience",
-                  <select
-                    value={audience}
-                    required
-                    onChange={(x) => {
-                      setAudience(x.target.value as NoticeAudience);
-                      setStudentId("");
-                    }}
-                  >
-                    {(teacher ? TEACHER_AUDIENCES : OFFICE_AUDIENCES).map((a) => (
-                      <option key={a} value={a}>
-                        {NOTICE_AUDIENCE[a]}
-                      </option>
-                    ))}
-                  </select>,
-                  true,
-                )}
-                {audience === "class_parents"
-                  ? field(
-                      "Class",
-                      <select value={classId} required onChange={(x) => setClassId(x.target.value)}>
-                        <option value="">Select class</option>
-                        {classes.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>,
-                      true,
-                    )
-                  : null}
-                {audience === "section_parents" || audience === "single_parent"
-                  ? field(
-                      "Section",
-                      <select
-                        value={sectionId}
-                        required
-                        onChange={(x) => {
-                          setSectionId(x.target.value);
-                          setStudentId("");
-                        }}
-                      >
-                        <option value="">Select section</option>
-                        {allSections.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
-                        ))}
-                      </select>,
-                      true,
-                    )
-                  : null}
-                {audience === "single_parent"
-                  ? field(
-                      "Student",
-                      <select value={studentId} required disabled={!sectionId} onChange={(x) => setStudentId(x.target.value)}>
-                        <option value="">{roster.loading ? "Loading…" : "Select student"}</option>
-                        {(roster.data ?? []).map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {`${s.full_name} · ${s.admission_no}`}
-                          </option>
-                        ))}
-                      </select>,
-                      true,
-                    )
-                  : null}
-                {field("Message", <textarea name="body" required defaultValue={n?.body} placeholder="Enter message" />, true, true)}
-                {!teacher ? (
-                  <>
-                    {field("Schedule date", <input type="date" name="schedule_date" defaultValue={scheduled ? `${scheduled.getFullYear()}-${p(scheduled.getMonth() + 1)}-${p(scheduled.getDate())}` : ""} />)}
-                    {field("Schedule time", <input type="time" name="schedule_time" defaultValue={scheduled ? `${p(scheduled.getHours())}:${p(scheduled.getMinutes())}` : ""} />)}
-                    {field(
-                      "Category",
-                      <select name="category" defaultValue={n?.category ?? "general"}>
-                        <option value="general">School updates</option>
-                        <option value="events">Events</option>
-                        <option value="exams">Exams</option>
-                        <option value="homework">Homework</option>
-                        <option value="attendance">Attendance</option>
-                        <option value="fees">Fees</option>
-                      </select>,
-                    )}
-                    {field("Event date", <input type="date" name="event_date" defaultValue={n?.event_date ?? ""} />)}
-                    {field("Event starts", <input type="time" name="event_start_time" defaultValue={n?.event_start_time?.slice(0, 5) ?? ""} />)}
-                    {field("Event ends", <input type="time" name="event_end_time" defaultValue={n?.event_end_time?.slice(0, 5) ?? ""} />)}
-                    {field("Event venue", <input name="event_venue" maxLength={200} defaultValue={n?.event_venue ?? ""} placeholder="e.g. School auditorium" />)}
-                  </>
-                ) : null}
-                {field("Attachment link", <input type="url" name="attachment_url" maxLength={500} defaultValue={n?.attachment_url ?? ""} placeholder="https://…" />, false, true)}
-              </div>
-            </section>
+    <>
+      <StatStrip items={stats} compact />
+      <div className="two-col">
+        <form id="campaign-form" className="panel" onSubmit={submit} key={n?.id ?? "new"}>
+          <div className="panel-pad">
+            <ErrorNote>{error ?? existing.error ?? mine.error}</ErrorNote>
+            <div className="form-sections">
+              <section>
+                <div className="form-section-title">
+                  <span className="number">01</span>
+                  <h3>Details</h3>
+                </div>
+                <div className="form-grid">
+                  {field("Campaign name", <input name="title" required maxLength={200} defaultValue={n?.title} placeholder="Enter campaign name" />, true)}
+                  {teacher
+                    ? field("Channel", <input value="In-app" readOnly />, true)
+                    : field(
+                        "Channel",
+                        <div className="row" style={{ gap: 12, flexWrap: "wrap", minHeight: 43, alignItems: "center" }}>
+                          {CHANNELS.map((c) => (
+                            <label key={c} className="row" style={{ gap: 6 }}>
+                              <input
+                                type="checkbox"
+                                checked={channels.has(c)}
+                                onChange={(x) => {
+                                  const next = new Set(channels);
+                                  if (x.target.checked) next.add(c);
+                                  else next.delete(c);
+                                  setChannels(next);
+                                }}
+                              />
+                              {CHANNEL_LABEL[c]}
+                            </label>
+                          ))}
+                        </div>,
+                        true,
+                      )}
+                  {field(
+                    "Audience",
+                    <select
+                      value={audience}
+                      required
+                      onChange={(x) => {
+                        setAudience(x.target.value as NoticeAudience);
+                        setStudentId("");
+                      }}
+                    >
+                      {(teacher ? TEACHER_AUDIENCES : OFFICE_AUDIENCES).map((a) => (
+                        <option key={a} value={a}>
+                          {NOTICE_AUDIENCE[a]}
+                        </option>
+                      ))}
+                    </select>,
+                    true,
+                  )}
+                  {audience === "class_parents"
+                    ? field(
+                        "Class",
+                        <select value={classId} required onChange={(x) => setClassId(x.target.value)}>
+                          <option value="">Select class</option>
+                          {classes.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                        </select>,
+                        true,
+                      )
+                    : null}
+                  {audience === "section_parents" || audience === "single_parent"
+                    ? field(
+                        "Section",
+                        <select
+                          value={sectionId}
+                          required
+                          onChange={(x) => {
+                            setSectionId(x.target.value);
+                            setStudentId("");
+                          }}
+                        >
+                          <option value="">Select section</option>
+                          {allSections.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>,
+                        true,
+                      )
+                    : null}
+                  {audience === "single_parent"
+                    ? field(
+                        "Student",
+                        <select value={studentId} required disabled={!sectionId} onChange={(x) => setStudentId(x.target.value)}>
+                          <option value="">{roster.loading ? "Loading…" : "Select student"}</option>
+                          {(roster.data ?? []).map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {`${s.full_name} · ${s.admission_no}`}
+                            </option>
+                          ))}
+                        </select>,
+                        true,
+                      )
+                    : null}
+                  {field("Message", <textarea name="body" required defaultValue={n?.body} placeholder="Enter message" />, true, true)}
+                  {!teacher ? (
+                    <>
+                      {field("Schedule date", <input type="date" name="schedule_date" defaultValue={scheduled ? `${scheduled.getFullYear()}-${p(scheduled.getMonth() + 1)}-${p(scheduled.getDate())}` : ""} />)}
+                      {field("Schedule time", <input type="time" name="schedule_time" defaultValue={scheduled ? `${p(scheduled.getHours())}:${p(scheduled.getMinutes())}` : ""} />)}
+                      {field(
+                        "Category",
+                        <select name="category" defaultValue={n?.category ?? "general"}>
+                          <option value="general">School updates</option>
+                          <option value="events">Events</option>
+                          <option value="exams">Exams</option>
+                          <option value="homework">Homework</option>
+                          <option value="attendance">Attendance</option>
+                          <option value="fees">Fees</option>
+                        </select>,
+                      )}
+                      {field("Event date", <input type="date" name="event_date" defaultValue={n?.event_date ?? ""} />)}
+                      {field("Event starts", <input type="time" name="event_start_time" defaultValue={n?.event_start_time?.slice(0, 5) ?? ""} />)}
+                      {field("Event ends", <input type="time" name="event_end_time" defaultValue={n?.event_end_time?.slice(0, 5) ?? ""} />)}
+                      {field("Event venue", <input name="event_venue" maxLength={200} defaultValue={n?.event_venue ?? ""} placeholder="e.g. School auditorium" />)}
+                    </>
+                  ) : null}
+                  {field("Attachment link", <input type="url" name="attachment_url" maxLength={500} defaultValue={n?.attachment_url ?? ""} placeholder="https://…" />, false, true)}
+                </div>
+              </section>
+            </div>
           </div>
-        </div>
-        <div className="form-footer">
-          <span>Fields marked * are required</span>
-          <div className="actions">
-            <button type="button" className="btn" onClick={() => router.back()}>
-              Cancel
-            </button>
-            {!teacher ? (
-              <button type="submit" className="btn" value="draft" disabled={saving}>
-                Save campaign
+          <div className="form-footer">
+            <span>Fields marked * are required</span>
+            <div className="actions">
+              <button type="button" className="btn" onClick={() => router.back()}>
+                Cancel
               </button>
-            ) : null}
-            <button type="submit" className="btn primary" value="send" disabled={saving}>
-              <Icon name="check" className="sm" />
-              {saving ? "Working…" : "Send now"}
-            </button>
-          </div>
-        </div>
-      </form>
-      <aside className="stack">
-        <div className="aside-panel">
-          <h3>Communication</h3>
-          {teacher ? (
-            <p>Your notice goes in-app to the parents you choose, straight away. What each parent received is counted as the server reports it.</p>
-          ) : (
-            <>
-              <dl className="kv">
-                <div>
-                  <dt>Sent</dt>
-                  <dd>{summary.data?.sent ?? "…"}</dd>
-                </div>
-                <div>
-                  <dt>Scheduled</dt>
-                  <dd>{summary.data?.scheduled ?? "…"}</dd>
-                </div>
-                <div>
-                  <dt>Drafts</dt>
-                  <dd>{summary.data?.draft ?? "…"}</dd>
-                </div>
-                <div>
-                  <dt>Past their time</dt>
-                  <dd>{summary.data?.overdue ?? "…"}</dd>
-                </div>
-                <div>
-                  <dt>Due to send now</dt>
-                  <dd>{due.data?.count ?? "…"}</dd>
-                </div>
-              </dl>
-              <div className="gap" />
-              {summary.data && !summary.data.scheduler_running ? (
-                <p>Nothing sends on a timer in this deployment. A scheduled notice goes out when due notices are run — by a job on the server or by the button below.</p>
+              {!teacher ? (
+                <button type="submit" className="btn" value="draft" disabled={saving}>
+                  Save campaign
+                </button>
               ) : null}
-              {due.data?.due.length ? <p>{`Due: ${due.data.due.map((d) => `${d.title} (${dateTime(d.scheduled_at)})`).join(", ")}`}</p> : null}
-              <div className="gap" />
-              <button type="button" className="btn" disabled={running || !due.data?.count} onClick={runDue}>
-                <Icon name="clock" className="sm" />
-                {running ? "Sending…" : "Send due notices now"}
+              <button type="submit" className="btn primary" value="send" disabled={saving}>
+                <Icon name="check" className="sm" />
+                {saving ? "Working…" : "Send now"}
               </button>
-              <div className="gap" />
-              <p>Each channel’s result is reported as the server records it: sent, queued, skipped (no address on file) or failed.</p>
-            </>
-          )}
-        </div>
-      </aside>
-    </div>
+            </div>
+          </div>
+        </form>
+        <aside className="stack">
+          <div className="aside-panel">
+            <h3>Communication</h3>
+            {teacher ? (
+              <p>Your notice goes in-app to the parents you choose, straight away. What each parent received is counted as the server reports it.</p>
+            ) : (
+              <>
+                <dl className="kv">
+                  <div>
+                    <dt>Sent</dt>
+                    <dd>{summary.data?.sent ?? "…"}</dd>
+                  </div>
+                  <div>
+                    <dt>Scheduled</dt>
+                    <dd>{summary.data?.scheduled ?? "…"}</dd>
+                  </div>
+                  <div>
+                    <dt>Drafts</dt>
+                    <dd>{summary.data?.draft ?? "…"}</dd>
+                  </div>
+                  <div>
+                    <dt>Past their time</dt>
+                    <dd>{summary.data?.overdue ?? "…"}</dd>
+                  </div>
+                  <div>
+                    <dt>Due to send now</dt>
+                    <dd>{due.data?.count ?? "…"}</dd>
+                  </div>
+                </dl>
+                <div className="gap" />
+                {summary.data && !summary.data.scheduler_running ? (
+                  <p>Nothing sends on a timer in this deployment. A scheduled notice goes out when due notices are run — by a job on the server or by the button below.</p>
+                ) : null}
+                {due.data?.due.length ? <p>{`Due: ${due.data.due.map((d) => `${d.title} (${dateTime(d.scheduled_at)})`).join(", ")}`}</p> : null}
+                <div className="gap" />
+                <button type="button" className="btn" disabled={running || !due.data?.count} onClick={runDue}>
+                  <Icon name="clock" className="sm" />
+                  {running ? "Sending…" : "Send due notices now"}
+                </button>
+                <div className="gap" />
+                <p>Each channel’s result is reported as the server records it: sent, queued, skipped (no address on file) or failed.</p>
+              </>
+            )}
+          </div>
+        </aside>
+      </div>
+    </>
   );
 }

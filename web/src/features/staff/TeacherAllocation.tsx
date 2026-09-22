@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -53,6 +54,17 @@ export function TeacherAllocation() {
     s.is_active ? "Active" : "Inactive",
   ]);
 
+  const staffed = (workload.data?.staff ?? []).filter((s) => s.role === "teacher" && s.is_active);
+  const sections = (classes.data ?? []).flatMap((c) => c.sections);
+  const w = (v: number) => (workload.loading && !workload.data ? "…" : String(v));
+  const c = (v: number) => (classes.loading && !classes.data ? "…" : !yearId ? "—" : String(v));
+  const stats = [
+    { label: "Teachers", value: w(staffed.length), note: "Active teaching staff" },
+    { label: "No subjects", value: w(staffed.filter((s) => !s.subjects_taught).length), note: "Teachers with nothing assigned" },
+    { label: "Sections", value: c(sections.length), note: "In the chosen year" },
+    { label: "No class teacher", value: c(sections.filter((s) => !s.class_teacher_user_id).length), note: "Sections still to assign" },
+  ];
+
   async function setClassTeacher(sectionId: number, userId: string) {
     setSaving(sectionId);
     setError(null);
@@ -70,6 +82,7 @@ export function TeacherAllocation() {
 
   return (
     <>
+      <StatStrip items={years.data?.length === 0 ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

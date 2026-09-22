@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -36,6 +37,15 @@ export function ChronicAbsence() {
     s.last_contact_on ? `${date(s.last_contact_on)} · ${label(s.last_contact_method)}` : "Never contacted",
     s.follow_up_on ? `${date(s.follow_up_on)}${s.follow_up_due ? " · due" : ""}` : "—",
   ]);
+
+  const r = risk.data;
+  const n = (v: number | undefined) => (v === undefined || (risk.loading && !r) ? "…" : String(v));
+  const stats = [
+    { label: "At risk", value: n(r?.count), note: r ? `below ${r.below}% in ${days} days` : `below ${below}%` },
+    { label: "Never contacted", value: n(r?.never_contacted), note: "no call home yet" },
+    { label: "Follow-ups due", value: n(r?.follow_ups_due), note: "agreed date reached" },
+    { label: "Under 50%", value: n(r ? all.filter((s) => s.percent < 50).length : undefined), note: "missing half the days" },
+  ];
 
   // One child's contact log, and recording another call home.
   const today = useSchoolDay();
@@ -72,6 +82,7 @@ export function ChronicAbsence() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

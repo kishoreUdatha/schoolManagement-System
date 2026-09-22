@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -27,9 +28,17 @@ export function SupplierManagement() {
   );
   const rows: Row[] = shown.map((x) => [{ name: x.name, sub: x.gstin ? `GSTIN ${x.gstin}` : undefined }, x.category ?? "—", x.contact_person ?? "—", x.phone ?? "—", x.email ?? "—", x.is_active ? "Active" : "Inactive"]);
   const active = (list.data ?? []).filter((x) => x.is_active).length;
+  const n = (v: number, ready: unknown) => (ready ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Suppliers", value: n(list.data?.length ?? 0, list.data), note: "On record" },
+    { label: "Active", value: n(active, list.data), note: "Can be bought from" },
+    { label: "Inactive", value: n((list.data?.length ?? 0) - active, list.data), note: "Switched off" },
+    { label: "Categories", value: n(new Set((list.data ?? []).map((x) => x.category).filter(Boolean)).size, list.data), note: "Kinds of supply" },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

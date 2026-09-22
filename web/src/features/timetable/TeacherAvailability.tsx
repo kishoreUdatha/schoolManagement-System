@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Avatar, Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
@@ -48,6 +49,17 @@ export function TeacherAvailability() {
     return true;
   });
 
+  const wait = (staff.loading && !staff.data) || (blocks.loading && !blocks.data);
+  const n = (v: number) => (wait ? "…" : String(v));
+  const blockedIds = new Set(all.map((b) => b.user_id));
+  const withBlocks = teachers.filter((t) => blockedIds.has(t.user_id)).length;
+  const stats = [
+    { label: "Teachers", value: n(teachers.length), note: "on the timetable" },
+    { label: "Available all week", value: n(teachers.length - withBlocks), note: "no blocked time" },
+    { label: "Has blocked time", value: n(withBlocks), note: `${all.length} weekly block${all.length === 1 ? "" : "s"}` },
+    { label: "Whole days off", value: n(all.filter((b) => b.period_number === null).length), note: "every week" },
+  ];
+
   const openFirst = useCallback(() => {
     const t = who ? Number(who) : teachers[0]?.user_id;
     if (t) setOpen({ userId: t, day: 1 });
@@ -56,6 +68,7 @@ export function TeacherAvailability() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Teacher" value={who} onChange={(e) => setWho(e.target.value)}>
           <option value="">All teachers</option>

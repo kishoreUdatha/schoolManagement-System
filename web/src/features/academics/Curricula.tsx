@@ -3,6 +3,7 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
@@ -39,11 +40,21 @@ export function Curricula() {
     label(c.status),
   ]);
 
+  const all = list.data ?? [];
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Curricula", value: n(all.length), note: year?.name ?? "this year" },
+    { label: "Active", value: n(all.filter((c) => c.status === "active").length), note: "in force now" },
+    { label: "Drafts", value: n(all.filter((c) => c.status === "draft").length), note: "not yet activated" },
+    { label: "Without subjects", value: n(all.filter((c) => !c.subjects.length).length), note: "need subjects added" },
+  ];
+
   usePageAction("add", useCallback(() => setEditing("new"), []));
   const open = typeof editing === "number" ? list.data?.find((c) => c.id === editing) : undefined;
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={q} onChange={setQ} placeholder="Search curriculum…" />
         <select aria-label="Filter by class" value={classId} onChange={(e) => setClassId(e.target.value)}>

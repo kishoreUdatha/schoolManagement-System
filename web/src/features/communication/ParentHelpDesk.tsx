@@ -11,6 +11,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Badge, Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { dateTime, initials } from "@/lib/format";
@@ -50,11 +51,28 @@ export function ParentHelpDesk() {
   const [filter, setFilter] = useState<Status | "">("");
   const tickets = useApi<Ticket[]>(`${S}/help-tickets`, { status: filter || undefined });
   const [activeId, setActiveId] = useState<number | null>(null);
+  // The figures count every request; with a filter on, fetch the full list beside it.
+  const every = useApi<Ticket[]>(filter ? `${S}/help-tickets` : null);
   const list = tickets.data ?? [];
   const active = list.find((t) => t.id === activeId) ?? list[0] ?? null;
+  const all = filter ? every.data : tickets.data;
+  const num = (v: number) => (all ? String(v) : "…");
+  const count = (s: Status) => (all ?? []).filter((t) => t.status === s).length;
+  const weekAgo = Date.now() - 7 * 864e5;
+  const stats = [
+    { label: "Open", value: num(count("open")), note: "Not picked up yet" },
+    { label: "In progress", value: num(count("in_progress")), note: "Being handled" },
+    { label: "New this week", value: num((all ?? []).filter((t) => new Date(t.created_at).getTime() >= weekAgo).length), note: "Sent in the last 7 days" },
+    { label: "Resolved", value: num(count("resolved")), note: "Closed requests" },
+  ];
+  const changed = () => {
+    tickets.reload();
+    if (filter) every.reload();
+  };
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <section className="panel">
         <div className="message-layout">
           <aside className="message-list">
@@ -88,7 +106,7 @@ export function ParentHelpDesk() {
           </aside>
           <div className="message-content">
             <ErrorNote>{tickets.error}</ErrorNote>
-            {active ? <TicketThread key={active.id} id={active.id} onChanged={tickets.reload} /> : <div className="panel-pad muted">Choose a request.</div>}
+            {active ? <TicketThread key={active.id} id={active.id} onChanged={changed} /> : <div className="panel-pad muted">Choose a request.</div>}
           </div>
         </div>
       </section>

@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, dateTime, initials, label } from "@/lib/format";
@@ -62,6 +63,16 @@ function Body({ s }: { s: StudentProfile }) {
         : "Not recorded";
   const emergency = p?.emergency_contact_name || p?.emergency_contact_phone ? [p?.emergency_contact_name, p?.emergency_contact_relation ? `(${p.emergency_contact_relation})` : null, p?.emergency_contact_phone].filter(Boolean).join(" · ") : "—";
   const lastCheckup = r?.checkups.map((c) => c.checked_on).sort().at(-1);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const in30 = new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10);
+  const lastVisit = r?.visits.map((x) => x.visited_at).sort().at(-1);
+  const n = (v: number) => (rec.loading && !r ? "…" : String(v));
+  const stats = [
+    { label: "Clinic visits", value: n(r?.visits.length ?? 0), note: lastVisit ? `Last on ${date(lastVisit)}` : "None recorded" },
+    { label: "Follow-ups due", value: n((r?.visits ?? []).filter((x) => x.follow_up_on && x.follow_up_on >= todayIso).length), note: "From clinic visits" },
+    { label: "Vaccines due", value: n((r?.immunizations ?? []).filter((x) => x.next_due_on && x.next_due_on <= in30).length), note: "Overdue or within 30 days" },
+    { label: "Last check-up", value: rec.loading && !r ? "…" : lastCheckup ? date(lastCheckup) : "—", note: `${r?.checkups.length ?? 0} check-up(s) on record` },
+  ];
 
   const rows: Row[] = (r?.visits ?? []).slice(0, 10).map((x) => [
     date(x.visited_at),
@@ -120,6 +131,7 @@ function Body({ s }: { s: StudentProfile }) {
         </div>
         <StudentTabs id={String(s.id)} active={65} />
       </div>
+      <StatStrip items={stats} compact />
       <ErrorNote>{error ?? rec.error}</ErrorNote>
       {editing && r ? (
         <Panel title="Update health record" sub="Blood group is kept on the student record">

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { date, label } from "@/lib/format";
@@ -64,9 +65,20 @@ export function ApplicationList() {
     label(a.status),
   ]);
   const year = years.data?.find((y) => y.id === yearId);
+  // Figures follow the filters on screen.
+  const n = (v: number) => (!list.data ? (list.loading ? "…" : "—") : String(v));
+  const count = (...s: string[]) => all.filter((a) => s.includes(a.status)).length;
+  const docsOpen = all.filter((a) => a.documents_total > a.documents_verified).length;
+  const stats = [
+    { label: "Applications", value: n(all.length), note: year ? `in ${year.name}` : "this academic year" },
+    { label: "To review", value: n(count("submitted", "verification", "assessment")), note: "submitted, verifying or assessing" },
+    { label: "Documents pending", value: n(docsOpen), note: "not all verified" },
+    { label: "Admitted", value: n(count("admitted")), note: `${count("approved", "fee_pending")} approved, awaiting fee` },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

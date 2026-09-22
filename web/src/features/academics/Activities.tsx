@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText, type Paginated } from "@/lib/api";
 import { date, label } from "@/lib/format";
@@ -43,9 +44,19 @@ export function Activities() {
       (!status || (status === "active" ? a.is_active && !a.is_full : status === "full" ? a.is_full : !a.is_active)) &&
       (!q || [a.name, a.in_charge_name ?? "", a.venue ?? ""].some((v) => v.toLowerCase().includes(q))),
   );
+  const all = list.data ?? [];
+  const live = all.filter((a) => a.is_active);
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Activities", value: n(all.length), note: `${live.length} active` },
+    { label: "Members", value: n(live.reduce((s, a) => s + a.members, 0)), note: "across active activities" },
+    { label: "Full", value: n(live.filter((a) => a.is_full).length), note: "no places left" },
+    { label: "No coordinator", value: n(live.filter((a) => !a.in_charge_name).length), note: "need a teacher in charge" },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

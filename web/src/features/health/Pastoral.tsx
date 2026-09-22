@@ -6,6 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, dateTime, label } from "@/lib/format";
@@ -62,6 +63,15 @@ export function CounsellingCalendar() {
   const byDay = new Map<string, Appointment[]>();
   items.forEach((a) => byDay.set(a.scheduled_on, [...(byDay.get(a.scheduled_on) ?? []), a]));
   const todayIso = today();
+  // The month's figures for the chosen counsellor, whatever the status filter shows.
+  const month_ = appts.data ?? [];
+  const n = (v: number) => (appts.loading && !appts.data ? (appts.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Coming up", value: n(month_.filter((a) => a.status === "booked" && a.scheduled_on >= todayIso).length), note: "Booked from today this month" },
+    { label: "Attended", value: n(month_.filter((a) => a.status === "attended").length), note: "Sessions held this month" },
+    { label: "Missed", value: n(month_.filter((a) => a.status === "missed").length), note: `${month_.filter((a) => a.status === "cancelled").length} cancelled` },
+    { label: "Students", value: n(new Set(month_.filter((a) => a.status !== "cancelled").map((a) => a.student_id)).size), note: "Seen or booked this month" },
+  ];
 
   const close = () => {
     setError(null);
@@ -125,6 +135,7 @@ export function CounsellingCalendar() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Filter by counsellor" value={counsellor} onChange={(e) => setCounsellor(e.target.value)}>
           <option value="">All counsellors</option>
@@ -566,6 +577,18 @@ export function IncidentList() {
   const all = incidents.data ?? [];
   const items = all.filter((i) => (!category || i.category === category) && (!search.trim() || `${i.student_name} ${i.reference_no} ${i.description}`.toLowerCase().includes(search.trim().toLowerCase())));
   const rows: Row[] = items.map((i) => [{ name: i.student_name, sub: i.reference_no }, i.section_label ?? "—", `${label(i.category)} · ${label(i.severity)}`, date(i.occurred_on), i.reported_by_name ?? "—", INCIDENT_STATUS[i.status]]);
+  // Figures cover every incident; while a status filter is on, the unfiltered list is fetched for them.
+  const unfiltered = useApi<Incident[]>(status ? `${DISC}/incidents` : null);
+  const base = status ? unfiltered : incidents;
+  const every = base.data ?? [];
+  const isOpen = (i: Incident) => i.status === "reported" || i.status === "investigating";
+  const n = (v: number) => (base.loading && !base.data ? (base.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Open", value: n(every.filter(isOpen).length), note: "Reported or under review" },
+    { label: "High severity", value: n(every.filter((i) => isOpen(i) && i.severity === "high").length), note: "Open and marked high" },
+    { label: "This month", value: n(every.filter((i) => i.occurred_on.slice(0, 7) === today().slice(0, 7)).length), note: "Incidents that happened" },
+    { label: "Parents told", value: n(every.filter((i) => i.shared_with_parents).length), note: `Of ${every.length} incident(s)` },
+  ];
 
   async function create(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -587,6 +610,7 @@ export function IncidentList() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={search} onChange={setSearch} placeholder="Search behaviour / discipline incidents…" />
         <select aria-label="Filter by type" value={category} onChange={(e) => setCategory(e.target.value)}>
@@ -691,8 +715,16 @@ export function IncidentFollowUp() {
 
   if (!id) {
     const acts = outstanding.data?.actions ?? [];
+    const n = (v: number | undefined) => (outstanding.loading && !outstanding.data ? (outstanding.loading ? "…" : "—") : String(v ?? 0));
+    const stats = [
+      { label: "Outstanding", value: n(outstanding.data?.outstanding), note: "Sanctions not yet served" },
+      { label: "Overdue", value: n(outstanding.data?.overdue), note: "Past their due date" },
+      { label: "Students", value: n(new Set(acts.map((a) => a.student_id ?? a.student_name)).size), note: "With a sanction pending" },
+      { label: "Parent meetings", value: n(acts.filter((a) => a.kind === "parent_meeting").length), note: "Still to be held" },
+    ];
     return (
       <>
+        <StatStrip items={stats} compact />
         <ErrorNote>{outstanding.error}</ErrorNote>
         <Panel title="Outstanding sanctions" sub={outstanding.data ? `${outstanding.data.outstanding} outstanding · ${outstanding.data.overdue} overdue · choose one to open its incident` : "Loading…"} flush>
           <DataTable

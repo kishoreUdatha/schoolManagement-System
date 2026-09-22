@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -51,6 +52,14 @@ export function IncomeList() {
   });
   // The API returns the whole range, so this total is the range's, not a page's.
   const total = sum((list.data ?? []).filter((x) => !x.is_void).map((x) => x.amount));
+  const valid = (list.data ?? []).filter((x) => !x.is_void);
+  const n = (v: number) => (list.data ? v.toLocaleString("en-IN") : "…");
+  const stats = [
+    { label: "Received", value: list.data ? money(total) : "…", note: `${date(from)} – ${date(to)}` },
+    { label: "Receipts", value: n(valid.length), note: "Income other than fees" },
+    { label: "Donations", value: list.data ? money(sum(valid.filter((x) => x.source === "donation").map((x) => x.amount))) : "…", note: "In this range" },
+    { label: "Void", value: n((list.data ?? []).length - valid.length), note: "Cancelled, not counted" },
+  ];
   const rows: Row[] = items.map((x) => [date(x.received_on), x.receipt_no, label(x.source), x.payer, money(x.amount), modeLabel(x.mode), x.is_void ? "Void" : "Received"]);
 
   async function voidIt(x: Income) {
@@ -68,6 +77,7 @@ export function IncomeList() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

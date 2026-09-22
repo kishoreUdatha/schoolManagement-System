@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -45,6 +46,16 @@ export function SubjectAssignment() {
   const addable = (subjects.data ?? []).filter((s) => !current.data?.some((cs) => cs.subject_id === s.id));
   const teacherName = (uid: number | null) => teachers.data?.find((t) => t.user_id === uid)?.full_name;
 
+  // Figures for the class chosen.
+  const taken = current.data ?? [];
+  const n = (v: number) => (current.loading && !current.data ? "…" : !classId ? "—" : String(v));
+  const stats = [
+    { label: "Subjects", value: n(taken.length), note: `${taken.filter((cs) => cs.is_optional).length} optional` },
+    { label: "No teacher", value: n(taken.filter((cs) => !cs.teacher_user_id).length), note: "Still to be assigned" },
+    { label: "Teachers", value: n(new Set(taken.map((cs) => cs.teacher_user_id).filter(Boolean)).size), note: "Teaching this class" },
+    { label: "Periods a week", value: n(taken.reduce((t, cs) => t + (cs.periods_per_week ?? 0), 0)), note: "Per section, where set" },
+  ];
+
   async function run(action: () => Promise<unknown>, done: string) {
     setBusy(true);
     setError(null);
@@ -68,6 +79,7 @@ export function SubjectAssignment() {
 
   return (
     <>
+      <StatStrip items={years.data?.length === 0 ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -42,8 +43,21 @@ export function SyllabusProgress() {
   const behind = rows.filter((r) => r.s.behind > 0).sort((a, b) => b.s.behind - a.s.behind).slice(0, 5);
   const year = years.data?.find((y) => String(y.id) === yearId) ?? years.data?.find((y) => y.is_current);
 
+  // The strip counts the whole year, whatever the filters below show.
+  const every = all.flatMap((c) => c.sections);
+  const done = every.reduce((n, s) => n + s.covered, 0);
+  const planned = every.reduce((n, s) => n + s.total, 0);
+  const n = (v: string | number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Covered", value: n(planned ? `${((done / planned) * 100).toFixed(1)}%` : "0%"), note: `${done} of ${planned} topics` },
+    { label: "Subject sections", value: n(every.length), note: `${all.length} class subjects` },
+    { label: "Behind plan", value: n(every.filter((s) => s.behind > 0).length), note: "sections past planned dates" },
+    { label: "No syllabus", value: n(every.filter((s) => s.total === 0).length), note: "sections without topics" },
+  ];
+
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Filter by class" value={classId} onChange={(e) => { setClassId(e.target.value); setSection(""); }}>
           <option value="">All classes</option>

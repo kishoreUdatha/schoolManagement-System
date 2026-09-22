@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -85,10 +86,21 @@ export function StaffAttendance() {
     }
   }
 
+  // The strip counts what is saved for the day, not unsaved choices.
+  const saved = (st: AttendanceStatus[]) => (staff.data ?? []).filter((s) => st.includes(byUser.get(s.user_id)?.status as AttendanceStatus)).length;
+  const n = (v: number) => ((staff.loading && !staff.data) || (records.loading && !records.data) ? "…" : String(v));
+  const stats = [
+    { label: "Active staff", value: n(staff.data?.length ?? 0), note: `${departments.length} departments` },
+    { label: "Present", value: n(saved(["present", "late"])), note: `${saved(["late"])} came late` },
+    { label: "Absent", value: n(saved(["absent"])), note: "Saved for the day" },
+    { label: "On leave", value: n(saved(["on_leave", "sick", "holiday"])), note: `${(staff.data ?? []).filter((s) => !byUser.has(s.user_id)).length} not marked yet` },
+  ];
+
   const longDay = day ? new Date(`${day}T00:00:00`).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
 
   return (
     <form id="staff-register" onSubmit={save}>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Filter by department" value={dept} onChange={(e) => setDept(e.target.value)}>
           <option value="">All departments</option>

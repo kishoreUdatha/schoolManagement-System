@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -78,10 +79,23 @@ export function EntranceAssessment() {
     return [{ name: a.student_name, sub: a.application_no }, ...COLUMN_KINDS.map((k) => cell(tests, k)), max ? `${got} / ${max}` : "—", decision(tests)];
   });
 
+  // Figures cover every applicant at the assessment stage (search applies, the
+  // class and decision filters do not); test figures wait for the details.
+  const testsOf = atAssessment.map((a) => details.data[a.id]?.assessments ?? []);
+  const n = (v: number, needsTests = false) => (!list.data || (needsTests && atAssessment.some((a) => !details.data[a.id])) ? "…" : String(v));
+  const decided = (d: string) => testsOf.filter((t) => decision(t) === d).length;
+  const stats = [
+    { label: "At assessment", value: n(atAssessment.length), note: `${open.length} open applications` },
+    { label: "Awaiting marks", value: n(testsOf.flat().filter((t) => t.status === "scheduled").length, true), note: "assessments scheduled" },
+    { label: "Recommended", value: n(decided("Recommended"), true), note: "passed every test" },
+    { label: "Not recommended", value: n(decided("Not recommended") + decided("Absent"), true), note: "failed a test or absent" },
+  ];
+
   const scheduled = shown.flatMap(({ a, tests }) => tests.filter((t) => t.status === "scheduled").map((t) => ({ a, t })));
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

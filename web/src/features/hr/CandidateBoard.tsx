@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type DragEvent, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -54,6 +55,17 @@ export function CandidateBoard() {
 
   const closed = items.filter((a) => CLOSED.includes(a.stage));
   const columns = closed.length ? [...COLUMNS, { title: "Not selected", stages: CLOSED, dropTo: null }] : COLUMNS;
+
+  // Counts follow the opening chosen, not the search or stage filter.
+  const every = apps.data ?? [];
+  const at = (st: Stage[]) => every.filter((a) => st.includes(a.stage)).length;
+  const n = (v: number) => (apps.loading && !apps.data ? (apps.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Applications", value: n(every.length), note: `${at(CLOSED)} not selected` },
+    { label: "New", value: n(at(["applied"])), note: "Waiting to be screened" },
+    { label: "Interviewing", value: n(at(["interview"])), note: `${at(["screening", "shortlisted"])} in review` },
+    { label: "Selected", value: n(at(["offered", "hired"])), note: `${at(["hired"])} hired` },
+  ];
 
   async function move(a: Application, to: Stage | "offer") {
     if (to === "offer") {
@@ -109,6 +121,7 @@ export function CandidateBoard() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

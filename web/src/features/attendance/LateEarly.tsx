@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -55,6 +56,15 @@ export function LateEarly() {
     { name: e.row.authorised_by ?? "—", sub: e.row.recorded_by_name ? `Logged by ${e.row.recorded_by_name}` : undefined },
   ]);
 
+  // The whole window, before the search and filters.
+  const n = (v: number) => (!win.data ? (win.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Late entries", value: n(events.filter((e) => e.kind === "Late entry").length), note: from ? `since ${date(from)}` : "in the window" },
+    { label: "Early exits", value: n(events.filter((e) => e.kind === "Early exit").length), note: "in the window" },
+    { label: "Today", value: n(events.filter((e) => e.row.date === today).length), note: "late or early" },
+    { label: "Repeat cases", value: n(new Set(events.filter((e) => e.row.times_in_window > 1).map((e) => e.row.student_id)).size), note: "students, more than once" },
+  ];
+
   // Recording
   const [open, setOpen] = useState(false);
   const [student, setStudent] = useState<StudentHit | null>(null);
@@ -105,6 +115,7 @@ export function LateEarly() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

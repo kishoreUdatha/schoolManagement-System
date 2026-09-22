@@ -3,6 +3,7 @@
 import { useCallback, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date } from "@/lib/format";
@@ -26,7 +27,7 @@ const days = (t: Term) => t.working_days ?? t.school_days ?? Math.round((Date.pa
 
 /** SCR-093, live: GET/POST /academic-years/{id}/terms, PUT /academic-years/{id}/terms/{term}, DELETE /terms/{id}. */
 export function Terms() {
-  const { years, yearId, setYearId, year, error: yearsError } = useYears();
+  const { years, yearId, setYearId, year, error: yearsError, loaded } = useYears();
   const list = useApi<Term[]>(yearId ? `/api/v1/school/academic-years/${yearId}/terms` : null);
   const [status, setStatus] = useState("");
   const [editing, setEditing] = useState<Term | "new" | null>(null);
@@ -36,6 +37,16 @@ export function Terms() {
   const { q, setQ, shown } = useSearch(terms, (t) => t.name);
   const rows: Row[] = shown.map((t) => [t.name, year?.name ?? "—", date(t.start_date), date(t.end_date), String(days(t)), statusOf(t, today)]);
 
+  const all = list.data ?? [];
+  const now = all.find((t) => statusOf(t, today) === "Active");
+  const wait = !yearId || (list.loading && !list.data);
+  const stats = [
+    { label: "Terms", value: wait ? "…" : String(all.length), note: year?.name ?? "this year" },
+    { label: "Current term", value: wait ? "…" : now?.name ?? "None", note: now ? `ends ${date(now.end_date)}` : "no term running today" },
+    { label: "Days left", value: wait ? "…" : now ? String(Math.round((Date.parse(now.end_date) - Date.parse(today)) / 86400000)) : "—", note: "in the current term" },
+    { label: "Working days", value: wait ? "…" : String(all.reduce((s, t) => s + days(t), 0)), note: "across the year's terms" },
+  ];
+
   usePageAction("add", useCallback(() => setEditing("new"), []));
   usePageAction(
     "export",
@@ -44,6 +55,7 @@ export function Terms() {
 
   return (
     <>
+      <StatStrip items={loaded && !yearId ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />
       <div className="filterbar">
         <SearchBox value={q} onChange={setQ} placeholder="Search terms or semesters…" />
         <YearSelect years={years} yearId={yearId} onChange={setYearId} />

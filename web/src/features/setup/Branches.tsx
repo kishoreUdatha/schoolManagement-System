@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -37,6 +38,15 @@ export function BranchesList() {
     );
   }, [list.data, typed, kind, status]);
 
+  const all = list.data ?? [];
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : v.toLocaleString("en-IN"));
+  const stats = [
+    { label: "Branches", value: n(all.length), note: `${all.filter((b) => !b.is_active).length} inactive` },
+    { label: "Students", value: n(all.reduce((t, b) => t + b.students, 0)), note: "Across all branches" },
+    { label: "Staff", value: n(all.reduce((t, b) => t + b.staff, 0)), note: "Across all branches" },
+    { label: "No head", value: n(all.filter((b) => b.is_active && !b.head_user_id).length), note: "Active branches without a head" },
+  ];
+
   const rows: Row[] = items.map((b) => [
     { name: b.name, sub: b.is_main ? "Main campus" : undefined },
     b.code,
@@ -48,6 +58,7 @@ export function BranchesList() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

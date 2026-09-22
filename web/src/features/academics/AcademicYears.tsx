@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date } from "@/lib/format";
@@ -62,6 +63,16 @@ export function AcademicYears() {
     return [y.name, date(y.start_date), date(y.end_date), n === undefined ? "…" : `${n} term${n === 1 ? "" : "s"}`, admissionsOf(y), statusOf(y)];
   });
 
+  const current = years.find((y) => y.is_current);
+  const daysLeft = current ? Math.max(0, Math.ceil((new Date(`${current.end_date}T23:59:59`).getTime() - Date.now()) / 86_400_000)) : 0;
+  const wait = list.loading && !list.data;
+  const stats = [
+    { label: "Current year", value: wait ? "…" : current?.name ?? "None set", note: current ? `${date(current.start_date)} – ${date(current.end_date)}` : "set one as current" },
+    { label: "Days left", value: wait ? "…" : current ? String(daysLeft) : "—", note: "in the current year" },
+    { label: "Terms", value: wait ? "…" : current ? String(terms.get(current.id) ?? "…") : "—", note: "in the current year" },
+    { label: "Admissions open", value: wait ? "…" : String(years.filter((y) => y.admissions_open).length), note: "years taking applications" },
+  ];
+
   usePageAction("add", useCallback(() => setAdding(true), []));
   usePageAction(
     "export",
@@ -70,6 +81,7 @@ export function AcademicYears() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <SearchBox value={q} onChange={setQ} placeholder="Search academic years…" />
         <select aria-label="Archived years" value={showArchived ? "yes" : "no"} onChange={(e) => setShowArchived(e.target.value === "yes")}>

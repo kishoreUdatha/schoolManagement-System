@@ -12,6 +12,7 @@
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Badge, Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date } from "@/lib/format";
@@ -84,6 +85,18 @@ export function ParentSurveys() {
     }
   }
 
+  const num = (v: number) => (surveys.data ? String(v) : "…");
+  const openNow = list.filter((s) => s.status === "open");
+  const answered = list.reduce((t, s) => t + (s.response_count ?? 0), 0);
+  const openAnswered = openNow.reduce((t, s) => t + (s.response_count ?? 0), 0);
+  const openAudience = openNow.reduce((t, s) => t + (s.audience_count ?? 0), 0);
+  const stats = [
+    { label: "Open", value: num(openNow.length), note: "Parents can answer now" },
+    { label: "Drafts", value: num(list.filter((s) => s.status === "draft").length), note: "Not sent to parents yet" },
+    { label: "Responses", value: num(answered), note: "Across all surveys" },
+    { label: "Response rate", value: surveys.data ? (openAudience ? `${Math.round((openAnswered / openAudience) * 100)}%` : "—") : "…", note: "Open surveys" },
+  ];
+
   const rows: Row[] = list.map((s) => [
     { name: s.title, sub: `${s.questions.length} question${s.questions.length === 1 ? "" : "s"}` },
     s.audience === "class" ? `Parents of ${s.class_name ?? "a class"}` : "All parents",
@@ -94,6 +107,7 @@ export function ParentSurveys() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <ErrorNote>{failed ?? surveys.error}</ErrorNote>
       {editing ? (
         <SurveyForm

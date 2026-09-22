@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -90,10 +91,21 @@ export function DailyAttendance() {
     );
   if (!day || (mine.loading && !mine.data)) return <Loading what="Finding today's register…" />;
 
+  // The register on screen, updating as the teacher marks.
+  const n = (x: number) => (view.loading ? "…" : !view.data ? "—" : String(x));
+  const of = `of ${rows.length} students`;
+  const stats = [
+    { label: "Present", value: n(counts.present), note: of },
+    { label: "Absent", value: n(counts.absent), note: `${rows.filter((r) => r.on_leave).length} on approved leave` },
+    { label: "Late", value: n(counts.late), note: `${counts.half_day} half day` },
+    { label: "Not marked", value: n(counts.unmarked), note: counts.unmarked ? "still to mark" : "everyone marked" },
+  ];
+
   const shown = show ? rows.filter((r) => (show === "unmarked" ? !r.status : r.status === show)) : rows;
 
   return (
     <form id={DAILY_FORM} onSubmit={save}>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Section" value={sectionId ?? ""} onChange={(e) => setSectionId(Number(e.target.value))}>
           {mine.data?.class_teacher_of.map((s) => (

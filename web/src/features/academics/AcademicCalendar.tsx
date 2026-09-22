@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { date } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
@@ -62,10 +63,22 @@ export function AcademicCalendar() {
   for (let d = 1; cells.length % 7; d++) cells.push({ key: iso(new Date(ym.y, ym.m + 1, d)), day: d, outside: true });
 
   const today = iso(now);
+
+  // The month's entries by kind, cancelled ones left out.
+  const month = (feed.data ?? []).filter((it) => !it.is_cancelled);
+  const count = (...t: string[]) => (feed.loading && !feed.data ? (feed.loading ? "…" : "—") : String(month.filter((it) => t.includes(it.type)).length));
+  const inMonth = `in ${MONTHS[ym.m]}`;
+  const stats = [
+    { label: "Events", value: count("event"), note: inMonth },
+    { label: "Holidays", value: count("holiday"), note: inMonth },
+    { label: "Exams", value: count("exam"), note: inMonth },
+    { label: "PT meetings", value: count("ptm", "ptm_slot"), note: inMonth },
+  ];
   const shift = (n: number) => setYm(({ y, m }) => ({ y: y + Math.floor((m + n) / 12), m: (((m + n) % 12) + 12) % 12 }));
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Filter by type" value={type} onChange={(e) => setType(e.target.value)}>
           <option value="">All entries</option>

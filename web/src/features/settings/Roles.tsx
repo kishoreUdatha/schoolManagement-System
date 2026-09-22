@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { routeOf } from "@/lib/screens";
@@ -31,6 +32,16 @@ export function RolesList() {
   }, [roles.data, typed, kind, status]);
 
   const total = perms.data?.length;
+  const all = roles.data ?? [];
+  const custom = all.filter((r) => !r.is_system);
+  const n = (v: number) => (roles.loading && !roles.data ? (roles.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Roles", value: n(all.length), note: `${all.length - custom.length} built-in` },
+    { label: "Custom roles", value: n(custom.length), note: `${custom.filter((r) => !r.is_active).length} inactive` },
+    { label: "Assigned", value: n(custom.reduce((t, r) => t + r.users, 0)), note: "People given a custom role" },
+    { label: "Permissions", value: perms.loading && !perms.data ? (perms.loading ? "…" : "—") : String(total ?? 0), note: "Available to grant" },
+  ];
+
   const rows: Row[] = items.map((r) => [
     { name: r.name, sub: `${roleKind(r)} · ${r.code}` },
     r.description ?? "—",
@@ -42,6 +53,7 @@ export function RolesList() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

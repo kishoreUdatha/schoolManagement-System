@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText, type Paginated } from "@/lib/api";
@@ -70,9 +71,19 @@ export function FollowUpCalendar() {
 
   const shift = (n: number) => setMonth(({ y, m }) => ({ y: m + n < 0 ? y - 1 : m + n > 11 ? y + 1 : y, m: (m + n + 12) % 12 }));
   const overdue = list.data?.items.filter((e) => e.next_follow_up_date && e.next_follow_up_date < today).length ?? 0;
+  const monthKey = `${month.y}-${String(month.m + 1).padStart(2, "0")}`;
+  const dated = list.data?.items.filter((e) => e.next_follow_up_date) ?? [];
+  const n = (v: number) => (!list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Open enquiries", value: n(list.data?.total ?? 0), note: `${dated.length} with a follow-up date` },
+    { label: "Overdue", value: n(overdue), note: "follow-up date has passed" },
+    { label: "Due today", value: n(byDay.get(today)?.length ?? 0), note: date(today) },
+    { label: "This month", value: n(dated.filter((e) => e.next_follow_up_date!.startsWith(monthKey)).length), note: `${MONTHS[month.m]} ${month.y}` },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Filter by source" value={source} onChange={(e) => setSource(e.target.value)}>
           <option value="">All sources</option>

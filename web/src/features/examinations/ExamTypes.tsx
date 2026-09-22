@@ -3,6 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -28,6 +29,16 @@ export function ExamTypes() {
         (!status || (status === "active" ? t.is_active : !t.is_active)),
     );
   }, [list.data, search, status]);
+
+  const all = list.data ?? [];
+  const active = all.filter((t) => t.is_active);
+  const n = (v: string | number) => (!list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Exam types", value: n(all.length), note: `${active.length} active` },
+    { label: "Exams", value: n(all.reduce((s, t) => s + t.exams, 0)), note: "set up with these types" },
+    { label: "Weightage", value: n(`${active.reduce((s, t) => s + Number(t.weight_percent ?? 0), 0)}%`), note: "active types, of the final result" },
+    { label: "Unused", value: n(all.filter((t) => !t.exams).length), note: "types with no exam yet" },
+  ];
 
   const rows: Row[] = shown.map((t) => [
     t.name,
@@ -81,6 +92,7 @@ export function ExamTypes() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

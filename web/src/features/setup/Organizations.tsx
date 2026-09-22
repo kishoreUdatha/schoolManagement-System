@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -16,6 +17,7 @@ import { SentList } from "@/features/platform/Messaging";
 import { useSession } from "@/lib/useSession";
 import { BoardSelect, Field, KV, SectionTitle, count, orNull } from "./bits";
 import type { ActivityItem } from "../dashboards/types";
+import type { UsageSummary } from "@/features/platform/types";
 import type { Plan, Tenant, TenantCreated, TenantDetail, TenantSchool, TenantUsage } from "./types";
 
 const TENANTS = "/api/v1/super-admin/tenants";
@@ -52,6 +54,8 @@ export function SchoolsList() {
   const [page, setPage] = useState(1);
   const list = useApi<{ items: Tenant[]; total: number; pages: number }>(platform ? TENANTS : null, { page, page_size: PAGE_SIZE, search, status });
   const [lines, setLines] = useState<Line[] | null>(null);
+  // Platform-wide figures for the strip (the list itself is one page of organisations).
+  const summary = useApi<UsageSummary>(platform ? "/api/v1/super-admin/usage/summary" : null);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(typed.trim()), 300);
@@ -93,8 +97,18 @@ export function SchoolsList() {
     label(r.tenant.status === "active" && r.school && !r.school.is_active ? "inactive" : r.tenant.status),
   ]);
 
+  const sum = summary.data;
+  const n = (v: number | undefined) => (v === undefined ? (summary.error ? "—" : "…") : v.toLocaleString("en-IN"));
+  const stats = [
+    { label: "Organisations", value: n(sum?.total_tenants), note: sum ? `${sum.active_tenants} active · ${sum.suspended_tenants} suspended` : "On the platform" },
+    { label: "Schools", value: n(sum?.total_schools), note: "Across all organisations" },
+    { label: "Students", value: n(sum?.total_students), note: `${sum ? sum.total_staff.toLocaleString("en-IN") : "…"} staff` },
+    { label: "Renewals due", value: n(sum?.pending_renewals), note: "Subscriptions ending within 14 days" },
+  ];
+
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

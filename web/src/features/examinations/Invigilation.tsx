@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -95,9 +96,18 @@ export function Invigilation() {
   }
 
   const unwatched = duty.data?.unwatched ?? [];
+  // The exam's roster, and the rooms of the paper chosen below.
+  const n = (v: number) => (!c.examId ? "—" : !roster.data ? (roster.error ? "—" : "…") : String(v));
+  const stats = [
+    { label: "Duties", value: n(roster.data?.total_duties ?? 0), note: "in this exam" },
+    { label: "Staff on duty", value: n(roster.data?.staff.length ?? 0), note: "invigilators" },
+    { label: "Papers covered", value: n(new Set(duties.map((d) => d.paper_id)).size), note: `of ${pc.papers.length} papers` },
+    { label: "Unwatched rooms", value: !paperId ? "—" : !duty.data ? (duty.loading ? "…" : "—") : String(unwatched.length), note: pc.paper ? "for the chosen paper" : "choose a paper" },
+  ];
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

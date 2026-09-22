@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
@@ -22,7 +23,7 @@ type Line = Section & { className: string };
  * teachers from GET /staff?role=teacher; enrolled from GET /students (section_id).
  */
 export function Sections() {
-  const { years, yearId, setYearId, year, error: yearsError } = useYears();
+  const { years, yearId, setYearId, year, error: yearsError, loaded } = useYears();
   const list = useApi<SchoolClass[]>(yearId ? "/api/v1/school/classes" : null, { academic_year_id: yearId });
   const staff = useApi<StaffMember[]>("/api/v1/school/staff", { role: "teacher", status: "active" });
   const [classId, setClassId] = useState("");
@@ -46,6 +47,18 @@ export function Sections() {
     return [s.name, s.className, s.class_teacher_user_id ? teacherName.get(s.class_teacher_user_id) ?? "—" : "Not assigned", s.room_name ?? "—", String(s.capacity), n === undefined ? "…" : String(n)];
   });
 
+  const wait = !yearId || (list.loading && !list.data);
+  const n = (v: number) => (wait ? "…" : String(v));
+  // Enrolled shows "…" until every section's count is in.
+  const enrolled = lines.every((s) => counts.has(s.id)) ? lines.reduce((t, s) => t + (counts.get(s.id) ?? 0), 0) : null;
+  const seats = lines.reduce((t, s) => t + s.capacity, 0);
+  const stats = [
+    { label: "Sections", value: n(lines.length), note: `in ${classes.length} classes` },
+    { label: "Enrolled", value: wait || enrolled === null ? "…" : String(enrolled), note: `of ${seats} seats` },
+    { label: "No class teacher", value: n(lines.filter((s) => !s.class_teacher_user_id).length), note: "sections to assign" },
+    { label: "No room", value: n(lines.filter((s) => !s.room_id).length), note: "sections without a room" },
+  ];
+
   usePageAction("add", useCallback(() => setEditing("new"), []));
   usePageAction(
     "export",
@@ -54,6 +67,7 @@ export function Sections() {
 
   return (
     <>
+      <StatStrip items={loaded && !yearId ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />
       <div className="filterbar">
         <SearchBox value={q} onChange={setQ} placeholder="Search sections…" />
         <select aria-label="Filter by class" value={classId} onChange={(e) => setClassId(e.target.value)}>

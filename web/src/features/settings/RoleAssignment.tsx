@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel, Person } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -58,6 +59,15 @@ export function RoleAssignment() {
     );
   }, [list.data, typed, roleFilter, branchFilter]);
 
+  const all = list.data ?? [];
+  const n = (v: number) => (list.loading && !list.data ? (list.loading ? "…" : "—") : String(v));
+  const stats = [
+    { label: "Assignments", value: n(all.length), note: "Extra roles given" },
+    { label: "People", value: n(new Set(all.map((a) => a.user_id)).size), note: "Holding an extra role" },
+    { label: "Branch-limited", value: n(all.filter((a) => a.branch_id !== null).length), note: `${all.filter((a) => a.branch_id === null).length} for the whole school` },
+    { label: "Assignable roles", value: roles.loading && !roles.data ? (roles.loading ? "…" : "—") : String(assignable.length), note: "Active custom roles" },
+  ];
+
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
@@ -109,6 +119,7 @@ export function RoleAssignment() {
 
   return (
     <>
+      <StatStrip items={stats} compact />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />

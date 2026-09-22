@@ -5,9 +5,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { dateTime } from "@/lib/format";
+import { date, dateTime } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -43,63 +44,73 @@ export function ParentActivity() {
 
   const list = view === "by" ? byThem : toThem;
   const entries = list.data ?? [];
+  const num = (v: number | undefined) => (v === undefined ? "…" : String(v));
+  const stats = [
+    { label: "Done by parent", value: num(byThem.data?.length), note: byThem.data?.length === 200 ? "Latest 200" : "Changes they made" },
+    { label: "Done to account", value: num(toThem.data?.length), note: toThem.data?.length === 200 ? "Latest 200" : "Changes by the office" },
+    { label: "Last sign-in", value: p.last_login_at ? date(p.last_login_at) : "Never", note: p.is_active ? "Account active" : "Account inactive" },
+    { label: "Office notes", value: num(notes.data?.length), note: "Follow-ups recorded" },
+  ];
 
   return (
-    <div className="two-col">
-      <div className="stack">
-        <ErrorNote>{list.error}</ErrorNote>
-        <Panel
-          title="Activity history"
-          sub={`${entries.length} entr${entries.length === 1 ? "y" : "ies"}${list.loading ? " · Loading…" : ""}`}
-          action={
-            <select aria-label="Whose activity" value={view} onChange={(e) => setView(e.target.value as "by" | "to")}>
-              <option value="by">{`Done by ${p.full_name.split(/\s+/)[0]}`}</option>
-              <option value="to">Done to the account</option>
-            </select>
-          }
-        >
-          {entries.length ? (
-            entries.map((e) => <AuditItem key={e.id} e={e} />)
-          ) : (
-            <p className="muted">{list.loading ? "Loading…" : view === "by" ? "This parent has not changed anything yet." : "Nothing recorded on this account yet."}</p>
-          )}
-        </Panel>
+    <>
+      <StatStrip items={stats} compact />
+      <div className="two-col">
+        <div className="stack">
+          <ErrorNote>{list.error}</ErrorNote>
+          <Panel
+            title="Activity history"
+            sub={`${entries.length} entr${entries.length === 1 ? "y" : "ies"}${list.loading ? " · Loading…" : ""}`}
+            action={
+              <select aria-label="Whose activity" value={view} onChange={(e) => setView(e.target.value as "by" | "to")}>
+                <option value="by">{`Done by ${p.full_name.split(/\s+/)[0]}`}</option>
+                <option value="to">Done to the account</option>
+              </select>
+            }
+          >
+            {entries.length ? (
+              entries.map((e) => <AuditItem key={e.id} e={e} />)
+            ) : (
+              <p className="muted">{list.loading ? "Loading…" : view === "by" ? "This parent has not changed anything yet." : "Nothing recorded on this account yet."}</p>
+            )}
+          </Panel>
+        </div>
+        <aside className="stack">
+          <Panel title="Record information">
+            <dl className="kv">
+              <div>
+                <dt>Student</dt>
+                <dd>{p.children.map((c) => c.full_name).join(", ") || "—"}</dd>
+              </div>
+              <div>
+                <dt>Class</dt>
+                <dd>{[...new Set(p.children.map((c) => c.section_label ?? "—"))].join(", ") || "—"}</dd>
+              </div>
+              <div>
+                <dt>Last sign-in</dt>
+                <dd>{p.last_login_at ? dateTime(p.last_login_at) : "Never"}</dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd>{p.is_active ? "Active" : "Inactive"}</dd>
+              </div>
+            </dl>
+          </Panel>
+          <Panel title="Next action">
+            <p className="muted small">Review the latest activity and record any follow-up; portal access and passwords are managed on Login access.</p>
+            <div className="gap" />
+            <div className="actions">
+              <AddNote id={String(p.user_id)} onAdded={notes.reload} />
+              <Link href={`${routeOf(76)}?id=${p.user_id}`} className="btn">
+                <Icon name="arrow" className="sm" />
+                Login access
+              </Link>
+            </div>
+          </Panel>
+          <NotesPanel id={String(p.user_id)} notes={notes.data} loading={notes.loading} onChange={notes.reload} />
+        </aside>
       </div>
-      <aside className="stack">
-        <Panel title="Record information">
-          <dl className="kv">
-            <div>
-              <dt>Student</dt>
-              <dd>{p.children.map((c) => c.full_name).join(", ") || "—"}</dd>
-            </div>
-            <div>
-              <dt>Class</dt>
-              <dd>{[...new Set(p.children.map((c) => c.section_label ?? "—"))].join(", ") || "—"}</dd>
-            </div>
-            <div>
-              <dt>Last sign-in</dt>
-              <dd>{p.last_login_at ? dateTime(p.last_login_at) : "Never"}</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>{p.is_active ? "Active" : "Inactive"}</dd>
-            </div>
-          </dl>
-        </Panel>
-        <Panel title="Next action">
-          <p className="muted small">Review the latest activity and record any follow-up; portal access and passwords are managed on Login access.</p>
-          <div className="gap" />
-          <div className="actions">
-            <AddNote id={String(p.user_id)} onAdded={notes.reload} />
-            <Link href={`${routeOf(76)}?id=${p.user_id}`} className="btn">
-              <Icon name="arrow" className="sm" />
-              Login access
-            </Link>
-          </div>
-        </Panel>
-        <NotesPanel id={String(p.user_id)} notes={notes.data} loading={notes.loading} onChange={notes.reload} />
-      </aside>
-    </div>
+    </>
   );
 }
 

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { FileCards, filesForm, UploadZone, type Attachment } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
+import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -95,123 +96,137 @@ export function ProjectEvaluation() {
     }
   }
 
+  // Every student the assignment was set for; a row with id 0 has not started.
+  const all = rows.data ?? [];
+  const n = (v: number) => (!rows.data ? (rows.loading ? "…" : "—") : String(v));
+  const count = (st: string) => all.filter((x) => x.id !== 0 && x.status === st).length;
+  const stats = [
+    { label: "To review", value: n(count("submitted")), note: "handed in, waiting for you" },
+    { label: "Reviewed", value: n(count("reviewed")), note: "feedback published" },
+    { label: "In progress", value: n(count("in_progress")), note: "working on it" },
+    { label: "Not started", value: n(all.filter((x) => x.id === 0 || x.status === "not_started").length), note: `of ${all.length} students` },
+  ];
+
   return (
-    <div className="two-col">
-      <div className="stack">
-        <ErrorNote>{rows.error}</ErrorNote>
-        <Panel
-          title="Student submission"
-          sub={`${reviewable.filter((x) => x.status === "submitted").length} waiting · ${reviewable.length} started`}
-          action={
-            reviewable.length ? (
-              <select aria-label="Choose a student" value={pid ?? ""} onChange={(e) => setPid(Number(e.target.value))}>
-                {reviewable.map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {`${x.student_name ?? "Student"} · ${label(x.status)}`}
-                  </option>
-                ))}
-              </select>
-            ) : undefined
-          }
-        >
-          {r ? (
-            <>
-              <div className="spread">
-                <div className="person">
-                  <span className="avatar mint">{initials(r.student_name ?? "?")}</span>
-                  <div>
-                    {r.student_name ?? "—"}
-                    <small>{`${p.class_name ?? ""} · ${r.student_admission_no ?? "—"}`}</small>
+    <>
+      <StatStrip items={stats} compact />
+      <div className="two-col">
+        <div className="stack">
+          <ErrorNote>{rows.error}</ErrorNote>
+          <Panel
+            title="Student submission"
+            sub={`${reviewable.filter((x) => x.status === "submitted").length} waiting · ${reviewable.length} started`}
+            action={
+              reviewable.length ? (
+                <select aria-label="Choose a student" value={pid ?? ""} onChange={(e) => setPid(Number(e.target.value))}>
+                  {reviewable.map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {`${x.student_name ?? "Student"} · ${label(x.status)}`}
+                    </option>
+                  ))}
+                </select>
+              ) : undefined
+            }
+          >
+            {r ? (
+              <>
+                <div className="spread">
+                  <div className="person">
+                    <span className="avatar mint">{initials(r.student_name ?? "?")}</span>
+                    <div>
+                      {r.student_name ?? "—"}
+                      <small>{`${p.class_name ?? ""} · ${r.student_admission_no ?? "—"}`}</small>
+                    </div>
                   </div>
+                  <Badge>{label(r.status)}</Badge>
                 </div>
-                <Badge>{label(r.status)}</Badge>
-              </div>
-              <div className="gap" />
-              <div className="assessment-prompt">
-                <h3>{p.title}</h3>
-                <p>{r.submitted_at ? `Handed in ${dateTime(r.submitted_at)}` : `Updated ${dateTime(r.updated_at)}`}</p>
                 <div className="gap" />
-                <p className="muted" style={{ whiteSpace: "pre-line" }}>
-                  {r.comment || "No written note."}
-                </p>
+                <div className="assessment-prompt">
+                  <h3>{p.title}</h3>
+                  <p>{r.submitted_at ? `Handed in ${dateTime(r.submitted_at)}` : `Updated ${dateTime(r.updated_at)}`}</p>
+                  <div className="gap" />
+                  <p className="muted" style={{ whiteSpace: "pre-line" }}>
+                    {r.comment || "No written note."}
+                  </p>
+                </div>
+                {r.attachment_url ? <LinkCard url={r.attachment_url} note="Handed in with the work" /> : null}
+              </>
+            ) : (
+              <p className="muted">{rows.loading ? "Loading…" : "No student has started this assignment yet."}</p>
+            )}
+          </Panel>
+          {r ? (
+            <form id="evaluation-form" className="panel" onSubmit={save}>
+              <div className="panel-head">
+                <h2>Evaluation</h2>
               </div>
-              {r.attachment_url ? <LinkCard url={r.attachment_url} note="Handed in with the work" /> : null}
-            </>
-          ) : (
-            <p className="muted">{rows.loading ? "Loading…" : "No student has started this assignment yet."}</p>
-          )}
-        </Panel>
-        {r ? (
-          <form id="evaluation-form" className="panel" onSubmit={save}>
-            <div className="panel-head">
-              <h2>Evaluation</h2>
-            </div>
-            <div className="panel-body">
-              <ErrorNote>{error}</ErrorNote>
-              <div className="form-grid">
-                <label className="field">
-                  <span>Rating (out of 5)</span>
-                  <select aria-label="Rating" value={rating} onChange={(e) => setRating(e.target.value)}>
-                    <option value="">No rating</option>
-                    {[0, 1, 2, 3, 4, 5].map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field full">
-                  <span>Feedback</span>
-                  <textarea aria-label="Feedback" maxLength={2000} placeholder="Enter feedback" value={remark} onChange={(e) => setRemark(e.target.value)} />
-                </label>
+              <div className="panel-body">
+                <ErrorNote>{error}</ErrorNote>
+                <div className="form-grid">
+                  <label className="field">
+                    <span>Rating (out of 5)</span>
+                    <select aria-label="Rating" value={rating} onChange={(e) => setRating(e.target.value)}>
+                      <option value="">No rating</option>
+                      {[0, 1, 2, 3, 4, 5].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field full">
+                    <span>Feedback</span>
+                    <textarea aria-label="Feedback" maxLength={2000} placeholder="Enter feedback" value={remark} onChange={(e) => setRemark(e.target.value)} />
+                  </label>
+                </div>
               </div>
-            </div>
-            <div className="form-footer">
-              <span>{r.reviewed_at ? `Last reviewed ${dateTime(r.reviewed_at)}${r.reviewed_by_name ? ` by ${r.reviewed_by_name}` : ""}` : "Not reviewed yet"}</span>
-              <button type="submit" className="btn primary" disabled={saving}>
-                <Icon name="check" className="sm" />
-                {saving ? "Saving…" : "Publish feedback"}
-              </button>
-            </div>
-          </form>
-        ) : null}
+              <div className="form-footer">
+                <span>{r.reviewed_at ? `Last reviewed ${dateTime(r.reviewed_at)}${r.reviewed_by_name ? ` by ${r.reviewed_by_name}` : ""}` : "Not reviewed yet"}</span>
+                <button type="submit" className="btn primary" disabled={saving}>
+                  <Icon name="check" className="sm" />
+                  {saving ? "Saving…" : "Publish feedback"}
+                </button>
+              </div>
+            </form>
+          ) : null}
+        </div>
+        <aside className="stack">
+          <Panel title="Homework details">
+            <dl className="kv">
+              {[
+                ["Subject", p.subject_name ?? "—"],
+                ["Class", p.class_name ?? "—"],
+                ["Due date", date(p.deadline)],
+                ["Maximum score", "Rated out of 5"],
+                ["Type", label(p.kind)],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </Panel>
+          {p.attachment_url || p.attachments?.length ? (
+            <Panel title="Assignment attachments">
+              {p.attachment_url ? <LinkCard url={p.attachment_url} note="Attached by the teacher" /> : null}
+              <FileCards files={p.attachments ?? []} pathOf={(a) => `/api/v1/teacher/projects/${p.id}/files/${a.id}`} note="Attached by the teacher" onError={setError} />
+            </Panel>
+          ) : null}
+          {r ? (
+            <Panel title="Attachments" sub="Feedback file for the student and parents">
+              <UploadZone onFiles={(fs) => reviewFiles(r.id, fs)} busy={uploading} />
+              <FileCards
+                files={r.review_files ?? []}
+                pathOf={(a) => `/api/v1/teacher/projects/progress/${r.id}/files/${a.id}`}
+                note="Your feedback file"
+                onRemove={(a) => removeReviewFile(r.id, a)}
+                onError={setError}
+              />
+            </Panel>
+          ) : null}
+        </aside>
       </div>
-      <aside className="stack">
-        <Panel title="Homework details">
-          <dl className="kv">
-            {[
-              ["Subject", p.subject_name ?? "—"],
-              ["Class", p.class_name ?? "—"],
-              ["Due date", date(p.deadline)],
-              ["Maximum score", "Rated out of 5"],
-              ["Type", label(p.kind)],
-            ].map(([k, v]) => (
-              <div key={k}>
-                <dt>{k}</dt>
-                <dd>{v}</dd>
-              </div>
-            ))}
-          </dl>
-        </Panel>
-        {p.attachment_url || p.attachments?.length ? (
-          <Panel title="Assignment attachments">
-            {p.attachment_url ? <LinkCard url={p.attachment_url} note="Attached by the teacher" /> : null}
-            <FileCards files={p.attachments ?? []} pathOf={(a) => `/api/v1/teacher/projects/${p.id}/files/${a.id}`} note="Attached by the teacher" onError={setError} />
-          </Panel>
-        ) : null}
-        {r ? (
-          <Panel title="Attachments" sub="Feedback file for the student and parents">
-            <UploadZone onFiles={(fs) => reviewFiles(r.id, fs)} busy={uploading} />
-            <FileCards
-              files={r.review_files ?? []}
-              pathOf={(a) => `/api/v1/teacher/projects/progress/${r.id}/files/${a.id}`}
-              note="Your feedback file"
-              onRemove={(a) => removeReviewFile(r.id, a)}
-              onError={setError}
-            />
-          </Panel>
-        ) : null}
-      </aside>
-    </div>
+    </>
   );
 }
