@@ -77,8 +77,7 @@ export function AssetRegister() {
       </div>
       <ErrorNote>{list.error}</ErrorNote>
       <Panel
-        title="All records"
-        sub={`${shown.length} asset(s) · ${money(value)} at cost · open a row for its history${list.loading ? " · Loading…" : ""}`}
+        
         action={
           <button type="button" className="btn" data-columns="">
             <Icon name="grid" className="sm" />

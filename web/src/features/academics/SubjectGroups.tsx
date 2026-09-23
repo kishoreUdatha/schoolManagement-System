@@ -91,7 +91,7 @@ export function SubjectGroups() {
         </select>
       </div>
       <ErrorNote>{list.error}</ErrorNote>
-      <Panel title="All records" sub={`${list.data?.length ?? 0} groups${list.loading ? " · Loading…" : ""}`} flush>
+      <Panel flush>
         <DataTable
           columns={COLUMNS}
           rows={rows}

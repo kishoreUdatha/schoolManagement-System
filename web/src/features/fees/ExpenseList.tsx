@@ -98,7 +98,7 @@ export function ExpenseList() {
         </button>
       </div>
       <ErrorNote>{error ?? list.error}</ErrorNote>
-      <Panel title="All records" sub={`${date(from)} – ${date(to)} · ${money(total)} spent incl. tax, excluding void${list.loading ? " · Loading…" : ""}`} flush>
+      <Panel flush>
         <DataTable
           columns={["Date", "Voucher", "Expense head", "Payee", "Amount", "Status"]}
           rows={rows}

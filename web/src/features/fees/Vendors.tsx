@@ -72,11 +72,7 @@ export function Vendors() {
         </button>
       </div>
       <ErrorNote>{suppliers.error ?? payables.error}</ErrorNote>
-      <Panel
-        title="All records"
-        sub={pd ? `${money(pd.total_outstanding)} owed to ${pd.suppliers_owed} supplier${pd.suppliers_owed === 1 ? "" : "s"} · ${money(pd.total_overdue)} overdue` : "Worked out from bills less payments"}
-        flush
-      >
+      <Panel flush>
         <DataTable
           columns={["Vendor", "Tax ID", "Contact", "Phone", "Outstanding", "Status"]}
           rows={rows}

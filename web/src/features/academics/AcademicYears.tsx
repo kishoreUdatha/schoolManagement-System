@@ -96,7 +96,7 @@ export function AcademicYears() {
         </select>
       </div>
       <ErrorNote>{list.error}</ErrorNote>
-      <Panel title="All records" sub={`${years.length} academic year${years.length === 1 ? "" : "s"}${list.loading ? " · Loading…" : ""}`} flush>
+      <Panel flush>
         <DataTable
           columns={COLUMNS}
           rows={rows}

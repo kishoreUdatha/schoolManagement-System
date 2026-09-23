@@ -92,11 +92,7 @@ export function CertificateRegister() {
           }}
         />
       ) : null}
-      <Panel
-        title="All records"
-        sub={`${status ? label(status) : "Every status"} · numbered in the order they were issued${list.loading ? " · Loading…" : ""}`}
-        flush
-      >
+      <Panel flush>
         <div className="table-wrap">
           <table className="data-table">
             <thead>

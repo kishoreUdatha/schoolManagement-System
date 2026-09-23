@@ -100,7 +100,7 @@ export function Subjects() {
         <YearSelect years={years} yearId={yearId} onChange={setYearId} />
       </div>
       <ErrorNote>{yearsError ?? list.error ?? classes.error}</ErrorNote>
-      <Panel title="All records" sub={`Classes shown for ${year ? year.name : "the current academic year"}${list.loading ? " · Loading…" : ""}`} flush>
+      <Panel flush>
         <DataTable
           columns={COLUMNS}
           rows={rows}

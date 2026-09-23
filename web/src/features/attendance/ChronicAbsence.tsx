@@ -106,11 +106,7 @@ export function ChronicAbsence() {
         </select>
       </div>
       <ErrorNote>{risk.error}</ErrorNote>
-      <Panel
-        title="All records"
-        sub={risk.data ? `${date(risk.data.from_date)} – ${date(risk.data.to_date)} · ${risk.data.count} below ${risk.data.below}% · ${risk.data.never_contacted} never contacted · ${risk.data.follow_ups_due} follow-ups due` : "Loading…"}
-        flush
-      >
+      <Panel flush>
         <DataTable
           columns={["Student", "Class", "Absent days", "Attendance", "Last contact", "Follow-up"]}
           rows={rows}

@@ -146,7 +146,7 @@ export function LeaveRequests() {
         </select>
       </div>
       <ErrorNote>{error ?? children.error}</ErrorNote>
-      <Panel title="All records" sub={`Leave requests for ${childId ? (children.data?.find((c) => String(c.id) === childId)?.full_name ?? "your child") : "your children"}${leaves === null ? " · Loading…" : ""}`} flush>
+      <Panel flush>
         <DataTable
           columns={["Student", "Leave type", "From", "To", "Days", "Status"]}
           rows={rows}

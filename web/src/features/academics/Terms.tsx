@@ -67,7 +67,7 @@ export function Terms() {
         </select>
       </div>
       <ErrorNote>{yearsError ?? list.error}</ErrorNote>
-      <Panel title="All records" sub={`${year ? `Academic year ${year.name}` : "Current academic year"}${list.loading ? " · Loading…" : ""}`} flush>
+      <Panel flush>
         <DataTable
           columns={COLUMNS}
           rows={rows}

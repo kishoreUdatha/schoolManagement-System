@@ -52,8 +52,7 @@ export function SupplierManagement() {
       </div>
       <ErrorNote>{list.error}</ErrorNote>
       <Panel
-        title="All records"
-        sub={`${list.data?.length ?? 0} supplier(s) · ${active} active${list.loading ? " · Loading…" : ""}`}
+        
         action={
           <button type="button" className="btn" data-columns="">
             <Icon name="grid" className="sm" />

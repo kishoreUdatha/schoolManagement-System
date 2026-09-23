@@ -81,8 +81,7 @@ export function ItemCatalogue() {
       </div>
       <ErrorNote>{list.error ?? all.error}</ErrorNote>
       <Panel
-        title="All records"
-        sub={`${items.length} item${items.length === 1 ? "" : "s"} · ${money(value)} in stock · ${low} below reorder level${list.loading ? " · Loading…" : ""}`}
+        
         action={
           <button type="button" className="btn" data-columns="">
             <Icon name="grid" className="sm" />

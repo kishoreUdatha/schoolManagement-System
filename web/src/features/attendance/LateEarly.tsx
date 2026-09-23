@@ -136,7 +136,7 @@ export function LateEarly() {
         <input type="date" className="select-plain" aria-label="To" value={to ?? ""} onChange={(e) => e.target.value && setTo(e.target.value)} />
       </div>
       <ErrorNote>{win.error ?? (!open ? error : null)}</ErrorNote>
-      <Panel title="All records" sub={from && to ? `${date(from)} – ${date(to)} · ${win.data?.count ?? "…"} register entries${win.loading ? " · Loading…" : ""}` : "Loading…"} flush>
+      <Panel flush>
         <DataTable
           columns={["Student", "Class", "Type", "Date", "Time", "Reason", "Authorised by"]}
           rows={rows}

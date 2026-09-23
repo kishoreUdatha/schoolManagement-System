@@ -69,8 +69,7 @@ export function LabRegister() {
       <ErrorNote>{list.error}</ErrorNote>
       {all.length && (noRoom || noHead) ? <Tip warn>{`${noRoom} lab(s) without a room and ${noHead} without someone in charge.`}</Tip> : null}
       <Panel
-        title="All records"
-        sub={`${all.length} lab(s) · ${all.reduce((n, l) => n + (l.upcoming_bookings ?? 0), 0)} upcoming booking(s)${list.loading ? " · Loading…" : ""}`}
+        
         action={
           <button type="button" className="btn" data-columns="">
             <Icon name="grid" className="sm" />

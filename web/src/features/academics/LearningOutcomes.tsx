@@ -145,15 +145,7 @@ export function LearningOutcomes() {
         </select>
       </div>
       <ErrorNote>{error}</ErrorNote>
-      <Panel
-        title="All records"
-        sub={
-          c
-            ? `${c.section_label ?? "Section"} · ${c.covered} covered, ${c.in_progress} in progress, ${c.not_started} not started${c.unmapped ? `, ${c.unmapped} not mapped to topics` : ""}`
-            : `${cs ? `${cs.class_name} · ${cs.subject_name}` : "Choose a subject"} · pick a section to see coverage${loading ? " · Loading…" : ""}`
-        }
-        flush
-      >
+      <Panel flush>
         <DataTable
           columns={["Outcome code", "Learning outcome", "Subject", "Class", "Unit", "Bloom level", "Status"]}
           rows={rows}

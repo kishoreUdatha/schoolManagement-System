@@ -97,7 +97,7 @@ export function FeeStructureList() {
         </select>
       </div>
       <ErrorNote>{years.error ?? structures.error ?? classes.error}</ErrorNote>
-      <Panel title="All records" sub={`${year ? `Academic year ${year.name}` : "Current academic year"} · one line per class and fee head${structures.loading ? " · Loading…" : ""}`} flush>
+      <Panel flush>
         <DataTable
           columns={["Structure", "Academic year", "Class", "Amount per charge", "Frequency", "Status"]}
           rows={rows}

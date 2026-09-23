@@ -169,8 +169,7 @@ function LearnerSubmissions() {
       <Filters search={search} setSearch={setSearch} status={status} setStatus={setStatus} states={["Submitted", "Returned", "Marked"]} extra={<ChildPicker learner={learner} />} />
       <ErrorNote>{learner.error ?? list.error}</ErrorNote>
       <Panel
-        title="All records"
-        sub={learner.who ? `${learner.who.name} · ${learner.who.sub}` : undefined}
+        
         action={
           <button type="button" className="btn" onClick={() => downloadCsv("my-submissions.csv", columns, cells)}>
             <Icon name="download" className="sm" />

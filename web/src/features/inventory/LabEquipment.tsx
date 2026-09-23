@@ -71,8 +71,7 @@ export function LabEquipment() {
       <ErrorNote>{items.error ?? labs.error}</ErrorNote>
       <Tip>Lab equipment is a note on each lab, not a stock list — nothing counts microscopes. Consumables that need counting are store items; give them the lab as their location to list them here.</Tip>
       <Panel
-        title="All records"
-        sub={`${shown.length} stock item(s)${location ? ` kept at ${location}` : ""}${items.loading ? " · Loading…" : ""}`}
+        
         action={
           <button type="button" className="btn" data-columns="">
             <Icon name="grid" className="sm" />

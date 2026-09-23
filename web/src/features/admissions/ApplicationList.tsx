@@ -109,7 +109,7 @@ export function ApplicationList() {
         </select>
       </div>
       <ErrorNote>{list.error ?? years.error}</ErrorNote>
-      <Panel title="All records" sub={`${year ? `Academic year ${year.name}` : "Current academic year"}${list.loading ? " · Loading…" : ""}`} flush>
+      <Panel flush>
         <DataTable
           columns={["Application", "Student", "Applying for", "Submitted on", "Documents", "Status"]}
           rows={rows}

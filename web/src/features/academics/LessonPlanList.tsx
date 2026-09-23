@@ -95,11 +95,7 @@ export function LessonPlanList() {
         </label>
       </div>
       <ErrorNote>{list.error}</ErrorNote>
-      <Panel
-        title="All records"
-        sub={`${from ? `Week of ${date(from)}` : "All dates"} · ${role === "teacher" ? "Your own plans" : "Every teacher"}${list.loading ? " · Loading…" : ""}`}
-        flush
-      >
+      <Panel flush>
         <DataTable
           columns={["Lesson plan", "Subject", "Class", "Teacher", "Week", "Status"]}
           rows={rows}

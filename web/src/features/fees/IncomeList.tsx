@@ -103,7 +103,7 @@ export function IncomeList() {
         </button>
       </div>
       <ErrorNote>{error ?? list.error}</ErrorNote>
-      <Panel title="All records" sub={`${date(from)} – ${date(to)} · ${money(total)} received, excluding void${list.loading ? " · Loading…" : ""}`} flush>
+      <Panel flush>
         <DataTable
           columns={["Date", "Reference", "Income head", "Received from", "Amount", "Payment method", "Status"]}
           rows={rows}
