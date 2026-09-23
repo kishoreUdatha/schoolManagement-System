@@ -26,6 +26,8 @@ export const NOT_IN_MENU = new Set([
   34, 35, 36, 37, 38, 39, 40, 41, 42, // the other roles' dashboards
   110, 114, 128, 131, 132, 134, 145, 147, // teacher / parent / student portal screens
   21, 22, 23, // organisation profile, schools list, add school: the platform's, not a school's
+  // the old per-item setup screens: the setup wizard and the academics screens do this now
+  28, 29, 30, 31, 32,
   // Tabs of a grouped menu entry (lib/menuGroups): only the group's first screen is listed.
   ...TAB_GROUPS.flatMap((g) => g.tabs.slice(1).map(([n]) => n)),
 ]);
