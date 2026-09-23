@@ -13,7 +13,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { appClass, APPS, daysFromToday, emitChange, seatText, useDetails, useOnAction, useOnChange, useSeats, useYears } from "./shared";
-import type { Application } from "./types";
+import type { Application, OnlyApplication } from "./types";
 
 import { ask } from "@/lib/dialog";
 const AWAITING = ["submitted", "verification", "assessment"];
@@ -33,8 +33,12 @@ function assessmentSummary(a: Application | undefined): string {
  * submitted · verification · assessment, with GET /applications/{id} for the
  * evidence). POST /applications/{id}/decide approves or rejects. Class
  * capacity from GET /admissions/seats for the application's year.
+ *
+ * With `only` it is the Approval tab of SCR-050: the figures, the search and
+ * the queue of other requests go, leaving this application's checklist,
+ * decision and history.
  */
-export function AdmissionApproval() {
+export function AdmissionApproval({ only }: { only?: OnlyApplication }) {
   const idParam = useSearchParams().get("id");
   const [typed, setTyped] = useState("");
   const [search, setSearch] = useState("");
@@ -51,10 +55,11 @@ export function AdmissionApproval() {
     return () => clearTimeout(t);
   }, [typed]);
 
-  const list = useApi<Application[]>(APPS, { search });
+  // Narrowed to one application there is no queue to fetch, only its detail.
+  const list = useApi<Application[]>(only ? null : APPS, { search });
   const all = list.data ?? [];
   const queue = useMemo(() => all.filter((a) => AWAITING.includes(a.status)), [all]);
-  const details = useDetails(queue.map((a) => a.id));
+  const details = useDetails(only ? [only.id] : queue.map((a) => a.id));
   const reload = useCallback(() => {
     list.reload();
     details.reload();
@@ -62,7 +67,8 @@ export function AdmissionApproval() {
   useOnChange(reload);
 
   const shown = queue.filter((a) => (!classFilter || appClass(a) === classFilter) && (!status || a.status === status));
-  const current = shown.find((a) => a.id === selected) ?? shown[0];
+  // Narrowed, the request under review is that one application, whatever its stage.
+  const current = only ? details.data[only.id] : (shown.find((a) => a.id === selected) ?? shown[0]);
   const cur = current ? details.data[current.id] : undefined;
   const years = useYears();
   const seats = useSeats(current?.academic_year_id ?? years.current?.id);
@@ -131,6 +137,81 @@ export function AdmissionApproval() {
   const history = [...(cur?.history ?? [])].sort((x, z) => z.changed_at.localeCompare(x.changed_at)).slice(0, 5);
   const classes = [...new Set(queue.map(appClass))].sort();
 
+  // The decision itself and how the application got here: the same panels
+  // either side of the queue, and on their own in SCR-050's Approval tab.
+  const review = (
+    <>
+      <Panel
+        title="Review checklist"
+        sub={only || !current ? undefined : `${current.student_name} · ${current.application_no}`}
+        action={
+          current && !only ? (
+            <Link href={`${routeOf(50)}?id=${current.id}`} className="btn text">
+              Open
+            </Link>
+          ) : undefined
+        }
+      >
+        <div className="checklist">
+          {checklist.map(([t, ok, sub]) => (
+            <div className="check-item" key={t}>
+              <input type="checkbox" aria-label={t} checked={ok} readOnly />
+              <label>
+                {t}
+                <small>{sub}</small>
+              </label>
+            </div>
+          ))}
+        </div>
+        <div className="gap" />
+        <label className="field">
+          <span>Decision note</span>
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Required when rejecting" />
+        </label>
+        <label className="row small" style={{ marginTop: 8 }}>
+          <input type="checkbox" checked={feeDue} onChange={(e) => setFeeDue(e.target.checked)} />
+          Collect the admission fee before admitting
+        </label>
+        <div className="gap" />
+        <div className="actions">
+          <button type="button" className="btn" disabled={busy || !current} onClick={() => decide(current, false)}>
+            Reject
+          </button>
+          <button type="button" className="btn primary" disabled={busy || !current || current.status === "submitted"} onClick={() => decide(current, true)}>
+            <Icon name="check" className="sm" />
+            Approve
+          </button>
+        </div>
+      </Panel>
+      <Panel title="Approval history">
+        {history.length ? (
+          history.map((h, i) => (
+            <div className="timeline-item" key={i}>
+              <span className="timeline-dot">
+                <Icon name={i === 0 ? "check" : "file"} />
+              </span>
+              <div>
+                <h4>{h.from_status ? `${label(h.from_status)} → ${label(h.to_status)}` : label(h.to_status)}</h4>
+                <p>{[h.note, h.changed_by_name ?? "School office"].filter(Boolean).join(" · ")}</p>
+              </div>
+              <time>{dateTime(h.changed_at)}</time>
+            </div>
+          ))
+        ) : (
+          <p className="muted">{current ? "No changes yet." : "Choose a request to review."}</p>
+        )}
+      </Panel>
+    </>
+  );
+
+  if (only)
+    return (
+      <>
+        <ErrorNote>{error}</ErrorNote>
+        <div className="stack">{review}</div>
+      </>
+    );
+
   return (
     <>
       <StatStrip items={stats} compact />
@@ -189,58 +270,7 @@ export function AdmissionApproval() {
             <p className="muted panel-pad">{list.loading ? "Loading…" : "No applications are waiting for a decision."}</p>
           )}
         </div>
-        <aside className="stack">
-          <Panel title="Review checklist" sub={current ? `${current.student_name} · ${current.application_no}` : undefined} action={current ? <Link href={`${routeOf(50)}?id=${current.id}`} className="btn text">Open</Link> : undefined}>
-            <div className="checklist">
-              {checklist.map(([t, ok, sub]) => (
-                <div className="check-item" key={t}>
-                  <input type="checkbox" aria-label={t} checked={ok} readOnly />
-                  <label>
-                    {t}
-                    <small>{sub}</small>
-                  </label>
-                </div>
-              ))}
-            </div>
-            <div className="gap" />
-            <label className="field">
-              <span>Decision note</span>
-              <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Required when rejecting" />
-            </label>
-            <label className="row small" style={{ marginTop: 8 }}>
-              <input type="checkbox" checked={feeDue} onChange={(e) => setFeeDue(e.target.checked)} />
-              Collect the admission fee before admitting
-            </label>
-            <div className="gap" />
-            <div className="actions">
-              <button type="button" className="btn" disabled={busy || !current} onClick={() => decide(current, false)}>
-                Reject
-              </button>
-              <button type="button" className="btn primary" disabled={busy || !current || current.status === "submitted"} onClick={() => decide(current, true)}>
-                <Icon name="check" className="sm" />
-                Approve
-              </button>
-            </div>
-          </Panel>
-          <Panel title="Approval history">
-            {history.length ? (
-              history.map((h, i) => (
-                <div className="timeline-item" key={i}>
-                  <span className="timeline-dot">
-                    <Icon name={i === 0 ? "check" : "file"} />
-                  </span>
-                  <div>
-                    <h4>{h.from_status ? `${label(h.from_status)} → ${label(h.to_status)}` : label(h.to_status)}</h4>
-                    <p>{[h.note, h.changed_by_name ?? "School office"].filter(Boolean).join(" · ")}</p>
-                  </div>
-                  <time>{dateTime(h.changed_at)}</time>
-                </div>
-              ))
-            ) : (
-              <p className="muted">{current ? "No changes yet." : "Choose a request to review."}</p>
-            )}
-          </Panel>
-        </aside>
+        <aside className="stack">{review}</aside>
       </div>
     </>
   );

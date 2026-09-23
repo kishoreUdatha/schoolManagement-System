@@ -138,6 +138,9 @@ export type Application = {
   history?: HistoryRow[];
 };
 
+/** The one application a screen narrows to when embedded in SCR-050's tabs. */
+export type OnlyApplication = { id: number; name: string };
+
 export type Funnel = { by_status: Partial<Record<ApplicationStatus, number>>; total: number; in_progress: number; admitted: number };
 
 /** GET /api/v1/school/directory/staff — who can be a counsellor or assessor. */

@@ -34,8 +34,12 @@ const submitted = (q: Application) => (q.submitted_at ? date(q.submitted_at) : "
  * documents; POST /documents/{doc}/verify to accept or reject, multipart POST
  * /applications/{id}/documents to add one, POST /applications/{id}/status to
  * finish.
+ *
+ * With `embedded` it is the Documents tab of SCR-050: the application is the
+ * one already on screen, so there is no list to go back to and the header
+ * above says whose papers these are.
  */
-export function DocumentVerification() {
+export function DocumentVerification({ embedded }: { embedded?: boolean }) {
   const router = useRouter();
   const idParam = useSearchParams().get("id");
   const [typed, setTyped] = useState("");
@@ -52,7 +56,8 @@ export function DocumentVerification() {
     return () => clearTimeout(t);
   }, [typed]);
 
-  const list = useApi<Application[]>(APPS, { search });
+  // Embedded there is no list to show, so the applications are never fetched.
+  const list = useApi<Application[]>(embedded ? null : APPS, { search });
   const queue = useMemo(() => (list.data ?? []).filter((a) => LIVE.includes(a.status) || String(a.id) === idParam), [list.data, idParam]);
   // No application chosen: the list is what you see.
   const appId = idParam;
@@ -128,7 +133,7 @@ export function DocumentVerification() {
 
   const open = (id: number) => router.push(`${routeOf(51)}?id=${id}`);
 
-  if (!appId)
+  if (!appId && !embedded)
     return (
       <>
         <div className="toolbar">
@@ -167,12 +172,14 @@ export function DocumentVerification() {
   return (
     <>
       <div className="toolbar">
-        <button type="button" className="btn" onClick={() => router.push(routeOf(51))}>
-          <span style={{ transform: "rotate(180deg)", display: "inline-flex" }}>
-            <Icon name="arrow" className="sm" />
-          </span>
-          All applications
-        </button>
+        {embedded ? null : (
+          <button type="button" className="btn" onClick={() => router.push(routeOf(51))}>
+            <span style={{ transform: "rotate(180deg)", display: "inline-flex" }}>
+              <Icon name="arrow" className="sm" />
+            </span>
+            All applications
+          </button>
+        )}
         <select aria-label="Filter by document status" value={docFilter} onChange={(e) => setDocFilter(e.target.value)}>
           <option value="">All documents</option>
           <option value="pending">Pending</option>
@@ -185,7 +192,7 @@ export function DocumentVerification() {
         <div className="stack">
           <Panel
             title="Documents for review"
-            sub={a ? `${a.student_name} · ${a.application_no} · ${appClass(a)} · ${label(a.status)} · files uploaded against this application only` : "Choose an application"}
+            sub={embedded ? "Files uploaded against this application only" : a ? `${a.student_name} · ${a.application_no} · ${appClass(a)} · ${label(a.status)} · files uploaded against this application only` : "Choose an application"}
             action={a ? <UploadButton busy={busy} onUpload={upload} /> : undefined}
           >
             {shown.length ? (
@@ -254,19 +261,24 @@ export function DocumentVerification() {
         </div>
         <aside className="stack">
           <Panel title="Review details">
+            {/* Embedded, the header above already names the student, the application and the class. */}
             <dl className="kv">
-              <div>
-                <dt>Student</dt>
-                <dd>{a?.student_name ?? "—"}</dd>
-              </div>
-              <div>
-                <dt>Application</dt>
-                <dd>{a?.application_no ?? "—"}</dd>
-              </div>
-              <div>
-                <dt>Class</dt>
-                <dd>{a ? appClass(a) : "—"}</dd>
-              </div>
+              {embedded ? null : (
+                <>
+                  <div>
+                    <dt>Student</dt>
+                    <dd>{a?.student_name ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt>Application</dt>
+                    <dd>{a?.application_no ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt>Class</dt>
+                    <dd>{a ? appClass(a) : "—"}</dd>
+                  </div>
+                </>
+              )}
               <div>
                 <dt>Document type</dt>
                 <dd>{current ? label(current.category) : "—"}</dd>

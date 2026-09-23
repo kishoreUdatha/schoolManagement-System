@@ -13,7 +13,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { appClass, APPS, emitChange, useDetails, useOnChange } from "./shared";
-import type { Application, Assessment, AssessmentKind, StaffOption } from "./types";
+import type { Application, Assessment, AssessmentKind, OnlyApplication, StaffOption } from "./types";
 
 import { ask } from "@/lib/dialog";
 const KINDS: AssessmentKind[] = ["written_test", "interaction", "interview", "audition", "other"];
@@ -42,8 +42,12 @@ function decision(tests: Assessment[]): string {
  * then GET /applications/{id} for the tests). PUT /applications/assessments/{id}
  * records a result; POST /applications/{id}/assessments schedules one;
  * DELETE /applications/assessments/{id} removes one not yet marked.
+ *
+ * With `only` it is the Assessment tab of SCR-050: the figures, the search and
+ * the school-wide list go, leaving this applicant's tests, the marks form and
+ * the scheduling form.
  */
-export function EntranceAssessment() {
+export function EntranceAssessment({ only }: { only?: OnlyApplication }) {
   const router = useRouter();
   const idParam = useSearchParams().get("id");
   const [typed, setTyped] = useState("");
@@ -56,10 +60,12 @@ export function EntranceAssessment() {
     return () => clearTimeout(t);
   }, [typed]);
 
-  const list = useApi<Application[]>(APPS, { search });
+  // Narrowed to one application there is no list to fetch: its own detail carries the tests.
+  const list = useApi<Application[]>(only ? null : APPS, { search });
   const open = useMemo(() => (list.data ?? []).filter((a) => OPEN.includes(a.status) || String(a.id) === idParam), [list.data, idParam]);
   const atAssessment = useMemo(() => open.filter((a) => a.status === "assessment" || String(a.id) === idParam), [open, idParam]);
-  const details = useDetails(atAssessment.map((a) => a.id));
+  const details = useDetails(only ? [only.id] : atAssessment.map((a) => a.id));
+  const mine = only ? details.data[only.id] : undefined;
   const staff = useApi<StaffOption[]>("/api/v1/school/directory/staff");
   const reload = useCallback(() => {
     list.reload();
@@ -68,9 +74,13 @@ export function EntranceAssessment() {
   useOnChange(reload);
 
   const classes = [...new Set(atAssessment.map(appClass))].sort();
-  const shown = atAssessment
-    .map((a) => ({ a, tests: details.data[a.id]?.assessments ?? [] }))
-    .filter(({ a, tests }) => (!classFilter || appClass(a) === classFilter) && (!decisionFilter || decision(tests) === decisionFilter));
+  const shown = only
+    ? mine
+      ? [{ a: mine, tests: mine.assessments ?? [] }]
+      : []
+    : atAssessment
+        .map((a) => ({ a, tests: details.data[a.id]?.assessments ?? [] }))
+        .filter(({ a, tests }) => (!classFilter || appClass(a) === classFilter) && (!decisionFilter || decision(tests) === decisionFilter));
 
   const rows: Row[] = shown.map(({ a, tests }) => {
     const done = tests.filter((t) => t.status === "done" && t.max_marks);
@@ -95,40 +105,73 @@ export function EntranceAssessment() {
 
   return (
     <>
-      <StatStrip items={stats} compact />
-      <div className="filterbar">
-        <div className="searchbox">
-          <Icon name="search" className="sm" />
-          <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Search entrance assessment…" aria-label="Search applicants" />
-        </div>
-        <select aria-label="Filter by class" value={classFilter} onChange={(e) => setClassFilter(e.target.value)}>
-          <option value="">All classes</option>
-          {classes.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-        <select aria-label="Filter by decision" value={decisionFilter} onChange={(e) => setDecisionFilter(e.target.value)}>
-          <option value="">All decisions</option>
-          {["Scheduled", "Recommended", "Not recommended", "Absent", "Not scheduled"].map((d) => (
-            <option key={d}>{d}</option>
-          ))}
-        </select>
-      </div>
+      {only ? null : (
+        <>
+          <StatStrip items={stats} compact />
+          <div className="filterbar">
+            <div className="searchbox">
+              <Icon name="search" className="sm" />
+              <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Search entrance assessment…" aria-label="Search applicants" />
+            </div>
+            <select aria-label="Filter by class" value={classFilter} onChange={(e) => setClassFilter(e.target.value)}>
+              <option value="">All classes</option>
+              {classes.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+            <select aria-label="Filter by decision" value={decisionFilter} onChange={(e) => setDecisionFilter(e.target.value)}>
+              <option value="">All decisions</option>
+              {["Scheduled", "Recommended", "Not recommended", "Absent", "Not scheduled"].map((d) => (
+                <option key={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        </>
+      )}
       <ErrorNote>{list.error}</ErrorNote>
-      <Panel title="Entrance assessment results" sub={`Applications at the assessment stage${list.loading ? " · Loading…" : ""}`} flush>
-        <DataTable
-          columns={["Applicant", "Written test", "Interaction", "Interview", "Total", "Decision"]}
-          rows={rows}
-          selectable={false}
-          onView={(i) => router.push(`${routeOf(50)}?id=${shown[i].a.id}`)}
-          empty={list.loading ? "Loading…" : "No applications are at the assessment stage."}
-        />
-      </Panel>
+      {only ? (
+        <AssessmentsPanel tests={shown[0]?.tests ?? []} loaded={Boolean(mine)} />
+      ) : (
+        <Panel title="Entrance assessment results" sub={`Applications at the assessment stage${list.loading ? " · Loading…" : ""}`} flush>
+          <DataTable
+            columns={["Applicant", "Written test", "Interaction", "Interview", "Total", "Decision"]}
+            rows={rows}
+            selectable={false}
+            onView={(i) => router.push(`${routeOf(50)}?id=${shown[i].a.id}`)}
+            empty={list.loading ? "Loading…" : "No applications are at the assessment stage."}
+          />
+        </Panel>
+      )}
       <div className="two-col" style={{ marginTop: 20 }}>
         <ResultForm scheduled={scheduled} />
-        <ScheduleForm apps={open} staff={staff.data ?? []} preset={idParam} />
+        <ScheduleForm apps={only ? (mine ? [mine] : []) : open} staff={staff.data ?? []} preset={only ? String(only.id) : idParam} />
       </div>
     </>
+  );
+}
+
+/** One applicant's tests, with the marks where they have been recorded. */
+function AssessmentsPanel({ tests, loaded }: { tests: Assessment[]; loaded: boolean }) {
+  const live = tests.filter((t) => t.status !== "cancelled");
+  return (
+    <Panel title="Assessments" sub={live.length ? decision(tests) : undefined}>
+      {live.length ? (
+        live.map((t) => (
+          <div className="timeline-item" key={t.id}>
+            <span className="timeline-dot">
+              <Icon name={t.status === "done" ? "check" : "calendar"} />
+            </span>
+            <div>
+              <h4>{`${label(t.kind)} · ${t.status === "done" ? (t.max_marks ? `${num(t.marks_obtained) ?? "—"} / ${num(t.max_marks)}${t.passed === null ? "" : t.passed ? " · passed" : " · not passed"}` : t.passed ? "Passed" : "Not passed") : label(t.status)}`}</h4>
+              <p>{[t.venue, t.assessor_name ? `Assessor ${t.assessor_name}` : null, t.remarks].filter(Boolean).join(" · ") || "No venue or assessor recorded"}</p>
+            </div>
+            <time>{dateTime(t.scheduled_at)}</time>
+          </div>
+        ))
+      ) : (
+        <p className="muted">{loaded ? "No assessment is scheduled for this applicant." : "Loading assessments…"}</p>
+      )}
+    </Panel>
   );
 }
 
