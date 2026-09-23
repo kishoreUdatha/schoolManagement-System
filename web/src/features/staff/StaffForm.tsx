@@ -144,14 +144,22 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
                 {field("Employee no.", <input name="employee_no" required maxLength={40} defaultValue={s?.employee_no} placeholder="Enter employee no." />, true)}
                 {field(
                   "Department",
-                  <select name="department_id" defaultValue={s?.department_id ?? ""}>
-                    <option value="">{departments.data?.length ? "No department" : "No departments set up yet"}</option>
-                    {departments.data?.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>,
+                  departments.data && !departments.data.length ? (
+                    // nothing to choose yet: send them where departments are made
+                    <Link href={routeOf(1085)} className="btn" style={{ justifyContent: "center" }}>
+                      <Icon name="plus" className="sm" />
+                      Set up departments
+                    </Link>
+                  ) : (
+                    <select name="department_id" defaultValue={s?.department_id ?? ""}>
+                      <option value="">{departments.data ? "No department" : "Loading…"}</option>
+                      {departments.data?.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
+                  ),
                 )}
                 {field("Designation", <input name="designation" maxLength={120} defaultValue={s?.designation ?? ""} placeholder="e.g. Mathematics Teacher" />)}
                 {field(

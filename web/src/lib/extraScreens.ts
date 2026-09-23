@@ -9,6 +9,7 @@ import type { Screen } from "./screens";
 const M = {
   admissions: ["Admissions & Enquiries", "Admissions"],
   students: ["Students", "Students"],
+  staff: ["Teachers & Staff", "Teachers & staff"],
   academics: ["Academics & Curriculum", "Academics"],
   attendance: ["Student Attendance", "Attendance"],
   homework: ["Homework & Assignments", "Homework"],
@@ -64,6 +65,9 @@ const DEFS: Def[] = [
   [1080, "Approval Requests", "settings", "Principal", "approval", "/settings/approval-requests"],
   [1081, "Data Exports", "settings", "School Admin", "table", "/settings/data-exports"],
   [1082, "WhatsApp Integration", "settings", "School Admin", "settings", "/settings/whatsapp-integration"],
+  // Departments: the school admin needs them for staff, job openings and subjects;
+  // SCR-031 sits in the platform's school-setup module, out of their menu.
+  [1085, "Departments", "staff", "School Admin", "form", "/staff/departments"],
   [1083, "Tenant Integrations", "platform", "Super Admin", "table", "/platform/tenant-integrations"],
   // Self-service portals: staff, teacher, student.
   [1090, "My Attendance", "hr", "Staff", "attendancehistory", "/human-resources/my-attendance"],

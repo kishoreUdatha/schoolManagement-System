@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { ErrorNote, Loading } from "@/components/ui/states";
@@ -14,11 +14,14 @@ import { Field, KV, SectionTitle, orNull } from "./bits";
 import type { AcademicYear, Branch, Department, StaffPick } from "./types";
 
 /**
- * SCR-031, live. POST /departments to add, PUT /departments/{id} (?id=) to
- * edit. The PUT replaces the whole record, so every field is sent.
+ * SCR-031 and NEW-085 (the school admin's own menu entry), live. POST
+ * /departments to add, PUT /departments/{id} (?id=) to edit. The PUT replaces
+ * the whole record, so every field is sent. Its own links stay on whichever
+ * of the two screens the user opened.
  */
 export function DepartmentSetup() {
   const router = useRouter();
+  const here = usePathname();
   const id = useSearchParams().get("id");
   const depts = useApi<Department[]>("/api/v1/school/departments");
   const staff = useApi<StaffPick[]>("/api/v1/school/directory/staff");
@@ -55,7 +58,7 @@ export function DepartmentSetup() {
         const created = await api.post<Department>("/api/v1/school/departments", body);
         notify(`${created.name} created.`);
         await depts.reload();
-        router.replace(`${routeOf(31)}?id=${created.id}`);
+        router.replace(`${here}?id=${created.id}`);
       }
     } catch (err) {
       setError(errorText(err));
@@ -136,7 +139,7 @@ export function DepartmentSetup() {
           {depts.data?.length ? (
             depts.data.map((d) => (
               <div className="spread" key={d.id} style={{ padding: "6px 0" }}>
-                <Link href={`${routeOf(31)}?id=${d.id}`} className={String(d.id) === id ? "active" : ""}>
+                <Link href={`${here}?id=${d.id}`} className={String(d.id) === id ? "active" : ""}>
                   {`${d.name} · ${d.code}`}
                 </Link>
                 <small className="muted">{d.head_name ?? "No head"}</small>
@@ -148,7 +151,7 @@ export function DepartmentSetup() {
           {dept ? (
             <>
               <div className="gap" />
-              <Link href={routeOf(31)} className="btn">
+              <Link href={here} className="btn">
                 <Icon name="plus" className="sm" />
                 New department
               </Link>
