@@ -132,6 +132,12 @@ export function TeacherAllocation({ only }: { only?: OnlyStaff }) {
           }}
         />
       </Panel>
+      {only ? (
+        <>
+          <div className="gap" />
+          <TeacherSubjects who={only} classes={classes.data ?? []} mine={list[0]?.subjects ?? []} onChange={() => workload.reload()} />
+        </>
+      ) : null}
       <div className="gap" />
       <Panel title="Class teachers" sub="Choose a class teacher for each section; changes save at once" flush>
         <div className="table-wrap">
@@ -178,8 +184,113 @@ export function TeacherAllocation({ only }: { only?: OnlyStaff }) {
       </Panel>
       <div className="tip">
         <Icon name="shield" className="sm" />
-        <span>Assignments follow the selected academic year. Subject teachers are assigned on Subject & Class Assignment.</span>
+        <span>Assignments follow the selected academic year. A whole class at once is set on Subjects & classes.</span>
       </div>
     </>
+  );
+}
+
+/** One class's subjects, for the picker below. */
+type ClassSubject = { id: number; teacher_user_id: number | null; subject: { id: number; name: string } };
+
+/**
+ * The subjects this teacher takes, from their side rather than the class's.
+ * Same record underneath (PATCH /class-subjects/{id}), so Subjects & classes
+ * shows the change at once; this is simply how a school thinks when it is
+ * looking at one teacher: "what does she teach?"
+ */
+function TeacherSubjects({
+  who,
+  classes,
+  mine,
+  onChange,
+}: {
+  who: OnlyStaff;
+  classes: SchoolClass[];
+  mine: { class_subject_id: number; subject_name: string; class_name: string | null }[];
+  onChange: () => void;
+}) {
+  const [classId, setClassId] = useState("");
+  const [subjectId, setSubjectId] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const subjects = useApi<ClassSubject[]>(classId ? `/api/v1/school/classes/${classId}/subjects` : null);
+
+  // a subject already taken by somebody else says so rather than disappearing
+  const options = subjects.data ?? [];
+  const teacherNames = useApi<Staff[]>("/api/v1/school/staff", { role: "teacher" });
+  const nameOf = (id: number | null) => teacherNames.data?.find((t) => t.user_id === id)?.full_name ?? "another teacher";
+
+  async function save(classSubjectId: number, take: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      await api.patch(`/api/v1/school/class-subjects/${classSubjectId}`, { teacher_user_id: take ? who.userId : null });
+      notify(take ? `${who.name} now teaches this subject.` : `Taken off ${who.name}.`);
+      setSubjectId("");
+      subjects.reload();
+      onChange();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Panel title="Subjects this teacher takes" sub="The same assignment as Subjects & classes, from this teacher's side">
+      <ErrorNote>{error}</ErrorNote>
+      {mine.length ? (
+        <div className="dept-list" style={{ marginBottom: 14 }}>
+          {mine.map((s) => (
+            <div className="dept-row" key={s.class_subject_id} style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}>
+              <span>{`${s.subject_name} · ${s.class_name ?? "—"}`}</span>
+              <button type="button" className="btn text" disabled={busy} onClick={() => save(s.class_subject_id, false)}>
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="muted small" style={{ marginBottom: 14 }}>{`${who.name} does not teach any subject yet.`}</p>
+      )}
+      <div className="form-grid">
+        <label className="field">
+          <span>Class</span>
+          <select
+            value={classId}
+            onChange={(e) => {
+              setClassId(e.target.value);
+              setSubjectId("");
+            }}
+          >
+            <option value="">Choose a class…</option>
+            {classes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Subject</span>
+          <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)} disabled={!classId || subjects.loading}>
+            <option value="">{!classId ? "Choose a class first" : subjects.loading ? "Loading…" : options.length ? "Choose a subject…" : "This class has no subjects yet"}</option>
+            {options
+              .filter((o) => o.teacher_user_id !== who.userId)
+              .map((o) => (
+                <option key={o.id} value={o.id}>
+                  {`${o.subject.name}${o.teacher_user_id ? ` (now ${nameOf(o.teacher_user_id)})` : ""}`}
+                </option>
+              ))}
+          </select>
+        </label>
+      </div>
+      <div className="gap" />
+      <button type="button" className="btn primary" disabled={!subjectId || busy} onClick={() => save(Number(subjectId), true)}>
+        <Icon name="plus" className="sm" />
+        {busy ? "Saving…" : "Give this subject to the teacher"}
+      </button>
+    </Panel>
   );
 }
