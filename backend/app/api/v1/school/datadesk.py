@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
 from app.core import storage
-from app.core.deps import SchoolAdminUser
+from app.core.deps import ReportReader, SchoolAdminUser
 from app.core.enums import ImportType, ReportSource
 from app.database import get_db
 from app.models.user import User
@@ -101,12 +101,12 @@ def cancel_import(job_id: int, payload: ImportCancelIn, current_user: SchoolAdmi
 
 
 @router.get("/report-sources", response_model=list[SourceInfo], summary="What a report can be built on")
-def sources(current_user: SchoolAdminUser):
+def sources(current_user: ReportReader):
     return report_service.catalogue()
 
 
 @router.get("/report-definitions", response_model=list[ReportRead])
-def list_reports(current_user: SchoolAdminUser, db: Db, source: Optional[ReportSource] = None,
+def list_reports(current_user: ReportReader, db: Db, source: Optional[ReportSource] = None,
                  include_inactive: bool = False):
     return report_service.list_reports(db, current_user.school_id, source, include_inactive)
 
@@ -117,7 +117,7 @@ def create_report(payload: ReportIn, current_user: SchoolAdminUser, db: Db):
 
 
 @router.get("/report-definitions/{report_id}", response_model=ReportRead)
-def get_report(report_id: int, current_user: SchoolAdminUser, db: Db):
+def get_report(report_id: int, current_user: ReportReader, db: Db):
     return report_service.to_read(db, [report_service.get(db, report_id, current_user.school_id)])[0]
 
 
@@ -133,7 +133,7 @@ def delete_report(report_id: int, current_user: SchoolAdminUser, db: Db):
 
 
 @router.post("/report-definitions/{report_id}/run", response_model=ReportResult, summary="Run it and see the rows")
-def run_report(report_id: int, current_user: SchoolAdminUser, db: Db,
+def run_report(report_id: int, current_user: ReportReader, db: Db,
                filters: Optional[dict[str, Any]] = None, limit: int = Query(500, ge=1, le=5000)):
     report = report_service.get(db, report_id, current_user.school_id)
     return report_service.run(db, current_user.school_id, report, filters, limit)
@@ -141,7 +141,7 @@ def run_report(report_id: int, current_user: SchoolAdminUser, db: Db,
 
 @router.post("/report-definitions/{report_id}/export", response_model=ExportRead, status_code=status.HTTP_201_CREATED,
              summary="Run it and keep the CSV")
-def export_report(report_id: int, current_user: SchoolAdminUser, db: Db,
+def export_report(report_id: int, current_user: ReportReader, db: Db,
                   filters: Optional[dict[str, Any]] = None):
     report = report_service.get(db, report_id, current_user.school_id)
     job = report_service.export(db, current_user, report, filters)

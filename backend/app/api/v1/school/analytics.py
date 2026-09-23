@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import AssetKeeper, LibraryReports, SchoolAdminOrAccountant, SchoolAdminOrPrincipal
+from app.core.deps import AssetKeeper, LibraryReports, ReportReader, SchoolAdminOrPrincipal
 from app.database import get_db
 from app.schemas.analytics import (
     ChronicAbsence,
@@ -165,7 +165,7 @@ def teacher_activity(
 
 @router.get("/fee-collection", response_model=FeeCollectionReport)
 def fee_collection(
-    user: SchoolAdminOrAccountant,
+    user: ReportReader,
     db: Annotated[Session, Depends(get_db)],
     frm: Optional[date] = Query(None, alias="from"),
     to: Optional[date] = None,
@@ -175,7 +175,7 @@ def fee_collection(
 
 @router.get("/fee-collection.csv", response_class=PlainTextResponse)
 def fee_collection_csv(
-    user: SchoolAdminOrAccountant,
+    user: ReportReader,
     db: Annotated[Session, Depends(get_db)],
     frm: Optional[date] = Query(None, alias="from"),
     to: Optional[date] = None,
@@ -189,18 +189,18 @@ def fee_collection_csv(
 
 @router.get("/payroll-by-department", response_model=PayrollByDepartment,
             summary="One payroll run (the latest by default), by department")
-def payroll_by_department(user: SchoolAdminOrAccountant, db: Annotated[Session, Depends(get_db)],
+def payroll_by_department(user: ReportReader, db: Annotated[Session, Depends(get_db)],
                           run_id: Optional[int] = None):
     return analytics_service.payroll_by_department(db, user.school_id, run_id)
 
 
 @router.get("/dues-ageing", response_model=DuesAgeing)
-def dues_ageing(user: SchoolAdminOrAccountant, db: Annotated[Session, Depends(get_db)]):
+def dues_ageing(user: ReportReader, db: Annotated[Session, Depends(get_db)]):
     return analytics_service.dues_ageing(db, user.school_id)
 
 
 @router.get("/dues-ageing.csv", response_class=PlainTextResponse)
-def dues_ageing_csv(user: SchoolAdminOrAccountant, db: Annotated[Session, Depends(get_db)]):
+def dues_ageing_csv(user: ReportReader, db: Annotated[Session, Depends(get_db)]):
     data = analytics_service.dues_ageing(db, user.school_id)
     return _csv(
         "dues-ageing.csv",

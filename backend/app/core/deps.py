@@ -351,3 +351,11 @@ StaffDirectoryReader = Annotated[
 PublicLinkReader = Annotated[
     User, Depends(allow(UserRole.school_admin, UserRole.principal, any_of=("admissions.manage", "hr.manage")))
 ]
+# Reading a timetable is part of arranging cover; building it stays the office's.
+TimetableReader = Annotated[
+    User, Depends(allow(UserRole.school_admin, UserRole.principal, any_of=("cover.manage", "settings.manage")))
+]
+# Anyone the school lets see its reports; writing a report definition is separate.
+ReportReader = Annotated[
+    User, Depends(allow(UserRole.school_admin, UserRole.principal, UserRole.accountant, permission="reports.view"))
+]

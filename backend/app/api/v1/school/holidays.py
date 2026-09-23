@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import SchoolAdminUser, SchoolStructureReader
 from app.database import get_db
 from app.schemas.holiday import HolidayCreate, HolidayRead, HolidayUpdate
 from app.services import holiday_service
@@ -35,7 +35,7 @@ def create(
     summary="List holidays, optionally filtered by year/month or upcoming-only",
 )
 def list_(
-    current_user: SchoolAdminUser,
+    current_user: SchoolStructureReader,
     db: Annotated[Session, Depends(get_db)],
     year: Optional[int] = Query(None, ge=2000, le=3000),
     month: Optional[int] = Query(None, ge=1, le=12),

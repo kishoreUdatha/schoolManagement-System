@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import SchoolAdminUser, SchoolStructureReader
 from app.database import get_db
 from app.schemas.subject import (
     ClassSubjectAssign,
@@ -48,7 +48,7 @@ def assign(
 )
 def list_for_class(
     class_id: int,
-    current_user: SchoolAdminUser,
+    current_user: SchoolStructureReader,
     db: Annotated[Session, Depends(get_db)],
 ):
     items = subject_service.list_class_subjects(

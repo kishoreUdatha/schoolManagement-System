@@ -6,8 +6,8 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { createPortal } from "react-dom";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Avatar, Person } from "@/components/ui/primitives";
-import { ModuleGroup, PARENT } from "./ModuleGroup";
-import { heldJobs, usePermissions } from "@/lib/jobs";
+import { LinkGroup, ModuleGroup, PARENT } from "./ModuleGroup";
+import { heldJobs, usePermissions, type Job } from "@/lib/jobs";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { MODULES, SCREENS, screenAt, routeOf, type Screen } from "@/lib/screens";
@@ -70,6 +70,27 @@ export function viewerFor(n: number): { who: string; role: string } {
 
 type Viewer = { who: string; role: string };
 
+/**
+ * A job's screens as menu entries. Screens that share a tab group are one
+ * entry under the group's name — the rest of the group is a row of tabs on
+ * the page — but only where the job can open the whole group. Screens already
+ * in the person's own menu are not repeated.
+ */
+function jobMenu(job: Job, own: Set<number>): [number, string][] {
+  const listed = new Set(job.items.map(([n]) => n));
+  const out: [number, string][] = [];
+  const seen = new Set<number>();
+  for (const [n, label] of job.items) {
+    const group = tabGroupOf(n);
+    const grouped = group && listed.has(group.tabs[0][0]);
+    const head = grouped ? group.tabs[0][0] : n;
+    if (seen.has(head) || own.has(head)) continue;
+    seen.add(head);
+    out.push([head, grouped ? group.label : label]);
+  }
+  return out;
+}
+
 /** The signed-in person, or the mock's viewer for this screen until known. */
 function useViewer(s: Screen | undefined): Viewer {
   const sess = useSession();
@@ -98,7 +119,7 @@ function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer;
   // their menu are not repeated.
   const perms = usePermissions();
   const own = new Set((roleNav ?? []).map(([n]) => n));
-  const jobs = roleNav ? heldJobs(perms).map((j) => ({ ...j, items: j.items.filter(([n]) => !own.has(n)) })).filter((j) => j.items.length) : [];
+  const jobs = roleNav ? heldJobs(perms).map((j) => ({ ...j, items: jobMenu(j, own) })).filter((j) => j.items.length) : [];
   const here = s ? (PARENT[s.n] ?? s.n) : -1;
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -160,15 +181,9 @@ function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer;
                 <span>{label}</span>
               </Link>
             ))}
-            {jobs.map((j) => (
-              <div key={j.permission}>
-                <div className="nav-label">{j.title.toUpperCase()}</div>
-                {j.items.map(([n, label]) => (
-                  <Link key={n} className={`nav ${n === here ? "active" : ""}`} href={routeOf(n)}>
-                    <span>{label}</span>
-                  </Link>
-                ))}
-              </div>
+            {jobs.length ? <div className="nav-label">THE REST OF THE SCHOOL</div> : null}
+            {jobs.map((j, i) => (
+              <LinkGroup key={j.permission} title={j.title} items={j.items} activeN={here} tone={i} currentId={s?.id ?? ""} />
             ))}
           </>
         ) : (

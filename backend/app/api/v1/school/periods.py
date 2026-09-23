@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import SchoolAdminUser, SchoolStructureReader
 from app.database import get_db
 from app.schemas.timetable import PeriodCreate, PeriodRead, PeriodUpdate
 from app.services import timetable_service
@@ -36,7 +36,7 @@ def create(
     summary="List all periods (sorted by day, then period number)",
 )
 def list_(
-    current_user: SchoolAdminUser,
+    current_user: SchoolStructureReader,
     db: Annotated[Session, Depends(get_db)],
 ):
     items = timetable_service.list_periods(db, current_user.school_id)

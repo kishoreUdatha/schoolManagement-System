@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import SchoolAdminUser, TimetableReader
 from app.database import get_db
 from app.schemas.timetable import (
     CopyTimetableRequest,
@@ -25,7 +25,7 @@ router = APIRouter()
 )
 def get_timetable(
     section_id: int,
-    current_user: SchoolAdminUser,
+    current_user: TimetableReader,
     db: Annotated[Session, Depends(get_db)],
 ):
     data = timetable_service.get_section_timetable(
@@ -138,7 +138,7 @@ def unpublish(
     summary="School-wide teacher clash report",
 )
 def clashes(
-    current_user: SchoolAdminUser,
+    current_user: TimetableReader,
     db: Annotated[Session, Depends(get_db)],
 ):
     items = timetable_service.detect_clashes(db, current_user.school_id)

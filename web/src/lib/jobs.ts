@@ -84,9 +84,10 @@ export const JOBS: Job[] = [
     permission: "exams.manage",
     title: "Examinations",
     items: [
+      // marks entry and bulk import are the teacher's own screens, on the teacher API
       [138, "Exam dashboard"], [139, "Exam types"], [140, "Exam setup"], [141, "Exam schedule"],
-      [142, "Hall allocation"], [143, "Invigilation"], [144, "Admit cards"], [145, "Marks entry"],
-      [146, "Practical marks"], [147, "Bulk marks import"], [148, "Marks verification"],
+      [142, "Hall allocation"], [143, "Invigilation"], [144, "Admit cards"],
+      [146, "Practical marks"], [148, "Marks verification"],
       [149, "Grading setup", "grading.manage"], [150, "Publish results"], [152, "Report cards"], [272, "Result analysis", "reports.view"],
     ],
   },
@@ -102,19 +103,31 @@ export const JOBS: Job[] = [
   {
     permission: "cover.manage",
     title: "Timetable & cover",
+    // building the timetable is the office's (settings.manage); this is reading
+    // it and covering for whoever is away
     items: [
-      [120, "Timetable dashboard"], [121, "Timetable setup"], [122, "Period setup"], [123, "Teacher availability"],
-      [124, "Generate timetable"], [125, "Class timetable"], [126, "Teacher timetable"], [127, "Substitutions"],
+      [120, "Timetable dashboard"], [123, "Teacher availability"], [125, "Class timetable"],
+      [126, "Teacher timetable"], [127, "Substitutions"],
     ],
   },
   {
     permission: "health.manage",
-    title: "Health & counselling",
+    title: "Health & clinic",
     items: [
       [216, "Health dashboard"], [217, "Medical profiles"], [218, "Clinic visits"], [219, "Medication & first aid"],
       [220, "Immunisation & allergies"], [225, "Emergency contacts"],
-      [221, "Counselling appointments", "counselling.access"], [222, "Case notes", "counselling.access"],
     ],
+  },
+  {
+    // counselling is its own confidence: a principal holds it without the clinic
+    permission: "counselling.access",
+    title: "Counselling",
+    items: [[221, "Counselling appointments"], [222, "Case notes"]],
+  },
+  {
+    permission: "fees.refund.approve",
+    title: "Fees",
+    items: [[165, "Refund approvals"]],
   },
   {
     permission: "discipline.manage",
@@ -126,7 +139,7 @@ export const JOBS: Job[] = [
     title: "Communication",
     items: [
       [252, "Announcements"], [253, "Messaging inbox"], [254, "Notification campaigns"], [255, "Communication history"],
-      [296, "Notification centre"], [246, "Events calendar", "events.manage"], [247, "Create an event", "events.manage"],
+      [296, "Notification centre"], [246, "Events calendar", "events.manage"],
       [249, "Field trips & consent", "events.manage"], [250, "PTM setup", "events.manage"],
     ],
   },

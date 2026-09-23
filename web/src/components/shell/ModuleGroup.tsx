@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { type IconName } from "@/components/ui/Icon";
 import { MENU_FIRST, MENU_LABEL, TAB_GROUPS } from "@/lib/menuGroups";
-import { MODULES, SCREENS } from "@/lib/screens";
+import { MODULES, routeOf, SCREENS } from "@/lib/screens";
 
 /**
  * Screens that are not starting points: a form opened from a list's "Add"
@@ -47,33 +47,11 @@ export const PARENT: Record<number, number> = {
 };
 
 /**
- * One module in the menu: a heading that opens to list the module's screens.
- * Open/closed is React state, not the <details> element's own, so a group
- * the user toggled cannot drift out of step with the page. Arriving on a
- * module opens its group; the others keep whatever the user chose.
+ * Open/closed for one menu group. React state, not the <details> element's
+ * own, so a group the user toggled cannot drift out of step with the page.
+ * Arriving inside a group opens it; the others keep whatever the user chose.
  */
-export function ModuleGroup({
-  label,
-  mods,
-  currentId,
-  currentModule,
-  tone,
-  count,
-}: {
-  label: string;
-  icon: IconName;
-  mods: number[];
-  currentId: string;
-  currentModule: string;
-  tone: number;
-  count?: number;
-}) {
-  const screens = SCREENS.filter((x) => mods.includes(MODULES.indexOf(x.module)) && !NOT_IN_MENU.has(x.n)).sort(
-    (a, b) => Number(MENU_FIRST.has(b.n)) - Number(MENU_FIRST.has(a.n)),
-  );
-  const currentN = SCREENS.find((x) => x.id === currentId)?.n;
-  const activeN = currentN !== undefined ? (PARENT[currentN] ?? currentN) : undefined;
-  const here = mods.includes(MODULES.indexOf(currentModule));
+function useGroupOpen(label: string, here: boolean, currentId: string) {
   const [open, setOpenState] = useState(here);
 
   // Groups the user opened stay open as they move between screens (each screen
@@ -101,6 +79,87 @@ export function ModuleGroup({
       }
       return next;
     });
+
+  return [open, setOpen] as const;
+}
+
+/**
+ * A job's screens in a role's menu (library, admissions, exams…): the same
+ * heading-that-opens as a module group, over a list the caller works out.
+ * One screen is not a menu, so it shows as a plain entry.
+ */
+export function LinkGroup({
+  title,
+  items,
+  activeN,
+  tone,
+  currentId,
+}: {
+  title: string;
+  items: [number, string][];
+  activeN: number | undefined;
+  tone: number;
+  currentId: string;
+}) {
+  const here = items.some(([n]) => n === activeN);
+  const [open, setOpen] = useGroupOpen(title, here, currentId);
+
+  if (items.length === 1) {
+    const [n, label] = items[0];
+    return (
+      <Link href={routeOf(n)} className={`nav ${n === activeN ? "active" : ""}`}>
+        <span>{label}</span>
+      </Link>
+    );
+  }
+
+  return (
+    <div className={`nav-group tone-${tone % 6} ${open ? "open" : ""}`}>
+      <button type="button" className={`nav ${here ? "active" : ""}`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <span>{title}</span>
+        <svg className="caret" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      {open ? (
+        <div className="subnav-list">
+          {items.map(([n, label]) => (
+            <Link key={n} href={routeOf(n)} className={`subnav ${n === activeN ? "active" : ""}`}>
+              {label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * One module in the menu: a heading that opens to list the module's screens.
+ */
+export function ModuleGroup({
+  label,
+  mods,
+  currentId,
+  currentModule,
+  tone,
+  count,
+}: {
+  label: string;
+  icon: IconName;
+  mods: number[];
+  currentId: string;
+  currentModule: string;
+  tone: number;
+  count?: number;
+}) {
+  const screens = SCREENS.filter((x) => mods.includes(MODULES.indexOf(x.module)) && !NOT_IN_MENU.has(x.n)).sort(
+    (a, b) => Number(MENU_FIRST.has(b.n)) - Number(MENU_FIRST.has(a.n)),
+  );
+  const currentN = SCREENS.find((x) => x.id === currentId)?.n;
+  const activeN = currentN !== undefined ? (PARENT[currentN] ?? currentN) : undefined;
+  const here = mods.includes(MODULES.indexOf(currentModule));
+  const [open, setOpen] = useGroupOpen(label, here, currentId);
 
   // One screen is not a menu: show it as a plain entry, with no arrow to open.
   if (screens.length === 1) {
