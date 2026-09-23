@@ -126,7 +126,13 @@ def add_document(
     category: DocumentCategory = Form(DocumentCategory.other),
     remark: Optional[str] = Form(None),
 ):
-    return svc.add_document(db, current_user, application_id, category, file, remark)
+    d = svc.add_document(db, current_user, application_id, category, file, remark)
+    # the model keeps the upload time as created_at; the reply names it as the screen does
+    return DocumentRead(
+        id=d.id, category=d.category, file_name=d.file_name, size_bytes=d.size_bytes,
+        is_verified=d.is_verified, remark=d.remark, verified_at=d.verified_at,
+        uploaded_at=d.created_at, uploaded_by_name=current_user.full_name,
+    )
 
 
 @router.get("/documents/{doc_id}/file")

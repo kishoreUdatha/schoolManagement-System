@@ -4,7 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
-import { StatStrip } from "@/components/ui/StatStrip";
+import { StatChips } from "@/components/ui/StatStrip";
+import { DataTable } from "@/components/ui/DataTable";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, dateTime, label } from "@/lib/format";
@@ -20,11 +21,19 @@ const CHECKS = ["Name matches the record", "Document is readable", "Dates and re
 
 const ext = (name: string) => (name.split(".").pop() ?? "file").slice(0, 4).toUpperCase();
 
+/** "3 / 7 verified", or what is missing. */
+const docCell = (q: Application) => (!q.documents_total ? "None uploaded" : `${q.documents_verified} / ${q.documents_total} verified`);
+
+// the list carries no document dates (they come with an application's detail)
+const submitted = (q: Application) => (q.submitted_at ? date(q.submitted_at) : "—");
+
 /**
- * SCR-051, live: GET /admissions/applications (the open ones) and
- * GET /applications/{id} for the documents; POST /documents/{doc}/verify to
- * accept or reject, multipart POST /applications/{id}/documents to add one,
- * POST /applications/{id}/status to finish.
+ * SCR-051, live. Applications waiting on their papers are a list; opening one
+ * (?id=) shows that application's documents and verifies them. GET
+ * /admissions/applications for the list and /applications/{id} for the
+ * documents; POST /documents/{doc}/verify to accept or reject, multipart POST
+ * /applications/{id}/documents to add one, POST /applications/{id}/status to
+ * finish.
  */
 export function DocumentVerification() {
   const router = useRouter();
@@ -45,8 +54,8 @@ export function DocumentVerification() {
 
   const list = useApi<Application[]>(APPS, { search });
   const queue = useMemo(() => (list.data ?? []).filter((a) => LIVE.includes(a.status) || String(a.id) === idParam), [list.data, idParam]);
-  const auto = queue.find((a) => a.documents_verified < a.documents_total) ?? queue[0];
-  const appId = idParam ?? (auto ? String(auto.id) : null);
+  // No application chosen: the list is what you see.
+  const appId = idParam;
   const detail = useApi<Application>(appId ? `${APPS}/${appId}` : null);
   const a = detail.data;
   const reload = useCallback(() => {
@@ -115,32 +124,61 @@ export function DocumentVerification() {
   };
 
   const history = [...(a?.history ?? [])].sort((x, z) => z.changed_at.localeCompare(x.changed_at)).slice(0, 5);
-  const stats = [
-    { label: "Verified", value: a ? String(verified) : "…", note: "Review completed" },
-    { label: "Pending", value: a ? String(docs.length - verified) : "…", note: "Needs review" },
-  ];
   const allChecked = checks.every(Boolean);
+
+  const open = (id: number) => router.push(`${routeOf(51)}?id=${id}`);
+
+  if (!appId)
+    return (
+      <>
+        <div className="toolbar">
+          <div className="searchbox">
+            <Icon name="search" className="sm" />
+            <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Search applications…" aria-label="Search applications" />
+          </div>
+          <StatChips
+            items={[
+              { label: "Waiting", value: list.data ? String(queue.filter((q) => q.documents_verified < q.documents_total).length) : "…", note: "Applications with papers still to check" },
+              { label: "All checked", value: list.data ? String(queue.filter((q) => q.documents_total > 0 && q.documents_verified === q.documents_total).length) : "…", note: "Every document verified" },
+              { label: "Nothing uploaded", value: list.data ? String(queue.filter((q) => !q.documents_total).length) : "…", note: "No documents on the application yet" },
+            ]}
+          />
+        </div>
+        <ErrorNote>{error ?? list.error}</ErrorNote>
+        <Panel flush>
+          <DataTable
+            columns={["Applicant", "Application", "Class", "Stage", "Documents", "Submitted"]}
+            rows={queue.map((q) => [
+              { name: q.student_name, sub: q.phone ?? q.email ?? "—" },
+              q.application_no,
+              appClass(q),
+              label(q.status),
+              docCell(q),
+              submitted(q),
+            ])}
+            selectable={false}
+            onView={(i) => open(queue[i].id)}
+            empty={list.loading ? "Loading applications…" : search ? "No applications match your search." : "No applications are waiting for document checks."}
+          />
+        </Panel>
+      </>
+    );
 
   return (
     <>
-      <div className="filterbar">
-        <div className="searchbox">
-          <Icon name="search" className="sm" />
-          <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Search applications…" aria-label="Search applications" />
-        </div>
-        <select aria-label="Application" value={appId ?? ""} onChange={(e) => router.replace(`${routeOf(51)}?id=${e.target.value}`)}>
-          {!queue.length ? <option value="">{list.loading ? "Loading…" : "No open applications"}</option> : null}
-          {queue.map((q) => (
-            <option key={q.id} value={q.id}>
-              {`${q.student_name} · ${q.application_no} · ${q.documents_verified}/${q.documents_total} verified`}
-            </option>
-          ))}
-        </select>
+      <div className="toolbar">
+        <button type="button" className="btn" onClick={() => router.push(routeOf(51))}>
+          <span style={{ transform: "rotate(180deg)", display: "inline-flex" }}>
+            <Icon name="arrow" className="sm" />
+          </span>
+          All applications
+        </button>
         <select aria-label="Filter by document status" value={docFilter} onChange={(e) => setDocFilter(e.target.value)}>
           <option value="">All documents</option>
           <option value="pending">Pending</option>
           <option value="verified">Verified</option>
         </select>
+        <StatChips items={[{ label: "Verified", value: a ? String(verified) : "…", note: "Review completed" }, { label: "Pending", value: a ? String(docs.length - verified) : "…", note: "Needs review" }]} />
       </div>
       <ErrorNote>{error ?? detail.error ?? list.error}</ErrorNote>
       <div className="two-col">
@@ -263,9 +301,6 @@ export function DocumentVerification() {
               <Icon name="check" className="sm" />
               {picked.size ? `Verify selected (${picked.size})` : "Verify selected"}
             </button>
-          </Panel>
-          <Panel title="Document status">
-            <StatStrip items={stats} compact />
           </Panel>
         </aside>
       </div>
