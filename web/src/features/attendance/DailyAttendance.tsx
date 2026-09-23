@@ -55,8 +55,20 @@ export function DailyAttendance() {
   const lastSaved = rows.reduce<string | null>((m, r) => (r.marked_at && (!m || r.marked_at > m) ? r.marked_at : m), null);
 
   const set = (id: number, patch: Partial<DayRow>) => setRows((p) => p.map((r) => (r.student_id === id ? { ...r, ...patch } : r)));
-  // Children on approved leave stay absent when everyone is marked present.
-  const allPresent = () => setRows((p) => p.map((r) => ({ ...r, status: r.on_leave ? "absent" : "present" })));
+  /**
+   * Everyone present, and in at this moment — which is what taking the
+   * register at the start of the day means. Children on approved leave stay
+   * absent, a check-in already typed is left alone, and a register being
+   * filled in for an earlier day gets no time: today's clock says nothing
+   * about when they arrived last Tuesday.
+   */
+  const allPresent = () => {
+    const now = new Date();
+    const stamp = day === schoolDay ? `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}` : null;
+    setRows((p) =>
+      p.map((r) => (r.on_leave ? { ...r, status: "absent" } : { ...r, status: "present", arrived_at: r.arrived_at ?? stamp })),
+    );
+  };
 
   async function save(e: FormEvent) {
     e.preventDefault();
