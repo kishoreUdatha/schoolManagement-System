@@ -174,7 +174,7 @@ export function HomeworkEvaluation() {
       <StatCards items={stats} />
       <div className="marking">
         <Panel title="Student submissions" sub={`${count("approved") + count("rejected")} of ${rosterRows.length || list.length} reviewed`} flush>
-          <div className="panel-pad" style={{ paddingBottom: 0 }}>
+          <div className="roll-search">
             <div className="searchbox">
               <Icon name="search" className="sm" />
               <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Search students…" aria-label="Search students" />

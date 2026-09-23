@@ -338,7 +338,9 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .row-menu-list button.bad{color:#be3244}
 /* Marking a class: the children on the left, one piece of work in the middle,
    what was set on the right. */
-.marking{display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
+.marking{display:grid;grid-template-columns:370px minmax(0,1fr);gap:18px;align-items:start}
+/* The search sits under the heading, not a panel's width away from it. */
+.roll-search{padding:0 16px 12px}
 .roll{display:grid;max-height:560px;overflow:auto}
 .roll-row{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:11px 16px;background:none;border-bottom:1px solid #eef2f8;font:inherit}
 .roll-row:last-child{border-bottom:0}
@@ -355,7 +357,7 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .marks-box{display:flex;align-items:center;gap:8px}
 .marks-box input{width:100%}
 .marks-box span{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
-@media(max-width:1300px){.marking{grid-template-columns:260px minmax(0,1fr)}}
+@media(max-width:1300px){.marking{grid-template-columns:300px minmax(0,1fr)}}
 @media(max-width:800px){.marking{grid-template-columns:1fr}}
 .field-title{font-size:12.5px;font-weight:650;color:#485872;margin:0 0 7px}
 .quote{margin:0;padding:12px 14px;background:#f7faff;border:1px solid var(--line);border-radius:10px;font-size:13.5px;color:#3c5275;line-height:1.6}
@@ -377,3 +379,14 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .topbar .row{gap:8px}
 @media(max-width:1200px){.topsearch{width:180px}.topsearch kbd{display:none}}
 @media(max-width:820px){.topsearch{width:140px}}
+
+/* Marking: a tighter head over the class list, and smaller figures above it. */
+.marking .panel-head{padding:15px 16px 9px}
+.marking .panel-head h2{font-size:17px}
+.marking .stat-card{padding:11px 13px;gap:11px}
+.stat-cards{gap:12px;margin-bottom:14px}
+.stat-card-icon{width:34px;height:34px;border-radius:10px}
+.stat-card-icon .ico{width:17px;height:17px}
+.stat-card-body b{font-size:19px}
+.stat-card-label{font-size:12px}
+.stat-card-body small{font-size:11.5px}
