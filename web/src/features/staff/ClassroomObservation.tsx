@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
-import { Badge } from "@/components/ui/primitives";
+import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date } from "@/lib/format";
@@ -113,7 +113,7 @@ export function ClassroomObservation() {
   return (
     <>
       <StatStrip items={stats} compact />
-      <div className="two-col">
+      <div>
         <form id={OBSERVATION_FORM} className="panel" onSubmit={submit}>
           <div className="panel-pad">
             <ErrorNote>{error ?? teachers.error ?? classes.error}</ErrorNote>
@@ -228,52 +228,32 @@ export function ClassroomObservation() {
             </div>
           </div>
         </form>
-        <aside className="stack">
-          <div className="aside-panel">
-            <h3>Staff</h3>
-            <dl className="kv">
-              <div>
-                <dt>Designation</dt>
-                <dd>{teacher ? (teacher.designation ?? ROLE_LABEL[teacher.role]) : "—"}</dd>
-              </div>
-              <div>
-                <dt>Employee no.</dt>
-                <dd>{teacher?.employee_no ?? "—"}</dd>
-              </div>
-              <div>
-                <dt>Status</dt>
-                <dd>{teacher ? (teacher.is_active ? "Active" : "Inactive") : "—"}</dd>
-              </div>
-              <div>
-                <dt>Observations</dt>
-                <dd>{history.data ? `${history.data.count} · ${history.data.follow_ups_due} follow-ups due` : "—"}</dd>
-              </div>
-            </dl>
-            <div className="gap" />
-            {!staffId ? (
-              <p>Choose a teacher to see earlier observations.</p>
-            ) : history.data?.observations.length ? (
-              history.data.observations.map((o) => (
-                <div className="timeline-item" key={o.id}>
-                  <span className="timeline-dot">
-                    <Icon name="check" />
-                  </span>
-                  <div>
-                    <h4>{o.focus ?? o.subject_name ?? "Observation"}</h4>
-                    <p>{[date(o.observed_on), o.section_label, o.observer_name, o.average_score != null ? `${o.average_score} / 5` : null].filter(Boolean).join(" · ")}</p>
-                    <button type="button" className="btn" style={{ marginTop: 6 }} onClick={() => share(o.id, !o.shared_with_staff)}>
-                      {o.shared_with_staff ? "Stop sharing" : "Share with teacher"}
-                    </button>
-                  </div>
-                  <Badge>{o.shared_with_staff ? "Shared" : "Draft"}</Badge>
-                </div>
-              ))
-            ) : (
-              <p>{history.loading ? "Loading…" : "No observations recorded for this teacher yet."}</p>
-            )}
-          </div>
-        </aside>
       </div>
+      {/* Earlier visits to this teacher's lessons, under the form rather than
+          beside it; the teacher's own details are on their profile. */}
+      <Panel title="Earlier observations" sub={history.data ? `${history.data.count} recorded · ${history.data.follow_ups_due} follow-ups due` : undefined}>
+        {!staffId ? (
+          <p className="muted">Choose a teacher to see earlier observations.</p>
+        ) : history.data?.observations.length ? (
+          history.data.observations.map((o) => (
+            <div className="timeline-item" key={o.id}>
+              <span className="timeline-dot">
+                <Icon name="check" />
+              </span>
+              <div>
+                <h4>{o.focus ?? o.subject_name ?? "Observation"}</h4>
+                <p>{[date(o.observed_on), o.section_label, o.observer_name, o.average_score != null ? `${o.average_score} / 5` : null].filter(Boolean).join(" · ")}</p>
+                <button type="button" className="btn" style={{ marginTop: 6 }} onClick={() => share(o.id, !o.shared_with_staff)}>
+                  {o.shared_with_staff ? "Stop sharing" : "Share with teacher"}
+                </button>
+              </div>
+              <Badge>{o.shared_with_staff ? "Shared" : "Draft"}</Badge>
+            </div>
+          ))
+        ) : (
+          <p className="muted">{history.loading ? "Loading…" : "No observations recorded for this teacher yet."}</p>
+        )}
+      </Panel>
     </>
   );
 }
