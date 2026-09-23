@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -100,7 +101,16 @@ export function LessonPlanList() {
           columns={["Lesson plan", "Subject", "Class", "Teacher", "Week", "Status"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(103)}?id=${shown[i].id}`)}
-          empty={list.loading ? "Loading lesson plans…" : all.length ? "No lesson plans match these filters." : "No lesson plans yet."}
+          empty={list.loading ? "Loading lesson plans…" : all.length ? "No lesson plans match these filters." : undefined}
+          emptyState={{
+            title: "No lesson plans yet",
+            note: "Lesson plans set out what each class period covers, so create the first one to get started.",
+            action: (
+              <Link href={routeOf(103)} className="btn primary">
+                Create lesson plan
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

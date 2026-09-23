@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -132,7 +133,16 @@ export function CrewList() {
           columns={["Name", "Role", "License no.", "License expiry", "Phone", "Vehicle"]}
           rows={rows}
           onView={(i) => setEditing(items[i])}
-          empty={crew.loading ? "Loading crew…" : all.length ? "No one matches these filters." : "No drivers or conductors yet."}
+          empty={crew.loading ? "Loading crew…" : all.length ? "No one matches these filters." : undefined}
+          emptyState={{
+            title: "No drivers or conductors yet",
+            note: "Add the drivers and conductors who work your routes, then put them on a vehicle.",
+            action: (
+              <Link href={`${routeOf(192)}?new=1`} className="btn primary">
+                Add crew member
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {dialogOpen ? (
@@ -303,7 +313,16 @@ export function RouteAssignment() {
           columns={["Student", "Class", "Pickup stop", "Drop stop", "Route", "Fee plan"]}
           rows={rows}
           onView={(i) => setEditing(items[i])}
-          empty={list.loading ? "Loading assignments…" : "No students are assigned to transport."}
+          empty={list.loading ? "Loading assignments…" : undefined}
+          emptyState={{
+            title: "No students on transport yet",
+            note: "Assign a student to a route and stop to start using the transport fee and attendance features.",
+            action: (
+              <Link href={`${routeOf(193)}?new=1`} className="btn primary">
+                Assign route
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {dialogOpen ? (

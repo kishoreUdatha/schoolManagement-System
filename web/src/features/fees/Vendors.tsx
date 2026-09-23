@@ -77,7 +77,16 @@ export function Vendors() {
           columns={["Vendor", "Tax ID", "Contact", "Phone", "Outstanding", "Status"]}
           rows={rows}
           onView={(i) => setEditing(items[i])}
-          empty={suppliers.loading ? "Loading vendors…" : "No vendors match these filters."}
+          empty={suppliers.loading ? "Loading vendors…" : q || status ? "No vendors match these filters." : undefined}
+          emptyState={{
+            title: "No vendors yet",
+            note: "Add the suppliers the school buys from to raise purchase orders and track what is owed them.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                Add vendor
+              </button>
+            ),
+          }}
         />
       </Panel>
       {editing ? (

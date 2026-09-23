@@ -98,7 +98,16 @@ export function HealthCheckups() {
                 Delete
               </button>
             )}
-            empty="No check-ups recorded for this student."
+            emptyState={{
+              title: "No check-ups recorded",
+              note: "Height, weight, vision and dental checks for this student will be listed here once one is recorded.",
+              action: (
+                <Link href={`${ROUTE}?id=${id}&new=1`} className="btn primary" scroll={false}>
+                  <Icon name="plus" className="sm" />
+                  Record check-up
+                </Link>
+              ),
+            }}
           />
         </Panel>
         <aside className="stack">

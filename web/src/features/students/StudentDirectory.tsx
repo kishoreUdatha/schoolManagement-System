@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -132,7 +133,17 @@ export function StudentDirectory() {
           pages={list.data?.pages ?? 1}
           onPage={setPage}
           onView={(i) => router.push(`${routeOf(57)}?id=${items[i].id}`)}
-          empty={list.loading ? "Loading students…" : search || classId || status ? "No students match these filters." : "No students in this academic year yet."}
+          empty={list.loading ? "Loading students…" : search || classId || status ? "No students match these filters." : undefined}
+          emptyState={{
+            title: "No students yet",
+            note: "Students are admitted into a section of a class; add the first one to start the register.",
+            action: (
+              <Link href="/students/add-student" className="btn primary">
+                <Icon name="plus" className="sm" />
+                Add student
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

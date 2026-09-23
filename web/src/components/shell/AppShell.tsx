@@ -11,7 +11,7 @@ import { heldJobs, usePermissions } from "@/lib/jobs";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { MODULES, SCREENS, screenAt, routeOf, type Screen } from "@/lib/screens";
-import { MENU_LABEL, tabGroupOf } from "@/lib/menuGroups";
+import { MENU_LABEL, SCREEN_NOTE, tabGroupOf } from "@/lib/menuGroups";
 import { HOME_SCREEN, ROLE_LABEL, session } from "@/lib/session";
 import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
@@ -257,6 +257,44 @@ function YearSelect({ admin }: { admin: boolean }) {
   );
 }
 
+/** The handful of things a school office starts most days. */
+const QUICK_NEW: [number, string][] = [
+  [56, "Student"],
+  [44, "Enquiry"],
+  [81, "Staff member"],
+  [158, "Fee payment"],
+  [252, "Announcement"],
+  [247, "Event"],
+];
+
+function NewMenu() {
+  const [open, setOpen] = useState(false);
+  // clicking anywhere else closes it
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [open]);
+  return (
+    <div className="new-menu" onClick={(e) => e.stopPropagation()}>
+      <button type="button" className="btn primary sm" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Icon name="plus" className="sm" />
+        New
+      </button>
+      {open ? (
+        <div className="new-menu-list" role="menu">
+          {QUICK_NEW.map(([n, label]) => (
+            <Link key={n} href={routeOf(n)} role="menuitem" onClick={() => setOpen(false)}>
+              {label}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function Topbar({ who, role, school }: { who: string; role: string; school: Branding | null }) {
   return (
     <header className="topbar">
@@ -272,6 +310,7 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
         </div>
       </div>
       <div className="row">
+        {role === "School Admin" ? <NewMenu /> : null}
         {school ? <YearSelect admin={role === "School Admin"} /> : null}
         <div className="bar-divider" />
         <Link href={routeOf(296)} aria-label="Notifications" className="btn icon">
@@ -333,6 +372,7 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
             <div className="page-head">
               <div>
                 <h1>{group?.label ?? MENU_LABEL[s.n] ?? s.name}</h1>
+                {SCREEN_NOTE[s.n] ? <p className="page-note">{SCREEN_NOTE[s.n]}</p> : null}
               </div>
               <div className="actions" id={PAGE_ACTIONS_SLOT} />
             </div>

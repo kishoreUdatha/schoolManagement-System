@@ -67,7 +67,11 @@ export function AcademicBody({ s }: { s: StudentProfile }) {
             rows={rows}
             selectable={false}
             rowAction={false}
-            empty={academic.loading ? "Loading subjects…" : "No subjects have been set up for this class yet."}
+            empty={academic.loading ? "Loading subjects…" : undefined}
+            emptyState={{
+              title: "No subjects yet",
+              note: "Subjects are set up per class; once added, this table lists the teacher for each one.",
+            }}
           />
         </Panel>
         <Panel title="Year by year" flush>
@@ -76,7 +80,11 @@ export function AcademicBody({ s }: { s: StudentProfile }) {
             rows={historyRows}
             selectable={false}
             rowAction={false}
-            empty={academic.loading ? "Loading…" : "No enrolment history has been recorded yet."}
+            empty={academic.loading ? "Loading…" : undefined}
+            emptyState={{
+              title: "No enrolment history yet",
+              note: "Yearly records appear here once this student is enrolled, promoted or transferred.",
+            }}
           />
         </Panel>
       </div>

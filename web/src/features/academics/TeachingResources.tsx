@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
-import { ErrorNote } from "@/components/ui/states";
+import { EmptyGuide, ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -126,7 +126,21 @@ export function TeachingResources() {
       <ErrorNote>{error ?? list.error}</ErrorNote>
       {items.length === 0 ? (
         <section className="panel">
-          <div className="panel-pad muted">{list.loading ? "Loading resources…" : search || csId || kind || status ? "No resources match these filters." : "No teaching resources yet. Upload the first one."}</div>
+          {list.loading || search || csId || kind || status ? (
+            <div className="panel-pad muted">{list.loading ? "Loading resources…" : "No resources match these filters."}</div>
+          ) : (
+            <div className="panel-pad">
+              <EmptyGuide
+                title="No teaching resources yet"
+                note="Notes, worksheets and links kept here sit against a class subject, and can be shared with parents."
+                action={
+                  <button type="button" className="btn primary" onClick={() => setUploading(true)}>
+                    Upload resource
+                  </button>
+                }
+              />
+            </div>
+          )}
         </section>
       ) : null}
       <div className="resource-grid">

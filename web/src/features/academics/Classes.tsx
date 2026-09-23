@@ -98,7 +98,16 @@ export function Classes() {
           columns={COLUMNS}
           rows={rows}
           onView={(i) => setOpen(shown[i])}
-          empty={list.loading ? "Loading classes…" : "No classes in this academic year yet."}
+          empty={list.loading ? "Loading classes…" : undefined}
+          emptyState={{
+            title: "No classes yet",
+            note: "Classes hold the sections children are admitted into, so set them up before anything else.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+                Add class
+              </button>
+            ),
+          }}
         />
       </Panel>
       {adding && yearId ? <ClassForm yearId={yearId} onClose={() => setAdding(false)} onSaved={reload} /> : null}

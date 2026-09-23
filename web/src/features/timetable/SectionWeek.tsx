@@ -149,9 +149,15 @@ function OfficeWeek({ mode }: { mode: "edit" | "view" }) {
             <WeekGrid
               slots={data.periods}
               empty={
-                <>
-                  No periods set up yet. Add them in <Link href={routeOf(122)}>Period setup</Link>.
-                </>
+                <div className="empty-guide">
+                  <strong>No periods set up yet</strong>
+                  <p>A section&apos;s week is built from the school&apos;s periods. Set them up once and every class timetable can use them.</p>
+                  <div className="empty-guide-action">
+                    <Link href={routeOf(122)} className="btn primary">
+                      Period setup
+                    </Link>
+                  </div>
+                </div>
               }
               cell={(_, p) => {
                 if (!p) return null;
@@ -433,7 +439,12 @@ function StudentWeek() {
           ) : (
             <WeekGrid
               slots={data.periods}
-              empty="No periods have been set up yet."
+              empty={
+                <div className="empty-guide">
+                  <strong>No timetable yet</strong>
+                  <p>The school hasn&apos;t set up periods for your class yet. Check back once they have.</p>
+                </div>
+              }
               cell={(_, p) => {
                 if (!p) return null;
                 if (p.is_break) return <Lesson tone="peach" title={p.label ?? "Break"} lines={[span(p.start_time, p.end_time)]} />;
@@ -483,7 +494,12 @@ function ChildWeek() {
           ) : (
             <WeekGrid
               slots={data.periods}
-              empty="No periods have been set up yet."
+              empty={
+                <div className="empty-guide">
+                  <strong>No timetable yet</strong>
+                  <p>The school hasn&apos;t set up periods for this class yet. Check back once they have.</p>
+                </div>
+              }
               cell={(_, p) => {
                 if (!p) return null;
                 if (p.is_break) return <Lesson tone="peach" title={p.label ?? "Break"} lines={[span(p.start_time, p.end_time)]} />;

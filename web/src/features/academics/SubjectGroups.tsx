@@ -96,7 +96,16 @@ export function SubjectGroups() {
           columns={COLUMNS}
           rows={rows}
           onView={(i) => setEditing(shown[i].id)}
-          empty={list.loading ? "Loading subject groups…" : "No subject groups yet."}
+          empty={list.loading ? "Loading subject groups…" : q || status || classFilter ? "No subject groups match these filters." : undefined}
+          emptyState={{
+            title: "No subject groups yet",
+            note: "Subject groups let students choose electives as a set, so create one once the school has subjects to offer.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                Add subject group
+              </button>
+            ),
+          }}
         />
       </Panel>
       {editing === "new" || open ? (

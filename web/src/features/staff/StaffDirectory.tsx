@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -91,7 +92,17 @@ export function StaffDirectory() {
           columns={COLUMNS}
           rows={rows}
           onView={(i) => router.push(`${routeOf(82)}?id=${items[i].id}`)}
-          empty={list.loading ? "Loading staff…" : search || role || status ? "No staff match these filters." : "No staff have been added yet."}
+          empty={list.loading ? "Loading staff…" : search || role || status ? "No staff match these filters." : undefined}
+          emptyState={{
+            title: "No staff yet",
+            note: "Add a member of staff to start building the directory.",
+            action: (
+              <Link href="/staff/add-staff" className="btn primary">
+                <Icon name="plus" className="sm" />
+                Add staff
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

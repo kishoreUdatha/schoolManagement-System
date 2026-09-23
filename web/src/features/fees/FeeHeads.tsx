@@ -49,7 +49,7 @@ export function FeeHeads() {
   });
   const n = (v: number) => (heads.data ? String(v) : "…");
   const stats = [
-    { label: "Fee heads", value: n(all.length), note: "Defined for the school" },
+    { label: "Fee types", value: n(all.length), note: "Defined for the school" },
     { label: "Active", value: n(all.filter((h) => h.is_active).length), note: "Can be charged" },
     { label: "Monthly", value: n(all.filter((h) => h.is_recurring).length), note: "Raised every month" },
     { label: "With a late fee", value: n(all.filter((h) => h.late_fee_type !== "none" && Number(h.late_fee_value) > 0).length), note: "Charged when paid late" },
@@ -85,7 +85,7 @@ export function FeeHeads() {
     try {
       if (f.id) await api.patch(`/api/v1/school/fees/heads/${f.id}`, { ...body, is_active: f.is_active });
       else await api.post("/api/v1/school/fees/heads", body);
-      notify(f.id ? "Fee head updated." : "Fee head added.");
+      notify(f.id ? "Fee type updated." : "Fee type added.");
       close();
       heads.reload();
     } catch (err) {
@@ -107,11 +107,11 @@ export function FeeHeads() {
   }
 
   async function remove(h: FeeHead) {
-    if (!(await ask(`Delete the fee head "${h.name}"? This cannot be undone.`))) return;
+    if (!(await ask(`Delete the fee type "${h.name}"? This cannot be undone.`))) return;
     setError(null);
     try {
       await api.delete(`/api/v1/school/fees/heads/${h.id}`);
-      notify("Fee head deleted.");
+      notify("Fee type deleted.");
       heads.reload();
     } catch (err) {
       setError(errorText(err));
@@ -124,7 +124,7 @@ export function FeeHeads() {
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or code…" aria-label="Search fee heads" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or code…" aria-label="Search fee types" />
         </div>
         <select aria-label="Filter status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All statuses</option>
@@ -133,9 +133,9 @@ export function FeeHeads() {
         </select>
       </div>
       <ErrorNote>{error ?? heads.error}</ErrorNote>
-      <Panel title="All fee heads" sub={`What the school charges for. Amounts per class are set in the fee structure.${heads.loading ? " · Loading…" : ""}`} flush>
+      <Panel title="All fee types" sub={`What the school charges for. Amounts per class are set in the fee structure.${heads.loading ? " · Loading…" : ""}`} flush>
         <DataTable
-          columns={["Fee head", "Code", "Frequency", "Late fee", "Status"]}
+          columns={["Fee type", "Code", "Frequency", "Late fee", "Status"]}
           rows={rows}
           actions={(i) => (
             <>
@@ -150,12 +150,21 @@ export function FeeHeads() {
               </button>
             </>
           )}
-          empty={heads.loading ? "Loading fee heads…" : q || status ? "No fee heads match these filters." : "No fee heads yet. Add Tuition, Transport and the rest."}
+          empty={heads.loading ? "Loading fee types…" : q || status ? "No fee types match these filters." : undefined}
+          emptyState={{
+            title: "No fee types yet",
+            note: "A fee type is what the school charges for — tuition, transport, books — and the fee structure is built from these.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => edit(null)}>
+                Add fee type
+              </button>
+            ),
+          }}
         />
       </Panel>
       <Dialog
         open={open}
-        title={f.id ? `Edit ${f.name || "fee head"}` : "Add fee head"}
+        title={f.id ? `Edit ${f.name || "fee type"}` : "Add fee type"}
         onClose={close}
         onSubmit={save}
         actions={
@@ -165,7 +174,7 @@ export function FeeHeads() {
             </button>
             <button type="submit" className="btn primary" disabled={saving}>
               <Icon name="check" className="sm" />
-              {saving ? "Saving…" : f.id ? "Save changes" : "Add fee head"}
+              {saving ? "Saving…" : f.id ? "Save changes" : "Add fee type"}
             </button>
           </>
         }

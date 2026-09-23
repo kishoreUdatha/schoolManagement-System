@@ -171,7 +171,17 @@ export function LinkChildren() {
               rows={rows}
               selectable={false}
               rowAction={false}
-              empty={contacts === null ? "Loading…" : "No guardian contacts are recorded on these children."}
+              empty={contacts === null ? "Loading…" : undefined}
+              emptyState={{
+                title: "No family contacts yet",
+                note: "Guardian details recorded on this parent's linked children will appear here.",
+                action: (
+                  <a href="#link-child" className="btn primary">
+                    <Icon name="check" className="sm" />
+                    Link child
+                  </a>
+                ),
+              }}
             />
           </Panel>
         </div>

@@ -148,7 +148,11 @@ function ConsentTracker() {
           selectable={false}
           rowAction={false}
           total={all.length}
-          empty={report.loading || events.loading ? "Loading…" : !consentEvents.length ? "No event asks parents for consent yet. Tick “Parent consent required” when creating one." : "No children match these filters."}
+          empty={report.loading || events.loading ? "Loading…" : consentEvents.length ? "No children match these filters." : undefined}
+          emptyState={{
+            title: "No event asks for consent yet",
+            note: "Tick “Parent consent required” when creating a trip or event, and it will appear here for tracking.",
+          }}
         />
       </Panel>
     </>

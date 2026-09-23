@@ -488,7 +488,8 @@ export function DataExports() {
               ) : null}
             </>
           )}
-          empty={jobs.loading ? "Loading exports…" : "No saved report has been exported yet. Build one in the custom report builder, then export it here."}
+          empty={jobs.loading ? "Loading exports…" : undefined}
+          emptyState={{ title: "No saved report exports yet", note: "Build a custom report, then export it here to download or keep as a file." }}
         />
       </Panel>
       {openJob !== null ? <JobDialog id={openJob} onClose={() => setOpenJob(null)} onFile={getFile} /> : null}

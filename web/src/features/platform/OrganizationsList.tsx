@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -107,7 +108,17 @@ export function OrganizationsList() {
           pages={list.data?.pages ?? 1}
           onPage={setPage}
           onView={(i) => router.push(`${routeOf(12)}?id=${items[i].id}`)}
-          empty={list.loading ? "Loading organizations…" : search || status ? "No organizations match these filters." : "No organizations yet."}
+          empty={list.loading ? "Loading organizations…" : search || status ? "No organizations match these filters." : undefined}
+          emptyState={{
+            title: "No organizations yet",
+            note: "An organization is a school or group of schools on the platform; add the first one to get started.",
+            action: (
+              <Link href={routeOf(11)} className="btn primary">
+                <Icon name="plus" className="sm" />
+                Add organization
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

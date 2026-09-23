@@ -163,7 +163,11 @@ export function AssetMaintenance() {
           columns={["Asset", "Issue", "Location", "Spent on repairs", "Assigned to", "Warranty", "Status"]}
           rows={rows}
           onView={(i) => setOpen(shown[i].id)}
-          empty={list.loading ? "Loading assets…" : s || status ? "No assets match these filters." : "No assets have been registered yet."}
+          empty={list.loading ? "Loading assets…" : s || status ? "No assets match these filters." : undefined}
+          emptyState={{
+            title: "No assets yet",
+            note: "Repairs, servicing and warranty dates are tracked against assets on the register — add one there first.",
+          }}
         />
       </Panel>
       <div className="gap" />

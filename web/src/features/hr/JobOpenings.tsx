@@ -16,7 +16,7 @@ import { useApi } from "@/lib/useApi";
 import type { PublicLink } from "@/features/admissions/types";
 import { careersPath } from "@/features/public/links";
 import type { Department, Opening, OpeningStatus } from "./types";
-import { Dialog, Field, KV, useNewFlag } from "./ui";
+import { Dialog, Field, KV, NewLink, useNewFlag } from "./ui";
 
 import { ask } from "@/lib/dialog";
 const BASE = "/api/v1/school/hr/openings";
@@ -166,7 +166,12 @@ export function JobOpenings() {
           columns={["Job title", "Department", "Vacancies", "Applications", "Closing date", "Status"]}
           rows={rows}
           onView={(i) => setOpen(items[i])}
-          empty={list.loading ? "Loading openings…" : typed || deptId || status ? "No opening matches these filters." : "No openings yet."}
+          empty={list.loading ? "Loading openings…" : typed || deptId || status ? "No opening matches these filters." : undefined}
+          emptyState={{
+            title: "No openings yet",
+            note: "Create an opening to start taking applications for a post.",
+            action: <NewLink icon="plus">Create opening</NewLink>,
+          }}
         />
       </Panel>
 

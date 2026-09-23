@@ -163,7 +163,11 @@ export function DocumentVerification({ embedded }: { embedded?: boolean }) {
             ])}
             selectable={false}
             onView={(i) => open(queue[i].id)}
-            empty={list.loading ? "Loading applications…" : search ? "No applications match your search." : "No applications are waiting for document checks."}
+            empty={list.loading ? "Loading applications…" : search ? "No applications match your search." : undefined}
+            emptyState={{
+              title: "Nothing waiting on document checks",
+              note: "Every application has either had its documents verified already or has none uploaded yet.",
+            }}
           />
         </Panel>
       </>

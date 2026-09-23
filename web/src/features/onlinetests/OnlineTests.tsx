@@ -102,7 +102,16 @@ function TestList() {
               ) : null}
             </>
           )}
-          empty={list.loading ? "Loading tests…" : search || status || csId ? "No tests match these filters." : "No online tests yet. Create the first one."}
+          empty={list.loading ? "Loading tests…" : search || status || csId ? "No tests match these filters." : undefined}
+          emptyState={{
+            title: "No online tests yet",
+            note: "Online tests draw on the question bank and mark objective questions automatically, so create the first one to get started.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setCreating(true)}>
+                Create test
+              </button>
+            ),
+          }}
         />
       </Panel>
       {creating ? (

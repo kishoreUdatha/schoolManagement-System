@@ -101,7 +101,16 @@ export function AcademicYears() {
           columns={COLUMNS}
           rows={rows}
           onView={(i) => setOpen(shown[i])}
-          empty={list.loading ? "Loading academic years…" : "No academic years match."}
+          empty={list.loading ? "Loading academic years…" : q || status ? "No academic years match these filters." : undefined}
+          emptyState={{
+            title: "No academic years yet",
+            note: "An academic year frames every term, class and timetable, so add one before setting up the rest.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+                Add academic year
+              </button>
+            ),
+          }}
         />
       </Panel>
       {adding ? <YearForm onClose={() => setAdding(false)} onSaved={list.reload} /> : null}

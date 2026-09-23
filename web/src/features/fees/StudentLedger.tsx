@@ -114,7 +114,14 @@ export function StudentLedger() {
         }
         flush
       >
-        <DataTable columns={["Date", "Reference", "Description", "Debit", "Credit", "Balance"]} rows={rows} selectable={false} rowAction={false} empty="No entries match these filters." />
+        <DataTable
+          columns={["Date", "Reference", "Description", "Debit", "Credit", "Balance"]}
+          rows={rows}
+          selectable={false}
+          rowAction={false}
+          empty={kind || status ? "No entries match these filters." : undefined}
+          emptyState={{ title: "No transactions yet", note: "Charges and receipts for this student will appear here once fees are raised." }}
+        />
       </Panel>
     </>
   );

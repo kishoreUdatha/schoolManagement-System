@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -77,7 +78,17 @@ export function RolesList() {
           columns={["Role", "Description", "Users", "Signs in as", "Permissions", "Status"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(286)}?id=${items[i].id}`)}
-          empty={roles.loading ? "Loading roles…" : "No roles match these filters."}
+          empty={roles.loading ? "Loading roles…" : typed || kind || status ? "No roles match these filters." : undefined}
+          emptyState={{
+            title: "No roles yet",
+            note: "A role is a set of permissions granted on top of a sign-in; create one to control what staff can see and do.",
+            action: (
+              <Link href={`${routeOf(286)}?new=1`} className="btn primary">
+                <Icon name="plus" className="sm" />
+                Create role
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

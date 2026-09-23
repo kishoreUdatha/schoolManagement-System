@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -69,7 +70,16 @@ export function RouteList() {
           columns={["Route", "Vehicle", "Stops", "Distance", "Students", "Fee / month", "Status"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(190)}?id=${items[i].id}`)}
-          empty={routes.loading ? "Loading routes…" : all.length ? "No routes match these filters." : "No routes yet. Create the first one."}
+          empty={routes.loading ? "Loading routes…" : all.length ? "No routes match these filters." : undefined}
+          emptyState={{
+            title: "No routes yet",
+            note: "A route is the path a bus takes with its stops; children are assigned to a stop on one.",
+            action: (
+              <Link href={routeOf(190)} className="btn primary">
+                Create route
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>
@@ -391,7 +401,16 @@ export function StopList() {
           columns={["Stop", "Route", "Sequence", "Pickup time", "Drop time", "Students"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(190)}?id=${stops[i].route.id}`)}
-          empty={routes.loading ? "Loading stops…" : "No stops yet. Add them on a route."}
+          empty={routes.loading ? "Loading stops…" : undefined}
+          emptyState={{
+            title: "No stops yet",
+            note: "Stops are added while building a route, not from this list.",
+            action: (
+              <Link href={routeOf(190)} className="btn primary">
+                Add stop
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

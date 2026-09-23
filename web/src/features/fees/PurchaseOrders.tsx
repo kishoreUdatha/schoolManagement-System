@@ -143,7 +143,16 @@ export function PurchaseOrders() {
                 </>
               );
             }}
-            empty={orders.loading ? "Loading orders…" : supplierId || status ? "No orders match these filters." : "No purchase orders yet."}
+            empty={orders.loading ? "Loading orders…" : supplierId || status ? "No orders match these filters." : undefined}
+            emptyState={{
+              title: "No purchase orders yet",
+              note: "Raise an order with a supplier before receiving stock or billing against it.",
+              action: (
+                <button type="button" className="btn primary" onClick={() => setNewOrder(true)}>
+                  Raise order
+                </button>
+              ),
+            }}
           />
         </Panel>
       ) : (
@@ -160,7 +169,16 @@ export function PurchaseOrders() {
                 <span className="muted small">—</span>
               )
             }
-            empty={bills.loading ? "Loading bills…" : supplierId || unpaid ? "No bills match these filters." : "No supplier bills recorded yet."}
+            empty={bills.loading ? "Loading bills…" : supplierId || unpaid ? "No bills match these filters." : undefined}
+            emptyState={{
+              title: "No supplier bills yet",
+              note: "Record a bill against a purchase order, or on its own, to track what the school owes a supplier.",
+              action: (
+                <button type="button" className="btn primary" onClick={() => setNewBill(true)}>
+                  Record bill
+                </button>
+              ),
+            }}
           />
         </Panel>
       )}

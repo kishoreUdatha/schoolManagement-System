@@ -98,7 +98,16 @@ export function VehicleList() {
           columns={["Vehicle", "Registration", "Capacity", "Driver", "Route", "Status"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(188)}?id=${items[i].id}`)}
-          empty={vehicles.loading ? "Loading vehicles…" : all.length ? "No vehicles match these filters." : "No vehicles yet. Add the first one."}
+          empty={vehicles.loading ? "Loading vehicles…" : all.length ? "No vehicles match these filters." : undefined}
+          emptyState={{
+            title: "No vehicles yet",
+            note: "Add the buses and vans that carry your students before building routes and assigning drivers.",
+            action: (
+              <Link href={routeOf(187)} className="btn primary">
+                Add vehicle
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>
@@ -362,7 +371,11 @@ export function VehicleDetails() {
               rows={services.map((l) => [label(l.kind) + (l.vendor ? ` · ${l.vendor}` : ""), date(l.log_date), l.odometer_km !== null ? `${l.odometer_km.toLocaleString("en-IN")} km` : "—", money(l.amount)])}
               selectable={false}
               rowAction={false}
-              empty={logs.loading ? "Loading…" : "No service entries recorded."}
+              empty={logs.loading ? "Loading…" : undefined}
+              emptyState={{
+                title: "No service entries yet",
+                note: "Service, repair and tyre work recorded for this vehicle will show up here. Fuel fill-ups are logged separately, under Maintenance & fuel.",
+              }}
             />
           </Panel>
         </div>
@@ -563,7 +576,16 @@ export function MaintenanceFuel() {
           columns={["Vehicle", "Service type", "Odometer", "Date", "Litres", "Amount"]}
           rows={rows}
           onView={(i) => setViewing(items[i])}
-          empty={logs ? "No fuel or service entries recorded." : "Loading…"}
+          empty={logs ? undefined : "Loading…"}
+          emptyState={{
+            title: "No fuel or service entries yet",
+            note: "Record fuel fill-ups, services and repairs against a vehicle to track its running costs.",
+            action: (
+              <Link href={`${routeOf(197)}?new=1`} className="btn primary">
+                Record fuel or service
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {viewing ? (

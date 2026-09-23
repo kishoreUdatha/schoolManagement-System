@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -116,7 +117,19 @@ export function TeacherAllocation({ only }: { only?: OnlyStaff }) {
           selectable={false}
           rowAction={!only}
           onView={(i) => router.push(`${routeOf(82)}?id=${list[i].staff_id}`)}
-          empty={workload.loading ? "Loading teachers…" : only ? `No subjects or periods are allocated to ${only.name}.` : "No teachers match."}
+          empty={workload.loading ? "Loading teachers…" : undefined}
+          emptyState={{
+            title: only ? "No workload for this teacher" : "No teachers yet",
+            note: only
+              ? `No subjects or periods are allocated to ${only.name} yet.`
+              : "Add teaching staff, then assign them to classes and subjects.",
+            action: only ? undefined : (
+              <Link href="/staff/subject-class-assignment" className="btn primary">
+                <Icon name="arrow" className="sm" />
+                Assign subject teachers
+              </Link>
+            ),
+          }}
         />
       </Panel>
       <div className="gap" />

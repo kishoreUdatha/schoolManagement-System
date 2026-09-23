@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
@@ -84,7 +85,17 @@ export function LabEquipment() {
           columns={["Equipment", "Location", "Available", "Unit", "Minimum stock", "Status"]}
           rows={rows}
           rowAction={false}
-          empty={items.loading ? "Loading items…" : "No stock items match these filters."}
+          empty={items.loading ? "Loading items…" : s || location || status ? "No stock items match these filters." : undefined}
+          emptyState={{
+            title: "No stock items yet",
+            note: "Consumables that need counting are set up as store items; give them a lab as their location to list them here.",
+            action: (
+              <Link href="/inventory-labs/item-catalogue?new=1" className="btn primary">
+                <Icon name="plus" className="sm" />
+                Add equipment
+              </Link>
+            ),
+          }}
         />
       </Panel>
       <Panel title="Equipment recorded on each lab" sub={`${labs.data?.length ?? 0} lab(s)`}>

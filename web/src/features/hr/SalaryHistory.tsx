@@ -152,7 +152,17 @@ export function SalaryHistory() {
             rows={historyRows}
             selectable={false}
             rowAction={false}
-            empty={staffId === null ? "Choose a staff member." : history.loading ? "Loading salary history…" : "No salary has been set for this person."}
+            empty={staffId === null ? "Choose a staff member." : history.loading ? "Loading salary history…" : undefined}
+            emptyState={{
+              title: "No salary set",
+              note: "Set up a salary structure for this person in Payroll Setup to start their salary history.",
+              action: (
+                <Link href={routeOf(183)} className="btn primary">
+                  <Icon name="settings" className="sm" />
+                  Set up salary
+                </Link>
+              ),
+            }}
           />
         </Panel>
         <Panel title="Payslips" sub={`${person ? person.full_name : "This person"} · latest ${MONTHS} payroll months`} flush>
@@ -169,7 +179,11 @@ export function SalaryHistory() {
                 </button>
               );
             }}
-            empty={staffId === null ? "Choose a staff member." : slips === null ? "Loading payslips…" : "No payslips for this person in these months."}
+            empty={staffId === null ? "Choose a staff member." : slips === null ? "Loading payslips…" : undefined}
+            emptyState={{
+              title: "No payslips yet",
+              note: `No payslips for ${person ? person.full_name : "this person"} in the last ${MONTHS} payroll months.`,
+            }}
           />
         </Panel>
         <Panel title="Bank files" sub="The bulk-transfer file for each payroll month, for the bank's portal. Available once the month is finalised." flush>
@@ -190,7 +204,17 @@ export function SalaryHistory() {
                 </button>
               );
             }}
-            empty={runs.loading ? "Loading payroll months…" : "No payroll has been run yet."}
+            empty={runs.loading ? "Loading payroll months…" : undefined}
+            emptyState={{
+              title: "No payroll run yet",
+              note: "Bank files appear here once a payroll month is finalised.",
+              action: (
+                <Link href={routeOf(184)} className="btn primary">
+                  <Icon name="money" className="sm" />
+                  Payroll processing
+                </Link>
+              ),
+            }}
           />
         </Panel>
       </div>

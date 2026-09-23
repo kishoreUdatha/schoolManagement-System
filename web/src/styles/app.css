@@ -284,3 +284,16 @@ option{background:#fff}
 .dept-row.on{background:#eef4ff;color:var(--blue)}
 .dept-row small{text-align:right}
 @media(max-width:700px){.dept-row{grid-template-columns:minmax(0,1fr) auto}.dept-row small{display:none}}
+/* One plain line under a screen's title, and the top bar's "New" menu */
+.page-note{margin:2px 0 0;font-size:12.5px;color:#56698a}
+.new-menu{position:relative}
+.new-menu-list{position:absolute;right:0;top:calc(100% + 6px);min-width:180px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--lift);padding:6px;z-index:60;display:grid;gap:2px}
+.new-menu-list a{display:block;padding:8px 10px;border-radius:7px;font-size:13.5px;color:inherit}
+.new-menu-list a:hover{background:#f2f6fd;color:var(--blue)}
+/* Empty lists: when a list has nothing in it yet, the table says what is
+   missing, why it matters and offers the screen's own first step. A filter
+   that matches nothing keeps the plain muted line above. */
+.empty-guide{display:flex;flex-direction:column;align-items:center;gap:5px;max-width:420px;margin:0 auto;padding:10px 0;text-align:center}
+.empty-guide strong{font-size:14.5px;font-weight:650;color:var(--ink)}
+.empty-guide p{margin:0;font-size:13px;line-height:1.55;color:var(--muted)}
+.empty-guide-action{margin-top:9px}

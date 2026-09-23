@@ -137,7 +137,17 @@ export function MyLeave() {
                   </>
                 );
               }}
-              empty={leaves.loading ? "Loading…" : all.length ? "No application matches these filters." : "You have not applied for leave yet."}
+              empty={leaves.loading ? "Loading…" : all.length ? "No application matches these filters." : undefined}
+              emptyState={{
+                title: "No leave applied for yet",
+                note: "Apply for leave and it appears here, from your request to the office's decision.",
+                action: (
+                  <button type="button" className="btn primary" onClick={() => setEditing({ leave: null })}>
+                    <Icon name="calendar" className="sm" />
+                    Apply for leave
+                  </button>
+                ),
+              }}
             />
           </Panel>
         </div>

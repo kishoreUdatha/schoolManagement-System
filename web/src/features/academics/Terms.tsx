@@ -72,7 +72,16 @@ export function Terms() {
           columns={COLUMNS}
           rows={rows}
           onView={(i) => setEditing(shown[i])}
-          empty={list.loading ? "Loading terms…" : "No terms in this academic year yet."}
+          empty={list.loading ? "Loading terms…" : q || status ? "No terms match these filters." : undefined}
+          emptyState={{
+            title: "No terms yet",
+            note: "Terms divide the academic year into the periods report cards and fee schedules run on, so add the first one.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                Add term
+              </button>
+            ),
+          }}
         />
       </Panel>
       {editing && yearId ? (

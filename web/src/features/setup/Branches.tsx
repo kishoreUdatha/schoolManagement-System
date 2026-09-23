@@ -81,7 +81,17 @@ export function BranchesList() {
           columns={["Branch", "Code", "School", "Coordinator", "Students", "Status"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(27)}?id=${items[i].id}`)}
-          empty={list.loading ? "Loading branches…" : list.data?.length ? "No branches match these filters." : "One campus — no branches added yet."}
+          empty={list.loading ? "Loading branches…" : list.data?.length ? "No branches match these filters." : undefined}
+          emptyState={{
+            title: "One campus — no branches added yet",
+            note: "Add a branch to run a second campus under this school, with its own sections and staff.",
+            action: (
+              <Link href={routeOf(26)} className="btn primary">
+                <Icon name="plus" className="sm" />
+                Add branch
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

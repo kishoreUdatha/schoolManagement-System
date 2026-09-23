@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
@@ -82,7 +83,17 @@ function Body({ s }: { s: StudentProfile }) {
           rows={rows}
           selectable={false}
           rowAction={false}
-          empty={loans.loading ? "Loading loans…" : all.length ? "No loans match these filters." : "This student has not borrowed any books yet."}
+          empty={loans.loading ? "Loading loans…" : all.length ? "No loans match these filters." : undefined}
+          emptyState={{
+            title: "No loans yet",
+            note: "Books this student borrows from the library will be listed here.",
+            action: (
+              <Link href="/library/library-catalogue" className="btn primary">
+                <Icon name="arrow" className="sm" />
+                View catalogue
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

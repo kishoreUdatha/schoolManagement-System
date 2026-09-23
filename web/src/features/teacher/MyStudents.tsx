@@ -99,7 +99,11 @@ function Roster() {
           rows={rows}
           selectable={false}
           onView={(i) => open(items[i].id)}
-          empty={roster.loading || classes.loading ? "Loading…" : all.length ? "No student matches the search." : "No active students in this section."}
+          empty={roster.loading || classes.loading ? "Loading…" : all.length ? "No student matches the search." : undefined}
+          emptyState={{
+            title: "No active students in this section",
+            note: "Once students are enrolled in this section, their roster appears here.",
+          }}
         />
       </Panel>
     </>
@@ -200,7 +204,10 @@ function StudentDetail({ id }: { id: string }) {
               rows={s.exams.map((e) => [e.exam_name, label(e.exam_kind), pct(e.percentage), e.overall_grade, e.is_pass ? "Pass" : "Failed"])}
               selectable={false}
               rowAction={false}
-              empty="No published results yet."
+              emptyState={{
+                title: "No published results yet",
+                note: "Results appear here once the student's exams are marked and published.",
+              }}
             />
           </Panel>
           <Panel title="Behaviour" sub="Recent ratings, 1 to 5" flush>
@@ -209,7 +216,10 @@ function StudentDetail({ id }: { id: string }) {
               rows={s.behaviour_recent.map((b) => [b.period_key, String(b.punctuality), String(b.participation), String(b.discipline), String(b.respect), b.average.toFixed(1), b.teacher_note ?? "—"])}
               selectable={false}
               rowAction={false}
-              empty="No behaviour ratings yet."
+              emptyState={{
+                title: "No behaviour ratings yet",
+                note: "Weekly or monthly behaviour ratings for this student will appear here once they're rated.",
+              }}
             />
           </Panel>
         </div>

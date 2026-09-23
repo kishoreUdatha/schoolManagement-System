@@ -189,7 +189,11 @@ export function Invigilation() {
           rows={rows}
           rowAction={false}
           selectable={false}
-          empty={roster.loading ? "Loading duties…" : "No invigilation duties for this exam yet."}
+          empty={roster.loading ? "Loading duties…" : undefined}
+          emptyState={{
+            title: "No invigilation duties yet",
+            note: "Invigilators are assigned per room, once a paper has been seated in Hall / Room Allocation.",
+          }}
         />
       </Panel>
       <div className="tip">

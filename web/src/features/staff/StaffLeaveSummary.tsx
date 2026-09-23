@@ -208,7 +208,17 @@ export function StaffLeaveSummary({ only }: { only?: OnlyStaff }) {
       </Panel>
       <div className="gap" />
       <Panel title="Detailed breakdown" sub={`Leave balances for ${year}`} flush>
-        <DataTable columns={COLUMNS} rows={rows} selectable={false} rowAction={false} empty={balances.loading ? "Loading…" : "No leave balances allotted for this year."} />
+        <DataTable
+          columns={COLUMNS}
+          rows={rows}
+          selectable={false}
+          rowAction={false}
+          empty={balances.loading ? "Loading…" : undefined}
+          emptyState={{
+            title: "No leave balances yet",
+            note: `Leave balances for ${year} have not been allotted to staff yet.`,
+          }}
+        />
       </Panel>
     </>
   );

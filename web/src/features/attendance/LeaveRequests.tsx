@@ -88,11 +88,12 @@ export function LeaveRequests() {
   const blank = { child: "", kind: "sick", from_date: "", to_date: "", reason: "" };
   const [f, setF] = useState(blank);
   const [formError, setFormError] = useState<string | null>(null);
-  usePageAction(EV.requestLeave, () => {
+  const openRequest = () => {
     setF({ ...blank, child: childId || String(children.data?.[0]?.id ?? ""), from_date: today ?? "", to_date: today ?? "" });
     setFormError(null);
     setOpen(true);
-  });
+  };
+  usePageAction(EV.requestLeave, openRequest);
   async function apply() {
     if (!f.child || !f.from_date || !f.to_date) return setFormError("Choose the child and the dates.");
     if (f.to_date < f.from_date) return setFormError("The last day is before the first.");
@@ -152,7 +153,17 @@ export function LeaveRequests() {
           rows={rows}
           selectable={false}
           onView={(i) => setViewing(items[i])}
-          empty={leaves === null ? "Loading requests…" : leaves.length ? "No requests match these filters." : "No leave has been requested yet."}
+          empty={leaves === null ? "Loading requests…" : leaves.length ? "No requests match these filters." : undefined}
+          emptyState={{
+            title: "No leave has been requested yet",
+            note: "A leave request goes straight to the class teacher, who approves or rejects it.",
+            action: (
+              <button type="button" className="btn primary" onClick={openRequest}>
+                <Icon name="check" className="sm" />
+                Request leave
+              </button>
+            ),
+          }}
         />
       </Panel>
       <Modal

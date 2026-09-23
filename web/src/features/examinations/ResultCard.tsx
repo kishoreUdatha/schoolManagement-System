@@ -248,7 +248,13 @@ function Shell({
             </div>
           ) : (
             <>
-              <DataTable columns={["Subject", "Maximum marks", "Marks obtained", "Grade", "Result"]} rows={rows} selectable={false} rowAction={false} empty="No subjects have been marked for this exam yet." />
+              <DataTable
+                columns={["Subject", "Maximum marks", "Marks obtained", "Grade", "Result"]}
+                rows={rows}
+                selectable={false}
+                rowAction={false}
+                emptyState={{ title: "No subjects marked yet", note: "This exam's marks have not been entered for this student yet." }}
+              />
               <div className="invoice-total">
                 <div>
                   <span>Total</span>

@@ -144,26 +144,35 @@ export function GenerateFees() {
                   </Field>
                 </div>
                 <p className="muted small" style={{ marginTop: 12 }}>
-                  Every active student of the year is charged each monthly fee head their class has in the fee structure, less any concession. The due date comes from the structure.
+                  Every active student of the year is charged each monthly fee type their class has in the fee structure, less any concession. The due date comes from the structure.
                 </p>
               </section>
             </div>
           </div>
           <div className="form-footer">
-            <span>{plan.length ? `${plan.length} fee head${plan.length === 1 ? "" : "s"} across ${new Set(used.map((s) => s.class_id)).size} classes` : "Nothing to raise yet"}</span>
+            <span>{plan.length ? `${plan.length} fee type${plan.length === 1 ? "" : "s"} across ${new Set(used.map((s) => s.class_id)).size} classes` : "Nothing to raise yet"}</span>
             <button type="submit" className="btn primary" disabled={busy !== "" || !yearId || !plan.length}>
               <Icon name="check" className="sm" />
               {busy === "fees" ? "Generating…" : `Generate ${monthLabel(period)} fees`}
             </button>
           </div>
         </form>
-        <Panel title="What will be raised" sub={`Monthly fee heads in the ${year?.name ?? ""} fee structure${structures.loading ? " · Loading…" : ""}`} flush>
+        <Panel title="What will be raised" sub={`Monthly fee types in the ${year?.name ?? ""} fee structure${structures.loading ? " · Loading…" : ""}`} flush>
           <DataTable
-            columns={["Fee head", "Classes", "Amount per student", "Due"]}
+            columns={["Fee type", "Classes", "Amount per student", "Due"]}
             rows={rows}
             selectable={false}
             rowAction={false}
-            empty={structures.loading ? "Loading the fee structure…" : "No monthly fees are set up for this year. Add them in the fee structure first."}
+            empty={structures.loading ? "Loading the fee structure…" : undefined}
+            emptyState={{
+              title: "No monthly fees set up for this year",
+              note: "Generating fees needs a monthly fee type in the fee structure for at least one class.",
+              action: (
+                <Link href={routeOf(155)} className="btn primary">
+                  Fee structure
+                </Link>
+              ),
+            }}
           />
         </Panel>
         <form className="panel" onSubmit={transport}>
@@ -175,9 +184,9 @@ export function GenerateFees() {
                   <h3>Transport fees</h3>
                 </div>
                 <div className="form-grid">
-                  <Field label="Book under fee head" required>
+                  <Field label="Book under fee type" required>
                     <select value={tHead} onChange={(e) => setTHead(e.target.value)} required>
-                      <option value="">Select fee head</option>
+                      <option value="">Select fee type</option>
                       {heads.data
                         ?.filter((h) => h.is_active)
                         .map((h) => (

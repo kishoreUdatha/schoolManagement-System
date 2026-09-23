@@ -19,7 +19,7 @@ type Draft = { id: number | null; fee_head_id: string; amount: string; due_day_o
 const EMPTY: Draft = { id: null, fee_head_id: "", amount: "", due_day_of_month: "10" };
 
 /**
- * SCR-156, live. A class's fee structure is one line per fee head for the
+ * SCR-156, live. A class's fee structure is one line per fee type for the
  * year: POST /school/fees/structures adds a head, PATCH changes its amount
  * or due day, DELETE removes it. Opens on ?year=&class= from SCR-155.
  * The structure's name is PUT /school/fees/structure-names (saved on leaving the field).
@@ -164,9 +164,9 @@ export function FeeStructureForm() {
                 ))}
               </select>
             </Field>
-            <Field label={draft.id ? "Fee head (editing)" : "Fee head"} required>
+            <Field label={draft.id ? "Fee type (editing)" : "Fee type"} required>
               <select value={draft.fee_head_id} required disabled={Boolean(draft.id) || !classId} onChange={(e) => setDraft({ ...draft, fee_head_id: e.target.value })}>
-                <option value="">Select fee head</option>
+                <option value="">Select fee type</option>
                 {available.map((h) => (
                   <option key={h.id} value={h.id}>
                     {`${h.name} · ${h.is_recurring ? "monthly" : "once"}`}
@@ -183,7 +183,7 @@ export function FeeStructureForm() {
           </div>
         </div>
         <div className="form-footer">
-          <span>{draft.id ? "Changing a line affects fees raised from now on." : "Each fee head is added to the class once."}</span>
+          <span>{draft.id ? "Changing a line affects fees raised from now on." : "Each fee type is added to the class once."}</span>
           <div className="actions">
             {draft.id ? (
               <button type="button" className="btn" onClick={() => setDraft(EMPTY)}>
@@ -198,7 +198,7 @@ export function FeeStructureForm() {
         </div>
       </form>
       <Panel
-        title="Fee heads"
+        title="Fee types"
         sub={classId ? `${lines.data?.length ?? 0} component${lines.data?.length === 1 ? "" : "s"}` : "Choose a class to see its components"}
         flush
       >
@@ -238,7 +238,7 @@ export function FeeStructureForm() {
           </table>
         </div>
         <div className="table-empty" hidden={Boolean(lines.data?.length)}>
-          {!classId ? "Choose a class." : lines.loading ? "Loading…" : "No fee heads on this class yet. Add the first component above."}
+          {!classId ? "Choose a class." : lines.loading ? "Loading…" : "No fee types on this class yet. Add the first component above."}
         </div>
       </Panel>
     </div>

@@ -187,7 +187,16 @@ export function QuestionBank() {
               </>
             );
           }}
-          empty={list.loading ? "Loading questions…" : search || subjectId || kind || bloom || difficulty ? "No questions match these filters." : "The bank is empty. Add the first question."}
+          empty={list.loading ? "Loading questions…" : search || subjectId || kind || bloom || difficulty ? "No questions match these filters." : undefined}
+          emptyState={{
+            title: "No questions in the bank yet",
+            note: "Questions you add here can be reused across online tests, so add the first one to start building the bank.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                Add question
+              </button>
+            ),
+          }}
         />
       </Panel>
 

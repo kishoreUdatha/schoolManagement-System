@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
@@ -82,7 +83,17 @@ export function LabRegister() {
           columns={["Lab", "Room", "In charge", "Capacity", "Equipment", "Status"]}
           rows={rows}
           onView={(i) => setEditing(shown[i])}
-          empty={list.loading ? "Loading labs…" : s || status ? "No labs match these filters." : "No labs have been set up yet."}
+          empty={list.loading ? "Loading labs…" : s || status ? "No labs match these filters." : undefined}
+          emptyState={{
+            title: "No labs yet",
+            note: "A lab record holds its room, subject and in-charge, and is what bookings and equipment notes are kept against.",
+            action: (
+              <Link href="/inventory-labs/lab-register?new=1" className="btn primary" scroll={false}>
+                <Icon name="plus" className="sm" />
+                Add lab
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {adding ? <LabDialog existing={null} onClose={closeAdd} onSaved={() => (closeAdd(), list.reload())} /> : null}

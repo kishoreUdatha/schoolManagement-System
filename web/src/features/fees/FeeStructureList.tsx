@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -52,9 +53,9 @@ export function FeeStructureList() {
   const all = structures.data ?? [];
   const n = (v: number) => (structures.data ? v.toLocaleString("en-IN") : "…");
   const stats = [
-    { label: "Structure lines", value: n(all.length), note: `One per class and fee head${year ? ` · ${year.name}` : ""}` },
+    { label: "Structure lines", value: n(all.length), note: `One per class and fee type${year ? ` · ${year.name}` : ""}` },
     { label: "Classes covered", value: n(new Set(all.map((s) => s.class_id)).size), note: classes.data ? `Of ${classes.data.length} classes` : "Have a fee structure" },
-    { label: "Fee heads", value: n(new Set(all.map((s) => s.fee_head_id)).size), note: "Used in the structures" },
+    { label: "Fee types", value: n(new Set(all.map((s) => s.fee_head_id)).size), note: "Used in the structures" },
     { label: "Monthly", value: n(all.filter((s) => s.is_recurring).length), note: "Lines charged every month" },
   ];
 
@@ -102,7 +103,17 @@ export function FeeStructureList() {
           columns={["Structure", "Academic year", "Class", "Amount per charge", "Frequency", "Status"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(156)}?year=${items[i].academic_year_id}&class=${items[i].class_id}`)}
-          empty={structures.loading ? "Loading fee structures…" : q || classId || status ? "No fee structures match these filters." : "No fee structures for this academic year yet."}
+          empty={structures.loading ? "Loading fee structures…" : q || classId || status ? "No fee structures match these filters." : undefined}
+          emptyState={{
+            title: "No fee structures for this academic year yet",
+            note: "A fee structure sets what each class pays, per fee type, so charges can be raised for every student.",
+            action: (
+              <Link href={routeOf(156)} className="btn primary">
+                <Icon name="plus" className="sm" />
+                Create fee structure
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

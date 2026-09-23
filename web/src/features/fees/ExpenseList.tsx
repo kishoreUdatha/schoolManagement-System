@@ -103,7 +103,16 @@ export function ExpenseList() {
           columns={["Date", "Voucher", "Expense head", "Payee", "Amount", "Status"]}
           rows={rows}
           onView={(i) => setOpen(items[i])}
-          empty={list.loading ? "Loading expenses…" : "No expenses recorded in this range."}
+          empty={list.loading ? "Loading expenses…" : q || categoryId || status ? "No expenses match these filters." : undefined}
+          emptyState={{
+            title: "No expenses in this range",
+            note: "Record what the school spends — supplies, repairs, salaries paid outside payroll — against a category.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+                Add expense
+              </button>
+            ),
+          }}
         />
       </Panel>
       {open ? (

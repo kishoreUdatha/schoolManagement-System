@@ -21,7 +21,7 @@ function fyStart(): string {
 
 /**
  * SCR-171, live: GET /school/finance/report?from=&to= — money received and
- * spent over a window, by fee head, mode, category and month. The CSV is the
+ * spent over a window, by fee type, mode, category and month. The CSV is the
  * fee-collection export, GET /school/analytics/fee-collection.csv.
  */
 export function FinanceReports() {
@@ -35,13 +35,13 @@ export function FinanceReports() {
     { label: "Received", value: r ? money(r.received) : "…", note: r ? `Fee collections · ${r.receipts.toLocaleString("en-IN")} receipts` : "Fee collections" },
     { label: "Spent", value: r ? money(r.spent) : "…", note: "Expenses and supplier payments" },
     { label: "Net", value: r ? money(r.net) : "…", note: r && r.net < 0 ? "Spent more than received" : "Received less spent" },
-    { label: "Fee heads", value: r ? String(r.income_by_head.length) : "…", note: "With money received" },
+    { label: "Fee types", value: r ? String(r.income_by_head.length) : "…", note: "With money received" },
   ];
 
   const months = (r?.by_month ?? []).slice(-6);
   const received = Number(r?.received ?? 0);
   const spent = Number(r?.spent ?? 0);
-  // Income rows are fee heads: billed in the period (expected), received in the period, still owed on those bills.
+  // Income rows are fee types: billed in the period (expected), received in the period, still owed on those bills.
   const billed = new Map((r?.billed_by_head ?? []).map((b) => [b.label, b]));
   const incomeHeads = [...new Set([...(r?.billed_by_head ?? []).map((b) => b.label), ...(r?.income_by_head ?? []).map((x) => x.label)])];
   const receivedBy = new Map((r?.income_by_head ?? []).map((x) => [x.label, Number(x.amount)]));
@@ -95,7 +95,7 @@ export function FinanceReports() {
               </div>
               <div>
                 <dt>Group by</dt>
-                <dd>Fee head and expense category</dd>
+                <dd>Fee type and expense category</dd>
               </div>
             </dl>
           </Panel>
@@ -129,7 +129,7 @@ export function FinanceReports() {
         flush
       >
         {/* Expected and outstanding are the bills falling due in the period; the collection rate is paid ÷ billed on those bills. */}
-        <DataTable columns={["Fee head / category", "Type", "Expected", "Received", "Outstanding", "Collection rate"]} rows={rows} selectable={false} rowAction={false} empty={rep.loading ? "Loading…" : "Nothing in this period."} />
+        <DataTable columns={["Fee type / category", "Type", "Expected", "Received", "Outstanding", "Collection rate"]} rows={rows} selectable={false} rowAction={false} empty={rep.loading ? "Loading…" : "Nothing in this period."} />
       </Panel>
     </>
   );

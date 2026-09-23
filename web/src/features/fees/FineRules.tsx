@@ -114,9 +114,9 @@ export function FineRules() {
                 <Field label="Rule name" required>
                   <input value={f.name} onChange={set("name")} minLength={2} maxLength={120} required placeholder="Monthly tuition late fee" />
                 </Field>
-                <Field label="Fee head">
+                <Field label="Fee type">
                   <select value={f.fee_head_id} onChange={set("fee_head_id")}>
-                    <option value="">Every fee head</option>
+                    <option value="">Every fee type</option>
                     {heads.data?.map((h) => (
                       <option key={h.id} value={h.id}>
                         {h.name}
@@ -126,7 +126,7 @@ export function FineRules() {
                 </Field>
                 <Field label="Book the fine under" required>
                   <select value={f.charge_head_id} onChange={set("charge_head_id")} required>
-                    <option value="">Select fee head</option>
+                    <option value="">Select fee type</option>
                     {heads.data?.map((h) => (
                       <option key={h.id} value={h.id}>
                         {h.name}
@@ -182,7 +182,7 @@ export function FineRules() {
             <div className="event-row" key={r.id}>
               <div className="event-content">
                 <h4>{r.name}</h4>
-                <p>{`${r.fee_head_name ?? "Every fee head"} · ${describeRule(r)} · booked as ${r.charge_head_name}`}</p>
+                <p>{`${r.fee_head_name ?? "Every fee type"} · ${describeRule(r)} · booked as ${r.charge_head_name}`}</p>
               </div>
               <div className="row">
                 {!r.is_active ? <Badge>Paused</Badge> : null}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
@@ -9,6 +10,7 @@ import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, dateTime, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
+import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { KV } from "@/features/setup/bits";
 import type { Assignment, StaffUser } from "./types";
@@ -169,7 +171,17 @@ export function UserManagement() {
             setOpenId(items[i].id);
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
-          empty={list.loading ? "Loading users…" : "No users match these filters."}
+          empty={list.loading ? "Loading users…" : role || status || typed ? "No users match these filters." : undefined}
+          emptyState={{
+            title: "No users yet",
+            note: "Every member of staff signs in as a user; their role decides what they can see.",
+            action: (
+              <Link href={routeOf(81)} className="btn primary">
+                <Icon name="arrow" className="sm" />
+                Invite user
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

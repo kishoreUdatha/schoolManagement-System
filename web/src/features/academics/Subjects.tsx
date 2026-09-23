@@ -105,7 +105,16 @@ export function Subjects() {
           columns={COLUMNS}
           rows={rows}
           onView={(i) => setEditing(shown[i])}
-          empty={list.loading ? "Loading subjects…" : "No subjects match."}
+          empty={list.loading ? "Loading subjects…" : q || kind || status ? "No subjects match these filters." : undefined}
+          emptyState={{
+            title: "No subjects yet",
+            note: "Subjects are what classes are built from, so add the school's subjects before assigning them to classes.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                Add subject
+              </button>
+            ),
+          }}
         />
       </Panel>
       {editing ? (

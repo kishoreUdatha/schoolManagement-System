@@ -131,7 +131,17 @@ export function SchoolsList() {
           pages={list.data?.pages ?? 1}
           onPage={setPage}
           onView={(i) => router.push(`${routeOf(21)}?id=${flat[i].tenant.id}`)}
-          empty={list.loading || !lines ? "Loading schools…" : search || status ? "No schools match these filters." : "No schools on the platform yet."}
+          empty={list.loading || !lines ? "Loading schools…" : search || status ? "No schools match these filters." : undefined}
+          emptyState={{
+            title: "No schools on the platform yet",
+            note: "Adding a school creates its organisation and first administrator together.",
+            action: (
+              <Link href={routeOf(23)} className="btn primary">
+                <Icon name="plus" className="sm" />
+                Add school
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

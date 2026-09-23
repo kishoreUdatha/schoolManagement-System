@@ -5,6 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
+import { Prereq } from "@/components/ui/Prereq";
 import { api, errorText } from "@/lib/api";
 import { initials, pct } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
@@ -98,6 +99,9 @@ export function AttendanceRegister() {
 
   return (
     <>
+      <Prereq missing={Boolean(classes.data && !sections.length)} screen={94} cta="Add classes">
+        No class has a section yet, so there is no register to show.
+      </Prereq>
       <StatStrip items={years.data?.length === 0 ? stats.map((x) => ({ ...x, value: "—" })) : stats} compact />
       <div className="filterbar">
         <select aria-label="Section" value={sectionId ?? ""} onChange={(e) => setSectionId(Number(e.target.value))}>

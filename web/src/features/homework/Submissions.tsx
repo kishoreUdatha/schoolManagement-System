@@ -122,7 +122,11 @@ function ProjectSubmissions() {
             if (r.id === 0) setNote(`${r.student_name ?? "This student"} has not started yet — nothing to evaluate.`);
             else router.push(`${routeOf(137)}?id=${id}&progress=${r.id}`);
           }}
-          empty={progress.loading ? "Loading…" : "No students match."}
+          empty={progress.loading ? "Loading…" : all.length ? "No students match these filters." : undefined}
+          emptyState={{
+            title: "No students yet",
+            note: "This assignment has no eligible students to submit work — check the class it was set for.",
+          }}
         />
       </Panel>
     </>
@@ -182,7 +186,11 @@ function LearnerSubmissions() {
           columns={columns}
           rows={cells}
           onView={(k) => router.push(`${routeOf(132)}?id=${shown[k].id}${learner.childQuery}`)}
-          empty={list.loading || subs.loading ? "Loading…" : "Nothing handed in yet."}
+          empty={list.loading || subs.loading ? "Loading…" : handed.length ? "Nothing matches these filters." : undefined}
+          emptyState={{
+            title: "Nothing handed in yet",
+            note: "Once you submit homework or assignments, they'll show up here with their marks and status.",
+          }}
         />
       </Panel>
     </>

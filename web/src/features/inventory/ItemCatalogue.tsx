@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
@@ -94,7 +95,17 @@ export function ItemCatalogue() {
           columns={["Item", "SKU", "Category", "Unit", "Available", "Reorder level"]}
           rows={rows}
           onView={(i) => setEditing(items[i])}
-          empty={list.loading ? "Loading items…" : search || category || status ? "No items match these filters." : "No items have been set up in the store yet."}
+          empty={list.loading ? "Loading items…" : search || category || status ? "No items match these filters." : undefined}
+          emptyState={{
+            title: "No items yet",
+            note: "The catalogue is where the store's stock is set up, with a SKU and reorder level, before it can be received or issued.",
+            action: (
+              <Link href="/inventory-labs/item-catalogue?new=1" className="btn primary" scroll={false}>
+                <Icon name="plus" className="sm" />
+                Add item
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {adding ? <ItemDialog existing={null} onClose={closeAdd} onSaved={() => (closeAdd(), saved())} /> : null}

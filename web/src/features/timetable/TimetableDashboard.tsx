@@ -111,7 +111,11 @@ export function TimetableDashboard() {
               rows={table}
               selectable={false}
               onView={(i) => router.push(`${routeOf(121)}?section=${rows[i].section_id}`)}
-              empty={dash.loading ? "Loading sections…" : "No sections have been set up yet."}
+              empty={dash.loading ? "Loading sections…" : undefined}
+              emptyState={{
+                title: "No sections set up yet",
+                note: "Timetable progress is tracked per class section. Add classes and sections under Academics to see them here.",
+              }}
             />
           </Panel>
         </div>

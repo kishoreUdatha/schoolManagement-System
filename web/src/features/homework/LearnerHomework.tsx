@@ -129,7 +129,11 @@ export function LearnerHomework() {
           columns={["Homework", "Subject", "Teacher", "Due date", "Submission", "Status"]}
           rows={rows}
           onView={(k) => router.push(`${routeOf(132)}?id=${shown[k].id}${q}`)}
-          empty={list.loading ? "Loading…" : items.length ? "Nothing matches these filters." : "Nothing has been set yet."}
+          empty={list.loading ? "Loading…" : items.length ? "Nothing matches these filters." : undefined}
+          emptyState={{
+            title: "No homework yet",
+            note: "Homework your teachers set will turn up here as soon as it's assigned.",
+          }}
         />
       </Panel>
     </>

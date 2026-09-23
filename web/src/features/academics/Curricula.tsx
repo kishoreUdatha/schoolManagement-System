@@ -80,7 +80,16 @@ export function Curricula() {
           columns={COLUMNS}
           rows={rows}
           onView={(i) => setEditing(shown[i].id)}
-          empty={list.loading ? "Loading curricula…" : "No curriculum for this year yet."}
+          empty={list.loading ? "Loading curricula…" : q || classId || state ? "No curricula match these filters." : undefined}
+          emptyState={{
+            title: "No curriculum yet",
+            note: "A curriculum lists what a class studies and how many periods each subject gets, so add one before classes have anything to teach.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                Add curriculum
+              </button>
+            ),
+          }}
         />
       </Panel>
       {editing === "new" && yearId ? (

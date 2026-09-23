@@ -12,7 +12,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { Payslip, Run, RunDetail } from "./types";
-import { Dialog, Field, downloadAuthed, monthLabel, today, useNewFlag } from "./ui";
+import { Dialog, Field, NewLink, downloadAuthed, monthLabel, today, useNewFlag } from "./ui";
 
 import { ask } from "@/lib/dialog";
 const BASE = "/api/v1/school/payroll/runs";
@@ -194,7 +194,14 @@ export function PayrollProcessing() {
           rows={rows}
           selectable={false}
           onView={(i) => (draft ? setAdjusting(slips[i]) : router.push(`${routeOf(185)}?run=${r?.id}&id=${slips[i].id}`))}
-          empty={run.loading ? "Loading payslips…" : r ? "No payslips on this run." : "No run chosen."}
+          empty={run.loading ? "Loading payslips…" : undefined}
+          emptyState={{
+            title: r ? "No payslips on this run" : "No payroll run yet",
+            note: r
+              ? "This run has no payslips, usually because no active staff have a salary set. Set one up in Payroll Setup, then recalculate."
+              : "Start a payroll run for a month to draft payslips from attendance and salaries.",
+            action: r ? undefined : <NewLink icon="check">Process payroll</NewLink>,
+          }}
         />
       </Panel>
 

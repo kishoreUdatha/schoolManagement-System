@@ -148,7 +148,16 @@ export function WeeklyReports() {
               </button>
             </>
           )}
-          empty={list.loading || classes.loading ? "Loading…" : all.length ? "No student matches the search." : "No reports for this week yet. Use Generate reports to build them."}
+          empty={list.loading || classes.loading ? "Loading…" : all.length ? "No student matches the search." : undefined}
+          emptyState={{
+            title: "No reports for this week yet",
+            note: "Weekly reports pull together each student's attendance, homework, marks and behaviour, so generate them for this class and week.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setGenerating(true)}>
+                Generate reports
+              </button>
+            ),
+          }}
         />
       </Panel>
 

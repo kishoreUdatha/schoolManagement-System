@@ -4,7 +4,7 @@ import { useCallback, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
-import { ErrorNote } from "@/components/ui/states";
+import { EmptyGuide, ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { label } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -71,7 +71,21 @@ export function Rooms() {
       <ErrorNote>{list.error}</ErrorNote>
       {rooms.length === 0 ? (
         <section className="panel">
-          <div className="panel-pad muted">{list.loading ? "Loading rooms…" : list.data?.length ? "No rooms match these filters." : "No rooms recorded yet."}</div>
+          {list.loading || list.data?.length ? (
+            <div className="panel-pad muted">{list.loading ? "Loading rooms…" : "No rooms match these filters."}</div>
+          ) : (
+            <div className="panel-pad">
+              <EmptyGuide
+                title="No rooms yet"
+                note="Rooms are the classrooms, labs and halls the timetable puts lessons in."
+                action={
+                  <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                    Add room
+                  </button>
+                }
+              />
+            </div>
+          )}
         </section>
       ) : null}
       <div className="room-grid">

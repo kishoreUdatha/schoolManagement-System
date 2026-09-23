@@ -13,7 +13,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { LeaveType, StaffLeave, StaffMember } from "./types";
-import { Dialog, Field, today, useNewFlag } from "./ui";
+import { Dialog, Field, NewLink, today, useNewFlag } from "./ui";
 
 /**
  * SCR-181, live: GET /api/v1/school/staff-leaves (status filter) with the
@@ -117,7 +117,12 @@ export function LeaveRequests() {
           columns={["Employee", "Leave type", "From", "To", "Days", "Status"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(182)}?id=${items[i].id}`)}
-          empty={list.loading ? "Loading leave requests…" : typed || role || status ? "No request matches these filters." : "No leave has been requested yet."}
+          empty={list.loading ? "Loading leave requests…" : typed || role || status ? "No request matches these filters." : undefined}
+          emptyState={{
+            title: "No leave requests yet",
+            note: "Leave staff request, or that you file on their behalf, appears here until it is approved or declined.",
+            action: <NewLink icon="plus">Request leave</NewLink>,
+          }}
         />
       </Panel>
 

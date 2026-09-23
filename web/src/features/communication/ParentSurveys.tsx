@@ -135,7 +135,15 @@ export function ParentSurveys() {
             columns={["Survey", "Audience", "Responses", "Closes", "Status"]}
             rows={rows}
             selectable={false}
-            empty="No surveys yet. Create one to ask parents for feedback."
+            emptyState={{
+              title: "No surveys yet",
+              note: "A survey asks parents to rate, choose or write in an answer; it appears in the parent app once opened.",
+              action: (
+                <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                  New survey
+                </button>
+              ),
+            }}
             actions={(i) => {
               const s = list[i];
               return (

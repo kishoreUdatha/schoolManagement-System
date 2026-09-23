@@ -149,7 +149,17 @@ export function ResultOverrides() {
               </button>
             </>
           )}
-          empty={list.loading ? "Loading decisions…" : search || status || examId ? "No decisions match these filters." : "No result has been overridden. Every result is as the marks say."}
+          empty={list.loading ? "Loading decisions…" : search || status || examId ? "No decisions match these filters." : undefined}
+          emptyState={{
+            title: "No result has been overridden",
+            note: "Every result stands as the marks say; withholding, passing by grace or failing a result is recorded here on top of the marks.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setCreating(true)}>
+                <Icon name="plus" className="sm" />
+                New result decision
+              </button>
+            ),
+          }}
         />
       </Panel>
       {creating ? (

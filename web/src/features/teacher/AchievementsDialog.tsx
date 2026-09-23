@@ -110,7 +110,11 @@ export function AchievementsDialog({ student, onClose }: { student: { student_id
         columns={["Achievement", "Category", "Progress", "Parents", "Recorded by"]}
         rows={rows}
         selectable={false}
-        empty={list.loading ? "Loading…" : "Nothing recorded yet."}
+        empty={list.loading ? "Loading…" : undefined}
+        emptyState={{
+          title: "Nothing recorded yet",
+          note: "Add the student's first achievement or milestone using the form below.",
+        }}
         actions={(i) => {
           const a = items[i];
           return (

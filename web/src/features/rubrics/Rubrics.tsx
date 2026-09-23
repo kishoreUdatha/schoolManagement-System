@@ -141,7 +141,16 @@ export function Rubrics() {
               </>
             );
           }}
-          empty={list.loading ? "Loading rubrics…" : search || subjectId ? "No rubrics match these filters." : "No rubrics yet. Create one to mark work against criteria."}
+          empty={list.loading ? "Loading rubrics…" : search || subjectId ? "No rubrics match these filters." : undefined}
+          emptyState={{
+            title: "No rubrics yet",
+            note: "A rubric breaks work into criteria so it can be marked consistently, so create one before marking homework or projects against it.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                Create rubric
+              </button>
+            ),
+          }}
         />
       </Panel>
 

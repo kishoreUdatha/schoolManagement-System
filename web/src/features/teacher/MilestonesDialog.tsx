@@ -70,7 +70,11 @@ export function MilestonesDialog({ project, onClose }: { project: { id: number; 
         columns={["#", "Milestone", "Due"]}
         rows={rows}
         selectable={false}
-        empty={list.loading ? "Loading…" : "No milestones yet."}
+        empty={list.loading ? "Loading…" : undefined}
+        emptyState={{
+          title: "No milestones yet",
+          note: "Add the project's first checkpoint using the form below; parents see these with the project.",
+        }}
         actions={(i) => (
           <button type="button" className="btn" disabled={busy} onClick={() => run(() => api.delete(`${path}/${items[i].id}`), "Milestone removed.")}>
             Remove

@@ -88,7 +88,8 @@ export function MyLibraryLoans() {
           rows={rows}
           selectable={false}
           rowAction={false}
-          empty={loans.loading ? "Loading…" : all.length ? (show === "open" ? "You have returned every book." : "No loan matches these filters.") : "You have not borrowed any books yet."}
+          empty={loans.loading ? "Loading…" : all.length ? (show === "open" ? "You have returned every book." : "No loan matches these filters.") : undefined}
+          emptyState={{ title: "No library loans yet", note: "Books issued to you at the library desk will appear here." }}
         />
       </Panel>
     </>

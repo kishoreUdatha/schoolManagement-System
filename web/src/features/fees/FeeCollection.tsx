@@ -6,6 +6,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
+import { Prereq } from "@/components/ui/Prereq";
 import type { Paginated } from "@/lib/api";
 import { api, errorText } from "@/lib/api";
 import { date, initials, money } from "@/lib/format";
@@ -58,6 +59,8 @@ export function FeeCollection() {
   const sid = student?.id ?? null;
   const fees = useApi<Paginated<StudentFee>>(sid ? "/api/v1/school/fees/student-fees" : null, { student_id: sid, status: "pending", page_size: 200 });
   const receipts = useApi<Collection[]>(sid ? "/api/v1/school/accounts/collections" : null, { student_id: sid, from: yearAgo(), to: isoToday() });
+  // nothing to collect until the school has raised fees for the year
+  const raised = useApi<{ total: number }>("/api/v1/school/fees/student-fees", { page_size: 1 });
 
   const pending = (fees.data?.items ?? []).filter((f) => Number(f.amount_outstanding) > 0).sort((a, b) => a.due_date.localeCompare(b.due_date));
   const fee = pending.find((f) => f.id === feeId) ?? null;
@@ -115,6 +118,10 @@ export function FeeCollection() {
   }
 
   return (
+    <>
+      <Prereq missing={raised.data?.total === 0} screen={1041} cta="Generate fees">
+        No fees have been raised yet, so there is nothing to collect.
+      </Prereq>
     <div className="two-col">
       <div className="stack">
         <Panel title="Student account">
@@ -255,5 +262,6 @@ export function FeeCollection() {
         </Panel>
       </aside>
     </div>
+    </>
   );
 }

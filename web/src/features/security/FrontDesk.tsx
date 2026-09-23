@@ -1296,7 +1296,17 @@ export function SecurityIncidentLog() {
           rows={list.map((x) => [label(x.category), x.location ?? "—", dateTime(x.occurred_at), label(x.severity), x.reported_by_name ?? "—", x.is_closed ? "Closed" : "Open"])}
           selectable={false}
           onView={(i) => router.replace(`${routeOf(233)}?id=${list[i].id}`)}
-          empty={incidents.loading ? "Loading…" : "No incidents."}
+          empty={incidents.loading ? "Loading…" : openOnly ? "No open incidents." : undefined}
+          emptyState={{
+            title: "No security incidents logged",
+            note: "Anything logged at the front desk — an unauthorised entry, a lost child, a fire alarm — will appear here.",
+            action: (
+              <Link href={`${routeOf(233)}?new=1`} className="btn primary">
+                <Icon name="check" className="sm" />
+                Record incident
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {adding ? (

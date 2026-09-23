@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
@@ -84,7 +85,17 @@ export function AssetAssignments() {
           columns={["Asset", "Asset code", "Current location", "New location", "New custodian", "Transfer date"]}
           rows={rows}
           onView={(i) => setAsset(shown[i].asset_id)}
-          empty={list.loading ? "Loading assignments…" : openOnly ? "Nothing is out at the moment." : "Nothing has been assigned yet."}
+          empty={list.loading ? "Loading assignments…" : openOnly ? "Nothing is out at the moment." : undefined}
+          emptyState={{
+            title: "Nothing assigned yet",
+            note: "An assignment records who is holding an asset, or where it has been moved, once one leaves the store.",
+            action: (
+              <Link href="/inventory-labs/asset-assignment-transfer?new=1" className="btn primary" scroll={false}>
+                <Icon name="check" className="sm" />
+                Transfer asset
+              </Link>
+            ),
+          }}
         />
       </Panel>
       <div className="tip">

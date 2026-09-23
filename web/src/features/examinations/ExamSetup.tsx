@@ -6,6 +6,7 @@ import { Dialog } from "@/components/ui/Dialog";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
+import { Prereq } from "@/components/ui/Prereq";
 import { api, errorText } from "@/lib/api";
 import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -125,6 +126,9 @@ export function ExamSetup() {
 
   return (
     <>
+      <Prereq missing={Boolean(yearId && terms.data && !terms.data.length)} screen={93} cta="Add terms">
+        This year has no terms yet, and an exam belongs to one.
+      </Prereq>
       <div className="two-col">
         <form className="panel" onSubmit={submit} key={ex?.id ?? "new"}>
           <div className="panel-pad">

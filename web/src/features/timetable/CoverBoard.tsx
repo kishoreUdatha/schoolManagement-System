@@ -194,7 +194,8 @@ export function CoverBoard() {
             rows={(mine.data ?? []).map((c) => [fmtDate(c.sub_date), `Period ${c.period_number} · ${span(c.start_time, c.end_time)}`, c.section_label, c.subject_name, c.absent_name ?? "—"])}
             selectable={false}
             rowAction={false}
-            empty={mine.loading ? "Loading…" : (mine.error ?? "You are not covering any lessons.")}
+            empty={mine.loading ? "Loading…" : (mine.error ?? undefined)}
+            emptyState={{ title: "No cover duties", note: "Lessons where you are asked to cover for an absent teacher, from yesterday to two weeks ahead, will show up here." }}
           />
         </Panel>
       </div>

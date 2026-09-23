@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -79,7 +80,19 @@ export function TeacherWorkload({ only }: { only?: OnlyStaff }) {
           selectable={false}
           rowAction={!only}
           onView={(i) => router.push(`${routeOf(82)}?id=${list[i].staff_id}`)}
-          empty={res.loading ? "Loading workload…" : only ? `No workload recorded for ${only.name}.` : "No staff match."}
+          empty={res.loading ? "Loading workload…" : undefined}
+          emptyState={{
+            title: only ? "No workload recorded" : "No staff to show",
+            note: only
+              ? `No workload has been recorded for ${only.name} yet.`
+              : "Workload is built from the timetable and cover register; it appears once periods are assigned.",
+            action: only ? undefined : (
+              <Link href="/staff/teacher-allocation" className="btn primary">
+                <Icon name="arrow" className="sm" />
+                View allocation
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

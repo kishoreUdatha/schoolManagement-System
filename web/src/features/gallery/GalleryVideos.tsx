@@ -547,7 +547,8 @@ function SchoolVideos({ canRemove }: { canRemove: boolean }) {
               ) : null}
             </>
           )}
-          empty={videos.loading ? "Loading videos…" : "No learning videos yet."}
+          empty={videos.loading ? "Loading videos…" : undefined}
+          emptyState={{ title: "No learning videos yet", note: "Once a teacher shares a video with their class, it will be listed here." }}
         />
       </Panel>
     </>
@@ -558,6 +559,7 @@ function SchoolVideos({ canRemove }: { canRemove: boolean }) {
 function TeacherVideos() {
   const videos = useApi<Video[]>("/api/v1/teacher/videos");
   const mine = useApi<TeacherClasses>("/api/v1/teacher/my-classes");
+  const { set } = useQuery();
   const [adding, closeAdd] = useNewFlag();
   const [editing, setEditing] = useState<Video | null>(null);
   const [watching, setWatching] = useState<Video | null>(null);
@@ -626,7 +628,16 @@ function TeacherVideos() {
               ) : null}
             </>
           )}
-          empty={videos.loading ? "Loading videos…" : "You have not shared any videos yet."}
+          empty={videos.loading ? "Loading videos…" : undefined}
+          emptyState={{
+            title: "No videos shared yet",
+            note: "Share a YouTube video with one of your classes and it will be listed here.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => set({ new: "1", album: null })}>
+                Share a video
+              </button>
+            ),
+          }}
         />
       </Panel>
       {editing ? (
@@ -784,7 +795,8 @@ function VideoCompletions({ video, onClose }: { video: Video; onClose: () => voi
         rows={items.map((r) => [{ name: r.full_name, sub: r.admission_no }, r.section_label, String(r.roll_no), r.completed_at ? date(r.completed_at) : "—", r.completed ? "Watched" : "Not watched (pending)"])}
         selectable={false}
         rowAction={false}
-        empty={roster.loading ? "Loading…" : all.length ? "No student matches." : "No students in this class."}
+        empty={roster.loading ? "Loading…" : all.length ? "No student matches." : undefined}
+        emptyState={{ title: "No students in this class", note: "Nobody is currently enrolled in the class this video was shared with." }}
       />
     </Dialog>
   );

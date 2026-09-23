@@ -171,7 +171,17 @@ export function ExamTypes() {
           columns={["Exam type", "Code", "Weightage", "Display order", "Exams using it", "Status"]}
           rows={rows}
           onView={(i) => setEditing(shown[i])}
-          empty={list.loading ? "Loading exam types…" : search || status ? "No exam types match these filters." : "No exam types yet. Add the first one."}
+          empty={list.loading ? "Loading exam types…" : search || status ? "No exam types match these filters." : undefined}
+          emptyState={{
+            title: "No exam types yet",
+            note: "An exam type, such as a unit test or term exam, sets the weightage each carries in the final result.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                <Icon name="plus" className="sm" />
+                Add exam type
+              </button>
+            ),
+          }}
         />
       </Panel>
     </>

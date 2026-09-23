@@ -164,7 +164,11 @@ export function RegisterLocks() {
               </button>
             );
           }}
-          empty={list.loading ? "Loading registers…" : q || filter ? "No registers match these filters." : "No sections set up."}
+          empty={list.loading ? "Loading registers…" : q || filter ? "No registers match these filters." : undefined}
+          emptyState={{
+            title: "No sections set up",
+            note: "A register only appears here once the school has classes and sections to mark attendance against.",
+          }}
         />
       </Panel>
       <div className="gap" />

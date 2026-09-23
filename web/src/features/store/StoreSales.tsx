@@ -47,7 +47,7 @@ const buyer = (s: Sale) => s.student_name ?? s.buyer_name ?? "—";
 /**
  * NEW-048, live. Sales: GET /school/inventory/store/sales?on= (one day, or
  * the latest 300 when no day is chosen), POST to sell (price and stock
- * come from the item; "add to fees" raises a charge under a fee head),
+ * come from the item; "add to fees" raises a charge under a fee type),
  * POST /{id}/void (stock goes back; a fee charge is waived unless paid).
  * Headline totals from GET /inventory/dashboard; sellable items from
  * GET /inventory/items?sellable_only=true.
@@ -143,7 +143,16 @@ export function StoreSales() {
               ) : null}
             </>
           )}
-          empty={sales.loading ? "Loading sales…" : q ? "No bills match." : day ? "No sales on this day." : "No sales yet."}
+          empty={sales.loading ? "Loading sales…" : q ? "No bills match." : day ? "No sales on this day." : undefined}
+          emptyState={{
+            title: "No sales yet",
+            note: "Record a walk-in sale of uniforms, books or stationery at the store counter.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setSelling(true)}>
+                New sale
+              </button>
+            ),
+          }}
         />
       </Panel>
       {viewing ? (
@@ -292,9 +301,9 @@ function NewSale({ items, onClose, onSaved }: { items: InventoryItem[]; onClose:
           </select>
         </Field>
         {payment === "add_to_fees" ? (
-          <Field label="Charge under fee head" required>
+          <Field label="Charge under fee type" required>
             <select value={headId} onChange={(e) => setHeadId(e.target.value)} required>
-              <option value="">Select fee head</option>
+              <option value="">Select fee type</option>
               {heads.data?.map((h) => (
                 <option key={h.id} value={h.id}>
                   {h.name}

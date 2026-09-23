@@ -113,7 +113,16 @@ export function TestResults() {
                 <span className="muted small">—</span>
               )
             }
-            empty={res.loading ? "Loading results…" : !testId ? "Publish a test to see its results here." : "No students match this filter."}
+            empty={res.loading ? "Loading results…" : !testId ? undefined : "No students match this filter."}
+            emptyState={{
+              title: "No published tests yet",
+              note: "Once a test is published, its results appear here as students attempt it.",
+              action: (
+                <Link href={TESTS_ROUTE()} className="btn primary">
+                  Go to online tests
+                </Link>
+              ),
+            }}
           />
         </Panel>
         <aside className="stack">
@@ -151,7 +160,10 @@ export function TestResults() {
               ])}
               selectable={false}
               rowAction={false}
-              empty="No questions in this test."
+              emptyState={{
+                title: "No questions in this test",
+                note: "Add questions to the test paper before publishing it, so there is something to analyse here.",
+              }}
             />
           </Panel>
         </div>

@@ -552,7 +552,8 @@ export function RenewReserve() {
           rows={rrows}
           selectable={false}
           onView={(i) => setHolding((reservations.data ?? [])[i])}
-          empty={reservations.loading ? "Loading…" : "No active reservations."}
+          empty={reservations.loading ? "Loading…" : undefined}
+          emptyState={{ title: "No active reservations", note: "Reserve a book above when every copy is out, and it will wait its turn here." }}
         />
       </Panel>
       {holding ? (

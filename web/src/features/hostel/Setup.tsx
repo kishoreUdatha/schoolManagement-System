@@ -138,7 +138,16 @@ export function HostelList() {
           columns={["Hostel", "Building", "Type", "Rooms", "Beds", "Warden", "Status"]}
           rows={rows}
           onView={(i) => setEditing(items[i])}
-          empty={hostels.loading ? "Loading hostels…" : all.length ? "No hostels match." : "No hostels yet. Add the first one."}
+          empty={hostels.loading ? "Loading hostels…" : all.length ? "No hostels match." : undefined}
+          emptyState={{
+            title: "No hostels yet",
+            note: "Add a hostel building before setting up its rooms, beds and warden rota.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => add.show()}>
+                Add hostel
+              </button>
+            ),
+          }}
         />
       </Panel>
       {open ? (
@@ -424,7 +433,21 @@ export function HostelAllocation() {
         <NoHostel loading={hostels.loading} />
       ) : (
         <Panel title="Allocation workspace" sub={`${hostel.occupied} of ${hostel.beds} beds taken · ${beds.length} free`} flush>
-          <DataTable columns={["Student", "Class", "Hostel", "Room", "Bed", "From date"]} rows={rows} onView={(i) => setMoving(items[i])} empty={residents.loading ? "Loading residents…" : "No residents yet."} />
+          <DataTable
+            columns={["Student", "Class", "Hostel", "Room", "Bed", "From date"]}
+            rows={rows}
+            onView={(i) => setMoving(items[i])}
+            empty={residents.loading ? "Loading residents…" : undefined}
+            emptyState={{
+              title: "No residents yet",
+              note: "Allocate a student to a free bed to start tracking who lives in this hostel.",
+              action: (
+                <button type="button" className="btn primary" onClick={() => add.show()}>
+                  Allocate bed
+                </button>
+              ),
+            }}
+          />
         </Panel>
       )}
       {(add.open && hostel) || moving ? (

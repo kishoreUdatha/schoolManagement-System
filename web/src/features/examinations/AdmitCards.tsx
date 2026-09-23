@@ -152,7 +152,13 @@ export function AdmitCards() {
             </div>
           </dl>
           <div className="gap" />
-          <DataTable columns={["Subject", "Date", "Time", "Room"]} rows={rows} selectable={false} rowAction={false} empty="No papers for this student in this exam." />
+          <DataTable
+            columns={["Subject", "Date", "Time", "Room"]}
+            rows={rows}
+            selectable={false}
+            rowAction={false}
+            emptyState={{ title: "No papers for this exam", note: "This student has no subjects scheduled in the exam timetable yet." }}
+          />
           <div className="gap" />
           <div className="tip">
             <Icon name="shield" className="sm" />

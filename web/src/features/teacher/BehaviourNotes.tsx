@@ -169,7 +169,11 @@ export function BehaviourNotes() {
               </>
             );
           }}
-          empty={view.loading || classes.loading ? "Loading…" : all.length ? "No student matches the search." : "No active students in this section."}
+          empty={view.loading || classes.loading ? "Loading…" : all.length ? "No student matches the search." : undefined}
+          emptyState={{
+            title: "No active students in this section",
+            note: "Once students are enrolled in this section, they'll appear here to rate for the week.",
+          }}
         />
       </Panel>
 
@@ -309,7 +313,11 @@ function HistoryDialog({ target, onClose }: { target: Target; onClose: () => voi
         rows={rows}
         selectable={false}
         rowAction={false}
-        empty={list.loading ? "Loading…" : "No ratings recorded for this student yet."}
+        empty={list.loading ? "Loading…" : undefined}
+        emptyState={{
+          title: "No ratings recorded yet",
+          note: "This student's weekly or monthly behaviour ratings will build up here once they're rated.",
+        }}
       />
     </Dialog>
   );

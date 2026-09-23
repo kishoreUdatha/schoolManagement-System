@@ -150,7 +150,16 @@ export function LearningOutcomes() {
           columns={["Outcome code", "Learning outcome", "Subject", "Class", "Unit", "Bloom level", "Status"]}
           rows={rows}
           onView={(i) => setEditing(shown[i])}
-          empty={loading ? "Loading learning outcomes…" : outcomes.length ? "No outcomes match these filters." : "No learning outcomes for this subject yet."}
+          empty={loading ? "Loading learning outcomes…" : outcomes.length ? "No outcomes match these filters." : undefined}
+          emptyState={{
+            title: "No learning outcomes yet",
+            note: "Learning outcomes describe what students should be able to do, and lessons and tests link back to them, so add some for this subject.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                Add outcome
+              </button>
+            ),
+          }}
         />
       </Panel>
       <OutcomeDialog

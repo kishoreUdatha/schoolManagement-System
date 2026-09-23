@@ -322,7 +322,16 @@ export function MedicalProfile() {
               rows={r.visits.map((v) => [date(v.visited_at), v.complaint, [v.treatment, OUTCOMES[v.outcome]].filter(Boolean).join(" · "), v.recorded_by_name ?? "—"])}
               selectable={false}
               rowAction={false}
-              empty="No clinic visits recorded."
+              emptyState={{
+                title: "No clinic visits recorded",
+                note: "This student has not been brought to the clinic; visits will show here once one is recorded.",
+                action: (
+                  <Link href={routeOf(218)} className="btn primary">
+                    <Icon name="plus" className="sm" />
+                    Record clinic visit
+                  </Link>
+                ),
+              }}
             />
           </Panel>
         </div>
@@ -1129,7 +1138,16 @@ export function ImmunizationAllergy() {
               rows={r.immunizations.map((m) => [m.vaccine, m.dose ?? "—", date(m.given_on), date(m.next_due_on), m.notes ?? "—"])}
               selectable={false}
               onView={(i) => setShot(r.immunizations[i].id)}
-              empty="No immunisations recorded."
+              emptyState={{
+                title: "No immunisations recorded",
+                note: "This student's vaccination history will show here once a dose is recorded.",
+                action: (
+                  <Link href={`${routeOf(220)}?id=${id}&new=1`} className="btn primary">
+                    <Icon name="plus" className="sm" />
+                    Add record
+                  </Link>
+                ),
+              }}
             />
           </Panel>
         </div>

@@ -86,7 +86,16 @@ export function Sections() {
           columns={COLUMNS}
           rows={rows}
           onView={(i) => setEditing(shown[i])}
-          empty={list.loading ? "Loading sections…" : "No sections match."}
+          empty={list.loading ? "Loading sections…" : q || classId ? "No sections match these filters." : undefined}
+          emptyState={{
+            title: "No sections yet",
+            note: "Sections are where students are actually enrolled, so add one to a class before admitting anyone.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                Add section
+              </button>
+            ),
+          }}
         />
       </Panel>
       {editing ? (

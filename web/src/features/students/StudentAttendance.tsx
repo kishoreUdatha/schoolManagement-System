@@ -72,7 +72,11 @@ export function AttendanceBody({ s }: { s: StudentProfile }) {
           rows={rows}
           selectable={false}
           rowAction={false}
-          empty={report.loading ? "Loading attendance…" : "No attendance has been marked for this period."}
+          empty={report.loading ? "Loading attendance…" : undefined}
+          emptyState={{
+            title: "No attendance recorded yet",
+            note: "Attendance will appear here once it is marked for this student.",
+          }}
         />
       </Panel>
     </>

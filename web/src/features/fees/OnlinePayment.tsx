@@ -386,7 +386,11 @@ function SchoolOnlinePayments() {
           rows={rows}
           selectable={false}
           onView={(i) => api.open(`/api/v1/school/payments/online/${items[i].id}/receipt.pdf`).catch((e) => notify(errorText(e)))}
-          empty={orders.loading ? "Loading online payments…" : all.length ? "No payments match these filters." : "No parent has paid online yet."}
+          empty={orders.loading ? "Loading online payments…" : all.length ? "No payments match these filters." : undefined}
+          emptyState={{
+            title: "No online payments yet",
+            note: "Parents pay fees from their own portal; nothing has come through here yet.",
+          }}
         />
       </Panel>
     </>

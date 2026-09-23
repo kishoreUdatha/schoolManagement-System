@@ -138,7 +138,11 @@ export function EntranceAssessment({ only }: { only?: OnlyApplication }) {
             rows={rows}
             selectable={false}
             onView={(i) => router.push(`${routeOf(50)}?id=${shown[i].a.id}`)}
-            empty={list.loading ? "Loading…" : "No applications are at the assessment stage."}
+            empty={list.loading ? "Loading…" : search || classFilter || decisionFilter ? "No applications match these filters." : undefined}
+            emptyState={{
+              title: "Nothing at the assessment stage",
+              note: "Applications move here once their documents are verified; results and decisions are recorded from this screen.",
+            }}
           />
         </Panel>
       )}

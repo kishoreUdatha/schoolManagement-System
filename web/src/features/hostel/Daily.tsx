@@ -665,9 +665,9 @@ export function ComplaintsFees() {
             <ErrorNote>{error}</ErrorNote>
             <p>Raises one fee per resident across all hostels, at their room or hostel rate. Residents already billed for the month are skipped.</p>
             <div className="form-grid">
-              <Field label="Fee head" required>
+              <Field label="Fee type" required>
                 <select name="fee_head_id" required defaultValue={heads.data?.find((h) => /hostel|board/i.test(`${h.name} ${h.code}`))?.id ?? ""}>
-                  <option value="">Select fee head</option>
+                  <option value="">Select fee type</option>
                   {heads.data?.map((h) => (
                     <option key={h.id} value={h.id}>
                       {h.name}

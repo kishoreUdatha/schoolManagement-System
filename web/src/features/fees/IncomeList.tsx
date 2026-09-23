@@ -108,7 +108,16 @@ export function IncomeList() {
           columns={["Date", "Reference", "Income head", "Received from", "Amount", "Payment method", "Status"]}
           rows={rows}
           onView={(i) => setOpen(items[i])}
-          empty={list.loading ? "Loading income…" : "No income recorded in this range."}
+          empty={list.loading ? "Loading income…" : q || source || status ? "No income matches these filters." : undefined}
+          emptyState={{
+            title: "No income in this range",
+            note: "Record money the school receives that is not a fee — donations, rent, grants, sponsorships.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+                Record income
+              </button>
+            ),
+          }}
         />
       </Panel>
       {open ? (

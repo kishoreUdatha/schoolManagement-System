@@ -84,7 +84,11 @@ export function PromotionDecision() {
           rows={rows}
           selectable={false}
           rowAction={false}
-          empty={prev.loading ? "Loading…" : students.length ? "No students match these filters." : "No results to base a promotion on for this exam."}
+          empty={prev.loading ? "Loading…" : students.length ? "No students match these filters." : undefined}
+          emptyState={{
+            title: "No results to base a promotion on",
+            note: "The suggestions here are read off the exam's marks, so they only appear once results are entered for this exam.",
+          }}
         />
       </Panel>
     </>

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
-import { ErrorNote } from "@/components/ui/states";
+import { EmptyGuide, ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -236,8 +236,21 @@ export function DocumentList({ scope }: { scope: Scope }) {
                   </div>
                 );
               })
+            ) : list.loading || typed || category || status || expiring ? (
+              <p className="muted">{list.loading ? "Loading documents…" : "No documents match these filters."}</p>
             ) : (
-              <p className="muted">{list.loading ? "Loading documents…" : typed || category || status || expiring ? "No documents match these filters." : "No documents have been uploaded yet."}</p>
+              <EmptyGuide
+                title="No documents yet"
+                note="Birth certificates, mark sheets, staff contracts — whatever the school has to keep a copy of lives here."
+                action={
+                  scope === "review" ? undefined : (
+                    <a href="#upload" className="btn primary">
+                      <Icon name="plus" className="sm" />
+                      Upload a document
+                    </a>
+                  )
+                }
+              />
             )}
           </Panel>
           <Panel title="Recent activity">

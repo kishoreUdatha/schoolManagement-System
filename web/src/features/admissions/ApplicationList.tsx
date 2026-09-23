@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -118,7 +119,17 @@ export function ApplicationList() {
           pages={pages}
           onPage={setPage}
           onView={(i) => router.push(`${routeOf(50)}?id=${items[i].id}`)}
-          empty={list.loading ? "Loading applications…" : search || status || classId ? "No applications match these filters." : "No applications in this academic year yet."}
+          empty={list.loading ? "Loading applications…" : search || status || classId ? "No applications match these filters." : undefined}
+          emptyState={{
+            title: "No applications yet",
+            note: "An application starts once a family applies for admission; it moves through document checks and assessment before enrolment.",
+            action: (
+              <Link href="/admissions/new-admission-application" className="btn primary">
+                <Icon name="plus" className="sm" />
+                New application
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

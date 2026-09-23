@@ -113,7 +113,11 @@ export function ParentRequestsPanel({
           columns={["Parent", "Student", "Request", "Sent", "Status"]}
           rows={rows}
           selectable={false}
-          empty={status ? "No requests waiting." : "No requests from parents yet."}
+          empty={status ? "No requests waiting." : undefined}
+          emptyState={{
+            title: "No requests yet",
+            note: "Requests parents send from the app, such as linking a child or updating contact details, will appear here.",
+          }}
           actions={(i) => {
             const r = items[i];
             if (r.status !== "pending") return <Badge>{STATUS[r.status]}</Badge>;

@@ -112,7 +112,11 @@ function YearRoster() {
           rows={table}
           selectable={false}
           onView={(i) => router.push(`${HERE()}?id=${rows[i].student_id}`)}
-          empty={roster.loading ? "Loading enrolments…" : q || outcome || sectionId ? "No enrolments match these filters." : "No enrolments recorded for this year."}
+          empty={roster.loading ? "Loading enrolments…" : q || outcome || sectionId ? "No enrolments match these filters." : undefined}
+          emptyState={{
+            title: "No enrolments yet",
+            note: year ? `No students have been enrolled in ${year.name} yet.` : "Choose an academic year to see who was enrolled.",
+          }}
         />
       </Panel>
       <div className="gap" />
@@ -191,7 +195,11 @@ function History({ s }: { s: StudentProfile }) {
               Correct outcome
             </button>
           )}
-          empty={list.loading ? "Loading…" : "No enrolments recorded for this student."}
+          empty={list.loading ? "Loading…" : undefined}
+          emptyState={{
+            title: "No enrolment history yet",
+            note: "Years will appear here once this student is enrolled in an academic year.",
+          }}
         />
       </Panel>
 

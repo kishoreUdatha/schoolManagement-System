@@ -109,7 +109,16 @@ export function ExpenseCategories() {
                   </button>
                 </>
               )}
-              empty={cats.loading ? "Loading categories…" : q ? "No categories match." : "No expense categories yet."}
+              empty={cats.loading ? "Loading categories…" : q ? "No categories match." : undefined}
+              emptyState={{
+                title: "No expense categories yet",
+                note: "Every expense is booked under a category, so the cash book and finance reports can total spending by it.",
+                action: (
+                  <button type="button" className="btn primary" onClick={() => setOpen(true)}>
+                    Add category
+                  </button>
+                ),
+              }}
             />
           </Panel>
         </div>

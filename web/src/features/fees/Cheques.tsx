@@ -33,7 +33,7 @@ const NOTE: Record<Action, string> = {
  * filtered here), POST to record one against a student's pending fees
  * (GET /fees/student-fees?student_id=&status=pending), POST /{id}/action
  * to deposit, clear (credits the fees), bounce (optional charge under a
- * fee head) or return it.
+ * fee type) or return it.
  */
 export function Cheques() {
   const list = useApi<Cheque[]>("/api/v1/school/accounts/cheques");
@@ -105,7 +105,16 @@ export function Cheques() {
               </button>
             ));
           }}
-          empty={list.loading ? "Loading cheques…" : q || status ? "No cheques match these filters." : "No cheques recorded yet."}
+          empty={list.loading ? "Loading cheques…" : q || status ? "No cheques match these filters." : undefined}
+          emptyState={{
+            title: "No cheques recorded yet",
+            note: "Record a cheque from a parent here, then deposit, clear, bounce or return it as it moves through the bank.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+                Record cheque
+              </button>
+            ),
+          }}
         />
       </Panel>
       {adding ? (
@@ -298,9 +307,9 @@ function ActionDialog({ cheque: c, action, onClose, onSaved }: { cheque: Cheque;
             <Field label="Bounce charge (₹)">
               <input type="number" min={0} step="0.01" value={charge} onChange={(e) => setCharge(e.target.value)} placeholder="0" />
             </Field>
-            <Field label="Charge under fee head" required={Number(charge) > 0}>
+            <Field label="Charge under fee type" required={Number(charge) > 0}>
               <select value={headId} onChange={(e) => setHeadId(e.target.value)} required={Number(charge) > 0} disabled={!(Number(charge) > 0)}>
-                <option value="">{Number(charge) > 0 ? "Select fee head" : "No charge"}</option>
+                <option value="">{Number(charge) > 0 ? "Select fee type" : "No charge"}</option>
                 {heads.data?.map((h) => (
                   <option key={h.id} value={h.id}>
                     {h.name}

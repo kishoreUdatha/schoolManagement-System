@@ -237,7 +237,17 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
                   );
                 }
           }
-          empty={loading ? "Loading…" : cards.length === 0 ? "You aren't assigned as a subject teacher anywhere yet." : search || status || csId ? "Nothing matches these filters." : `No ${noun} set yet.`}
+          empty={loading ? "Loading…" : cards.length === 0 ? "You aren't assigned as a subject teacher anywhere yet." : search || status || csId ? "Nothing matches these filters." : undefined}
+          emptyState={{
+            title: `No ${noun} set yet`,
+            note: `Once you set ${noun} for one of your classes, it appears here with how many students have submitted.`,
+            action: (
+              <Link href={isHw ? "/homework/create-homework" : "/homework/create-assignment"} className="btn primary">
+                <Icon name="plus" className="sm" />
+                {isHw ? "Create homework" : "Create assignment"}
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {milestones ? <MilestonesDialog project={milestones} onClose={() => setMilestones(null)} /> : null}

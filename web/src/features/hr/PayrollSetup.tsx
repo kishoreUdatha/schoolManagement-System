@@ -208,7 +208,17 @@ export function PayrollSetup() {
         </div>
       </form>
       <Panel title="Salary components" sub={s ? `Current structure for ${row?.full_name}` : "Shown once a salary is set"} flush>
-        <DataTable columns={["Component", "Amount", "Frequency", "Type", "Status"]} rows={components} selectable={false} rowAction={false} empty="No salary set for this person yet." />
+        <DataTable
+          columns={["Component", "Amount", "Frequency", "Type", "Status"]}
+          rows={components}
+          selectable={false}
+          rowAction={false}
+          empty={staff.loading ? "Loading…" : undefined}
+          emptyState={{
+            title: "No salary set",
+            note: row ? `${row.full_name} does not have a salary structure yet. Fill in the form above and save it.` : "Choose a staff member above to set up their salary.",
+          }}
+        />
       </Panel>
       <form className="panel" onSubmit={saveRates} key={JSON.stringify(settings.data)}>
         <div className="panel-head">

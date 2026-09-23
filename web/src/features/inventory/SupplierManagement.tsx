@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
@@ -65,7 +66,17 @@ export function SupplierManagement() {
           columns={["Supplier", "Category", "Contact", "Phone", "Email address", "Status"]}
           rows={rows}
           onView={(i) => setEditing(shown[i])}
-          empty={list.loading ? "Loading suppliers…" : s || status ? "No suppliers match these filters." : "No suppliers yet. Add the first one."}
+          empty={list.loading ? "Loading suppliers…" : s || status ? "No suppliers match these filters." : undefined}
+          emptyState={{
+            title: "No suppliers yet",
+            note: "A supplier record is who purchases and repairs are booked against, with their contact and GSTIN on file.",
+            action: (
+              <Link href="/inventory-labs/supplier-management?new=1" className="btn primary" scroll={false}>
+                <Icon name="plus" className="sm" />
+                Add supplier
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {adding ? <SupplierDialog existing={null} onClose={closeAdd} onSaved={() => (closeAdd(), list.reload())} /> : null}

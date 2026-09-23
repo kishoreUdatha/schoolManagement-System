@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -87,7 +88,17 @@ export function ParentDirectory() {
           columns={["Guardian", "Relationship", "Children", "Phone", "Portal access", "Status"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(73)}?id=${items[i].user_id}`)}
-          empty={list.loading ? "Loading parents…" : search || status || classId ? "No parents match these filters." : "No parents yet. Add one to give a family portal access."}
+          empty={list.loading ? "Loading parents…" : search || status || classId ? "No parents match these filters." : undefined}
+          emptyState={{
+            title: "No parents yet",
+            note: "Add a parent or guardian to give their family access to the portal.",
+            action: (
+              <Link href="/parents/add-parent-guardian" className="btn primary">
+                <Icon name="plus" className="sm" />
+                Add guardian
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

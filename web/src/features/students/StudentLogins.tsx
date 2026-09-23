@@ -191,7 +191,11 @@ export function StudentLogins() {
               </>
             );
           }}
-          empty={list.loading ? "Loading students…" : q || state ? "No students match these filters." : "No active students here."}
+          empty={list.loading ? "Loading students…" : q || state ? "No students match these filters." : undefined}
+          emptyState={{
+            title: "No active students here",
+            note: classId ? "There are no active students in this class." : "Active students will appear here once they are admitted.",
+          }}
         />
       </Panel>
 

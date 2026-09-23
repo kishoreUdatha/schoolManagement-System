@@ -21,7 +21,7 @@ type Collection = {
   by_class: { label: string; amount: string }[];
   by_mode: { label: string; amount: string }[];
   by_month: { month: string; amount: string }[];
-  /** per fee head: bills falling due in the period against what has been paid on them */
+  /** per fee type: bills falling due in the period against what has been paid on them */
   billed_by_head: { label: string; expected: string; paid: string; outstanding: string; collection_rate: number; bills: number; receipts: number }[];
 };
 
@@ -34,13 +34,13 @@ export function FeeCollectionReport() {
   const d = res.data;
   const total = n(d?.total);
   const groups = {
-    head: { name: "Fee head", items: d?.by_head ?? [] },
+    head: { name: "Fee type", items: d?.by_head ?? [] },
     class: { name: "Class", items: d?.by_class ?? [] },
     mode: { name: "Payment mode", items: (d?.by_mode ?? []).map((m) => ({ ...m, label: label(m.label) })) },
     month: { name: "Month", items: (d?.by_month ?? []).map((m) => ({ label: monthLabel(m.month), amount: m.amount })) },
   };
   const g = groups[by];
-  // By fee head, the mock's columns: what was billed, what came in on it, what is still owed.
+  // By fee type, the mock's columns: what was billed, what came in on it, what is still owed.
   const billed = d?.billed_by_head ?? [];
   const received = new Map((d?.by_head ?? []).map((h) => [h.label, h]));
   const heads = [...billed.map((b) => b.label), ...[...received.keys()].filter((k) => !billed.some((b) => b.label === k))];
@@ -58,7 +58,7 @@ export function FeeCollectionReport() {
       filters={
         <>
           <select aria-label="Group by" value={by} onChange={(e) => setBy(e.target.value as typeof by)}>
-            <option value="head">By fee head</option>
+            <option value="head">By fee type</option>
             <option value="class">By class</option>
             <option value="mode">By payment mode</option>
             <option value="month">By month</option>
@@ -88,7 +88,7 @@ export function FeeCollectionReport() {
           ? {
               name: "fee-collection-by-head",
               sub: "Bills falling due in the period, what has been paid on them, and receipts taken per head",
-              columns: ["Fee head", "Expected", "Collected", "Outstanding", "Collection rate", "Transactions"],
+              columns: ["Fee type", "Expected", "Collected", "Outstanding", "Collection rate", "Transactions"],
               rows,
               empty: "Nothing was billed or collected in this period.",
             }

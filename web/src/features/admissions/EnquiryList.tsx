@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -115,7 +116,17 @@ export function EnquiryList() {
           pages={list.data?.pages || 1}
           onPage={setPage}
           onView={(i) => router.push(`${routeOf(46)}?id=${items[i].id}`)}
-          empty={list.loading ? "Loading enquiries…" : search || stage || source || dueOnly ? "No enquiries match these filters." : "No enquiries yet. Add the first one."}
+          empty={list.loading ? "Loading enquiries…" : search || stage || source || dueOnly ? "No enquiries match these filters." : undefined}
+          emptyState={{
+            title: "No enquiries yet",
+            note: "An enquiry is the first record of a family interested in the school; it becomes an application once they apply.",
+            action: (
+              <Link href="/admissions/add-enquiry" className="btn primary">
+                <Icon name="plus" className="sm" />
+                Add enquiry
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

@@ -132,7 +132,17 @@ export function StaffAttendanceSummary({ only }: { only?: OnlyStaff }) {
         </aside>
       </div>
       <Panel title="Detailed breakdown" sub="Present includes late arrivals; leave includes sick days" flush>
-        <DataTable columns={COLUMNS} rows={rows} selectable={false} rowAction={false} empty={res.loading ? "Loading…" : only ? `No attendance recorded for ${only.name} this month.` : "No staff attendance recorded for this month."} />
+        <DataTable
+          columns={COLUMNS}
+          rows={rows}
+          selectable={false}
+          rowAction={false}
+          empty={res.loading ? "Loading…" : undefined}
+          emptyState={{
+            title: only ? `No attendance for ${only.name}` : "No attendance recorded yet",
+            note: only ? `No attendance has been marked for ${only.name} in ${period}.` : `No staff attendance has been marked for ${period} yet.`,
+          }}
+        />
       </Panel>
     </>
   );

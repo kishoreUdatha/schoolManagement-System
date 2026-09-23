@@ -105,7 +105,8 @@ export function MyPayslips() {
                   </button>
                 </>
               )}
-              empty={slips.loading ? "Loading…" : "No payslips yet. They appear here once the month's payroll is finalised."}
+              empty={slips.loading ? "Loading…" : year ? "No payslips for this year." : undefined}
+              emptyState={{ title: "No payslips yet", note: "Payslips appear here once the school finalises the month's payroll." }}
             />
           </Panel>
         </div>

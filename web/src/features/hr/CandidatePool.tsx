@@ -12,7 +12,7 @@ import { label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import type { Candidate, CandidateSource, Opening, Pipeline, Stage } from "./types";
-import { Field, today, useNewFlag } from "./ui";
+import { Field, NewLink, today, useNewFlag } from "./ui";
 
 const BASE = "/api/v1/school/hr";
 const SOURCES: CandidateSource[] = ["website", "referral", "agency", "walk_in", "job_portal", "other"];
@@ -212,7 +212,12 @@ export function CandidatePool() {
                 </>
               );
             }}
-            empty={list.loading ? "Loading candidates…" : search || source || resume ? "No candidate matches these filters." : "No candidates yet. Add one, or publish an opening on the careers page."}
+            empty={list.loading ? "Loading candidates…" : search || source || resume ? "No candidate matches these filters." : undefined}
+            emptyState={{
+              title: "No candidates yet",
+              note: "Add a candidate by hand, or they will appear here once someone applies through the careers page.",
+              action: <NewLink icon="plus">Add candidate</NewLink>,
+            }}
           />
         </Panel>
         <aside className="stack">

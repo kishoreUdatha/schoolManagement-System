@@ -107,7 +107,8 @@ export function SubscriptionsBilling() {
           rows={rows}
           selectable={false}
           onView={(i) => router.push(`${routeOf(12)}?id=${shown[i].tenant_id}`)}
-          empty={billing.loading ? "Loading subscriptions…" : "No organizations match these filters."}
+          empty={billing.loading ? "Loading subscriptions…" : typed || status ? "No organizations match these filters." : undefined}
+          emptyState={{ title: "No organizations yet", note: "Subscriptions are billed against organizations; they appear here once one is added to the platform." }}
         />
       </Panel>
     </>

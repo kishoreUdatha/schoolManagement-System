@@ -166,7 +166,11 @@ function Body({ s }: { s: StudentProfile }) {
                 </>
               );
             }}
-            empty={guardians.loading ? "Loading…" : "No parent or guardian is recorded yet."}
+            empty={guardians.loading ? "Loading…" : undefined}
+            emptyState={{
+              title: "No guardians yet",
+              note: "Parent and guardian contacts for this student will be listed here once they are recorded.",
+            }}
           />
         </Panel>
         {editing ? (

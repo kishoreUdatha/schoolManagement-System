@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
@@ -90,7 +91,17 @@ export function AssetRegister() {
           columns={["Asset", "Asset code", "Category", "Location", "Custodian", "Status"]}
           rows={rows}
           onView={(i) => setOpen(shown[i].id)}
-          empty={list.loading ? "Loading assets…" : search || category || status ? "No assets match these filters." : "No assets have been registered yet."}
+          empty={list.loading ? "Loading assets…" : search || category || status ? "No assets match these filters." : undefined}
+          emptyState={{
+            title: "No assets yet",
+            note: "The register is where the school's equipment is tracked, so it can be assigned, serviced and insured.",
+            action: (
+              <Link href="/inventory-labs/asset-register?new=1" className="btn primary" scroll={false}>
+                <Icon name="plus" className="sm" />
+                Register asset
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {adding ? <AssetCreateDialog onClose={closeAdd} onSaved={() => (closeAdd(), list.reload(), every.reload())} /> : null}

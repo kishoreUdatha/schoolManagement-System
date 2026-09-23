@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
@@ -133,7 +134,17 @@ export function VisitorDirectory() {
             rows={rows}
             selectable={false}
             onView={(i) => select(items[i].id)}
-            empty={list.loading ? "Loading visitors…" : search || blockedOnly ? "No visitors match." : "No visitors on record yet. They are added when someone is checked in."}
+            empty={list.loading ? "Loading visitors…" : search || blockedOnly ? "No visitors match." : undefined}
+            emptyState={{
+              title: "No visitors on record yet",
+              note: "A visitor record is created automatically the first time someone is checked in at the gate.",
+              action: (
+                <Link href="/campus-security/visitor-check-in" className="btn primary">
+                  <Icon name="plus" className="sm" />
+                  Check in a visitor
+                </Link>
+              ),
+            }}
           />
         </Panel>
         <aside className="stack">
@@ -273,7 +284,11 @@ function VisitorCard({ id, onChanged, onClose }: { id: string; onChanged: () => 
           ])}
           selectable={false}
           rowAction={false}
-          empty={visits.loading ? "Loading…" : (visits.error ?? "No visits linked to this visitor.")}
+          empty={visits.loading ? "Loading…" : (visits.error ?? undefined)}
+          emptyState={{
+            title: "No visits linked to this visitor",
+            note: "Their visit history will show here once they are checked in at the gate.",
+          }}
         />
       </Panel>
       <Dialog

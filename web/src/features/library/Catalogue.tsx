@@ -350,7 +350,21 @@ export function BookDetails() {
         }
         flush
       >
-        <DataTable columns={["Copy barcode", "Shelf", "Status", "Issued to", "Due date"]} rows={rows} selectable={false} onView={(i) => setCopy(b.copies[i])} empty="No copies yet. Add some." />
+        <DataTable
+          columns={["Copy barcode", "Shelf", "Status", "Issued to", "Due date"]}
+          rows={rows}
+          selectable={false}
+          onView={(i) => setCopy(b.copies[i])}
+          emptyState={{
+            title: "No copies yet",
+            note: "A book needs at least one physical copy before it can be issued to a member.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+                Add copies
+              </button>
+            ),
+          }}
+        />
       </Panel>
       {adding ? (
         <Modal title="Add copies" onClose={() => setAdding(false)}>
@@ -439,7 +453,16 @@ export function MemberList() {
           columns={["Member", "Member ID", "Type", "Class", "Books issued", "Status"]}
           rows={rows}
           onView={(i) => setOpen(items[i])}
-          empty={members.loading ? "Loading members…" : "No members match."}
+          empty={members.loading ? "Loading members…" : undefined}
+          emptyState={{
+            title: "No library members yet",
+            note: "A student or staff member is listed here the first time a book is issued to them.",
+            action: (
+              <Link href={routeOf(202)} className="btn primary">
+                Issue a book
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {open ? (
@@ -460,7 +483,8 @@ export function MemberList() {
             rows={(loans.data ?? []).map((l) => [l.title, l.accession_no, date(l.issued_on), date(l.due_on), l.returned_on ? date(l.returned_on) : l.lost_on ? "Lost" : "Out"])}
             selectable={false}
             rowAction={false}
-            empty={loans.loading ? "Loading…" : "No loans."}
+            empty={loans.loading ? "Loading…" : undefined}
+            emptyState={{ title: "No loans yet", note: "Books this member has borrowed, past and present, will be listed here." }}
           />
           <div className="actions row">
             <button type="button" className="btn primary" onClick={() => setOpen(null)}>
@@ -663,7 +687,14 @@ export function LibraryReports() {
           <Icon name="download" className="sm" />
           CSV
         </button>} flush>
-        <DataTable columns={["Category", "Total copies", "Not on shelf", "Available", "Overdue", "Utilization"]} rows={rows} selectable={false} rowAction={false} empty={books.loading ? "Loading…" : "No books in the catalogue."} />
+        <DataTable
+          columns={["Category", "Total copies", "Not on shelf", "Available", "Overdue", "Utilization"]}
+          rows={rows}
+          selectable={false}
+          rowAction={false}
+          empty={books.loading ? "Loading…" : undefined}
+          emptyState={{ title: "No books in the catalogue", note: "Reports need at least one book on the shelves to show borrowing by category." }}
+        />
       </Panel>
     </>
   );

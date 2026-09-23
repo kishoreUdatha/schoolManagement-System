@@ -183,7 +183,8 @@ export function TenantUsage() {
           rows={rows}
           selectable={false}
           onView={(i) => router.push(`${routeOf(12)}?id=${shown[i].tenant_id}`)}
-          empty={overview.loading ? "Loading usage…" : "No organizations match this filter."}
+          empty={overview.loading ? "Loading usage…" : filter ? "No organizations match this filter." : undefined}
+          emptyState={{ title: "No organizations yet", note: "Usage against a plan's limits appears here once organizations are added to the platform." }}
         />
       </Panel>
     </>

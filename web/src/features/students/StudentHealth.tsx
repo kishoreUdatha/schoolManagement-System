@@ -197,7 +197,11 @@ function Body({ s }: { s: StudentProfile }) {
               rows={rows}
               selectable={false}
               rowAction={false}
-              empty={rec.loading ? "Loading visits…" : "No clinic visits recorded."}
+              empty={rec.loading ? "Loading visits…" : undefined}
+              emptyState={{
+                title: "No clinic visits yet",
+                note: "Visits to the school clinic or nurse will be listed here as they are recorded.",
+              }}
             />
           </Panel>
         </div>

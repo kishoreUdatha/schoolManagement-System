@@ -636,7 +636,17 @@ export function IncidentList() {
           columns={["Student", "Class", "Incident type", "Date", "Recorded by", "Status"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(224)}?id=${items[i].id}`)}
-          empty={incidents.loading ? "Loading incidents…" : "No incidents recorded."}
+          empty={incidents.loading ? "Loading incidents…" : status || category || search ? "No incidents match these filters." : undefined}
+          emptyState={{
+            title: "No incidents recorded",
+            note: "A behaviour or discipline incident is logged here, with its category, severity and any follow-up action.",
+            action: (
+              <Link href={`${routeOf(223)}?new=1`} className="btn primary">
+                <Icon name="check" className="sm" />
+                Record incident
+              </Link>
+            ),
+          }}
         />
       </Panel>
       {add.open ? (

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Badge, Person } from "./primitives";
+import { EmptyGuide } from "./states";
 
 /** A cell is text, or a person with an optional second line (admission no.). */
 export type Cell = string | { name: string; sub?: string };
@@ -11,6 +12,15 @@ const PROGRESS_COLUMNS = ["Progress", "Attendance", "Collection rate", "Pass rat
 const WRAP_COLUMNS = ["Description", "Learning outcome", "Title", "Announcement", "Particulars", "Observation", "Item", "Homework", "Assignment", "Event"];
 
 const text = (c: Cell) => (typeof c === "string" ? c : c.name);
+
+/**
+ * What a screen shows when its list is genuinely empty: what is missing, one
+ * sentence on why it matters and the screen's own first step. Filters that
+ * match nothing keep the plain `empty` line instead.
+ */
+export type EmptyState = { title: string; note?: string; action?: ReactNode };
+
+const DEFAULT_EMPTY = "No matching records. Try a different filter.";
 
 function Display({ column, cell, index }: { column: string; cell: Cell; index: number }) {
   const v = text(cell);
@@ -50,7 +60,8 @@ export function DataTable({
   page = 1,
   pages = 1,
   onPage,
-  empty = "No matching records. Try a different filter.",
+  empty,
+  emptyState,
 }: {
   columns: string[];
   rows: Row[];
@@ -65,7 +76,10 @@ export function DataTable({
   page?: number;
   pages?: number;
   onPage?: (page: number) => void;
-  empty?: string;
+  /** The line for "loading" and "these filters match nothing". */
+  empty?: ReactNode;
+  /** Guidance for a list with nothing in it yet; used only when `empty` is left out. */
+  emptyState?: EmptyState;
 }) {
   const count = total ?? rows.length;
   return (
@@ -121,7 +135,13 @@ export function DataTable({
         </table>
       </div>
       <div className="table-empty" hidden={rows.length > 0}>
-        {empty}
+        {empty !== undefined && empty !== null ? (
+          empty
+        ) : emptyState ? (
+          <EmptyGuide {...emptyState} />
+        ) : (
+          DEFAULT_EMPTY
+        )}
       </div>
       <div className="table-footer">
         <span data-table-count="">{`Showing ${rows.length} of ${count} records`}</span>

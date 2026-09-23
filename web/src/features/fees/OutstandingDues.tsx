@@ -122,7 +122,11 @@ export function OutstandingDues() {
           columns={["Student", "Class", "Items", "Outstanding", "Overdue days"]}
           rows={rows}
           onView={(i) => router.push(`${routeOf(161)}?id=${items[i].student_id}`)}
-          empty={dues.loading ? "Loading dues…" : q || cls || age ? "No accounts match these filters." : "Nobody owes the school anything."}
+          empty={dues.loading ? "Loading dues…" : q || cls || age ? "No accounts match these filters." : undefined}
+          emptyState={{
+            title: "Nobody owes the school anything",
+            note: "Every student's fees are paid up. Nothing to chase right now.",
+          }}
         />
       </Panel>
     </>

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
-import { ErrorNote } from "@/components/ui/states";
+import { EmptyGuide, ErrorNote } from "@/components/ui/states";
 import { api, errorText, type Paginated } from "@/lib/api";
 import { date, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -80,7 +80,23 @@ export function Activities() {
       <ErrorNote>{list.error}</ErrorNote>
       {items.length === 0 ? (
         <section className="panel">
-          <div className="panel-pad muted">{list.loading ? "Loading activities…" : list.data?.length ? "No activities match these filters." : "No clubs or teams yet."}</div>
+          {list.loading || list.data?.length ? (
+            <div className="panel-pad muted">{list.loading ? "Loading activities…" : "No activities match these filters."}</div>
+          ) : (
+            <div className="panel-pad">
+              <EmptyGuide
+                title="No clubs or teams yet"
+                note="A club or team is anything children sign up for outside lessons; members and attendance are kept against it."
+                action={
+                  canManage ? (
+                    <button type="button" className="btn primary" onClick={() => setCreating(true)}>
+                      Create activity
+                    </button>
+                  ) : undefined
+                }
+              />
+            </div>
+          )}
         </section>
       ) : null}
       <div className="resource-grid">

@@ -80,7 +80,13 @@ export function TenantIntegrations() {
       </div>
       <ErrorNote>{list.error}</ErrorNote>
       <Panel title="Integrations by school" sub="Each school connects its own Razorpay account and WhatsApp Business number in its settings" flush>
-        <DataTable columns={["School", "Online payments", "WhatsApp", "WhatsApp · 30 days", "Last WhatsApp problem"]} rows={rows} selectable={false} empty={list.loading ? "Loading…" : "No schools match."} />
+        <DataTable
+          columns={["School", "Online payments", "WhatsApp", "WhatsApp · 30 days", "Last WhatsApp problem"]}
+          rows={rows}
+          selectable={false}
+          empty={list.loading ? "Loading…" : typed || show ? "No schools match these filters." : undefined}
+          emptyState={{ title: "No schools yet", note: "Schools appear here once an organization is added, so their payments and WhatsApp connections can be tracked." }}
+        />
       </Panel>
     </>
   );

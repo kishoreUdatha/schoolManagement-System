@@ -154,7 +154,11 @@ export function ParentPayments({ embedded = false }: { embedded?: boolean } = {}
               Receipt
             </button>
           )}
-          empty={ready ? "No payments recorded in this period." : "Loading payments…"}
+          empty={!ready ? "Loading payments…" : undefined}
+          emptyState={{
+            title: "No payments yet",
+            note: "Receipts recorded against this family's children will appear here.",
+          }}
         />
       </Panel>
     </>

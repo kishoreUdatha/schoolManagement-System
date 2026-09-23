@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
+import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
 import { Lesson, WeekGrid, toneOf, weekLabel } from "./shared";
@@ -40,7 +42,12 @@ function MyWeek() {
           ) : (
             <WeekGrid
               slots={slots}
-              empty="No lessons are timetabled for you yet."
+              empty={
+                <div className="empty-guide">
+                  <strong>No lessons yet</strong>
+                  <p>Your week appears here once the school office places you in a class timetable.</p>
+                </div>
+              }
               cell={(d, _, n) => {
                 const l = at(d, n);
                 return l ? <Lesson tone={toneOf(l.subject_code)} title={l.subject_name} lines={[l.section_label, l.notes]} /> : null;
@@ -107,7 +114,17 @@ function AnyTeacherWeek() {
           ) : (
             <WeekGrid
               slots={slots}
-              empty="No periods are set up yet."
+              empty={
+                <div className="empty-guide">
+                  <strong>No periods set up yet</strong>
+                  <p>A teacher&apos;s week is built from the school&apos;s periods. Set them up once and every timetable can use them.</p>
+                  <div className="empty-guide-action">
+                    <Link href={routeOf(122)} className="btn primary">
+                      Period setup
+                    </Link>
+                  </div>
+                </div>
+              }
               cell={(d, p, n) => {
                 if (!p) return null;
                 if (p.is_break) return null;

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Dialog } from "@/components/ui/Dialog";
@@ -233,7 +234,17 @@ export function Holidays() {
               </button>
             </>
           )}
-          empty={year.loading ? "Loading holidays…" : type ? "No holidays of this type this year." : `No holidays recorded for ${ym.y}. Add the first one.`}
+          empty={year.loading ? "Loading holidays…" : type ? "No holidays of this type this year." : undefined}
+          emptyState={{
+            title: `No holidays recorded for ${ym.y}`,
+            note: "Holidays keep attendance and the school calendar in step, so no one is marked absent on a day off.",
+            action: (
+              <Link href="/academics/holidays?new=1" className="btn primary" scroll={false}>
+                <Icon name="plus" className="sm" />
+                Add holiday
+              </Link>
+            ),
+          }}
         />
       </Panel>
       <Dialog

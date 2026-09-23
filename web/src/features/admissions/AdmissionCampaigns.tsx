@@ -154,7 +154,17 @@ export function AdmissionCampaigns() {
               </button>
             </>
           )}
-          empty={list.loading ? "Loading campaigns…" : typed || state || channel ? "No campaign matches these filters." : "No campaigns yet. Add one to tag enquiries by where they came from."}
+          empty={list.loading ? "Loading campaigns…" : typed || state || channel ? "No campaign matches these filters." : undefined}
+          emptyState={{
+            title: "No campaigns yet",
+            note: "A campaign tags enquiries by where they came from, so you can see which channel brings in admissions.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setEditing("new")}>
+                <Icon name="plus" className="sm" />
+                New campaign
+              </button>
+            ),
+          }}
         />
       </Panel>
 

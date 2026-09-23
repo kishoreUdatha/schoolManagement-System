@@ -385,7 +385,13 @@ export function WhatsappSettings() {
       </Panel>
       <div className="gap" />
       <Panel title="Recent WhatsApp messages" sub="The latest 50, newest first" flush>
-        <DataTable columns={["Notice", "Kind", "To", "Number", "Status", "Sent / reason"]} rows={logRows} selectable={false} empty={log.loading ? "Loading…" : "Nothing has been sent on WhatsApp yet."} />
+        <DataTable
+          columns={["Notice", "Kind", "To", "Number", "Status", "Sent / reason"]}
+          rows={logRows}
+          selectable={false}
+          empty={log.loading ? "Loading…" : undefined}
+          emptyState={{ title: "No WhatsApp messages yet", note: "Messages appear here once notices are sent to parents on WhatsApp." }}
+        />
       </Panel>
     </>
   );

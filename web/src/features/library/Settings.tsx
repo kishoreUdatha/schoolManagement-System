@@ -20,7 +20,7 @@ const SECTIONS: [string, string][] = [
   ["holds", "Reservations"],
 ];
 
-/** NEW-073, live: GET /library/settings and PATCH /library/settings; fee heads from GET /fees/heads. */
+/** NEW-073, live: GET /library/settings and PATCH /library/settings; fee types from GET /fees/heads. */
 export function LibrarySettings() {
   const settings = useApi<Full>(`${LIB}/settings`);
   const heads = useApi<FeeHead[]>("/api/v1/school/fees/heads", { active_only: true });
@@ -113,7 +113,7 @@ export function LibrarySettings() {
                 <Field label="Most a single loan can be fined (₹)">
                   <input type="number" name="max_fine_per_loan" min={0} step="0.01" defaultValue={s.max_fine_per_loan === null ? "" : Number(s.max_fine_per_loan)} placeholder="No cap" />
                 </Field>
-                <Field label="Fee head for student fines" full>
+                <Field label="Fee type for student fines" full>
                   <select name="fine_fee_head_id" defaultValue={s.fine_fee_head_id ?? ""}>
                     <option value="">None: collect fines at the library desk</option>
                     {heads.data?.map((h) => (
@@ -122,12 +122,12 @@ export function LibrarySettings() {
                       </option>
                     ))}
                     {/* Keep the saved head selectable even before the list loads (or if it is inactive), so saving never clears it by accident. */}
-                    {s.fine_fee_head_id && !head ? <option value={s.fine_fee_head_id}>{heads.data ? `Fee head #${s.fine_fee_head_id} (inactive)` : `Fee head #${s.fine_fee_head_id}`}</option> : null}
+                    {s.fine_fee_head_id && !head ? <option value={s.fine_fee_head_id}>{heads.data ? `Fee type #${s.fine_fee_head_id} (inactive)` : `Fee type #${s.fine_fee_head_id}`}</option> : null}
                   </select>
                 </Field>
               </div>
               <p className="muted small" style={{ marginTop: 10 }}>
-                With a fee head chosen, a student&apos;s fine is added to their school fees under it, and the desk can use “Add to fees”. Staff fines are always collected at the desk.
+                With a fee type chosen, a student&apos;s fine is added to their school fees under it, and the desk can use “Add to fees”. Staff fines are always collected at the desk.
               </p>
             </div>
           </section>

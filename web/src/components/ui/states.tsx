@@ -24,6 +24,21 @@ export function Loading({ what = "Loading…" }: { what?: string }) {
   );
 }
 
+/**
+ * A list with nothing in it yet: what is missing, one sentence on why it
+ * matters and the screen's own first step. DataTable uses it through its
+ * `emptyState` prop; screens with their own list markup can use it directly.
+ */
+export function EmptyGuide({ title, note, action }: { title: string; note?: string; action?: ReactNode }) {
+  return (
+    <div className="empty-guide">
+      <strong>{title}</strong>
+      {note ? <p>{note}</p> : null}
+      {action ? <div className="empty-guide-action">{action}</div> : null}
+    </div>
+  );
+}
+
 /** A record screen opened without saying which record (?id= missing). */
 export function PickFirst({ what, href, cta }: { what: string; href: string; cta: string }) {
   return (

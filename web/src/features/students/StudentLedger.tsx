@@ -96,7 +96,17 @@ export function LedgerBody({ s }: { s: StudentProfile }) {
           rows={rows}
           selectable={false}
           rowAction={false}
-          empty={ledger.loading ? "Loading the ledger…" : "No fee has been charged to this student yet."}
+          empty={ledger.loading ? "Loading the ledger…" : undefined}
+          emptyState={{
+            title: "No charges yet",
+            note: "Fees charged to this student, and any payments against them, will appear here.",
+            action: (
+              <Link href={`/fees-finance/fee-collection?id=${s.id}`} className="btn primary">
+                <Icon name="arrow" className="sm" />
+                Collect fee
+              </Link>
+            ),
+          }}
         />
       </Panel>
     </>

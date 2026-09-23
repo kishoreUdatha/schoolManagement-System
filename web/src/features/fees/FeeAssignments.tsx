@@ -115,10 +115,19 @@ export function FeeAssignments() {
       <ErrorNote>{error ?? years.error ?? list.error}</ErrorNote>
       <Panel title="Allocation workspace" sub="What a student pays when it differs from their class" flush>
         <DataTable
-          columns={["Student", "Academic year", "Fee head", "Class amount", "Assigned amount", "Status"]}
+          columns={["Student", "Academic year", "Fee type", "Class amount", "Assigned amount", "Status"]}
           rows={rows}
           onView={(i) => setOpen(items[i])}
-          empty={list.loading ? "Loading assignments…" : "No student-specific fee assignments. Everyone pays their class's structure."}
+          empty={list.loading ? "Loading assignments…" : q || status !== "active" ? "No assignments match these filters." : undefined}
+          emptyState={{
+            title: "No fee assignments yet",
+            note: "Everyone pays their class's fee structure until a student needs a different amount.",
+            action: (
+              <button type="button" className="btn primary" onClick={() => setAdding(true)}>
+                Assign fees
+              </button>
+            ),
+          }}
         />
       </Panel>
       <div className="tip">
@@ -224,9 +233,9 @@ function NewAssignment({ years, heads, yearId, onClose, onSaved }: { years: Acad
         <ErrorNote>{error}</ErrorNote>
         <div className="form-grid">
           <StudentPicker value={student} onChange={setStudent} />
-          <Field label="Fee head" required>
+          <Field label="Fee type" required>
             <select value={f.fee_head_id} onChange={set("fee_head_id")} required>
-              <option value="">Select fee head</option>
+              <option value="">Select fee type</option>
               {heads.map((h) => (
                 <option key={h.id} value={h.id}>
                   {h.name}

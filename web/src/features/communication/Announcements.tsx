@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge } from "@/components/ui/primitives";
-import { ErrorNote, Loading } from "@/components/ui/states";
+import { EmptyGuide, ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { dateTime, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -201,7 +201,24 @@ export function Announcements() {
           </article>
         ))}
         {!shown.length ? (
-          <div className="panel-pad muted">{loading ? "Loading announcements…" : items.length ? "No announcements match these filters." : "No announcements yet."}</div>
+          loading || items.length ? (
+            <div className="panel-pad muted">{loading ? "Loading announcements…" : "No announcements match these filters."}</div>
+          ) : (
+            <div className="panel-pad">
+              <EmptyGuide
+                title="No announcements yet"
+                note="An announcement tells every parent and teacher the same thing at once — a holiday, a result day, a change of plan."
+                action={
+                  office ? (
+                    <Link href="/communication/notification-campaigns" className="btn primary">
+                      <Icon name="plus" className="sm" />
+                      Create announcement
+                    </Link>
+                  ) : undefined
+                }
+              />
+            </div>
+          )
         ) : null}
       </div>
     </>

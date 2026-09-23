@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Dialog } from "@/components/ui/Dialog";
@@ -9,6 +10,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
+import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { LeaveBalance, LeaveType } from "./types";
 import { Field, KV } from "./ui";
@@ -134,13 +136,17 @@ export function LeaveBalances() {
               Adjust
             </button>
           )}
-          empty={
-            list.loading
-              ? "Loading balances…"
-              : all.length
-                ? "No balance matches these filters."
-                : `No balances for ${year} yet. Allot the year's leave from Leave Policies.`
-          }
+          empty={list.loading ? "Loading balances…" : all.length ? "No balance matches these filters." : undefined}
+          emptyState={{
+            title: "No balances yet",
+            note: `Leave for ${year} has not been allotted to staff yet.`,
+            action: (
+              <Link href={routeOf(180)} className="btn primary">
+                <Icon name="calendar" className="sm" />
+                Allot leave for a year
+              </Link>
+            ),
+          }}
         />
       </Panel>
 

@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Panel, Person } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
-import { ErrorNote } from "@/components/ui/states";
+import { EmptyGuide, ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
@@ -127,7 +127,20 @@ export function CertificateRegister() {
           </table>
         </div>
         <div className="table-empty" hidden={items.length > 0}>
-          {list.loading ? "Loading the register…" : typed || kind || status ? "No certificates match these filters." : "Nothing in the register yet."}
+          {list.loading || typed || kind || status ? (
+            list.loading ? "Loading the register…" : "No certificates match these filters."
+          ) : (
+            <EmptyGuide
+              title="Nothing in the register yet"
+              note="Every certificate the school issues — transfer, bonafide, conduct — gets a serial number here, so a reprint can be traced."
+              action={
+                <Link href="/documents/generate-certificate" className="btn primary">
+                  <Icon name="arrow" className="sm" />
+                  Generate certificate
+                </Link>
+              }
+            />
+          )}
         </div>
         <div className="table-footer">
           <span>{`Showing ${items.length} of ${list.data?.length ?? 0} records`}</span>
