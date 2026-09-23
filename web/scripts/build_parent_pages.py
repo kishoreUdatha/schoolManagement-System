@@ -99,11 +99,32 @@ def scope(css: str) -> str:
     return "\n".join(out)
 
 
+def bump_type(css: str) -> str:
+    """The pack was drawn for a preview frame on a desktop screen, where 9-12px
+    reads fine. In a hand it does not, so the type scale is lifted here —
+    spacing is left alone, and the design's hierarchy is kept."""
+
+    def one(m: "re.Match[str]") -> str:
+        px = float(m.group(1))
+        if px <= 10:
+            px += 4
+        elif px <= 13:
+            px += 3
+        elif px <= 16:
+            px += 2
+        elif px <= 22:
+            px += 1
+        return f"font-size:{px:g}px"
+
+    return re.sub(r"font-size:([0-9.]+)px", one, css)
+
+
 def write_css() -> None:
     css = "".join(re.findall(r"<style>(.*?)</style>", SRC_HTML, re.S))
     css = re.sub(r"@font-face\{[^}]*\}", "", css)
     css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
     css = css.replace("Manrope,Arial,sans-serif", "var(--font-sans),Arial,sans-serif").replace("font-family:Manrope", "font-family:var(--font-sans)")
+    css = bump_type(css)
     (WEB / "src/styles/parent.css").write_text(
         "/* Parent Mobile pack styles, scoped under .pm by scripts/build_parent_pages.py. Do not edit;\n"
         "   put changes in parent-app.css. */\n" + re.sub(r"(?m)^\s*:root\{", ".pm{", scope(css)) + "\n",
