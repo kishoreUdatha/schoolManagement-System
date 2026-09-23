@@ -175,7 +175,8 @@ function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer;
           <>
             {NAV.map(([title, links]) => (
               <div key={title}>
-                <div className="nav-label">{title.toUpperCase()}</div>
+                {/* "Overview" said nothing the entries did not; the rest still group the menu */}
+                {title === "Overview" ? null : <div className="nav-label">{title.toUpperCase()}</div>}
                 {links.map(([n, label, icon, mods], i) => (
                   <ModuleGroup key={n} label={label} icon={icon} mods={mods} currentId={s?.id ?? ""} currentModule={s?.module ?? ""} tone={i} />
                 ))}

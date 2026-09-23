@@ -102,6 +102,16 @@ export function ModuleGroup({
       return next;
     });
 
+  // One screen is not a menu: show it as a plain entry, with no arrow to open.
+  if (screens.length === 1) {
+    const only = screens[0];
+    return (
+      <Link href={only.route} className={`nav ${only.n === activeN ? "active" : ""}`} aria-current={only.id === currentId ? "page" : undefined}>
+        <span>{MENU_LABEL[only.n] ?? label}</span>
+      </Link>
+    );
+  }
+
   return (
     <div className={`nav-group tone-${tone % 6} ${open ? "open" : ""}`}>
       <button type="button" className={`nav ${here ? "active" : ""}`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
