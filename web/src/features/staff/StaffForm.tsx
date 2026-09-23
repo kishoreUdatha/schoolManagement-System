@@ -29,6 +29,8 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
   const existing = useApi<Staff>(editing && id ? `/api/v1/school/staff/${id}` : null);
   const departments = useApi<Department[]>("/api/v1/school/departments");
   const colleagues = useApi<Staff[]>("/api/v1/school/staff", { status: "active" });
+  // new staff get the school's next number; it stays editable for schools with their own series
+  const suggested = useApi<{ employee_no: string }>(editing ? null : "/api/v1/school/staff/next-employee-no");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Created | null>(null);
@@ -133,7 +135,18 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
               </div>
               <div className="form-grid">
                 {field("Staff name", <input name="full_name" required minLength={2} maxLength={160} defaultValue={s?.full_name} placeholder="Enter staff name" />, true)}
-                {field("Employee no.", <input name="employee_no" required maxLength={40} defaultValue={s?.employee_no} placeholder="Enter employee no." />, true)}
+                {field(
+                  "Employee no.",
+                  <input
+                    key={s?.employee_no ?? suggested.data?.employee_no ?? "loading"}
+                    name="employee_no"
+                    required={editing}
+                    maxLength={40}
+                    defaultValue={s?.employee_no ?? suggested.data?.employee_no ?? ""}
+                    placeholder="Given automatically"
+                  />,
+                  editing,
+                )}
                 {field(
                   "Department",
                   departments.data && !departments.data.length ? (

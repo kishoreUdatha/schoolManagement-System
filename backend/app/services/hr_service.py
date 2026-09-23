@@ -478,7 +478,7 @@ def withdraw_offer(db: Session, user: User, offer_id: int, note: Optional[str]) 
     return o
 
 
-def hire(db: Session, user: User, offer_id: int, employee_no: str, role: str) -> dict:
+def hire(db: Session, user: User, offer_id: int, employee_no: str | None, role: str) -> dict:
     """Turn an accepted offer into a staff member with a login."""
     from app.schemas.staff import StaffCreate
     from app.services import staff_service

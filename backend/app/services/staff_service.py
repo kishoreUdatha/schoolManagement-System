@@ -22,6 +22,21 @@ def _generate_password(length: int = 12) -> str:
     return "".join(secrets.choice(alphabet) for _ in range(length))
 
 
+def next_employee_no(db: Session, school_id: int) -> str:
+    """EMP0001 upward, one run per school. A school may still type its own."""
+    taken = db.execute(
+        select(Staff.employee_no).where(
+            Staff.school_id == school_id, Staff.employee_no.like("EMP%")
+        )
+    ).scalars().all()
+    seq = 0
+    for no in taken:
+        tail = no[3:]
+        if tail.isdigit():
+            seq = max(seq, int(tail))
+    return f"EMP{seq + 1:04d}"
+
+
 def _check_staff_quota(db: Session, tenant_id: int) -> None:
     sub = db.execute(
         select(TenantSubscription)
@@ -141,6 +156,7 @@ def create_staff(
 
     role = _STAFF_ROLE_MAP.get(data.role, UserRole.staff)
     raw_password = _generate_password()
+    employee_no = (data.employee_no or "").strip() or next_employee_no(db, school_id)
 
     user = User(
         tenant_id=tenant_id,
@@ -168,7 +184,7 @@ def create_staff(
         tenant_id=tenant_id,
         school_id=school_id,
         user_id=user.id,
-        employee_no=data.employee_no.strip(),
+        employee_no=employee_no,
         designation=data.designation.strip() if data.designation else None,
         joining_date=data.joining_date,
         department_id=data.department_id,
@@ -181,7 +197,7 @@ def create_staff(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Employee number '{data.employee_no}' already exists for this school",
+            detail=f"Employee number '{employee_no}' already exists for this school",
         )
 
     db.refresh(staff)

@@ -192,7 +192,7 @@ class OfferRead(BaseModel):
 
 
 class HireIn(BaseModel):
-    employee_no: str = Field(..., min_length=1, max_length=40)
+    employee_no: Optional[str] = Field(None, max_length=40, description="Left out, the next EMP number is used")
     role: str = Field("teacher", description="teacher | staff | principal | accountant")
 
 

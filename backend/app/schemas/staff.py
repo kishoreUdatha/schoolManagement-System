@@ -15,7 +15,9 @@ class StaffCreate(BaseModel):
     email: str = Field(..., min_length=3, max_length=255)
     phone: Optional[str] = Field(None, max_length=20)
     role: StaffRole = "teacher"
-    employee_no: str = Field(..., min_length=1, max_length=40)
+    employee_no: Optional[str] = Field(
+        None, max_length=40, description="Left out, the school's next EMP number is used"
+    )
     designation: Optional[str] = Field(None, max_length=120)
     joining_date: Optional[date] = None
     department_id: Optional[int] = None

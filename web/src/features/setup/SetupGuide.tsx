@@ -471,12 +471,7 @@ type StaffRow = { id: number; full_name: string; email: string | null; role: str
 function StaffStep({ busy, run }: StepProps) {
   const list = useApi<StaffRow[]>("/api/v1/school/staff");
   const staff = list.data ?? [];
-  const nextNo = () => {
-    const taken = new Set(staff.map((x) => x.employee_no.toUpperCase()));
-    let n = staff.length + 1;
-    while (taken.has(`EMP${String(n).padStart(3, "0")}`)) n++;
-    return `EMP${String(n).padStart(3, "0")}`;
-  };
+  const suggested = useApi<{ employee_no: string }>("/api/v1/school/staff/next-employee-no");
   const blank = { full_name: "", email: "", phone: "", role: "teacher", designation: "", employee_no: "" };
   const [f, setF] = useState(blank);
   const [made, setMade] = useState<{ name: string; email: string; password: string }[]>([]);
@@ -528,7 +523,7 @@ function StaffStep({ busy, run }: StepProps) {
         </label>
         <label className="field">
           <span>Employee no.</span>
-          <input value={f.employee_no} onChange={set("employee_no")} placeholder={`${nextNo()} (automatic)`} />
+          <input value={f.employee_no} onChange={set("employee_no")} placeholder={`${suggested.data?.employee_no ?? "EMP0001"} (automatic)`} />
         </label>
       </div>
       <div className="wizard-actions">
@@ -547,11 +542,12 @@ function StaffStep({ busy, run }: StepProps) {
                   phone: f.phone.trim() || null,
                   role: f.role,
                   designation: f.designation.trim() || null,
-                  employee_no: f.employee_no.trim() || nextNo(),
+                  employee_no: f.employee_no.trim() || null,
                 });
                 setMade((xs) => [...xs, { name: f.full_name.trim(), email: f.email.trim(), password: r.temporary_password }]);
                 setF(blank);
                 list.reload();
+                suggested.reload();
               },
               true,
             )

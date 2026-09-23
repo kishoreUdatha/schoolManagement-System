@@ -67,6 +67,7 @@ export function OfferAppointment() {
   const apps = useApi<Application[]>(`${BASE}/applications`);
   const departments = useApi<Department[]>("/api/v1/school/departments");
   const staff = useApi<StaffMember[]>("/api/v1/school/staff", { status: "active" });
+  const suggestedNo = useApi<{ employee_no: string }>("/api/v1/school/staff/next-employee-no");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [responding, setResponding] = useState<boolean | null>(null);
@@ -129,7 +130,7 @@ export function OfferAppointment() {
     if (!a?.offer) return;
     const f = new FormData(e.currentTarget);
     const r = await run(
-      () => api.post<{ employee_no: string; temporary_password: string }>(`${BASE}/offers/${a.offer!.id}/hire`, { employee_no: String(f.get("employee_no") ?? "").trim(), role: String(f.get("role") ?? "teacher") }),
+      () => api.post<{ employee_no: string; temporary_password: string }>(`${BASE}/offers/${a.offer!.id}/hire`, { employee_no: String(f.get("employee_no") ?? "").trim() || null, role: String(f.get("role") ?? "teacher") }),
       "Hired and added to staff.",
     );
     if (r) {
@@ -304,8 +305,8 @@ export function OfferAppointment() {
       {hiring ? (
         <Dialog title={`Add ${a?.candidate_name} to staff`} onClose={() => setHiring(false)} onSubmit={hire} submit="Hire" busy={busy} error={err}>
           <div className="form-grid">
-            <Field label="Employee number" required>
-              <input name="employee_no" required maxLength={40} />
+            <Field label="Employee number">
+              <input key={suggestedNo.data?.employee_no ?? "loading"} name="employee_no" maxLength={40} defaultValue={suggestedNo.data?.employee_no ?? ""} placeholder="Given automatically" />
             </Field>
             <Field label="Role" required>
               <select name="role" defaultValue="teacher">

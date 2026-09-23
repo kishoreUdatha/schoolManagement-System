@@ -66,6 +66,17 @@ def list_(
     ]
 
 
+@router.get(
+    "/next-employee-no",
+    summary="The employee number the next staff member will get",
+)
+def next_employee_no(
+    current_user: SchoolAdminOrPrincipal,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return {"employee_no": staff_service.next_employee_no(db, current_user.school_id)}
+
+
 @router.get("/{staff_id}", response_model=StaffRead)
 def get(
     staff_id: int,
