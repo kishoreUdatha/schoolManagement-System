@@ -163,19 +163,18 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
     return { note: `Due in ${days} days`, tone: days <= 3 ? "warn" : undefined };
   }
 
-  function RowMenu({ item }: { item: Item }) {
+  /** Everything a row can do, behind one "…" — the row stays a row. */
+  function RowMenu({ label, items }: { label: string; items: { text: string; bad?: boolean; go: () => void }[] }) {
     const [at, setAt] = useState<{ top: number; right: number } | null>(null);
-    const hw = homework.data?.find((h) => h.id === item.id);
-    if (!isHw || !hw?.can_edit) return null;
-    const open = at !== null;
+    if (!items.length) return null;
     return (
       <span className="row-menu">
         <button
           type="button"
           className="btn icon"
-          aria-label={`More for ${item.title}`}
+          aria-label={`More for ${label}`}
           onClick={(e) => {
-            if (open) {
+            if (at) {
               setAt(null);
               return;
             }
@@ -187,18 +186,19 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
         </button>
         {at ? (
           <span className="row-menu-list" style={{ top: at.top, right: at.right }} onMouseLeave={() => setAt(null)}>
-            <button type="button" onClick={() => router.push(detail(item.id))}>
-              Homework brief
-            </button>
-            <button type="button" onClick={() => router.push(`${routeOf(129)}?id=${item.id}`)}>
-              Edit homework
-            </button>
-            <button type="button" onClick={() => closeWork(item, !item.closed)}>
-              {item.closed ? "Reopen for submissions" : "Close for submissions"}
-            </button>
-            <button type="button" className="bad" onClick={() => removeWork(item)}>
-              Delete
-            </button>
+            {items.map((x) => (
+              <button
+                key={x.text}
+                type="button"
+                className={x.bad ? "bad" : ""}
+                onClick={() => {
+                  setAt(null);
+                  x.go();
+                }}
+              >
+                {x.text}
+              </button>
+            ))}
           </span>
         ) : null}
       </span>
@@ -316,32 +316,40 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
                           View
                         </button>
                       )}
-                      <RowMenu item={i} />
+                      <RowMenu
+                        label={i.title}
+                        items={[
+                          { text: "Homework brief", go: () => router.push(detail(i.id)) },
+                          ...(homework.data?.find((h) => h.id === i.id)?.can_edit
+                            ? [
+                                { text: "Edit homework", go: () => router.push(`${routeOf(129)}?id=${i.id}`) },
+                                { text: i.closed ? "Reopen for submissions" : "Close for submissions", go: () => closeWork(i, !i.closed) },
+                                { text: "Delete", bad: true, go: () => removeWork(i) },
+                              ]
+                            : []),
+                        ]}
+                      />
                     </>
                   );
                 }
               : (k) => {
-                  const p = projectOf(shown[k].id);
-                  const mine = p !== null && p.created_by_user_id === me;
+                  const i = shown[k];
+                  const pr = projectOf(i.id);
+                  const mine = pr !== null && pr.created_by_user_id === me;
                   return (
-                    <>
-                      <button type="button" className="btn" onClick={() => router.push(detail(shown[k].id))}>
-                        View
-                      </button>
-                      {mine ? (
-                        <>
-                          <button type="button" className="btn" onClick={() => setEditing(p)}>
-                            Edit
-                          </button>
-                          <button type="button" className="btn" onClick={() => setMilestones(p)}>
-                            Milestones
-                          </button>
-                          <button type="button" className="btn" onClick={() => remove(p)}>
-                            Delete
-                          </button>
-                        </>
-                      ) : null}
-                    </>
+                    <RowMenu
+                      label={i.title}
+                      items={[
+                        { text: i.awaiting ? `Evaluate ${i.awaiting}` : "View submissions", go: () => router.push(detail(i.id)) },
+                        ...(mine && pr
+                          ? [
+                              { text: "Edit assignment", go: () => setEditing(pr) },
+                              { text: "Milestones", go: () => setMilestones(pr) },
+                              { text: "Delete", bad: true, go: () => remove(pr) },
+                            ]
+                          : []),
+                      ]}
+                    />
                   );
                 }
           }
