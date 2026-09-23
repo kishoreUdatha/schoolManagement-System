@@ -175,7 +175,7 @@ function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer;
       >
         {roleNav ? (
           <>
-            <div className="nav-label">{`${role.toUpperCase()} WORKSPACE`}</div>
+            {/* the person's own screens need no heading: they are the menu */}
             {roleNav.map(([n, label]) => (
               <Link key={n + label} className={`nav ${n === here ? "active" : ""}`} href={routeOf(n)}>
                 <span>{label}</span>
