@@ -174,6 +174,9 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
         </button>
         {open ? (
           <span className="row-menu-list" onMouseLeave={() => setOpen(false)}>
+            <button type="button" onClick={() => router.push(detail(item.id))}>
+              Homework brief
+            </button>
             <button type="button" onClick={() => router.push(`${routeOf(129)}?id=${item.id}`)}>
               Edit homework
             </button>
@@ -283,11 +286,17 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
             isHw
               ? (k) => {
                   const i = shown[k];
+                  // Work handed in belongs on the marking screen; only work
+                  // nobody has touched sends a teacher to the brief.
                   return (
                     <>
                       {i.awaiting ? (
                         <button type="button" className="btn primary" onClick={() => router.push(review(i.id))}>
                           {`Evaluate ${i.awaiting}`}
+                        </button>
+                      ) : i.submitted ? (
+                        <button type="button" className="btn" onClick={() => router.push(review(i.id))}>
+                          Submissions
                         </button>
                       ) : (
                         <button type="button" className="btn" onClick={() => router.push(detail(i.id))}>
