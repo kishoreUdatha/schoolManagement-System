@@ -5,10 +5,10 @@ import { useEffect, useState, type FormEvent } from "react";
 import { FileCards, filesForm, UploadZone, type Attachment } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
 import { StatCards } from "@/components/ui/StatStrip";
-import { Badge, Panel } from "@/components/ui/primitives";
+import { Avatar, Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, initials } from "@/lib/format";
+import { date, dateTime } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -198,14 +198,14 @@ export function HomeworkEvaluation() {
             </div>
           </div>
           <div className="roll">
-            {roll.map((r) => (
+            {roll.map((r, i) => (
               <button
                 type="button"
                 key={r.id}
                 className={`roll-row ${(r.sub && r.sub.id === subId && !missing) || missing?.id === r.id ? "on" : ""} ${r.sub ? "" : "none"}`}
                 onClick={() => show(r)}
               >
-                <span className="avatar mint">{initials(r.full_name)}</span>
+                <Avatar name={r.full_name} index={i} />
                 <span className="roll-who">
                   <span className="roll-name">{r.full_name}</span>
                   <small>{`${h.class_name ?? ""} · ${r.admission_no}`}</small>
@@ -238,7 +238,7 @@ export function HomeworkEvaluation() {
               <>
                 <div className="spread">
                   <div className="person">
-                    <span className="avatar peach">{initials(missing.full_name)}</span>
+                    <Avatar name={missing.full_name} index={Math.max(0, roll.findIndex((r) => r.id === missing.id))} />
                     <div>
                       {missing.full_name}
                       <small>{`${h.class_name ?? ""} · ${missing.admission_no}`}</small>
@@ -255,7 +255,7 @@ export function HomeworkEvaluation() {
               <>
                 <div className="spread">
                   <div className="person">
-                    <span className="avatar mint">{initials(s.student_name ?? "?")}</span>
+                    <Avatar name={s.student_name ?? "?"} index={Math.max(0, roll.findIndex((r) => r.sub?.id === s.id))} />
                     <div>
                       {s.student_name ?? "—"}
                       <small>{`${h.class_name ?? ""} · ${s.student_admission_no ?? "—"}`}</small>
