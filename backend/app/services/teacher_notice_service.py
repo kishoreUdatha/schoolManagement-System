@@ -14,13 +14,19 @@ from app.services import notice_service
 
 
 def _teacher_class_ids(db: Session, teacher_user_id: int) -> set[int]:
-    """All class_ids where this teacher teaches at least one subject."""
+    """The classes this teacher answers for: the ones they teach a subject to,
+    and the class of any section they are class teacher of."""
     rows = db.execute(
         select(ClassSubject.class_id)
         .where(ClassSubject.teacher_user_id == teacher_user_id)
         .distinct()
     ).all()
-    return {row[0] for row in rows}
+    own = db.execute(
+        select(Section.class_id)
+        .where(Section.class_teacher_user_id == teacher_user_id)
+        .distinct()
+    ).all()
+    return {row[0] for row in rows} | {row[0] for row in own}
 
 
 def _check_audience_allowed_for_teacher(

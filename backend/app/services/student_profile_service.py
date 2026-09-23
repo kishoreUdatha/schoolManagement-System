@@ -225,20 +225,20 @@ def get_student_for_school(db: Session, student_id: int, school_id: int) -> Stud
 def get_student_for_teacher(
     db: Session, student_id: int, teacher_user_id: int, school_id: int
 ) -> Student:
-    """Teacher can view a student only if they teach a class_subject for the
-    student's class."""
+    """A teacher sees a child they are responsible for: the class teacher of
+    the child's section, or anyone teaching a subject to that class."""
     s = get_student_for_school(db, student_id, school_id)
     section = db.get(Section, s.section_id)
     if not section:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Student not found"
         )
-    teaches = db.execute(
+    teaches = section.class_teacher_user_id == teacher_user_id or db.execute(
         select(ClassSubject.id).where(
             ClassSubject.class_id == section.class_id,
             ClassSubject.teacher_user_id == teacher_user_id,
         )
-    ).first()
+    ).first() is not None
     if not teaches:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
