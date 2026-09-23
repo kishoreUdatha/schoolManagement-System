@@ -36,6 +36,9 @@ export function HomeworkEvaluation() {
   const [score, setScore] = useState("");
   const [outOf, setOutOf] = useState("");
   const [who, setWho] = useState("");
+  // a child chosen from the list who has handed in nothing; there is no
+  // submission to open, but the teacher still wants to see where they stand
+  const [missing, setMissing] = useState<{ id: number; full_name: string; admission_no: string } | null>(null);
   const [remark, setRemark] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -46,7 +49,7 @@ export function HomeworkEvaluation() {
     if (subId === null && subs.data?.length) setSubId((subs.data.find((s) => s.status === "submitted") ?? subs.data[0]).id);
   }, [subs.data, subId]);
 
-  const s = subs.data?.find((x) => x.id === subId);
+  const s = missing ? undefined : subs.data?.find((x) => x.id === subId);
   useEffect(() => {
     setMarks({});
     setScore(s?.marks ?? "");
@@ -163,6 +166,11 @@ export function HomeworkEvaluation() {
 
   return (
     <>
+      <p className="muted small" style={{ margin: "-6px 0 14px" }}>
+        {[h.title, h.subject_name, h.class_name, `Due ${date(h.due_date)}`, h.max_marks ? `Out of ${Number(h.max_marks)}` : max != null ? `Out of ${max}` : null]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
       <StatCards items={stats} />
       <div className="marking">
         <Panel title="Student submissions" sub={`${count("approved") + count("rejected")} of ${rosterRows.length || list.length} reviewed`} flush>
@@ -177,10 +185,15 @@ export function HomeworkEvaluation() {
               <button
                 type="button"
                 key={r.id}
-                className={`roll-row ${r.sub && r.sub.id === subId ? "on" : ""} ${r.sub ? "" : "none"}`}
-                disabled={!r.sub}
-                title={r.sub ? undefined : "Nothing handed in yet"}
-                onClick={() => r.sub && setSubId(r.sub.id)}
+                className={`roll-row ${(r.sub && r.sub.id === subId && !missing) || missing?.id === r.id ? "on" : ""} ${r.sub ? "" : "none"}`}
+                onClick={() => {
+                  if (r.sub) {
+                    setMissing(null);
+                    setSubId(r.sub.id);
+                  } else {
+                    setMissing({ id: r.id, full_name: r.full_name, admission_no: r.admission_no });
+                  }
+                }}
               >
                 <span className="avatar mint">{initials(r.full_name)}</span>
                 <span className="roll-who">
@@ -211,7 +224,24 @@ export function HomeworkEvaluation() {
               ) : undefined
             }
           >
-            {s ? (
+            {missing ? (
+              <>
+                <div className="spread">
+                  <div className="person">
+                    <span className="avatar peach">{initials(missing.full_name)}</span>
+                    <div>
+                      {missing.full_name}
+                      <small>{`${h.class_name ?? ""} · ${missing.admission_no}`}</small>
+                    </div>
+                  </div>
+                  <Badge>Not handed in</Badge>
+                </div>
+                <div className="gap" />
+                <p className="quote">
+                  {`${missing.full_name.split(" ")[0]} has handed nothing in${h.is_past_due ? `, and it was due ${date(h.due_date)}` : `; it is due ${date(h.due_date)}`}. There is nothing to mark until they do.`}
+                </p>
+              </>
+            ) : s ? (
               <>
                 <div className="spread">
                   <div className="person">
@@ -339,30 +369,6 @@ export function HomeworkEvaluation() {
             </form>
           ) : null}
         </div>
-        <aside className="stack">
-          <Panel title="Homework details">
-            <dl className="kv">
-              {[
-                ["Subject", h.subject_name ?? "—"],
-                ["Class", h.class_name ?? "—"],
-                ["Due date", date(h.due_date)],
-                ["Maximum score", h.max_marks ? String(Number(h.max_marks)) : max != null ? String(max) : "—"],
-              ].map(([k, v]) => (
-                <div key={k}>
-                  <dt>{k}</dt>
-                  <dd>{v}</dd>
-                </div>
-              ))}
-            </dl>
-          </Panel>
-          {h.attachment_url || h.attachments?.length ? (
-            <Panel title="Homework attachments">
-              {h.attachment_url ? <LinkCard url={h.attachment_url} note="Attached by the teacher" /> : null}
-              <FileCards files={h.attachments ?? []} pathOf={(a) => `/api/v1/teacher/homework/${h.id}/files/${a.id}`} note="Attached by the teacher" onError={setError} />
-            </Panel>
-          ) : null}
-
-        </aside>
       </div>
     </>
   );
