@@ -353,6 +353,16 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
 
   const schoolName = sess?.user.role === "super_admin" ? "BrightCampus Platform" : (school?.name ?? "Bright International");
   const group = tabGroupOf(s.n);
+  // Tabs are a way into screens, so they answer to the same rule the menu
+  // does: someone with their own menu (a teacher, a librarian) sees the tabs
+  // of a group their menu or their jobs can open, and not the office's. The
+  // school admin's menu is the modules themselves, so they keep every tab.
+  const perms = usePermissions();
+  const roleNav = ROLE_NAV[viewer.role];
+  const mine = roleNav
+    ? new Set([...roleNav.flatMap(screensIn), ...heldJobs(perms).flatMap((j) => j.items.map(([n]) => n))])
+    : null;
+  const tabs = (group?.tabs ?? []).filter(([n]) => !mine || n === s.n || mine.has(n));
   return (
     <div className="app">
       <Sidebar s={s} viewer={viewer} school={school ?? null} />
@@ -373,9 +383,9 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
               <div className="actions" id={PAGE_ACTIONS_SLOT} />
             </div>
           )}
-          {group ? (
+          {group && tabs.length > 1 ? (
             <nav className="module-tabs page-tabs" aria-label={group.label}>
-              {group.tabs.map(([n, t]) => (
+              {tabs.map(([n, t]) => (
                 <Link key={n} href={routeOf(n)} className={n === s.n ? "active" : ""} aria-current={n === s.n ? "page" : undefined}>
                   {t}
                 </Link>
