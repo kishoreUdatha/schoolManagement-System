@@ -355,11 +355,18 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .quote{margin:0;padding:12px 14px;background:#f7faff;border:1px solid var(--line);border-radius:10px;font-size:13.5px;color:#3c5275;line-height:1.6}
 .roll-row.none{opacity:.72}
 .roll-row:disabled{cursor:default}
-/* The top bar earns its height: a shorter strip and a search box the width of
-   what people type, not of the space going spare. */
-.topbar.topbar{height:56px}
+/* The top bar earns its height: a thin strip, a search box the width of what
+   people type, and controls sized to sit in it. */
+.topbar.topbar{height:40px}
 .topbar-left{flex:0 1 auto}
-.topsearch{width:250px}
-.topsearch input{height:34px}
-@media(max-width:1200px){.topsearch{width:190px}.topsearch kbd{display:none}}
-@media(max-width:820px){.topsearch{width:150px}}
+.topsearch{width:240px}
+.topsearch input{height:26px;font-size:12.5px}
+.topsearch kbd{padding:1px 4px;font-size:11px}
+.topbar .btn.icon{min-height:28px;min-width:28px;height:28px;padding:0 6px}
+.topbar .btn.icon .ico{width:17px;height:17px}
+.topbar .avatar{width:26px;height:26px;border-radius:8px;font-size:11px}
+.topbar select{font-size:12.5px;height:26px;padding:0 4px}
+.topbar .bar-divider{height:18px}
+.topbar .row{gap:8px}
+@media(max-width:1200px){.topsearch{width:180px}.topsearch kbd{display:none}}
+@media(max-width:820px){.topsearch{width:140px}}
