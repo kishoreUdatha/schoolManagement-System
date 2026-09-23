@@ -332,7 +332,7 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .stat-card.on{border-color:var(--blue);background:#f4f8ff}
 /* The quiet "…" on a row, for the things a teacher does less often. */
 .row-menu{position:relative}
-.row-menu-list{position:absolute;right:0;top:calc(100% + 4px);z-index:20;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 26px #23417014;padding:5px;display:grid;min-width:150px}
+.row-menu-list{position:fixed;z-index:60;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 26px #23417014;padding:5px;display:grid;min-width:150px}
 .row-menu-list button{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:7px;background:none;font-size:13px;font-weight:600;color:var(--ink)}
 .row-menu-list button:hover{background:#f2f7ff}
 .row-menu-list button.bad{color:#be3244}

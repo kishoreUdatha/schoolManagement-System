@@ -164,16 +164,29 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
   }
 
   function RowMenu({ item }: { item: Item }) {
-    const [open, setOpen] = useState(false);
+    const [at, setAt] = useState<{ top: number; right: number } | null>(null);
     const hw = homework.data?.find((h) => h.id === item.id);
     if (!isHw || !hw?.can_edit) return null;
+    const open = at !== null;
     return (
       <span className="row-menu">
-        <button type="button" className="btn icon" aria-label={`More for ${item.title}`} onClick={() => setOpen((o) => !o)}>
+        <button
+          type="button"
+          className="btn icon"
+          aria-label={`More for ${item.title}`}
+          onClick={(e) => {
+            if (open) {
+              setAt(null);
+              return;
+            }
+            const b = e.currentTarget.getBoundingClientRect();
+            setAt({ top: b.bottom + 4, right: window.innerWidth - b.right });
+          }}
+        >
           …
         </button>
-        {open ? (
-          <span className="row-menu-list" onMouseLeave={() => setOpen(false)}>
+        {at ? (
+          <span className="row-menu-list" style={{ top: at.top, right: at.right }} onMouseLeave={() => setAt(null)}>
             <button type="button" onClick={() => router.push(detail(item.id))}>
               Homework brief
             </button>
@@ -220,8 +233,8 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
     const handed = i.submitted ?? 0;
     const of = i.eligible ?? 0;
     return [
-      // what the class was actually asked to do, under its title
-      { name: i.title, sub: i.what.split(/\r?\n/)[0].slice(0, 70) || i.subject },
+      // the name alone; what the class was asked to do is on the brief
+      { name: i.title },
       i.subject,
       i.className,
       { text: date(i.due), note: w.note, tone: w.tone },
