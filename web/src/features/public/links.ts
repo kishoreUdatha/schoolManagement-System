@@ -1,8 +1,16 @@
 // Where the school's public pages live, and what their API returns.
 // Shared by the public pages and the admin screen that hands the links out.
 
-export const applyPath = (tenant: string, school: string) => `/apply/${encodeURIComponent(tenant)}/${encodeURIComponent(school)}`;
-export const careersPath = (tenant: string, school: string) => `/careers/${encodeURIComponent(tenant)}/${encodeURIComponent(school)}`;
+/** The school's form. One code is enough unless the organization runs several
+    schools, and repeating the same code twice helps nobody. */
+export const applyPath = (tenant: string, school: string) =>
+  school && school.toLowerCase() !== tenant.toLowerCase()
+    ? `/apply/${encodeURIComponent(tenant)}/${encodeURIComponent(school)}`
+    : `/apply/${encodeURIComponent(tenant)}`;
+export const careersPath = (tenant: string, school: string) =>
+  school && school.toLowerCase() !== tenant.toLowerCase()
+    ? `/careers/${encodeURIComponent(tenant)}/${encodeURIComponent(school)}`
+    : `/careers/${encodeURIComponent(tenant)}`;
 
 /** GET /api/v1/public/admissions/{tenant}/{school} and /public/careers/{tenant}/{school}. */
 export type PublicSchoolInfo = {

@@ -34,9 +34,11 @@ function Honeypot() {
 /**
  * The online admission form, no sign-in: GET /public/admissions/{tenant}/{school}
  * for the school, POST …/enquiries (the default) or …/applications (?form=application).
+ * With one code (the short link of an organization that has a single school)
+ * the same endpoints answer under /public/admissions/{code}.
  */
-export function AdmissionApply({ tenant, school }: { tenant: string; school: string }) {
-  const base = `/api/v1/public/admissions/${encodeURIComponent(tenant)}/${encodeURIComponent(school)}`;
+export function AdmissionApply({ tenant, school }: { tenant: string; school?: string }) {
+  const base = `/api/v1/public/admissions/${encodeURIComponent(tenant)}${school ? `/${encodeURIComponent(school)}` : ""}`;
   const path = usePathname();
   const full = useSearchParams().get("form") === "application";
   const info = useApi<PublicSchoolInfo>(base);

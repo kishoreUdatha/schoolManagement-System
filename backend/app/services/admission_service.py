@@ -634,7 +634,51 @@ def stats(db: Session, school_id: int) -> dict:
 
 # --- Public enquiry form ---
 
-def resolve_public_school(db: Session, tenant_code: str, school_code: str) -> School:
+def resolve_public_school(db: Session, tenant_code: str, school_code: Optional[str] = None) -> School:
+    """The school behind a public link.
+
+    Links carry the organization's code and the school's code
+    (/apply/<tenant>/<school>). With only one code — the short link an
+    organization with a single school hands out — that school is used; where
+    an organization runs several, the code must name one of them.
+    """
+    if school_code is None:
+        rows = list(db.execute(
+            select(School)
+            .join(Tenant, School.tenant_id == Tenant.id)
+            .where(
+                func.lower(Tenant.code) == tenant_code.lower(),
+                Tenant.status == TenantStatus.active,
+                Tenant.is_active.is_(True),
+                School.status == SchoolStatus.active,
+                School.is_active.is_(True),
+            )
+        ).scalars())
+        if len(rows) == 1:
+            return rows[0]
+        if not rows:
+            # the code may name the school itself
+            rows = list(db.execute(
+                select(School)
+                .join(Tenant, School.tenant_id == Tenant.id)
+                .where(
+                    func.lower(School.code) == tenant_code.lower(),
+                    Tenant.status == TenantStatus.active,
+                    Tenant.is_active.is_(True),
+                    School.status == SchoolStatus.active,
+                    School.is_active.is_(True),
+                )
+            ).scalars())
+            if len(rows) == 1:
+                return rows[0]
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This organization runs more than one school; use the school's own link." if rows else "School not found",
+        )
+    return _resolve_pair(db, tenant_code, school_code)
+
+
+def _resolve_pair(db: Session, tenant_code: str, school_code: str) -> School:
     school = db.execute(
         select(School)
         .join(Tenant, School.tenant_id == Tenant.id)

@@ -30,8 +30,9 @@ function Field({ label: text, required = false, full = false, children }: { labe
  * …/openings/{id}/apply/form (multipart: the candidate's details as JSON in
  * `payload`, plus an optional résumé — PDF or Word, 5 MB at most).
  */
-export function Careers({ tenant, school }: { tenant: string; school: string }) {
-  const base = `/api/v1/public/careers/${encodeURIComponent(tenant)}/${encodeURIComponent(school)}`;
+export function Careers({ tenant, school }: { tenant: string; school?: string }) {
+  // one code is the short link of an organization with a single school
+  const base = `/api/v1/public/careers/${encodeURIComponent(tenant)}${school ? `/${encodeURIComponent(school)}` : ""}`;
   const info = useApi<PublicSchoolInfo>(base);
   const openings = useApi<PublicOpening[]>(info.data ? `${base}/openings` : null);
   const [applying, setApplying] = useState<PublicOpening | null>(null);

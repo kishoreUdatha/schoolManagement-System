@@ -24,14 +24,34 @@ class ApplyAck(BaseModel):
     message: str
 
 
+# --- Short link: one code, for an organization with a single school. These
+# come first so /<code>/openings is not read as /<organization>/<school>. ---
+
+
+@router.get("/{code}/openings", response_model=list[PublicOpening])
+def openings_short(code: str, db: Db):
+    return openings(code, None, db)
+
+
+@router.post("/{code}/openings/{opening_id}/apply", response_model=ApplyAck, status_code=status.HTTP_201_CREATED)
+def apply_short(code: str, opening_id: int, payload: PublicApplyIn, db: Db):
+    return apply(code, None, opening_id, payload, db)
+
+
+@router.get("/{tenant_code}", response_model=PublicSchoolInfo)
+def school_info_short(tenant_code: str, db: Db):
+    school = admission_service.resolve_public_school(db, tenant_code)
+    return PublicSchoolInfo.model_validate(admission_service.public_school_info(school))
+
+
 @router.get("/{tenant_code}/{school_code}", response_model=PublicSchoolInfo)
-def school_info(tenant_code: str, school_code: str, db: Db):
+def school_info(tenant_code: str, school_code: Optional[str], db: Db):
     school = admission_service.resolve_public_school(db, tenant_code, school_code)
     return PublicSchoolInfo.model_validate(admission_service.public_school_info(school))
 
 
 @router.get("/{tenant_code}/{school_code}/openings", response_model=list[PublicOpening])
-def openings(tenant_code: str, school_code: str, db: Db):
+def openings(tenant_code: str, school_code: Optional[str], db: Db):
     school = admission_service.resolve_public_school(db, tenant_code, school_code)
     items = svc.list_openings(db, school.id, None, public_only=True)
     return [
@@ -44,7 +64,7 @@ def openings(tenant_code: str, school_code: str, db: Db):
 
 @router.post("/{tenant_code}/{school_code}/openings/{opening_id}/apply", response_model=ApplyAck,
              status_code=status.HTTP_201_CREATED)
-def apply(tenant_code: str, school_code: str, opening_id: int, payload: PublicApplyIn, db: Db):
+def apply(tenant_code: str, school_code: Optional[str], opening_id: int, payload: PublicApplyIn, db: Db):
     school = admission_service.resolve_public_school(db, tenant_code, school_code)
     opening = svc.get_opening(db, opening_id, school.id)
     if not opening.is_public:
