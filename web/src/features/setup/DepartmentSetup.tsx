@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -12,6 +12,33 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { Field, KV, SectionTitle, orNull } from "./bits";
 import type { AcademicYear, Branch, Department, StaffPick } from "./types";
+
+/** What most schools set up. Picking one fills the name and code, which stay
+    editable — a school's own department is simply typed in instead. */
+const COMMON: [string, string][] = [
+  ["Pre-Primary (Montessori)", "PREP"],
+  ["Primary", "PRIM"],
+  ["Middle School", "MID"],
+  ["Senior School", "SEN"],
+  ["Languages", "LANG"],
+  ["Mathematics", "MATH"],
+  ["Science", "SCI"],
+  ["Social Studies", "SOC"],
+  ["Computer Science", "CS"],
+  ["Arts & Crafts", "ART"],
+  ["Music & Dance", "MUS"],
+  ["Physical Education", "PE"],
+  ["Administration", "ADMIN"],
+  ["Accounts & Finance", "ACC"],
+  ["Front Office", "FO"],
+  ["Admissions", "ADM"],
+  ["Library", "LIB"],
+  ["Transport", "TRANS"],
+  ["Housekeeping & Maintenance", "MAINT"],
+  ["Security", "SEC"],
+  ["Health & Wellness", "HLTH"],
+  ["IT Support", "IT"],
+];
 
 /**
  * SCR-031 and NEW-085 (the school admin's own menu entry), live. POST
@@ -29,6 +56,14 @@ export function DepartmentSetup() {
   const branches = useApi<Branch[]>("/api/v1/school/branches");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // name and code follow the picker, and can be typed over
+  const [name, setName] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(null);
+  // a different record (or a new one): back to what it holds
+  useEffect(() => {
+    setName(null);
+    setCode(null);
+  }, [id]);
 
   if (depts.loading && !depts.data) return <Loading what="Loading departments…" />;
   const dept = id ? depts.data?.find((d) => String(d.id) === id) : undefined;
@@ -76,11 +111,32 @@ export function DepartmentSetup() {
             <section>
               <SectionTitle n="01">{dept ? `Edit ${dept.name}` : "Details"}</SectionTitle>
               <div className="form-grid">
+                {!dept ? (
+                  <Field label="Pick a common one, or type your own below" full>
+                    <select
+                      aria-label="Common departments"
+                      value=""
+                      onChange={(e) => {
+                        const pick = COMMON.find(([n]) => n === e.target.value);
+                        if (!pick) return;
+                        setName(pick[0]);
+                        setCode(pick[1]);
+                      }}
+                    >
+                      <option value="">Common departments…</option>
+                      {COMMON.filter(([n]) => !depts.data?.some((d) => d.name.toLowerCase() === n.toLowerCase())).map(([n, c]) => (
+                        <option key={c} value={n}>
+                          {`${n} · ${c}`}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                ) : null}
                 <Field label="Department name" required>
-                  <input type="text" name="name" required minLength={2} placeholder="Enter department name" defaultValue={dept?.name ?? ""} />
+                  <input type="text" name="name" required minLength={2} placeholder="Enter department name" value={name ?? dept?.name ?? ""} onChange={(e) => setName(e.target.value)} />
                 </Field>
                 <Field label="Department code" required>
-                  <input type="text" name="code" required placeholder="Enter department code" defaultValue={dept?.code ?? ""} />
+                  <input type="text" name="code" required placeholder="Enter department code" value={code ?? dept?.code ?? ""} onChange={(e) => setCode(e.target.value)} />
                 </Field>
                 <Field label="Head of department">
                   <select name="head_user_id" aria-label="Head of department" defaultValue={dept?.head_user_id ?? ""}>
