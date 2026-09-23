@@ -7,9 +7,12 @@ import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
-import type { Paginated } from "@/lib/api";
+import { api, errorText, type Paginated } from "@/lib/api";
+import { ask } from "@/lib/dialog";
+import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { downloadCsv } from "@/features/reports/kit";
 import type { AcademicYear, SchoolClass, Student } from "./types";
 
 const PAGE_SIZE = 25;
@@ -24,6 +27,9 @@ export function StudentDirectory() {
   const [typed, setTyped] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [picked, setPicked] = useState<number[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
 
   // Default to the school's current year once the list arrives.
   useEffect(() => {
@@ -37,6 +43,8 @@ export function StudentDirectory() {
   }, [typed]);
 
   useEffect(() => setPage(1), [yearId, classId, status, search]);
+  // a tick means "this row", so it cannot survive the rows changing underneath
+  useEffect(() => setPicked([]), [yearId, classId, status, search, page]);
 
   const ready = yearId !== null;
   const classes = useApi<SchoolClass[]>(ready ? "/api/v1/school/classes" : null, { academic_year_id: yearId });
@@ -83,7 +91,49 @@ export function StudentDirectory() {
     ];
   });
 
-  const error = years.error ?? list.error ?? classes.error;
+  const error = failed ?? years.error ?? list.error ?? classes.error;
+  const chosen = picked.map((i) => items[i]).filter(Boolean);
+
+  /** The ticked rows as a spreadsheet, exactly as they read on screen. */
+  function exportPicked() {
+    downloadCsv(
+      "students",
+      ["Admission no.", "Student", "Class", "Section", "Roll no.", "Status"],
+      chosen.map((s) => {
+        const where = sectionOf.get(s.section_id);
+        return [s.admission_no, s.full_name, where?.cls ?? "", where?.sec ?? "", s.roll_no ? String(s.roll_no) : "", s.is_active ? "Active" : "Inactive"];
+      }),
+    );
+  }
+
+  /** Take the ticked children off the roll (POST /students/{id}/deactivate each). */
+  async function deactivatePicked() {
+    const live = chosen.filter((s) => s.is_active);
+    if (!live.length) {
+      notify("Those children are already off the roll.");
+      return;
+    }
+    const who = live.length === 1 ? live[0].full_name : `${live.length} students`;
+    if (!(await ask(`Take ${who} off the roll? The record, attendance and fees are kept, and you can put them back later.`))) return;
+    setBusy(true);
+    setFailed(null);
+    let done = 0;
+    const trouble: string[] = [];
+    for (const s of live) {
+      try {
+        await api.post(`/api/v1/school/students/${s.id}/deactivate`);
+        done++;
+      } catch (e) {
+        trouble.push(`${s.full_name}: ${errorText(e)}`);
+      }
+    }
+    setBusy(false);
+    setPicked([]);
+    if (trouble.length) setFailed(trouble.join(" · "));
+    notify(`${done} student${done === 1 ? "" : "s"} taken off the roll.`);
+    list.reload();
+    activeCount.reload();
+  }
 
   return (
     <>
@@ -125,9 +175,27 @@ export function StudentDirectory() {
         sub={`${year ? `Academic year ${year.name}` : "Current academic year"}${list.loading ? " · Loading…" : ""}`}
         flush
       >
+        {picked.length ? (
+          <div className="bulk-bar">
+            <strong>{`${picked.length} selected`}</strong>
+            <button type="button" className="btn" disabled={busy} onClick={exportPicked}>
+              <Icon name="download" className="sm" />
+              Export to CSV
+            </button>
+            <button type="button" className="btn" disabled={busy} onClick={deactivatePicked}>
+              <Icon name="logout" className="sm" />
+              {busy ? "Working…" : "Take off the roll"}
+            </button>
+            <button type="button" className="btn text" onClick={() => setPicked([])}>
+              Clear
+            </button>
+          </div>
+        ) : null}
         <DataTable
           columns={["Student", "Admission no.", "Class", "Section", "Roll no.", "Status"]}
           rows={rows}
+          selected={picked}
+          onSelect={setPicked}
           total={list.data?.total}
           page={page}
           pages={list.data?.pages ?? 1}

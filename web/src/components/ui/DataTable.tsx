@@ -52,7 +52,9 @@ function Display({ column, cell, index }: { column: string; cell: Cell; index: n
 export function DataTable({
   columns,
   rows,
-  selectable = true,
+  selected,
+  onSelect,
+  selectable = false,
   rowAction = true,
   onView,
   actions,
@@ -65,6 +67,10 @@ export function DataTable({
 }: {
   columns: string[];
   rows: Row[];
+  /** Live tables: the rows ticked now, by index. Given with onSelect, the tick boxes appear. */
+  selected?: number[];
+  onSelect?: (rows: number[]) => void;
+  /** Deprecated: tick boxes that did nothing. Pass onSelect instead. */
   selectable?: boolean;
   rowAction?: boolean;
   /** Live tables: open a row. Without it, "View" shows the preview dialog. */
@@ -82,15 +88,34 @@ export function DataTable({
   emptyState?: EmptyState;
 }) {
   const count = total ?? rows.length;
+  // Tick boxes are shown only where they do something: a screen that wants
+  // them says what happens to the rows by passing onSelect.
+  const picking = Boolean(onSelect);
+  const chosen = new Set(selected ?? []);
+  const all = rows.length > 0 && chosen.size >= rows.length;
+  const toggle = (i: number) => {
+    const next = new Set(chosen);
+    if (next.has(i)) next.delete(i);
+    else next.add(i);
+    onSelect?.([...next].sort((a, b) => a - b));
+  };
   return (
     <>
       <div className="table-wrap">
         <table className="data-table" data-filterable="">
           <thead>
             <tr>
-              {selectable ? (
+              {picking ? (
                 <th className="checkcell">
-                  <input type="checkbox" data-select-all="" aria-label="Select all rows" />
+                  <input
+                    type="checkbox"
+                    checked={all}
+                    ref={(el) => {
+                      if (el) el.indeterminate = chosen.size > 0 && !all;
+                    }}
+                    onChange={() => onSelect?.(all ? [] : rows.map((_, i) => i))}
+                    aria-label="Select all rows"
+                  />
                 </th>
               ) : null}
               {columns.map((c) => (
@@ -102,9 +127,15 @@ export function DataTable({
           <tbody>
             {rows.map((row, i) => (
               <tr key={i}>
-                {selectable ? (
+                {picking ? (
                   <td className="checkcell">
-                    <input type="checkbox" className="row-check" aria-label={`Select row ${i + 1}`} />
+                    <input
+                      type="checkbox"
+                      className="row-check"
+                      checked={chosen.has(i)}
+                      onChange={() => toggle(i)}
+                      aria-label={`Select row ${i + 1}`}
+                    />
                   </td>
                 ) : null}
                 {columns.map((c, j) => (
