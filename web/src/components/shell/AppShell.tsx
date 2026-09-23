@@ -28,6 +28,11 @@ import { ask } from "@/lib/dialog";
  */
 
 type NavLink = [screen: number, label: string, icon: IconName];
+/** A role's menu is plain links, and groups of links where a role has enough screens to need them. */
+type NavGroupDef = { title: string; items: [number, string][] };
+type RoleEntry = NavLink | NavGroupDef;
+const isGroup = (e: RoleEntry): e is NavGroupDef => !Array.isArray(e);
+const screensIn = (e: RoleEntry) => (isGroup(e) ? e.items.map(([n]) => n) : [e[0]]);
 
 const NAV: [title: string, links: [number, string, IconName, number[]][]][] = [
   ["Overview", [[33, "Dashboard", "grid", [3]], [43, "Admissions", "file", [4]], [55, "Students", "cap", [5, 6]], [80, "Teachers & staff", "users", [7, 14]]]],
@@ -35,9 +40,18 @@ const NAV: [title: string, links: [number, string, IconName, number[]][]][] = [
   ["School operations", [[154, "Fees & finance", "money", [13]], [186, "Transport", "bus", [15]], [198, "Library", "book", [16]], [246, "Communication", "message", [21]], [264, "Reports", "chart", [23]], [289, "Settings", "settings", [24]]]],
 ];
 
-const ROLE_NAV: Record<string, NavLink[]> = {
+const ROLE_NAV: Record<string, RoleEntry[]> = {
   Student: [[36, "Dashboard", "grid"], [131, "My homework", "book"], [59, "My academics", "cap"], [60, "My attendance", "check"], [125, "My timetable", "calendar"], [61, "Exams & results", "chart"], [62, "My fees", "money"], [67, "My library", "book"], [63, "My documents", "file"], [246, "School events", "calendar"], [296, "Notifications", "bell"], [57, "My profile", "users"]],
-  Teacher: [[35, "Dashboard", "grid"], [1096, "My classes & students", "cap"], [110, "Mark attendance", "check"], [126, "My timetable", "calendar"], [128, "Homework", "book"], [134, "Assignments", "file"], [145, "Marks entry", "chart"], [102, "Lesson plans", "book"], [106, "Teaching resources", "folder"], [1021, "Rubrics", "check"], [1022, "Question bank", "file"], [1023, "Online tests", "chart"], [1094, "Behaviour notes", "heart"], [1095, "Weekly reports", "file"], [253, "Messages", "message"], [296, "Notifications", "bell"], [82, "My profile", "users"]],
+  // A teacher's day first, then the work that groups: the notification centre
+  // is a tab of Messages, so it is not listed twice.
+  Teacher: [
+    [35, "Dashboard", "grid"], [1096, "My classes & students", "cap"], [110, "Mark attendance", "check"], [126, "My timetable", "calendar"],
+    { title: "Homework & assignments", items: [[128, "Homework"], [134, "Assignments"]] },
+    { title: "Teaching", items: [[102, "Lesson plans"], [106, "Teaching resources"], [1021, "Rubrics"]] },
+    { title: "Marks & tests", items: [[145, "Marks entry"], [1022, "Question bank"], [1023, "Online tests"]] },
+    { title: "Notes on students", items: [[1094, "Behaviour notes"], [1095, "Weekly reports"]] },
+    [253, "Messages", "message"], [82, "My profile", "users"],
+  ],
   Parent: [[37, "Dashboard", "grid"], [57, "My children", "cap"], [60, "Attendance", "check"], [61, "Exams & results", "chart"], [131, "Homework", "book"], [78, "Payments & receipts", "money"], [251, "Parent-teacher meeting", "calendar"], [253, "Messages", "message"], [296, "Notifications", "bell"], [73, "My profile", "users"]],
   "Super Admin": [[9, "Platform overview", "grid"], [10, "Organizations", "building"], [13, "Subscription plans", "file"], [14, "Billing", "money"], [15, "Usage & limits", "chart"], [16, "Platform users", "users"], [17, "Support tickets", "message"], [18, "Service health", "check"], [19, "Announcements", "bell"], [1083, "Integrations", "settings"], [20, "Platform settings", "settings"]],
   Principal: [[34, "Dashboard", "grid"], [55, "Students", "cap"], [80, "Teachers", "users"], [104, "Lesson plan review", "book"], [53, "Admission approvals", "file"], [105, "Syllabus progress", "chart"], [117, "Attendance", "check"], [270, "Academic performance", "chart"], [1080, "Approval requests", "check"], [246, "School calendar", "calendar"], [252, "Announcements", "message"]],
@@ -84,7 +98,8 @@ function jobMenu(job: Job, own: Set<number>): [number, string][] {
     const group = tabGroupOf(n);
     const grouped = group && listed.has(group.tabs[0][0]);
     const head = grouped ? group.tabs[0][0] : n;
-    if (seen.has(head) || own.has(head)) continue;
+    // already in their own menu — as that screen, or as a tab of one they have
+    if (seen.has(head) || own.has(head) || (grouped && group.tabs.some(([t]) => own.has(t)))) continue;
     seen.add(head);
     out.push([head, grouped ? group.label : label]);
   }
@@ -118,7 +133,7 @@ function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer;
   // desk…), each a section under the person's own menu; items already in
   // their menu are not repeated.
   const perms = usePermissions();
-  const own = new Set((roleNav ?? []).map(([n]) => n));
+  const own = new Set((roleNav ?? []).flatMap(screensIn));
   const jobs = roleNav ? heldJobs(perms).map((j) => ({ ...j, items: jobMenu(j, own) })).filter((j) => j.items.length) : [];
   const here = s ? (PARENT[s.n] ?? s.n) : -1;
   const scroller = useRef<HTMLDivElement>(null);
@@ -176,11 +191,15 @@ function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer;
         {roleNav ? (
           <>
             {/* the person's own screens need no heading: they are the menu */}
-            {roleNav.map(([n, label]) => (
-              <Link key={n + label} className={`nav ${n === here ? "active" : ""}`} href={routeOf(n)}>
-                <span>{label}</span>
-              </Link>
-            ))}
+            {roleNav.map((entry, i) =>
+              isGroup(entry) ? (
+                <LinkGroup key={entry.title} title={entry.title} items={entry.items} activeN={here} tone={i} currentId={s?.id ?? ""} />
+              ) : (
+                <Link key={entry[0] + entry[1]} className={`nav ${entry[0] === here ? "active" : ""}`} href={routeOf(entry[0])}>
+                  <span>{entry[1]}</span>
+                </Link>
+              ),
+            )}
             {jobs.length ? <div className="nav-label">THE REST OF THE SCHOOL</div> : null}
             {jobs.map((j, i) => (
               <LinkGroup key={j.permission} title={j.title} items={j.items} activeN={here} tone={i} currentId={s?.id ?? ""} />
