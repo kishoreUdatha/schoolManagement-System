@@ -25,3 +25,18 @@ export function StatStrip({ items, compact = false }: { items: Stat[]; compact?:
     </div>
   );
 }
+
+/** The same figures as a row of chips, for a screen that keeps its numbers,
+    search and filters on one line (.toolbar). */
+export function StatChips({ items }: { items: Stat[] }) {
+  return (
+    <div className="stat-chips">
+      {items.map((s, i) => (
+        <span className="stat-chip" key={s.label + i} title={s.note}>
+          <b>{s.value}</b>
+          {s.label}
+        </span>
+      ))}
+    </div>
+  );
+}

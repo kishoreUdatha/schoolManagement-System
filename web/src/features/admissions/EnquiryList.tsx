@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
-import { StatStrip } from "@/components/ui/StatStrip";
+import { StatChips } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText, type Paginated } from "@/lib/api";
 import { date, label } from "@/lib/format";
@@ -58,9 +58,9 @@ export function EnquiryList() {
   const s = stats.data;
   const n = (v: number | undefined) => (v === undefined ? "…" : v.toLocaleString("en-IN"));
   const figures = [
-    { label: "Total enquiries", value: n(s?.total), note: "All admission cycles" },
+    { label: "Total", value: n(s?.total), note: "All admission cycles" },
     // "New this week" in the mock: the API has no created-since count, so this shows open enquiries instead.
-    { label: "Open enquiries", value: n(s?.open), note: "Not yet enrolled or lost" },
+    { label: "Open", value: n(s?.open), note: "Not yet enrolled or lost" },
     { label: "Follow-ups due", value: n(s?.follow_ups_due), note: "Today or overdue" },
     { label: "Confirmed", value: n(s?.enrolled), note: s ? `Converted to students · ${s.conversion_rate.toFixed(1)}%` : "Converted to students" },
   ];
@@ -77,8 +77,8 @@ export function EnquiryList() {
 
   return (
     <>
-      <StatStrip items={figures} compact />
-      <div className="filterbar">
+      {/* numbers, search and filters on one line */}
+      <div className="toolbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />
           <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Search by applicant, parent or phone…" aria-label="Search enquiries" />
@@ -103,6 +103,7 @@ export function EnquiryList() {
           <Icon name="calendar" className="sm" />
           Follow-ups due
         </button>
+        <StatChips items={figures} />
       </div>
       <ErrorNote>{exportError ?? list.error ?? stats.error}</ErrorNote>
       <Panel title="All records" sub={`All enquiries${list.loading ? " · Loading…" : ""}`} flush>

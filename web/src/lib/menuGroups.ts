@@ -26,6 +26,7 @@ export function tabGroupOf(n: number | undefined): TabGroup | undefined {
 
 /** Menu names that differ from the screen's own name. */
 export const MENU_LABEL: Record<number, string> = {
+  44: "Enquiry",
   289: "School setup",
   ...Object.fromEntries(TAB_GROUPS.map((g) => [g.tabs[0][0], g.label])),
 };

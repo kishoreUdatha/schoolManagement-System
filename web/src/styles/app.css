@@ -264,3 +264,11 @@ option{background:#fff}
 @media(max-width:700px){.main.main{padding-left:12px;padding-right:12px}}
 .topbar.topbar{padding-left:16px;padding-right:16px}
 @media(max-width:700px){.topbar.topbar{padding-left:12px;padding-right:12px}}
+/* One-line toolbar: search, filters and the screen's figures together */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.toolbar .searchbox{flex:1;min-width:200px}
+.toolbar select{height:41px;max-width:200px}
+.stat-chips{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.stat-chip{display:inline-flex;align-items:baseline;gap:6px;height:41px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:12.5px;color:#56698a;white-space:nowrap;align-self:center}
+.stat-chip b{font-size:16px;color:var(--ink)}
+@media(max-width:900px){.stat-chips{margin-left:0}}
