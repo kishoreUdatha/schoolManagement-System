@@ -75,6 +75,10 @@ export type AppDocument = {
   is_verified: boolean;
   remark: string | null;
   verified_at: string | null;
+  // who put this file on the application, and who checked it
+  uploaded_at: string | null;
+  uploaded_by_name: string | null;
+  verified_by_name: string | null;
 };
 
 export type AssessmentKind = "written_test" | "interaction" | "interview" | "audition" | "other";

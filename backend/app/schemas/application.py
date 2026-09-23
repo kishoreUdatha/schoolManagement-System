@@ -124,6 +124,10 @@ class DocumentRead(BaseModel):
     is_verified: bool
     remark: Optional[str]
     verified_at: Optional[datetime]
+    # provenance: the file belongs to this application, put there by this person
+    uploaded_at: Optional[datetime] = None
+    uploaded_by_name: Optional[str] = None
+    verified_by_name: Optional[str] = None
 
 
 class VerifyIn(BaseModel):

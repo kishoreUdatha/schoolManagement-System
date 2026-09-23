@@ -324,10 +324,16 @@ def to_read(db: Session, items: list[AdmissionApplication], with_detail: bool = 
         .group_by(ApplicationDocument.application_id)
     ).all())
     if with_detail:
-        for d in db.execute(select(ApplicationDocument).where(ApplicationDocument.application_id.in_(ids))).scalars():
+        drows = list(db.execute(select(ApplicationDocument).where(ApplicationDocument.application_id.in_(ids))).scalars())
+        uploaders = _names(db, {d.uploaded_by_user_id for d in drows})
+        verifiers = _names(db, {d.verified_by_user_id for d in drows})
+        for d in drows:
             docs.setdefault(d.application_id, []).append(dict(
                 id=d.id, category=d.category, file_name=d.file_name, size_bytes=d.size_bytes,
                 is_verified=d.is_verified, remark=d.remark, verified_at=d.verified_at,
+                # who put this file on the application, and who checked it
+                uploaded_at=d.created_at, uploaded_by_name=uploaders.get(d.uploaded_by_user_id),
+                verified_by_name=verifiers.get(d.verified_by_user_id),
             ))
         rows = list(db.execute(
             select(AdmissionAssessment).where(AdmissionAssessment.application_id.in_(ids))

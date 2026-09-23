@@ -147,7 +147,7 @@ export function DocumentVerification() {
         <div className="stack">
           <Panel
             title="Documents for review"
-            sub={a ? `${a.student_name} · ${appClass(a)} · ${label(a.status)}` : "Choose an application"}
+            sub={a ? `${a.student_name} · ${a.application_no} · ${appClass(a)} · ${label(a.status)} · files uploaded against this application only` : "Choose an application"}
             action={a ? <UploadButton busy={busy} onUpload={upload} /> : undefined}
           >
             {shown.length ? (
@@ -169,7 +169,16 @@ export function DocumentVerification() {
                   <div className="file-icon pdf">{ext(d.file_name)}</div>
                   <div className="document-info">
                     <h4>{`${label(d.category)} · ${d.file_name}`}</h4>
-                    <p>{[size(d.size_bytes), d.verified_at ? `verified ${date(d.verified_at)}` : null, d.remark].filter(Boolean).join(" · ")}</p>
+                    <p>
+                      {[
+                        size(d.size_bytes),
+                        d.uploaded_at ? `uploaded ${date(d.uploaded_at)}${d.uploaded_by_name ? ` by ${d.uploaded_by_name}` : ""}` : null,
+                        d.verified_at ? `verified ${date(d.verified_at)}${d.verified_by_name ? ` by ${d.verified_by_name}` : ""}` : null,
+                        d.remark,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
                   </div>
                   <Badge>{d.is_verified ? "Verified" : d.remark ? "Returned" : "Pending"}</Badge>
                   <button type="button" className="btn" onClick={() => openDocument(d.id).catch((e) => setError(errorText(e)))}>
@@ -213,6 +222,10 @@ export function DocumentVerification() {
                 <dd>{a?.student_name ?? "—"}</dd>
               </div>
               <div>
+                <dt>Application</dt>
+                <dd>{a?.application_no ?? "—"}</dd>
+              </div>
+              <div>
                 <dt>Class</dt>
                 <dd>{a ? appClass(a) : "—"}</dd>
               </div>
@@ -220,10 +233,13 @@ export function DocumentVerification() {
                 <dt>Document type</dt>
                 <dd>{current ? label(current.category) : "—"}</dd>
               </div>
-              {/* The API gives no upload date for a document; the file name and verification date stand in. */}
               <div>
                 <dt>File</dt>
                 <dd>{current ? `${current.file_name} · ${size(current.size_bytes)}` : "—"}</dd>
+              </div>
+              <div>
+                <dt>Uploaded</dt>
+                <dd>{current?.uploaded_at ? `${date(current.uploaded_at)}${current.uploaded_by_name ? ` by ${current.uploaded_by_name}` : ""}` : "—"}</dd>
               </div>
             </dl>
           </Panel>
