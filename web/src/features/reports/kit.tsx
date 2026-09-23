@@ -46,7 +46,11 @@ export function useExport(fn: () => void) {
   }, []);
 }
 
-const cellText = (c: Row[number]) => (typeof c === "string" ? c : c.sub ? `${c.name} (${c.sub})` : c.name);
+const cellText = (c: Row[number]) => {
+  if (typeof c === "string") return c;
+  if ("name" in c) return c.sub ? `${c.name} (${c.sub})` : c.name;
+  return c.note ? `${c.text} (${c.note})` : c.text;
+};
 
 /** Download the rows on screen as a CSV file. */
 export function downloadCsv(name: string, columns: string[], rows: Row[]) {

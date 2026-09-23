@@ -2,8 +2,12 @@ import type { ReactNode } from "react";
 import { Badge, Person } from "./primitives";
 import { EmptyGuide } from "./states";
 
-/** A cell is text, or a person with an optional second line (admission no.). */
-export type Cell = string | { name: string; sub?: string };
+/**
+ * A cell is text; a person with an optional second line (admission no.); or a
+ * line with a quieter one under it, which may carry a bar — "12 / 17" over how
+ * far through the class that is, "24 Sep 2026" over "Due in 3 days".
+ */
+export type Cell = string | { name: string; sub?: string } | { text: string; note?: string; tone?: "warn" | "bad"; percent?: number };
 export type Row = Cell[];
 
 const PERSON_COLUMNS = ["Student", "Applicant", "Candidate", "Staff member", "Employee", "Teacher", "Guardian", "User", "Member", "Visitor", "Name"];
@@ -11,7 +15,7 @@ const STATUS_WORDS = ["status", "stage", "decision", "consent", "result"];
 const PROGRESS_COLUMNS = ["Progress", "Attendance", "Collection rate", "Pass rate", "Utilization", "Delivery rate", "Syllabus progress"];
 const WRAP_COLUMNS = ["Description", "Learning outcome", "Title", "Announcement", "Particulars", "Observation", "Item", "Homework", "Assignment", "Event"];
 
-const text = (c: Cell) => (typeof c === "string" ? c : c.name);
+const text = (c: Cell) => (typeof c === "string" ? c : "name" in c ? c.name : c.text);
 
 /**
  * What a screen shows when its list is genuinely empty: what is missing, one
@@ -24,6 +28,19 @@ const DEFAULT_EMPTY = "No matching records. Try a different filter.";
 
 function Display({ column, cell, index }: { column: string; cell: Cell; index: number }) {
   const v = text(cell);
+  if (typeof cell === "object" && "text" in cell) {
+    return (
+      <div className="cell-lines">
+        <span>{cell.text}</span>
+        {cell.note ? <small className={cell.tone ?? ""}>{cell.note}</small> : null}
+        {cell.percent === undefined ? null : (
+          <div className="bar-track">
+            <i style={{ width: `${Math.max(0, Math.min(100, cell.percent))}%` }} />
+          </div>
+        )}
+      </div>
+    );
+  }
   if (PERSON_COLUMNS.includes(column)) {
     return <Person name={v} index={index} sub={typeof cell === "string" ? undefined : cell.sub} />;
   }

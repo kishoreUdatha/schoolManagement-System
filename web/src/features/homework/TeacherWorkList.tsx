@@ -23,6 +23,7 @@ type Item = {
   title: string;
   subject: string;
   className: string;
+  what: string;
   classSubjectId: number;
   due: string;
   closed: boolean;
@@ -48,6 +49,7 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
   const classes = useApi<MyClasses>("/api/v1/teacher/my-classes");
   const [csId, setCsId] = useState("");
   const [status, setStatus] = useState("");
+  const [subject, setSubject] = useState("");
   const [search, setSearch] = useState("");
   const [includePast, setIncludePast] = useState(true);
   const me = useSession()?.user.id;
@@ -75,6 +77,7 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
           title: h.title,
           subject: h.subject_name ?? "—",
           className: h.class_name ?? "—",
+          what: h.description,
           classSubjectId: h.class_subject_id,
           due: h.due_date,
           closed: h.is_closed,
@@ -94,6 +97,7 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
           title: p.title,
           subject: p.subject_name ?? "—",
           className: p.class_name ?? "—",
+          what: p.description ?? "",
           classSubjectId: p.class_subject_id,
           due: p.deadline,
           closed: false,
@@ -105,9 +109,13 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
       });
   }, [isHw, homework.data, projects.data, subs.data, progress.data, classSize, csId, includePast]);
 
+  const subjects = useMemo(() => [...new Set(items.map((i) => i.subject))].filter((x) => x !== "—").sort(), [items]);
   const shown = items
     .filter((i) => !search || i.title.toLowerCase().includes(search.toLowerCase()))
-    .filter((i) => !status || teacherState(i.closed, i.pastDue, i.due) === status);
+    .filter((i) => !subject || i.subject === subject)
+    .filter((i) => !status || teacherState(i.closed, i.pastDue, i.due) === status)
+    // soonest due first, so the work that needs a teacher is at the top
+    .sort((a, b) => a.due.localeCompare(b.due));
 
   const open = items.filter((i) => !i.closed && !i.pastDue);
   const week = open.filter((i) => daysUntil(i.due) <= 7);
@@ -129,14 +137,32 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
   const review = (id: number) => (isHw ? `${routeOf(133)}?id=${id}` : `${routeOf(136)}?id=${id}`);
   const upcoming = [...open].sort((a, b) => a.due.localeCompare(b.due)).slice(0, 5);
 
-  const rows: Row[] = shown.map((i) => [
-    i.title,
-    i.subject,
-    i.className,
-    date(i.due),
-    i.submitted === null ? "…" : `${i.submitted} / ${i.eligible ?? "—"}`,
-    teacherState(i.closed, i.pastDue, i.due),
-  ]);
+  /** "Due in 3 days", "Due tomorrow", "Overdue by 2 days" — what a teacher actually reads for. */
+  function when(i: Item): { note: string; tone?: "warn" | "bad" } {
+    if (i.closed) return { note: "Closed" };
+    const days = daysUntil(i.due);
+    if (days < 0) return { note: `Overdue by ${-days} day${days === -1 ? "" : "s"}`, tone: "bad" };
+    if (days === 0) return { note: "Due today", tone: "warn" };
+    if (days === 1) return { note: "Due tomorrow", tone: "warn" };
+    return { note: `Due in ${days} days`, tone: days <= 3 ? "warn" : undefined };
+  }
+
+  const rows: Row[] = shown.map((i) => {
+    const w = when(i);
+    const handed = i.submitted ?? 0;
+    const of = i.eligible ?? 0;
+    return [
+      // what the class was actually asked to do, under its title
+      { text: i.title, note: i.what.split(/\r?\n/)[0].slice(0, 70) || undefined },
+      i.subject,
+      i.className,
+      { text: date(i.due), note: w.note, tone: w.tone },
+      i.submitted === null
+        ? "…"
+        : { text: `${handed} / ${of || "—"}`, percent: of ? (handed / of) * 100 : 0, note: i.awaiting ? `${i.awaiting} to mark` : undefined },
+      teacherState(i.closed, i.pastDue, i.due),
+    ];
+  });
 
   const error = actionError ?? classes.error ?? homework.error ?? projects.error;
   const projectOf = (id: number) => projects.data?.find((p) => p.id === id) ?? null;
@@ -166,6 +192,14 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
             </option>
           ))}
         </select>
+        <select aria-label="Filter by subject" value={subject} onChange={(e) => setSubject(e.target.value)}>
+          <option value="">All subjects</option>
+          {subjects.map((x) => (
+            <option key={x} value={x}>
+              {x}
+            </option>
+          ))}
+        </select>
         <select aria-label="Filter status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All statuses</option>
           <option>Published</option>
@@ -179,39 +213,24 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
         </select>
       </div>
       <ErrorNote>{error}</ErrorNote>
-      <Panel
-        title="Assigned work"
-        sub="Open work, soonest due first"
-        action={upcoming[0] ? <Link href={review(upcoming[0].id)} className="btn">View submissions</Link> : undefined}
-      >
-        {upcoming.length ? (
-          upcoming.map((i, k) => (
-            <div className="event-row" key={i.id}>
-              <span className={`avatar ${AVATARS[k % 4]}`}>
-                <Icon name="book" />
-              </span>
-              <div className="event-content">
-                <h4>
-                  <Link href={detail(i.id)}>{i.title}</Link>
-                </h4>
-                <p>{`${i.subject} · Due ${shortDate(i.due)} · ${i.className}`}</p>
-              </div>
-              <Badge>{teacherState(i.closed, i.pastDue, i.due)}</Badge>
-            </div>
-          ))
-        ) : (
-          <p className="muted">{loading ? "Loading…" : `No open ${noun} right now.`}</p>
-        )}
-      </Panel>
-      <div className="gap" />
       <Panel title="Submission tracker" sub={loading ? "Loading…" : `${items.length} set by you`} flush>
         <DataTable
           columns={[isHw ? "Homework" : "Assignment", "Subject", "Class", "Due date", "Submissions", "Status"]}
           rows={rows}
-          onView={isHw ? (k) => router.push(detail(shown[k].id)) : undefined}
           actions={
             isHw
-              ? undefined
+              ? (k) => {
+                  const i = shown[k];
+                  return i.awaiting ? (
+                    <button type="button" className="btn primary" onClick={() => router.push(review(i.id))}>
+                      {`Mark ${i.awaiting}`}
+                    </button>
+                  ) : (
+                    <button type="button" className="btn" onClick={() => router.push(detail(i.id))}>
+                      View
+                    </button>
+                  );
+                }
               : (k) => {
                   const p = projectOf(shown[k].id);
                   const mine = p !== null && p.created_by_user_id === me;

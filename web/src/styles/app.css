@@ -303,3 +303,10 @@ option{background:#fff}
 /* What you can do with the rows you ticked; shown only while some are. */
 .bulk-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);background:#eef4ff;font-size:13px;flex-wrap:wrap}
 .bulk-bar strong{color:var(--blue);font-weight:650;margin-right:2px}
+/* A table cell that carries a quieter second line, and sometimes a bar:
+   "12 / 17" over how much of the class that is, a due date over "Due in 3 days". */
+.cell-lines{display:grid;gap:3px;min-width:96px}
+.cell-lines small{font-size:12px;color:var(--muted);font-weight:500}
+.cell-lines small.warn{color:#a4620a}
+.cell-lines small.bad{color:#be3244}
+.cell-lines .bar-track{margin-top:2px}
