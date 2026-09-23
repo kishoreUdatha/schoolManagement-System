@@ -6,7 +6,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import ParentManager
 from app.core.enums import NoticeChannel, NotificationCategory
 from app.database import get_db
 from app.schemas.parent import (
@@ -33,7 +33,7 @@ router = APIRouter()
 )
 def create(
     payload: ParentCreate,
-    current_user: SchoolAdminUser,
+    current_user: ParentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     u, raw = parent_service.create_parent(
@@ -51,7 +51,7 @@ def create(
     summary="List parents (with linked children)",
 )
 def list_(
-    current_user: SchoolAdminUser,
+    current_user: ParentManager,
     db: Annotated[Session, Depends(get_db)],
     status_filter: Optional[str] = Query(None, alias="status"),
     search: Optional[str] = Query(None),
@@ -71,7 +71,7 @@ def list_(
 @router.get("/{user_id}", response_model=ParentRead)
 def get(
     user_id: int,
-    current_user: SchoolAdminUser,
+    current_user: ParentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     u = parent_service.get_parent(
@@ -84,7 +84,7 @@ def get(
 def update(
     user_id: int,
     payload: ParentUpdate,
-    current_user: SchoolAdminUser,
+    current_user: ParentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     u = parent_service.update_parent(
@@ -101,7 +101,7 @@ def update(
 def link_child(
     user_id: int,
     payload: LinkChildRequest,
-    current_user: SchoolAdminUser,
+    current_user: ParentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     parent_service.link_child(
@@ -121,7 +121,7 @@ def link_child(
 def unlink_child(
     user_id: int,
     student_id: int,
-    current_user: SchoolAdminUser,
+    current_user: ParentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     parent_service.unlink_child(
@@ -133,7 +133,7 @@ def unlink_child(
 @router.post("/{user_id}/activate", response_model=ParentRead)
 def activate(
     user_id: int,
-    current_user: SchoolAdminUser,
+    current_user: ParentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     u = parent_service.set_active(
@@ -149,7 +149,7 @@ def activate(
 @router.post("/{user_id}/deactivate", response_model=ParentRead)
 def deactivate(
     user_id: int,
-    current_user: SchoolAdminUser,
+    current_user: ParentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     u = parent_service.set_active(
@@ -168,7 +168,7 @@ def deactivate(
 )
 def reset_password(
     user_id: int,
-    current_user: SchoolAdminUser,
+    current_user: ParentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     u, raw = parent_service.reset_password(
@@ -180,19 +180,19 @@ def reset_password(
 # --- School-side notes ---
 
 @router.get("/{user_id}/notes", response_model=list[ParentNoteRead], summary="Office notes on this parent")
-def list_notes(user_id: int, current_user: SchoolAdminUser, db: Annotated[Session, Depends(get_db)]):
+def list_notes(user_id: int, current_user: ParentManager, db: Annotated[Session, Depends(get_db)]):
     return parent_service.list_notes(db, user_id, current_user.tenant_id, current_user.school_id)
 
 
 @router.post("/{user_id}/notes", response_model=ParentNoteRead, status_code=status.HTTP_201_CREATED,
              summary="Add an office note (the parent never sees it)")
-def add_note(user_id: int, payload: ParentNoteIn, current_user: SchoolAdminUser,
+def add_note(user_id: int, payload: ParentNoteIn, current_user: ParentManager,
              db: Annotated[Session, Depends(get_db)]):
     return parent_service.add_note(db, user_id, current_user, payload)
 
 
 @router.delete("/{user_id}/notes/{note_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_note(user_id: int, note_id: int, current_user: SchoolAdminUser,
+def delete_note(user_id: int, note_id: int, current_user: ParentManager,
                 db: Annotated[Session, Depends(get_db)]):
     parent_service.delete_note(db, user_id, note_id, current_user)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -207,13 +207,13 @@ class PreferenceIn(BaseModel):
 
 
 @router.get("/{user_id}/preferences", summary="What this parent has chosen to be sent")
-def get_preferences(user_id: int, current_user: SchoolAdminUser, db: Annotated[Session, Depends(get_db)]):
+def get_preferences(user_id: int, current_user: ParentManager, db: Annotated[Session, Depends(get_db)]):
     u = parent_service.get_parent(db, user_id, current_user.tenant_id, current_user.school_id)
     return comms_settings_service.preferences(db, u)
 
 
 @router.put("/{user_id}/preferences", summary="Change one on the parent's behalf; locked ones stay on")
-def put_preference(user_id: int, payload: PreferenceIn, current_user: SchoolAdminUser,
+def put_preference(user_id: int, payload: PreferenceIn, current_user: ParentManager,
                    db: Annotated[Session, Depends(get_db)]):
     u = parent_service.get_parent(db, user_id, current_user.tenant_id, current_user.school_id)
     return comms_settings_service.set_preference(db, u, payload.channel, payload.category, payload.is_enabled)
@@ -222,7 +222,7 @@ def put_preference(user_id: int, payload: PreferenceIn, current_user: SchoolAdmi
 # --- Printable receipts and ledger ---
 
 @router.get("/{user_id}/receipts/{collection_id}/pdf", summary="A fee receipt for one of this parent's children")
-def receipt_pdf(user_id: int, collection_id: int, current_user: SchoolAdminUser,
+def receipt_pdf(user_id: int, collection_id: int, current_user: ParentManager,
                 db: Annotated[Session, Depends(get_db)]):
     parent = parent_service.get_parent(db, user_id, current_user.tenant_id, current_user.school_id)
     pdf, filename = parent_statement_service.receipt_pdf(db, parent, collection_id)
@@ -233,7 +233,7 @@ def receipt_pdf(user_id: int, collection_id: int, current_user: SchoolAdminUser,
 @router.get("/{user_id}/ledger.pdf", summary="Charges and payments across this parent's children")
 def ledger_pdf(
     user_id: int,
-    current_user: SchoolAdminUser,
+    current_user: ParentManager,
     db: Annotated[Session, Depends(get_db)],
     student_id: Optional[int] = Query(None),
     frm: Optional[date] = Query(None, alias="from"),

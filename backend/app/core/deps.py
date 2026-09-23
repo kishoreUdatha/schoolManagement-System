@@ -351,6 +351,15 @@ StaffDirectoryReader = Annotated[
 PublicLinkReader = Annotated[
     User, Depends(allow(UserRole.school_admin, UserRole.principal, any_of=("admissions.manage", "hr.manage")))
 ]
+# Keeping the student roll: the office, and anyone a school delegates it to
+# (a coordinator, an admissions clerk, a teacher who also runs the office).
+StudentManager = Annotated[
+    User, Depends(allow(UserRole.school_admin, permission="students.manage"))
+]
+# Parent logins and who they are linked to: the office, or whoever keeps the roll.
+ParentManager = Annotated[
+    User, Depends(allow(UserRole.school_admin, any_of=("parents.manage", "students.manage")))
+]
 # Reading a timetable is part of arranging cover; building it stays the office's.
 TimetableReader = Annotated[
     User, Depends(allow(UserRole.school_admin, UserRole.principal, any_of=("cover.manage", "settings.manage")))

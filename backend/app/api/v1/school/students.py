@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser, StudentLookup
+from app.core.deps import SchoolAdminOrPrincipal, StudentLookup, StudentManager
 from app.database import get_db
 from app.schemas.common import PaginatedResponse
 from app.schemas.student import (
@@ -39,7 +39,7 @@ BULK_TEMPLATE_SAMPLE_ROWS = (
     response_class=PlainTextResponse,
     summary="Download a sample CSV for bulk student import",
 )
-def import_template(_: SchoolAdminUser):
+def import_template(_: StudentManager):
     lines = [",".join(BULK_TEMPLATE_HEADERS)]
     for row in BULK_TEMPLATE_SAMPLE_ROWS:
         lines.append(",".join(row))
@@ -61,7 +61,7 @@ def import_template(_: SchoolAdminUser):
 )
 def create(
     payload: StudentCreate,
-    current_user: SchoolAdminUser,
+    current_user: StudentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     s = student_service.create_student(
@@ -127,7 +127,7 @@ def get(
 def update(
     student_id: int,
     payload: StudentUpdate,
-    current_user: SchoolAdminUser,
+    current_user: StudentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     s = student_service.update_student(
@@ -142,7 +142,7 @@ def update(
 )
 def activate(
     student_id: int,
-    current_user: SchoolAdminUser,
+    current_user: StudentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     s = student_service.set_active(db, student_id, current_user.school_id, active=True)
@@ -157,7 +157,7 @@ def activate(
 def transfer(
     student_id: int,
     payload: TransferOut,
-    current_user: SchoolAdminUser,
+    current_user: StudentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     return TransferResult.model_validate(
@@ -171,7 +171,7 @@ def transfer(
 )
 def deactivate(
     student_id: int,
-    current_user: SchoolAdminUser,
+    current_user: StudentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     s = student_service.set_active(db, student_id, current_user.school_id, active=False)
@@ -185,7 +185,7 @@ def deactivate(
 )
 def bulk(
     payload: StudentBulkCreate,
-    current_user: SchoolAdminUser,
+    current_user: StudentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     created, errors = student_service.bulk_create(
@@ -209,7 +209,7 @@ def bulk(
 )
 def promote(
     payload: StudentPromoteRequest,
-    current_user: SchoolAdminUser,
+    current_user: StudentManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     promoted, errors = student_service.promote_students(
