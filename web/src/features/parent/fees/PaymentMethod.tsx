@@ -23,6 +23,17 @@ type ProviderReply = { razorpay_order_id: string; razorpay_payment_id: string; r
 
 type RazorpayCtor = new (opts: Record<string, unknown>) => { open: () => void; close: () => void; on: (ev: string, cb: (r: { error?: { description?: string } }) => void) => void };
 
+/**
+ * True in the Android app and on a phone browser, where paying means leaving
+ * for a UPI or bank app. The checkout's own reply never survives that, so the
+ * payment is finished by a redirect back to the server instead.
+ */
+function paysByLeaving(): boolean {
+  if (typeof window === "undefined") return false;
+  const w = window as unknown as { Capacitor?: unknown };
+  return Boolean(w.Capacitor) || /Android|iPhone|iPad/i.test(navigator.userAgent);
+}
+
 function loadRazorpay(): Promise<RazorpayCtor> {
   const w = window as unknown as { Razorpay?: RazorpayCtor };
   if (w.Razorpay) return Promise.resolve(w.Razorpay);
@@ -45,6 +56,7 @@ export function PaymentMethod() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [test, setTest] = useState<Checkout | null>(null);
+  const [waiting, setWaiting] = useState(false);
   const done = useRef(false);
 
   // Only fee lines that are still payable for *this* child count; anything else in ?fees= is ignored.
@@ -58,6 +70,31 @@ export function PaymentMethod() {
   async function reportFailure(orderId: number, reason: string) {
     if (!base) return;
     await api.post(`${base}/fees/pay/${orderId}/failed`, { reason }).catch(() => undefined);
+  }
+
+  /**
+   * Whether the money has landed, asked of the server a few times over the
+   * next few seconds.
+   *
+   * On a phone the checkout hands over to the UPI app, and the reply that
+   * normally closes this page is lost the moment the parent leaves it: they
+   * come back to a screen that still believes nothing was paid. The bank's
+   * own webhook tells the server, so the server is who to ask — and it is
+   * asked before a closed checkout is ever called a failure.
+   */
+  async function landed(orderId: number, tries = 6): Promise<boolean> {
+    if (!base) return false;
+    for (let i = 0; i < tries; i++) {
+      try {
+        const o = await api.get<OnlineOrder>(`${base}/fees/pay/${orderId}`);
+        if (o.status === "paid") return true;
+        if (o.status === "failed") return false;
+      } catch {
+        // the server could not be asked; try again, then give up quietly
+      }
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    return false;
   }
 
   async function verify(orderId: number, reply: ProviderReply) {
@@ -96,6 +133,11 @@ export function PaymentMethod() {
         name: co.school_name,
         description: co.description,
         prefill: { name: co.prefill_name ?? undefined, email: co.prefill_email ?? undefined, contact: co.prefill_contact ?? undefined },
+        // On a phone, come back through the server rather than through a page
+        // the parent has already left (see paysByLeaving).
+        ...(paysByLeaving()
+          ? { redirect: true, callback_url: `${window.location.origin}/api/v1/public/payments/razorpay/return` }
+          : {}),
         handler: (r: ProviderReply) => {
           done.current = true;
           verify(co.order_id, r);
@@ -104,7 +146,12 @@ export function PaymentMethod() {
           ondismiss: async () => {
             if (done.current) return;
             done.current = true;
-            await reportFailure(co.order_id, "Cancelled by user");
+            // They may have paid in a UPI app and come back here; ask the
+            // server before calling it cancelled.
+            setWaiting(true);
+            const paid = await landed(co.order_id);
+            setWaiting(false);
+            if (!paid) await reportFailure(co.order_id, "Cancelled by user");
             goTo(26, { order: co.order_id });
           },
         },
@@ -116,6 +163,18 @@ export function PaymentMethod() {
         rzp.close();
         goTo(26, { order: co.order_id });
       });
+      // Coming back from the UPI app: the checkout's own reply may never
+      // arrive, so the moment this page is looked at again, ask the server.
+      const onReturn = async () => {
+        if (done.current || document.visibilityState !== "visible") return;
+        if (await landed(co.order_id, 2)) {
+          done.current = true;
+          document.removeEventListener("visibilitychange", onReturn);
+          rzp.close();
+          goTo(26, { order: co.order_id });
+        }
+      };
+      document.addEventListener("visibilitychange", onReturn);
       rzp.open();
     } catch (e) {
       setError(errorText(e));
@@ -209,7 +268,7 @@ export function PaymentMethod() {
         </div>
       ) : (
         <button className="action" disabled={busy || Boolean(blocking)} onClick={start}>
-          {busy ? "Waiting for payment…" : "Continue to secure payment"}
+          {waiting ? "Checking with the bank…" : busy ? "Waiting for payment…" : "Continue to secure payment"}
         </button>
       )}
       <p className="micro">You pay on the payment provider’s secure page. The app never sees your card or UPI details, and the school confirms the payment before issuing a receipt.</p>

@@ -42,6 +42,16 @@ def verify_payment(student_id: int, payload: VerifyRequest, current_user: Parent
     return OrderRead.model_validate(svc.order_to_read(db, o))
 
 
+@router.get(
+    "/{student_id}/fees/pay/{order_id}",
+    response_model=OrderRead,
+    summary="Has this payment landed yet? (the app asks after returning from a UPI app)",
+)
+def order_status(student_id: int, order_id: int, current_user: ParentUser, db: Db):
+    o = svc.get_parent_order(db, current_user.id, student_id, order_id)
+    return OrderRead.model_validate(svc.order_to_read(db, o))
+
+
 @router.post("/{student_id}/fees/pay/{order_id}/failed", response_model=OrderRead)
 def report_failure(
     student_id: int, order_id: int, payload: FailureReport, current_user: ParentUser, db: Db

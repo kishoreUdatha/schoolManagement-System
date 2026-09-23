@@ -382,6 +382,36 @@ def verify(db: Session, parent: User, student_id: int, data: VerifyRequest) -> F
     return _apply_paid(db, order, data.razorpay_payment_id)
 
 
+def settle_return(db: Session, provider_order_id: str, payment_id: str, signature: str) -> FeePaymentOrder:
+    """The checkout coming back to us by redirect, which is how a phone pays.
+
+    Razorpay posts the reply to a URL of ours instead of calling back into a
+    page the parent has already left for their UPI app. Nobody is signed in on
+    that request, so the signature is the proof: it is checked against the
+    school's own secret before a rupee is recorded.
+    """
+    order = db.execute(
+        select(FeePaymentOrder).where(FeePaymentOrder.provider_order_id == provider_order_id)
+    ).scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment order not found")
+    if order.status == OnlinePaymentStatus.paid:
+        return order
+    if order.provider == "mock":
+        ok = test_mode_available() and signature == MOCK_SIGNATURE
+    else:
+        gw = get_gateway(db, order.school_id)
+        ok = bool(gw) and _signature_ok(
+            crypto.decrypt(gw.key_secret_enc), f"{provider_order_id}|{payment_id}", signature
+        )
+    if not ok:
+        order.status = OnlinePaymentStatus.failed
+        order.failure_reason = "Signature verification failed"
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Payment could not be verified")
+    return _apply_paid(db, order, payment_id)
+
+
 def mark_failed(db: Session, parent: User, student_id: int, order_id: int, reason: str) -> FeePaymentOrder:
     """Browser reports a cancelled/failed checkout. Never overrides 'paid'."""
     require_linked_child(db, parent.id, student_id)
