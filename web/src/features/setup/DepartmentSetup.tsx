@@ -10,7 +10,8 @@ import { label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { Field, KV, SectionTitle, orNull } from "./bits";
+import { Panel } from "@/components/ui/primitives";
+import { Field, SectionTitle, orNull } from "./bits";
 import type { AcademicYear, Branch, Department, StaffPick } from "./types";
 
 /** What most schools set up. Picking one fills the name and code, which stay
@@ -103,7 +104,7 @@ export function DepartmentSetup() {
   }
 
   return (
-    <div className="two-col">
+    <div className="stack">
       <form id="department-form" key={dept?.id ?? "new"} className="panel" onSubmit={submit}>
         <div className="panel-pad">
           <ErrorNote>{error ?? depts.error ?? (id && depts.data && !dept ? "That department was not found." : null)}</ErrorNote>
@@ -112,25 +113,24 @@ export function DepartmentSetup() {
               <SectionTitle n="01">{dept ? `Edit ${dept.name}` : "Details"}</SectionTitle>
               <div className="form-grid">
                 {!dept ? (
-                  // chips rather than a long drop-down: every choice is visible,
-                  // and nothing opens off the bottom of the screen
-                  <Field label="Pick a common one, or type your own below" full>
-                    <div className="pick-chips" role="group" aria-label="Common departments">
+                  <Field label="Common department">
+                    <select
+                      aria-label="Common departments"
+                      value=""
+                      onChange={(e) => {
+                        const pick = COMMON.find(([n]) => n === e.target.value);
+                        if (!pick) return;
+                        setName(pick[0]);
+                        setCode(pick[1]);
+                      }}
+                    >
+                      <option value="">Choose one, or type your own</option>
                       {COMMON.filter(([n]) => !depts.data?.some((d) => d.name.toLowerCase() === n.toLowerCase())).map(([n, c]) => (
-                        <button
-                          type="button"
-                          key={c}
-                          className={`pick-chip ${name === n ? "on" : ""}`}
-                          onClick={() => {
-                            setName(n);
-                            setCode(c);
-                          }}
-                        >
-                          {n}
-                          <small>{c}</small>
-                        </button>
+                        <option key={c} value={n}>
+                          {`${n} · ${c}`}
+                        </option>
                       ))}
-                    </div>
+                    </select>
                   </Field>
                 ) : null}
                 <Field label="Department name" required>
@@ -178,44 +178,32 @@ export function DepartmentSetup() {
           </div>
         </div>
       </form>
-      <aside className="stack">
-        <div className="aside-panel">
-          <h3>School setup</h3>
-          <KV
-            rows={[
-              ["Academic year", current?.name ?? "—"],
-              ["Branch", main?.name ?? "Whole school"],
-              ["Status", dept ? (dept.is_active ? "Active" : "Inactive") : "New"],
-            ]}
-          />
-          <div className="gap" />
-          <p>{dept ? `${dept.staff_count} staff and ${dept.subject_count} subjects belong to ${dept.name}.` : "Review the information, then save your changes."}</p>
-        </div>
-        <div className="aside-panel">
-          <h3>{`Departments (${depts.data?.length ?? 0})`}</h3>
-          {depts.data?.length ? (
-            depts.data.map((d) => (
-              <div className="spread" key={d.id} style={{ padding: "6px 0" }}>
-                <Link href={`${here}?id=${d.id}`} className={String(d.id) === id ? "active" : ""}>
-                  {`${d.name} · ${d.code}`}
-                </Link>
+      <Panel
+        title={`Departments (${depts.data?.length ?? 0})`}
+        sub={dept ? `${dept.staff_count} staff and ${dept.subject_count} subjects belong to ${dept.name}` : undefined}
+        action={
+          dept ? (
+            <Link href={here} className="btn">
+              <Icon name="plus" className="sm" />
+              New department
+            </Link>
+          ) : undefined
+        }
+      >
+        {depts.data?.length ? (
+          <div className="dept-list">
+            {depts.data.map((d) => (
+              <Link key={d.id} href={`${here}?id=${d.id}`} className={`dept-row ${String(d.id) === id ? "on" : ""}`}>
+                <strong>{d.name}</strong>
+                <span className="muted">{d.code}</span>
                 <small className="muted">{d.head_name ?? "No head"}</small>
-              </div>
-            ))
-          ) : (
-            <p className="muted">No departments yet.</p>
-          )}
-          {dept ? (
-            <>
-              <div className="gap" />
-              <Link href={here} className="btn">
-                <Icon name="plus" className="sm" />
-                New department
               </Link>
-            </>
-          ) : null}
-        </div>
-      </aside>
+            ))}
+          </div>
+        ) : (
+          <p className="muted">No departments yet.</p>
+        )}
+      </Panel>
     </div>
   );
 }
