@@ -197,7 +197,7 @@ export function HomeworkEvaluation() {
               >
                 <span className="avatar mint">{initials(r.full_name)}</span>
                 <span className="roll-who">
-                  {r.full_name}
+                  <span className="roll-name">{r.full_name}</span>
                   <small>{`${h.class_name ?? ""} · ${r.admission_no}`}</small>
                 </span>
                 <Badge>{r.sub ? STATUS[r.sub.status] : "Not handed in"}</Badge>
