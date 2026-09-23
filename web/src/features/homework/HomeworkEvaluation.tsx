@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { FileCards, filesForm, UploadZone, type Attachment } from "@/components/ui/Attachments";
 import { Icon } from "@/components/ui/Icon";
-import { StatStrip } from "@/components/ui/StatStrip";
+import { StatCards } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -32,6 +32,8 @@ export function HomeworkEvaluation() {
   const [subId, setSubId] = useState<number | null>(params.get("sub") ? Number(params.get("sub")) : null);
   const [marks, setMarks] = useState<Record<number, string>>({});
   const [decision, setDecision] = useState<"approved" | "rejected">("approved");
+  const [score, setScore] = useState("");
+  const [who, setWho] = useState("");
   const [remark, setRemark] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -45,6 +47,7 @@ export function HomeworkEvaluation() {
   const s = subs.data?.find((x) => x.id === subId);
   useEffect(() => {
     setMarks({});
+    setScore(s?.marks ?? "");
     setRemark(s?.teacher_remark ?? "");
     setDecision(s?.status === "rejected" ? "rejected" : "approved");
     setError(null);
@@ -67,8 +70,12 @@ export function HomeworkEvaluation() {
           .map((c) => ({ criterion_id: c.criterion_id, points: Number(marks[c.criterion_id]) }));
         if (scores.length) await api.put(`/api/v1/teacher/homework/submissions/${s.id}/rubric-scores`, { scores });
       }
-      await api.patch(`/api/v1/teacher/homework/submissions/${s.id}/review`, { status: decision, teacher_remark: remark.trim() || null });
-      notify(`Evaluation saved for ${s.student_name ?? "the student"}.`);
+      await api.patch(`/api/v1/teacher/homework/submissions/${s.id}/review`, {
+        status: decision,
+        teacher_remark: remark.trim() || null,
+        ...(h?.max_marks && score.trim() !== "" ? { marks: Number(score) } : {}),
+      });
+      notify(`Marked ${s.student_name ?? "the student"}.`);
       const next = subs.data?.find((x) => x.status === "submitted" && x.id !== s.id);
       await subs.reload();
       if (next) setSubId(next.id);
@@ -110,30 +117,60 @@ export function HomeworkEvaluation() {
   const n = (v: number) => (!subs.data ? (subs.loading ? "…" : "—") : String(v));
   const count = (st: Submission["status"]) => list.filter((x) => x.status === st).length;
   const stats = [
-    { label: "Handed in", value: n(list.length), note: `${list.filter((x) => x.submitted_at.slice(0, 10) > h.due_date.slice(0, 10)).length} after the due date` },
-    { label: "To evaluate", value: n(count("submitted")), note: "waiting for you" },
-    { label: "Approved", value: n(count("approved")), note: "evaluated" },
-    { label: "Returned", value: n(count("rejected")), note: "sent back for another go" },
+    { label: "Submitted", value: n(list.length), note: "handed in so far", icon: "file" as const },
+    { label: "To evaluate", value: n(count("submitted")), note: "waiting for your review", icon: "clock" as const },
+    { label: "Approved", value: n(count("approved")), note: "evaluated by you", icon: "check" as const },
+    { label: "Returned", value: n(count("rejected")), note: "sent back for revision", icon: "arrow" as const },
   ];
+
+  // The children on the left, in the order the teacher works through them.
+  const roll = list.filter((x) => !who || `${x.student_name ?? ""} ${x.student_admission_no ?? ""}`.toLowerCase().includes(who.toLowerCase()));
+  const place = list.findIndex((x) => x.id === subId);
+  const step = (by: number) => {
+    const next = list[place + by];
+    if (next) setSubId(next.id);
+  };
 
   return (
     <>
-      <StatStrip items={stats} compact />
-      <div className="two-col">
+      <StatCards items={stats} />
+      <div className="marking">
+        <Panel title="Student submissions" sub={`${count("approved") + count("rejected")} of ${list.length} reviewed`} flush>
+          <div className="panel-pad" style={{ paddingBottom: 0 }}>
+            <div className="searchbox">
+              <Icon name="search" className="sm" />
+              <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Search students…" aria-label="Search students" />
+            </div>
+          </div>
+          <div className="roll">
+            {roll.map((x) => (
+              <button type="button" key={x.id} className={`roll-row ${x.id === subId ? "on" : ""}`} onClick={() => setSubId(x.id)}>
+                <span className="avatar mint">{initials(x.student_name ?? "?")}</span>
+                <span className="roll-who">
+                  {x.student_name ?? "—"}
+                  <small>{`${h.class_name ?? ""} · ${x.student_admission_no ?? "—"}`}</small>
+                </span>
+                <Badge>{STATUS[x.status]}</Badge>
+              </button>
+            ))}
+            {roll.length ? null : <p className="muted panel-pad">{subs.loading ? "Loading…" : "Nobody has handed this in yet."}</p>}
+          </div>
+        </Panel>
         <div className="stack">
           <ErrorNote>{subs.error}</ErrorNote>
           <Panel
             title="Student submission"
-            sub={`${list.filter((x) => x.status === "submitted").length} waiting · ${list.length} handed in`}
             action={
               list.length ? (
-                <select aria-label="Choose a submission" value={subId ?? ""} onChange={(e) => setSubId(Number(e.target.value))}>
-                  {list.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {`${x.student_name ?? "Student"} · ${STATUS[x.status]}`}
-                    </option>
-                  ))}
-                </select>
+                <span className="row" style={{ gap: 6 }}>
+                  <button type="button" className="btn icon" aria-label="Previous student" disabled={place <= 0} onClick={() => step(-1)}>
+                    ‹
+                  </button>
+                  <span className="muted small">{`${place + 1} of ${list.length}`}</span>
+                  <button type="button" className="btn icon" aria-label="Next student" disabled={place < 0 || place >= list.length - 1} onClick={() => step(1)}>
+                    ›
+                  </button>
+                </span>
               ) : undefined
             }
           >
@@ -189,11 +226,31 @@ export function HomeworkEvaluation() {
                         />
                       </label>
                     ))
+                  ) : h.max_marks ? (
+                    <label className="field">
+                      <span>
+                        Marks
+                        <span className="req">*</span>
+                      </span>
+                      <span className="marks-box">
+                        <input
+                          type="number"
+                          min={0}
+                          max={Number(h.max_marks)}
+                          step="0.5"
+                          required
+                          aria-label="Marks"
+                          value={score}
+                          onChange={(e) => setScore(e.target.value)}
+                        />
+                        <span>{`/ ${Number(h.max_marks)}`}</span>
+                      </span>
+                    </label>
                   ) : (
-                    // No rubric on this homework: the API records a decision and feedback, not marks.
+                    // Nothing to mark out of: this homework was set without a maximum or a rubric.
                     <label className="field">
                       <span>Marks</span>
-                      <input type="text" readOnly aria-label="Marks" value="No rubric — approve or return" />
+                      <input type="text" readOnly aria-label="Marks" value="Not marked out of anything — approve or return" />
                     </label>
                   )}
                   <label className="field">
@@ -214,10 +271,12 @@ export function HomeworkEvaluation() {
               </div>
               <div className="form-footer">
                 <span>{s.reviewed_at ? `Last reviewed ${dateTime(s.reviewed_at)}${s.reviewed_by_name ? ` by ${s.reviewed_by_name}` : ""}` : "Not reviewed yet"}</span>
-                <button type="submit" className="btn primary" disabled={saving}>
-                  <Icon name="check" className="sm" />
-                  {saving ? "Saving…" : "Save evaluation"}
-                </button>
+                <div className="actions">
+                  <button type="submit" className="btn primary" disabled={saving}>
+                    <Icon name="check" className="sm" />
+                    {saving ? "Saving…" : place < list.length - 1 ? "Save & next student" : "Save evaluation"}
+                  </button>
+                </div>
               </div>
             </form>
           ) : null}
@@ -229,7 +288,7 @@ export function HomeworkEvaluation() {
                 ["Subject", h.subject_name ?? "—"],
                 ["Class", h.class_name ?? "—"],
                 ["Due date", date(h.due_date)],
-                ["Maximum score", max != null ? String(max) : "—"],
+                ["Maximum score", h.max_marks ? String(Number(h.max_marks)) : max != null ? String(max) : "—"],
               ].map(([k, v]) => (
                 <div key={k}>
                   <dt>{k}</dt>

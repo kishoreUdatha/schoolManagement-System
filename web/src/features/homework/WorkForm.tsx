@@ -40,6 +40,7 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
   const [publishOn, setPublishOn] = useState("");
   const [attachment, setAttachment] = useState("");
   const [rubricId, setRubricId] = useState("");
+  const [outOf, setOutOf] = useState("");
   const [projectKind, setProjectKind] = useState<ProjectKind>("individual");
   const [notifyParents, setNotifyParents] = useState(false);
   const [pending, setPending] = useState<File[]>([]);
@@ -59,6 +60,7 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
       setPublishOn(h.publish_on ?? "");
       setAttachment(h.attachment_url ?? "");
       setRubricId(h.rubric_id ? String(h.rubric_id) : "");
+      setOutOf(h.max_marks ? String(Number(h.max_marks)) : "");
     } else if (!editing && classId === null && cards.length) {
       setClassId(cards[0].class_id);
       setCsId(cards[0].class_subject_id);
@@ -108,6 +110,7 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
           attachment_url: attachment.trim() || null,
           due_date: due,
           rubric_id: rubricId ? Number(rubricId) : null,
+          max_marks: outOf.trim() ? Number(outOf) : null,
           ...(publishOn && publishOn > todayIso() ? { publish_on: publishOn } : {}),
         };
         const later = Boolean(publishOn && publishOn > todayIso());
@@ -256,6 +259,22 @@ export function WorkForm({ kind }: { kind: "homework" | "project" }) {
                   {/* A link (attachment_url) still works; files go in the Attachments panel. */}
                   <input type="url" aria-label="Attachment link" placeholder="https://… link to the worksheet" value={attachment} onChange={(e) => setAttachment(e.target.value)} />
                 </label>
+                {isHw ? (
+                  <label className="field">
+                    <span>Out of</span>
+                    {/* What the work is marked out of; a rubric below can carry its own scheme instead. */}
+                    <input
+                      type="number"
+                      min={1}
+                      max={1000}
+                      step="1"
+                      aria-label="Maximum score"
+                      placeholder="e.g. 20 — leave blank to only approve or return"
+                      value={outOf}
+                      onChange={(e) => setOutOf(e.target.value)}
+                    />
+                  </label>
+                ) : null}
                 {isHw ? (
                   <label className="field">
                     <span>Marking</span>

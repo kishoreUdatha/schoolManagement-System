@@ -336,3 +336,18 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .row-menu-list button{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:7px;background:none;font-size:13px;font-weight:600;color:var(--ink)}
 .row-menu-list button:hover{background:#f2f7ff}
 .row-menu-list button.bad{color:#be3244}
+/* Marking a class: the children on the left, one piece of work in the middle,
+   what was set on the right. */
+.marking{display:grid;grid-template-columns:300px minmax(0,1fr) 300px;gap:18px;align-items:start}
+.roll{display:grid;max-height:560px;overflow:auto}
+.roll-row{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:11px 16px;background:none;border-bottom:1px solid #eef2f8;font:inherit}
+.roll-row:last-child{border-bottom:0}
+.roll-row:hover{background:#f6faff}
+.roll-row.on{background:#eef4ff;box-shadow:inset 3px 0 0 var(--blue)}
+.roll-who{display:grid;min-width:0;flex:1;font-size:13.5px;font-weight:650;color:var(--ink)}
+.roll-who small{font-size:12px;color:var(--muted);font-weight:500}
+.marks-box{display:flex;align-items:center;gap:8px}
+.marks-box input{width:100%}
+.marks-box span{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
+@media(max-width:1300px){.marking{grid-template-columns:260px minmax(0,1fr)}.marking>aside{grid-column:1/-1}}
+@media(max-width:800px){.marking{grid-template-columns:1fr}}

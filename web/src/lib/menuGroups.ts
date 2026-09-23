@@ -135,6 +135,7 @@ export const MENU_LABEL: Record<number, string> = {
  */
 export const SCREEN_NOTE: Record<number, string> = {
   128: "Create, track and evaluate class homework.",
+  133: "Review submissions and evaluate student homework.",
   // Admissions
   44: "Families who have asked about a seat, before they apply.",
   47: "Enquiries with a call or visit due.",

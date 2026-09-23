@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -18,6 +19,7 @@ class HomeworkBase(BaseModel):
 class HomeworkCreate(HomeworkBase):
     class_subject_id: int
     rubric_id: Optional[int] = None
+    max_marks: Optional[Decimal] = Field(None, ge=1, le=1000, description="What the work is out of, when marked with a number")
     publish_on: Optional[date] = None
     notify_parents: bool = Field(
         default=False,
@@ -31,6 +33,7 @@ class HomeworkUpdate(BaseModel):
     attachment_url: Optional[str] = Field(None, max_length=500)
     due_date: Optional[date] = None
     rubric_id: Optional[int] = None
+    max_marks: Optional[Decimal] = Field(None, ge=1, le=1000)
     publish_on: Optional[date] = None
 
 
@@ -57,6 +60,7 @@ class HomeworkRead(BaseModel):
     can_edit: bool  # tells the UI whether the current viewer can edit
     rubric_id: Optional[int] = None
     rubric_name: Optional[str] = None
+    max_marks: Optional[Decimal] = None
     is_closed: bool = False
     closed_at: Optional[datetime] = None
     closed_by_name: Optional[str] = None
@@ -80,10 +84,11 @@ class SubmissionUpdate(BaseModel):
 
 
 class SubmissionReview(BaseModel):
-    """Teacher action — approve or reject with an optional remark."""
+    """Teacher action — approve or reject, with a mark and a word of feedback."""
 
     status: SubmissionStatus
     teacher_remark: Optional[str] = Field(None, max_length=2000)
+    marks: Optional[Decimal] = Field(None, ge=0, le=1000, description="Out of the homework's max_marks")
 
 
 class SubmissionRead(BaseModel):
@@ -100,6 +105,7 @@ class SubmissionRead(BaseModel):
     comment: Optional[str] = None
     submitted_at: datetime
     status: SubmissionStatus
+    marks: Optional[Decimal] = None
     teacher_remark: Optional[str] = None
     reviewed_by_user_id: Optional[int] = None
     reviewed_by_name: Optional[str] = None

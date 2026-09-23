@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import (
@@ -8,6 +9,7 @@ from sqlalchemy import (
     Enum as SAEnum,
     ForeignKey,
     Index,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -47,6 +49,9 @@ class Homework(Base, PrimaryKeyMixin, TimestampMixin):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     attachment_url: Mapped[Optional[str]] = mapped_column(String(500))
     due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # What the work is out of, when a teacher marks it with a number rather
+    # than a rubric — most homework, in most schools.
+    max_marks: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
     # Scheduled publishing: children and parents see it from this day.
     # None = published when saved.
     publish_on: Mapped[Optional[date]] = mapped_column(Date)
@@ -111,6 +116,8 @@ class HomeworkSubmission(Base, PrimaryKeyMixin, TimestampMixin):
         default=SubmissionStatus.submitted,
         nullable=False,
     )
+    # What this child scored, against the homework's max_marks.
+    marks: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2))
     teacher_remark: Mapped[Optional[str]] = mapped_column(Text)
     reviewed_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")

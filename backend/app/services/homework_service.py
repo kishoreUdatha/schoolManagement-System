@@ -89,6 +89,7 @@ def _to_read_dict(db: Session, h: Homework, *, viewer_id: Optional[int] = None) 
         "can_edit": can_edit,
         "rubric_id": h.rubric_id,
         "rubric_name": rubric.name if rubric else None,
+        "max_marks": h.max_marks,
         "is_closed": h.closed_at is not None,
         "closed_at": h.closed_at,
         "closed_by_name": closer.full_name if closer else None,
@@ -197,6 +198,7 @@ def create(
         attachment_url=data.attachment_url,
         due_date=data.due_date,
         rubric_id=data.rubric_id,
+        max_marks=data.max_marks,
         created_by_user_id=teacher_user_id,
     )
     db.add(h)
@@ -426,6 +428,7 @@ def submission_to_dict(db: Session, sub: HomeworkSubmission) -> dict:
         "comment": sub.comment,
         "submitted_at": sub.submitted_at,
         "status": sub.status,
+        "marks": sub.marks,
         "teacher_remark": sub.teacher_remark,
         "reviewed_by_user_id": sub.reviewed_by_user_id,
         "reviewed_by_name": reviewer.full_name if reviewer else None,
@@ -626,6 +629,20 @@ def teacher_review_submission(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Review status must be approved or rejected",
         )
+    if data.marks is not None:
+        hw = db.get(Homework, sub.homework_id)
+        top = hw.max_marks if hw else None
+        if top is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="This homework has no maximum score, so it cannot be marked out of one",
+            )
+        if data.marks > top:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"The work is out of {top:g}",
+            )
+        sub.marks = data.marks
     sub.status = data.status
     sub.teacher_remark = data.teacher_remark
     sub.reviewed_by_user_id = teacher_user_id

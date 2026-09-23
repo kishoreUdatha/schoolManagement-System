@@ -38,6 +38,7 @@ export type Homework = {
   can_edit: boolean;
   rubric_id: number | null;
   rubric_name: string | null;
+  max_marks: string | null;
   is_closed: boolean;
   publish_on: string | null;
   is_scheduled: boolean;
@@ -72,6 +73,7 @@ export type Submission = {
   comment: string | null;
   submitted_at: string;
   status: SubmissionStatus;
+  marks: string | null;
   teacher_remark: string | null;
   reviewed_by_user_id: number | null;
   reviewed_by_name: string | null;
