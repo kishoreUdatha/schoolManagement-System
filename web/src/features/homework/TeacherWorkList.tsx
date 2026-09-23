@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
@@ -166,6 +166,24 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
   /** Everything a row can do, behind one "…" — the row stays a row. */
   function RowMenu({ label, items }: { label: string; items: { text: string; bad?: boolean; go: () => void }[] }) {
     const [at, setAt] = useState<{ top: number; right: number } | null>(null);
+    // An open menu closes on the next click anywhere else, or on Escape —
+    // otherwise it sits over the row below and swallows the click meant for it.
+    useEffect(() => {
+      if (!at) return;
+      const shut = (e: Event) => {
+        if (e instanceof KeyboardEvent && e.key !== "Escape") return;
+        setAt(null);
+      };
+      const t = setTimeout(() => {
+        document.addEventListener("click", shut);
+        document.addEventListener("keydown", shut);
+      });
+      return () => {
+        clearTimeout(t);
+        document.removeEventListener("click", shut);
+        document.removeEventListener("keydown", shut);
+      };
+    }, [at]);
     if (!items.length) return null;
     return (
       <span className="row-menu">
@@ -299,37 +317,25 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
             isHw
               ? (k) => {
                   const i = shown[k];
-                  // Work handed in belongs on the marking screen; only work
-                  // nobody has touched sends a teacher to the brief.
+                  // Everything behind the dots, the marking first: work handed
+                  // in belongs on the marking screen, the rest on the brief.
                   return (
-                    <>
-                      {i.awaiting ? (
-                        <button type="button" className="btn primary" onClick={() => router.push(review(i.id))}>
-                          {`Evaluate ${i.awaiting}`}
-                        </button>
-                      ) : i.submitted ? (
-                        <button type="button" className="btn" onClick={() => router.push(review(i.id))}>
-                          Submissions
-                        </button>
-                      ) : (
-                        <button type="button" className="btn" onClick={() => router.push(detail(i.id))}>
-                          View
-                        </button>
-                      )}
-                      <RowMenu
-                        label={i.title}
-                        items={[
-                          { text: "Homework brief", go: () => router.push(detail(i.id)) },
-                          ...(homework.data?.find((h) => h.id === i.id)?.can_edit
-                            ? [
-                                { text: "Edit homework", go: () => router.push(`${routeOf(129)}?id=${i.id}`) },
-                                { text: i.closed ? "Reopen for submissions" : "Close for submissions", go: () => closeWork(i, !i.closed) },
-                                { text: "Delete", bad: true, go: () => removeWork(i) },
-                              ]
-                            : []),
-                        ]}
-                      />
-                    </>
+                    <RowMenu
+                      label={i.title}
+                      items={[
+                        ...(i.submitted
+                          ? [{ text: i.awaiting ? `Evaluate ${i.awaiting}` : "View submissions", go: () => router.push(review(i.id)) }]
+                          : []),
+                        { text: "Homework brief", go: () => router.push(detail(i.id)) },
+                        ...(homework.data?.find((h) => h.id === i.id)?.can_edit
+                          ? [
+                              { text: "Edit homework", go: () => router.push(`${routeOf(129)}?id=${i.id}`) },
+                              { text: i.closed ? "Reopen for submissions" : "Close for submissions", go: () => closeWork(i, !i.closed) },
+                              { text: "Delete", bad: true, go: () => removeWork(i) },
+                            ]
+                          : []),
+                      ]}
+                    />
                   );
                 }
               : (k) => {
