@@ -132,7 +132,7 @@ export function ApplicationForm() {
   );
 
   return (
-    <div className="two-col">
+    <div>
       <form
         id="application-form"
         className="panel"
@@ -141,14 +141,6 @@ export function ApplicationForm() {
           if (!locked) save(ev.currentTarget, true);
         }}
       >
-        <div className="steps">
-          {["Basic details", "Academic & contact", "Documents", "Review"].map((t, i) => (
-            <div key={t} className={`step ${i === 0 ? "active" : ""}`}>
-              <b>{i + 1}</b>
-              {t}
-            </div>
-          ))}
-        </div>
         <div className="panel-pad">
           <ErrorNote>{error ?? enquiry.error ?? years.error}</ErrorNote>
           {e ? <p className="muted" style={{ marginBottom: 12 }}>{`From enquiry ENQ-${e.id} · applying for ${e.applying_for_class ?? "—"}`}</p> : null}
@@ -255,27 +247,6 @@ export function ApplicationForm() {
           </div>
         </div>
       </form>
-      <aside className="stack">
-        <div className="aside-panel">
-          <h3>Complete the record</h3>
-          <div className="stepper">
-            {[
-              ["Basic details", "Identity and enrollment"],
-              ["Academic details", "Class and academic year"],
-              ["Contact information", "Parent and emergency contact"],
-              ["Review & save", "Submit, or save as a draft"],
-            ].map(([t, p], i) => (
-              <div key={t} className={`stepper-row ${i === 0 ? "done" : ""}`}>
-                <span>{i === 0 ? <Icon name="check" className="sm" /> : i + 1}</span>
-                <div>
-                  <strong>{t}</strong>
-                  <p>{p}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }

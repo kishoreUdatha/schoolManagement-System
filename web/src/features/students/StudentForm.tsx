@@ -117,16 +117,8 @@ export function StudentForm({ mode }: { mode: "add" | "edit" }) {
   );
 
   return (
-    <div className="two-col">
+    <div>
       <form id="student-form" className="panel" onSubmit={submit}>
-        <div className="steps">
-          {["Basic details", "Academic & contact", "Documents", "Review"].map((t, i) => (
-            <div key={t} className={`step ${i === 0 ? "active" : ""}`}>
-              <b>{i + 1}</b>
-              {t}
-            </div>
-          ))}
-        </div>
         <div className="panel-pad">
           <ErrorNote>{error ?? years.error ?? existing.error}</ErrorNote>
           <div className="form-sections">
@@ -236,27 +228,6 @@ export function StudentForm({ mode }: { mode: "add" | "edit" }) {
           </div>
         </div>
       </form>
-      <aside className="stack">
-        <div className="aside-panel">
-          <h3>Complete the record</h3>
-          <div className="stepper">
-            {[
-              ["Basic details", "Identity and enrollment"],
-              ["Academic details", "Class, section and year"],
-              ["Contact information", editing ? "Parents are managed under Siblings & Family" : "Parent and emergency contact"],
-              ["Review & save", "Check the information"],
-            ].map(([t, p], i) => (
-              <div key={t} className={`stepper-row ${i === 0 ? "done" : ""}`}>
-                <span>{i === 0 ? <Icon name="check" className="sm" /> : i + 1}</span>
-                <div>
-                  <strong>{t}</strong>
-                  <p>{p}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }

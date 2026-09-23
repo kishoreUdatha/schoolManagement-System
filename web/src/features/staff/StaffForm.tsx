@@ -121,16 +121,8 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
   );
 
   return (
-    <div className="two-col">
+    <div>
       <form id={STAFF_FORM} className="panel" onSubmit={submit}>
-        <div className="steps">
-          {["Basic details", "Academic & contact", "Documents", "Review"].map((t, i) => (
-            <div key={t} className={`step ${i === 0 ? "active" : ""}`}>
-              <b>{i + 1}</b>
-              {t}
-            </div>
-          ))}
-        </div>
         <div className="panel-pad">
           <ErrorNote>{error ?? departments.error}</ErrorNote>
           <div className="form-sections">
@@ -250,27 +242,6 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
           </div>
         </div>
       </form>
-      <aside className="stack">
-        <div className="aside-panel">
-          <h3>Complete the record</h3>
-          <div className="stepper">
-            {[
-              ["Basic details", "Name, employee no. and role"],
-              ["Work details", "Department, designation and joining date"],
-              ["Contact information", editing ? "Mobile, address and emergency contact" : "Email becomes the sign-in"],
-              ["Review & save", editing ? "Check the information" : "A temporary password is shown once"],
-            ].map(([t, p], i) => (
-              <div key={t} className={`stepper-row ${i === 0 ? "done" : ""}`}>
-                <span>{i === 0 ? <Icon name="check" className="sm" /> : i + 1}</span>
-                <div>
-                  <strong>{t}</strong>
-                  <p>{p}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }

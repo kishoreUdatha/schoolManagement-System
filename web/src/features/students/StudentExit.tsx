@@ -82,16 +82,8 @@ export function StudentExit() {
   );
 
   return (
-    <div className="two-col">
+    <div>
       <form id="exit-form" className="panel" onSubmit={submit}>
-        <div className="steps">
-          {["Basic details", "Clearance", "Certificate", "Review"].map((t, i) => (
-            <div key={t} className={`step ${i === 0 ? "active" : ""}`}>
-              <b>{i + 1}</b>
-              {t}
-            </div>
-          ))}
-        </div>
         <div className="panel-pad">
           <ErrorNote>{error ?? years.error ?? students.error ?? profile.error}</ErrorNote>
           <div className="form-sections">
@@ -149,26 +141,6 @@ export function StudentExit() {
           </div>
         </div>
       </form>
-      <aside className="stack">
-        <Panel title="Recent leavers" sub={leavers.data ? `${leavers.data.total} left · ${leavers.data.without_certificate} without a certificate` : "Loading…"}>
-          {(leavers.data?.leavers ?? []).slice(0, 6).map((l) => (
-            <div className="spread" key={l.student_id} style={{ padding: "8px 0", borderTop: "1px solid var(--line)" }}>
-              <div>
-                <Link href={`${routeOf(57)}?id=${l.student_id}`}>{l.full_name}</Link>
-                <p className="small muted">{`${l.admission_no} · ${l.last_class_name ?? ""} ${l.last_section_name ?? ""} · ${l.last_year_name ?? "—"}${l.left_on ? ` · left ${date(l.left_on)}` : ""}`}</p>
-                {l.exit_remarks ? <p className="small muted">{l.exit_remarks}</p> : null}
-              </div>
-              <Badge>{l.certificate_no ? `TC ${l.certificate_no}` : "No certificate"}</Badge>
-            </div>
-          ))}
-          {leavers.data && !leavers.data.leavers.length ? <p className="muted">No student has left yet.</p> : null}
-          <div className="gap" />
-          <Link href="/documents/transfer-certificate" className="btn">
-            Issue transfer certificate
-          </Link>
-          <p className="small muted">{`As of ${date(today())}`}</p>
-        </Panel>
-      </aside>
     </div>
   );
 }
