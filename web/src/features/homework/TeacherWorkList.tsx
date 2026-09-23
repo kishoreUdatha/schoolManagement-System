@@ -6,9 +6,11 @@ import { useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
-import { StatStrip } from "@/components/ui/StatStrip";
+import { StatCards } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
-import { errorText } from "@/lib/api";
+import { api, errorText } from "@/lib/api";
+import { ask } from "@/lib/dialog";
+import { notify } from "@/lib/notify";
 import { date } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -109,11 +111,23 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
       });
   }, [isHw, homework.data, projects.data, subs.data, progress.data, classSize, csId, includePast]);
 
+  /**
+   * Where a piece of work stands, in the words of the screen: work waiting to
+   * be marked says so before anything else, because that is the teacher's job
+   * on this page.
+   */
+  function state(i: Item): string {
+    if (i.closed) return "Completed";
+    if (i.awaiting) return "Review pending";
+    if (i.pastDue) return "Overdue";
+    return daysUntil(i.due) <= 3 ? "Due soon" : "Active";
+  }
+
   const subjects = useMemo(() => [...new Set(items.map((i) => i.subject))].filter((x) => x !== "—").sort(), [items]);
   const shown = items
     .filter((i) => !search || i.title.toLowerCase().includes(search.toLowerCase()))
     .filter((i) => !subject || i.subject === subject)
-    .filter((i) => !status || teacherState(i.closed, i.pastDue, i.due) === status)
+    .filter((i) => !status || state(i) === status)
     // soonest due first, so the work that needs a teacher is at the top
     .sort((a, b) => a.due.localeCompare(b.due));
 
@@ -126,11 +140,13 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
   const loading = isHw ? homework.loading : projects.loading;
   const n = (v: number) => (loading && !items.length ? "…" : String(v));
 
+  // Each card filters the list it counts; pressing the one already chosen clears it.
+  const pick = (want: string) => () => setStatus((cur) => (cur === want ? "" : want));
   const stats = [
-    { label: "Active assignments", value: n(open.length), note: "Open, not yet due" },
-    { label: "Due this week", value: n(week.length), note: `By ${shortDate(`${weekEnd.getFullYear()}-${weekEnd.getMonth() + 1}-${weekEnd.getDate()}`)}` },
-    { label: "Submitted", value: sum((i) => i.submitted), note: "Across assigned classes" },
-    { label: "Awaiting evaluation", value: sum((i) => i.awaiting), note: "Ready to review" },
+    { label: `Active ${noun}`, value: n(open.length), note: "Currently open", icon: "book" as const, onClick: pick("Active"), active: status === "Active" },
+    { label: "Due this week", value: n(week.length), note: `By ${shortDate(`${weekEnd.getFullYear()}-${weekEnd.getMonth() + 1}-${weekEnd.getDate()}`)}`, icon: "calendar" as const, onClick: pick("Due soon"), active: status === "Due soon" },
+    { label: "Submitted", value: sum((i) => i.submitted), note: `Across all ${noun}`, icon: "check" as const },
+    { label: "Awaiting evaluation", value: sum((i) => i.awaiting), note: "Ready to review", icon: "clock" as const, onClick: pick("Review pending"), active: status === "Review pending" },
   ];
 
   const detail = (id: number) => (isHw ? `${routeOf(130)}?id=${id}` : `${routeOf(136)}?id=${id}`);
@@ -147,20 +163,69 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
     return { note: `Due in ${days} days`, tone: days <= 3 ? "warn" : undefined };
   }
 
+  function RowMenu({ item }: { item: Item }) {
+    const [open, setOpen] = useState(false);
+    const hw = homework.data?.find((h) => h.id === item.id);
+    if (!isHw || !hw?.can_edit) return null;
+    return (
+      <span className="row-menu">
+        <button type="button" className="btn icon" aria-label={`More for ${item.title}`} onClick={() => setOpen((o) => !o)}>
+          …
+        </button>
+        {open ? (
+          <span className="row-menu-list" onMouseLeave={() => setOpen(false)}>
+            <button type="button" onClick={() => router.push(`${routeOf(129)}?id=${item.id}`)}>
+              Edit homework
+            </button>
+            <button type="button" onClick={() => closeWork(item, !item.closed)}>
+              {item.closed ? "Reopen for submissions" : "Close for submissions"}
+            </button>
+            <button type="button" className="bad" onClick={() => removeWork(item)}>
+              Delete
+            </button>
+          </span>
+        ) : null}
+      </span>
+    );
+  }
+
+  async function closeWork(i: Item, close: boolean) {
+    setActionError(null);
+    try {
+      await api.patch(`/api/v1/teacher/homework/${i.id}`, { is_closed: close });
+      notify(close ? "Closed for submissions." : "Open for submissions again.");
+      homework.reload();
+    } catch (e) {
+      setActionError(errorText(e));
+    }
+  }
+
+  async function removeWork(i: Item) {
+    if (!(await ask(`Delete "${i.title}"? Anything handed in goes with it.`))) return;
+    setActionError(null);
+    try {
+      await api.delete(`/api/v1/teacher/homework/${i.id}`);
+      notify("Homework deleted.");
+      homework.reload();
+    } catch (e) {
+      setActionError(errorText(e));
+    }
+  }
+
   const rows: Row[] = shown.map((i) => {
     const w = when(i);
     const handed = i.submitted ?? 0;
     const of = i.eligible ?? 0;
     return [
       // what the class was actually asked to do, under its title
-      { text: i.title, note: i.what.split(/\r?\n/)[0].slice(0, 70) || undefined },
+      { name: i.title, sub: i.what.split(/\r?\n/)[0].slice(0, 70) || i.subject },
       i.subject,
       i.className,
       { text: date(i.due), note: w.note, tone: w.tone },
       i.submitted === null
         ? "…"
         : { text: `${handed} / ${of || "—"}`, percent: of ? (handed / of) * 100 : 0, note: i.awaiting ? `${i.awaiting} to mark` : undefined },
-      teacherState(i.closed, i.pastDue, i.due),
+      state(i),
     ];
   });
 
@@ -178,7 +243,7 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
 
   return (
     <>
-      <StatStrip items={stats} compact />
+      <StatCards items={stats} />
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />
@@ -202,18 +267,15 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
         </select>
         <select aria-label="Filter status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All statuses</option>
-          <option>Published</option>
+          <option>Active</option>
           <option>Due soon</option>
-          <option>Open (late)</option>
-          {isHw ? <option>Closed</option> : null}
-        </select>
-        <select aria-label="Due dates" value={includePast ? "all" : "upcoming"} onChange={(e) => setIncludePast(e.target.value === "all")}>
-          <option value="all">Include past due</option>
-          <option value="upcoming">{`Due from ${date(todayIso())}`}</option>
+          <option>Review pending</option>
+          <option>Overdue</option>
+          <option>Completed</option>
         </select>
       </div>
       <ErrorNote>{error}</ErrorNote>
-      <Panel title="Submission tracker" sub={loading ? "Loading…" : `${items.length} set by you`} flush>
+      <section className="panel">
         <DataTable
           columns={[isHw ? "Homework" : "Assignment", "Subject", "Class", "Due date", "Submissions", "Status"]}
           rows={rows}
@@ -221,14 +283,19 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
             isHw
               ? (k) => {
                   const i = shown[k];
-                  return i.awaiting ? (
-                    <button type="button" className="btn primary" onClick={() => router.push(review(i.id))}>
-                      {`Mark ${i.awaiting}`}
-                    </button>
-                  ) : (
-                    <button type="button" className="btn" onClick={() => router.push(detail(i.id))}>
-                      View
-                    </button>
+                  return (
+                    <>
+                      {i.awaiting ? (
+                        <button type="button" className="btn primary" onClick={() => router.push(review(i.id))}>
+                          {`Evaluate ${i.awaiting}`}
+                        </button>
+                      ) : (
+                        <button type="button" className="btn" onClick={() => router.push(detail(i.id))}>
+                          View
+                        </button>
+                      )}
+                      <RowMenu item={i} />
+                    </>
                   );
                 }
               : (k) => {
@@ -268,7 +335,7 @@ export function TeacherWorkList({ kind }: { kind: "homework" | "project" }) {
             ),
           }}
         />
-      </Panel>
+      </section>
       {milestones ? <MilestonesDialog project={milestones} onClose={() => setMilestones(null)} /> : null}
       {editing ? (
         <ProjectEditDialog

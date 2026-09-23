@@ -91,6 +91,7 @@ export function tabGroupOf(n: number | undefined): TabGroup | undefined {
 
 /** Menu names that differ from the screen's own name. */
 export const MENU_LABEL: Record<number, string> = {
+  128: "Homework",
   25: "Branches",
   43: "Admissions dashboard",
   108: "School calendar",
@@ -133,6 +134,7 @@ export const MENU_LABEL: Record<number, string> = {
  * dashboards never show one (they have no page head).
  */
 export const SCREEN_NOTE: Record<number, string> = {
+  128: "Create, track and evaluate class homework.",
   // Admissions
   44: "Families who have asked about a seat, before they apply.",
   47: "Enquiries with a call or visit due.",

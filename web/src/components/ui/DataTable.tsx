@@ -10,7 +10,7 @@ import { EmptyGuide } from "./states";
 export type Cell = string | { name: string; sub?: string } | { text: string; note?: string; tone?: "warn" | "bad"; percent?: number };
 export type Row = Cell[];
 
-const PERSON_COLUMNS = ["Student", "Applicant", "Candidate", "Staff member", "Employee", "Teacher", "Guardian", "User", "Member", "Visitor", "Name"];
+const PERSON_COLUMNS = ["Student", "Applicant", "Candidate", "Staff member", "Employee", "Teacher", "Guardian", "User", "Member", "Visitor", "Name", "Homework", "Assignment"];
 const STATUS_WORDS = ["status", "stage", "decision", "consent", "result"];
 const PROGRESS_COLUMNS = ["Progress", "Attendance", "Collection rate", "Pass rate", "Utilization", "Delivery rate", "Syllabus progress"];
 const WRAP_COLUMNS = ["Description", "Learning outcome", "Title", "Announcement", "Particulars", "Observation", "Item", "Homework", "Assignment", "Event"];
