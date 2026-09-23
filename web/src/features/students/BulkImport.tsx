@@ -122,7 +122,9 @@ export function BulkImport() {
     r.data.gender ? label(r.data.gender) : "—",
     date(r.data.dob),
     r.data.blood_group ?? "—",
-    r.data.address ?? "—",
+    [r.data.father_name && `Father ${r.data.father_name}`, r.data.mother_name && `Mother ${r.data.mother_name}`]
+      .filter(Boolean)
+      .join(" · ") || "—",
     r.problems.length ? "Rejected" : "Ready",
     r.problems.join("; ") || "—",
   ]);
@@ -277,7 +279,7 @@ export function BulkImport() {
 
           <Panel title="Preview" sub={parsed.rows.length ? `${parsed.rows.length} row(s) read · line numbers match the file` : "Load a file or paste rows to check them"} flush>
             <DataTable
-              columns={["Line", "Student", "Gender", "Date of birth", "Blood group", "Address", "Status", "Problem"]}
+              columns={["Line", "Student", "Gender", "Date of birth", "Blood group", "Parents", "Status", "Problem"]}
               rows={preview}
               selectable={false}
               rowAction={false}
@@ -287,7 +289,10 @@ export function BulkImport() {
         </div>
         <aside className="stack">
           <Panel title="File template">
-            <p className="muted small">Use these column names on the first line. Only full_name is required.</p>
+            <p className="muted small">
+              Use these column names on the first line. Only full_name is required; a parent named needs a mobile number, and
+              primary_contact (father or mother) says who the school rings first.
+            </p>
             <div className="gap" />
             {COLUMNS.map((c) => (
               <div className="event-row" style={{ padding: "9px 0" }} key={c}>

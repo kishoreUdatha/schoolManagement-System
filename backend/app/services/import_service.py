@@ -41,10 +41,25 @@ def _404(what: str) -> HTTPException:
 # import type -> (columns, what the options must carry)
 TEMPLATES: dict[ImportType, dict[str, Any]] = {
     ImportType.students: {
-        "columns": ["full_name", "gender", "dob", "blood_group", "address"],
-        "sample": [["Aarav Sharma", "male", "2018-05-12", "O+", "12 MG Road Bengaluru"]],
+        "columns": [
+            "full_name", "gender", "dob", "blood_group", "address",
+            "father_name", "father_phone", "father_email", "father_occupation",
+            "mother_name", "mother_phone", "mother_email", "mother_occupation",
+            "primary_contact",
+        ],
+        "sample": [[
+            "Aarav Sharma", "male", "2018-05-12", "O+", "12 MG Road Bengaluru",
+            "Ramesh Sharma", "9876500201", "ramesh@example.com", "Engineer",
+            "Sudha Sharma", "9876500202", "sudha@example.com", "Doctor",
+            "mother",
+        ]],
         "needs": ["academic_year_id", "section_id"],
-        "help": "One row per child. They all go into the section you pick.",
+        "help": (
+            "One row per child; they all go into the section you pick. Parent columns "
+            "are optional, but a parent named needs a mobile number. primary_contact is "
+            "father or mother — whoever the school calls first. Parent logins are not "
+            "made here; use Parents › Login access afterwards."
+        ),
     },
     ImportType.staff: {
         "columns": ["full_name", "email", "phone", "role", "employee_no", "designation", "joining_date"],
@@ -132,15 +147,45 @@ def _check_students(db: Session, job: ImportJob, rows: list[dict]) -> tuple[list
             dob = _date(r.get("dob", ""), "dob")
             if dob and dob > date.today():
                 raise ValueError("dob is in the future")
+            parents = _parents_in(r)
         except ValueError as e:
             bad.append({"row": i, "value": name or "(blank)", "error": str(e), "duplicate": isinstance(e, _Duplicate)})
             continue
         seen.add(name.lower())
-        ok.append({"row": i, "data": StudentBulkRow(
+        ok.append({"row": i, "parents": parents, "data": StudentBulkRow(
             full_name=name, gender=gender or None, dob=dob,
             blood_group=r.get("blood_group") or None, address=r.get("address") or None,
         )})
     return ok, bad
+
+
+def _parents_in(r: dict) -> list[dict]:
+    """The father and mother columns of one row, as guardians. A parent named
+    without a mobile number is an error: the school has to be able to ring
+    somebody about the child."""
+    first = (r.get("primary_contact") or "").strip().lower()
+    if first and first not in ("father", "mother"):
+        raise ValueError("primary_contact must be father or mother")
+    out = []
+    for relation in ("father", "mother"):
+        name = (r.get(f"{relation}_name") or "").strip()
+        if not name:
+            continue
+        phone = (r.get(f"{relation}_phone") or "").strip()
+        if not phone:
+            raise ValueError(f"{relation}_phone is missing ({name} has no mobile number)")
+        out.append({
+            "full_name": name,
+            "phone": phone,
+            "email": (r.get(f"{relation}_email") or "").strip() or None,
+            "occupation": (r.get(f"{relation}_occupation") or "").strip() or None,
+            "relation": relation,
+            "is_primary": relation == first,
+        })
+    # nobody named as the first contact: the first parent listed takes the calls
+    if out and not any(g["is_primary"] for g in out):
+        out[0]["is_primary"] = True
+    return out
 
 
 def _check_staff(db: Session, job: ImportJob, rows: list[dict]) -> tuple[list[dict], list[dict]]:
@@ -252,7 +297,28 @@ def _commit_students(db: Session, job: ImportJob, ok: list[dict]) -> tuple[int, 
     )
     rows = [{"row": ok[e["row"]]["row"] if isinstance(e.get("row"), int) and e["row"] < len(ok) else None,
              "value": e.get("full_name"), "error": e.get("error")} for e in errors]
+    rows += _attach_parents(db, ok, created)
     return len(created), rows
+
+
+def _attach_parents(db: Session, ok: list[dict], created: list) -> list[dict]:
+    """The parents named in each row, put on the child that row created. A
+    parent that will not save is reported; the child stays imported."""
+    from app.schemas.foundation import GuardianIn
+    from app.services import foundation_service
+
+    by_name = {s.full_name.strip().lower(): s for s in created}
+    problems: list[dict] = []
+    for r in ok:
+        student = by_name.get((r["data"].full_name or "").strip().lower())
+        if not student:
+            continue  # the row didn't make it in; already reported above
+        for g in r.get("parents") or []:
+            try:
+                foundation_service.add_guardian(db, student, GuardianIn(**g))
+            except HTTPException as e:
+                problems.append({"row": r["row"], "value": g["full_name"], "error": str(e.detail)})
+    return problems
 
 
 def _commit_staff(db: Session, job: ImportJob, ok: list[dict]) -> tuple[int, list[dict]]:

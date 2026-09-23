@@ -10,7 +10,12 @@ import type { BulkRow, Gender } from "./types";
 /** The most rows one request may carry (StudentBulkCreate.students maxItems). */
 export const MAX_ROWS = 200;
 
-export const COLUMNS = ["full_name", "gender", "dob", "blood_group", "address", "photo_url"] as const;
+export const COLUMNS = [
+  "full_name", "gender", "dob", "blood_group", "address", "photo_url",
+  "father_name", "father_phone", "father_email", "father_occupation",
+  "mother_name", "mother_phone", "mother_email", "mother_occupation",
+  "primary_contact",
+] as const;
 type Column = (typeof COLUMNS)[number];
 
 const ALIASES: Record<string, Column> = {
@@ -27,6 +32,21 @@ const ALIASES: Record<string, Column> = {
   address: "address",
   photo_url: "photo_url",
   photo: "photo_url",
+  // the family, in the same file
+  father_name: "father_name",
+  father: "father_name",
+  father_phone: "father_phone",
+  father_mobile: "father_phone",
+  father_email: "father_email",
+  father_occupation: "father_occupation",
+  mother_name: "mother_name",
+  mother: "mother_name",
+  mother_phone: "mother_phone",
+  mother_mobile: "mother_phone",
+  mother_email: "mother_email",
+  mother_occupation: "mother_occupation",
+  primary_contact: "primary_contact",
+  first_contact: "primary_contact",
 };
 
 /** Split CSV (or tab-separated, as pasted from a spreadsheet) into cells, honouring quotes. */
@@ -134,6 +154,13 @@ export function parseStudents(text: string): Parsed {
     if (blood.length > 10) problems.push("Blood group is longer than 10 characters");
     const photo = cell("photo_url");
     if (photo.length > 500) problems.push("Photo URL is longer than 500 characters");
+    // A parent named with no mobile number cannot be saved as a contact, so
+    // the row is held back rather than importing the child without the family.
+    for (const who of ["father", "mother"] as const) {
+      if (cell(`${who}_name`) && !cell(`${who}_phone`)) problems.push(`${who === "father" ? "Father" : "Mother"} has no mobile number`);
+    }
+    const first = cell("primary_contact").toLowerCase();
+    if (first && first !== "father" && first !== "mother") problems.push(`First contact "${cell("primary_contact")}" must be father or mother`);
     return {
       line: i + 2,
       problems,
@@ -144,6 +171,15 @@ export function parseStudents(text: string): Parsed {
         blood_group: blood || null,
         address: cell("address") || null,
         photo_url: photo || null,
+        father_name: cell("father_name") || null,
+        father_phone: cell("father_phone") || null,
+        father_email: cell("father_email") || null,
+        father_occupation: cell("father_occupation") || null,
+        mother_name: cell("mother_name") || null,
+        mother_phone: cell("mother_phone") || null,
+        mother_email: cell("mother_email") || null,
+        mother_occupation: cell("mother_occupation") || null,
+        primary_contact: first || null,
       },
     };
   });

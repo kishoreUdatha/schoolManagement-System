@@ -95,6 +95,15 @@ export type BulkRow = {
   blood_group: string | null;
   address: string | null;
   photo_url: string | null;
+  father_name: string | null;
+  father_phone: string | null;
+  father_email: string | null;
+  father_occupation: string | null;
+  mother_name: string | null;
+  mother_phone: string | null;
+  mother_email: string | null;
+  mother_occupation: string | null;
+  primary_contact: string | null;
 };
 
 /** `row` is the index into the `students` array that was sent. */

@@ -26,11 +26,21 @@ router = APIRouter()
 
 
 # Headers the bulk endpoint understands. Order is the template column order.
-BULK_TEMPLATE_HEADERS = ("full_name", "gender", "dob", "blood_group", "address")
-# Sample rows — keep address comma-free so the row parses cleanly without quoting.
+# Only full_name is required; the parent columns are how a school brings the
+# family in with the children, and primary_contact says who it rings first.
+BULK_TEMPLATE_HEADERS = (
+    "full_name", "gender", "dob", "blood_group", "address",
+    "father_name", "father_phone", "father_email", "father_occupation",
+    "mother_name", "mother_phone", "mother_email", "mother_occupation",
+    "primary_contact",
+)
+# Sample rows — keep every cell comma-free so a row parses without quoting.
 BULK_TEMPLATE_SAMPLE_ROWS = (
-    ("Aarav Sharma", "male", "2018-05-12", "O+", "12 MG Road Bengaluru"),
-    ("Diya Patel", "female", "2018-08-03", "A+", ""),
+    ("Aarav Sharma", "male", "2018-05-12", "O+", "12 MG Road Bengaluru",
+     "Ramesh Sharma", "9876500201", "ramesh.sharma@example.com", "Engineer",
+     "Sudha Sharma", "9876500202", "sudha.sharma@example.com", "Doctor", "mother"),
+    ("Diya Patel", "female", "2018-08-03", "A+", "",
+     "Nikhil Patel", "9876500203", "", "", "", "", "", "", ""),
 )
 
 

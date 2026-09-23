@@ -80,6 +80,39 @@ class StudentBulkRow(BaseModel):
     address: Optional[str] = None
     photo_url: Optional[str] = Field(None, max_length=500)
 
+    # The family, carried by the same file. A parent named without a mobile
+    # number is left off: the school must be able to ring somebody.
+    father_name: Optional[str] = Field(None, max_length=160)
+    father_phone: Optional[str] = Field(None, max_length=20)
+    father_email: Optional[str] = Field(None, max_length=255)
+    father_occupation: Optional[str] = Field(None, max_length=120)
+    mother_name: Optional[str] = Field(None, max_length=160)
+    mother_phone: Optional[str] = Field(None, max_length=20)
+    mother_email: Optional[str] = Field(None, max_length=255)
+    mother_occupation: Optional[str] = Field(None, max_length=120)
+    primary_contact: Optional[str] = Field(None, description="father or mother — who the school calls first")
+
+    def guardians(self) -> list[dict]:
+        """The parents on this row, as add_guardian wants them."""
+        first = (self.primary_contact or "").strip().lower()
+        out: list[dict] = []
+        for relation in ("father", "mother"):
+            name = (getattr(self, f"{relation}_name") or "").strip()
+            phone = (getattr(self, f"{relation}_phone") or "").strip()
+            if not name or not phone:
+                continue
+            out.append({
+                "full_name": name,
+                "phone": phone,
+                "email": (getattr(self, f"{relation}_email") or "").strip() or None,
+                "occupation": (getattr(self, f"{relation}_occupation") or "").strip() or None,
+                "relation": relation,
+                "is_primary": relation == first,
+            })
+        if out and not any(g["is_primary"] for g in out):
+            out[0]["is_primary"] = True
+        return out
+
 
 class StudentBulkCreate(BaseModel):
     academic_year_id: int

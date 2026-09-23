@@ -300,6 +300,21 @@ def bulk_create(
     for s in created:
         fee_service.generate_one_time_for_student(db, tenant_id, school_id, s)
 
+    # The parents each row named. A child stays imported even when a parent
+    # will not save; the reason is reported against that row.
+    from app.schemas.foundation import GuardianIn
+
+    by_name = {s.full_name.strip().lower(): s for s in created}
+    for idx, row in cleaned:
+        student = by_name.get((row.full_name or "").strip().lower())
+        if not student:
+            continue
+        for g in row.guardians():
+            try:
+                foundation_service.add_guardian(db, student, GuardianIn(**g))
+            except HTTPException as e:
+                errors.append({"row": idx, "full_name": row.full_name, "error": f"{g['full_name']}: {e.detail}"})
+
     return created, errors
 
 
