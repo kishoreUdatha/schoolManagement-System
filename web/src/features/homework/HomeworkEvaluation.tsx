@@ -34,6 +34,7 @@ export function HomeworkEvaluation() {
   const [marks, setMarks] = useState<Record<number, string>>({});
   const [decision, setDecision] = useState<"approved" | "rejected">("approved");
   const [score, setScore] = useState("");
+  const [outOf, setOutOf] = useState("");
   const [who, setWho] = useState("");
   const [remark, setRemark] = useState("");
   const [saving, setSaving] = useState(false);
@@ -89,6 +90,23 @@ export function HomeworkEvaluation() {
       const next = draft ? null : subs.data?.find((x) => x.status === "submitted" && x.id !== s.id);
       await subs.reload();
       if (next) setSubId(next.id);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  /** Homework set before anyone thought about a score can be given one here. */
+  async function setMaximum() {
+    if (!h) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await api.patch(`/api/v1/teacher/homework/${h.id}`, { max_marks: Number(outOf) });
+      notify(`Marked out of ${Number(outOf)} from now on.`);
+      setOutOf("");
+      await hw.reload();
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -264,10 +282,25 @@ export function HomeworkEvaluation() {
                       </span>
                     </label>
                   ) : (
-                    // Nothing to mark out of: this homework was set without a maximum or a rubric.
+                    // Set without a maximum or a rubric — so say what it would
+                    // take to mark it with a number, and take it here.
                     <label className="field">
                       <span>Marks</span>
-                      <input type="text" readOnly aria-label="Marks" value="Not marked out of anything — approve or return" />
+                      <span className="marks-box">
+                        <input
+                          type="number"
+                          min={1}
+                          max={1000}
+                          step="1"
+                          aria-label="What this homework is out of"
+                          placeholder="Out of what? e.g. 20"
+                          value={outOf}
+                          onChange={(e) => setOutOf(e.target.value)}
+                        />
+                        <button type="button" className="btn" disabled={!outOf.trim() || saving} onClick={setMaximum}>
+                          Set
+                        </button>
+                      </span>
                     </label>
                   )}
                   <label className="field">
