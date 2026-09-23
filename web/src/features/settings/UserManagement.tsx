@@ -163,14 +163,38 @@ export function UserManagement() {
           </div>
         </Panel>
       ) : null}
-      <Panel title="All users" sub={`Staff sign-ins · parent and student logins are managed with their records${list.loading ? " · Loading…" : ""}`} flush>
+      <Panel
+        title="All users"
+        sub={`Staff sign-ins. A parent's password is reset on Parents › Login access, a child's on Students › Logins${list.loading ? " · Loading…" : ""}`}
+        flush
+      >
         <DataTable
           columns={["User", "Email address", "Role", "Department", "Last login", "Status"]}
           rows={rows}
-          onView={(i) => {
-            setOpenId(items[i].id);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
+          actions={(i) => (
+            <>
+              <button
+                type="button"
+                className="btn"
+                disabled={busy || !items[i].is_active}
+                title={items[i].is_active ? "Give them a new temporary password" : "This login is switched off"}
+                onClick={() => reset(items[i])}
+              >
+                <Icon name="shield" className="sm" />
+                Reset password
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setOpenId(items[i].id);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+              >
+                View
+              </button>
+            </>
+          )}
           empty={list.loading ? "Loading users…" : role || status || typed ? "No users match these filters." : undefined}
           emptyState={{
             title: "No users yet",
