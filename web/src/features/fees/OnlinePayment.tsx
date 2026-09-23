@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { StatChips } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, dateTime, initials, money } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
@@ -154,21 +157,8 @@ export function OnlinePayment() {
     }
   }
 
-  if (hydrated && sess && !isParent) {
-    return (
-      <section className="panel">
-        <div className="panel-pad">
-          <p className="muted" style={{ marginBottom: 14 }}>
-            Online payment is made by a parent from the parent portal. Payments made online appear in the cash book and each student’s ledger.
-          </p>
-          <Link href={routeOf(158)} className="btn primary">
-            <Icon name="arrow" className="sm" />
-            Record a payment at the counter instead
-          </Link>
-        </div>
-      </section>
-    );
-  }
+  // The school sees what parents have paid online; paying itself is the parent's side.
+  if (hydrated && sess && !isParent) return <SchoolOnlinePayments />;
 
   return (
     <div className="two-col">
@@ -333,5 +323,72 @@ export function OnlinePayment() {
         </Dialog>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * SCR-159 for the school: GET /school/payments/online — what parents have
+ * paid from the parent portal, newest first. Receipts come from
+ * GET /payments/online/{id}/receipt.pdf. Paying is the parent's side; the
+ * office records counter payments on SCR-158.
+ */
+function SchoolOnlinePayments() {
+  const orders = useApi<OnlineOrder[]>("/api/v1/school/payments/online");
+  const [status, setStatus] = useState("");
+  const [typed, setTyped] = useState("");
+  const q = typed.trim().toLowerCase();
+  const all = orders.data ?? [];
+  const items = all
+    .filter((o) => (!status || o.status === status) && (!q || `${o.student_name} ${o.parent_name ?? ""} ${o.receipt_no ?? ""} ${o.provider_payment_id ?? ""}`.toLowerCase().includes(q)))
+    .sort((a, b) => (b.paid_at ?? b.created_at).localeCompare(a.paid_at ?? a.created_at));
+  const paidRows = all.filter((o) => o.status === "paid");
+  const thisMonth = paidRows.filter((o) => (o.paid_at ?? o.created_at).slice(0, 7) === new Date().toISOString().slice(0, 7));
+  const sum = (rows: OnlineOrder[]) => rows.reduce((t, o) => t + Number(o.amount), 0);
+  const n = (v: string) => (orders.data ? v : "…");
+  const rows: Row[] = items.map((o) => [
+    { name: o.student_name, sub: o.parent_name ?? "—" },
+    dateTime(o.paid_at ?? o.created_at),
+    money(o.amount),
+    o.receipt_no ?? "—",
+    o.provider_payment_id ?? o.provider_order_id,
+    o.status === "paid" ? "Paid" : o.status === "failed" ? "Failed" : "Started",
+  ]);
+  return (
+    <>
+      <div className="toolbar">
+        <div className="searchbox">
+          <Icon name="search" className="sm" />
+          <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Search student, parent or receipt…" aria-label="Search online payments" />
+        </div>
+        <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">All payments</option>
+          <option value="paid">Paid</option>
+          <option value="failed">Failed</option>
+          <option value="created">Started, not finished</option>
+        </select>
+        <Link href={routeOf(158)} className="btn">
+          <Icon name="arrow" className="sm" />
+          Counter payment
+        </Link>
+        <StatChips
+          items={[
+            { label: "Paid", value: n(String(paidRows.length)), note: "Payments received online" },
+            { label: "Received", value: n(money(sum(paidRows))), note: "All online payments" },
+            { label: "This month", value: n(money(sum(thisMonth))), note: "Received this calendar month" },
+            { label: "Unfinished", value: n(String(all.filter((o) => o.status !== "paid").length)), note: "Started or failed at the gateway" },
+          ]}
+        />
+      </div>
+      <ErrorNote>{orders.error}</ErrorNote>
+      <Panel flush>
+        <DataTable
+          columns={["Student", "Paid on", "Amount", "Receipt", "Gateway reference", "Status"]}
+          rows={rows}
+          selectable={false}
+          onView={(i) => api.open(`/api/v1/school/payments/online/${items[i].id}/receipt.pdf`).catch((e) => notify(errorText(e)))}
+          empty={orders.loading ? "Loading online payments…" : all.length ? "No payments match these filters." : "No parent has paid online yet."}
+        />
+      </Panel>
+    </>
   );
 }
