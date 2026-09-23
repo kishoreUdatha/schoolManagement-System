@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -85,6 +85,30 @@ class GuardianRead(BaseModel):
     is_emergency_contact: bool
     lives_with_student: bool
     has_portal_login: bool
+
+
+class GuardianChild(BaseModel):
+    student_id: int
+    full_name: str
+    admission_no: str
+    section_label: Optional[str] = None
+    relation: str
+    is_primary: bool
+
+
+class GuardianDirectoryRow(BaseModel):
+    """One family contact in the school-wide directory, login or not."""
+
+    guardian_id: int
+    user_id: Optional[int] = None
+    full_name: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    occupation: Optional[str] = None
+    has_portal_login: bool
+    is_active: Optional[bool] = None
+    last_login_at: Optional[datetime] = None
+    children: list[GuardianChild] = []
 
 
 class PortalGrant(BaseModel):

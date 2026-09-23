@@ -3,7 +3,7 @@ from datetime import date
 from typing import Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -174,6 +174,64 @@ def guardians_of(db: Session, student_id: int) -> list[dict]:
          "can_pickup": l.can_pickup, "is_emergency_contact": l.is_emergency_contact,
          "lives_with_student": l.lives_with_student, "has_portal_login": g.user_id is not None}
         for l, g in rows
+    ]
+
+
+def list_guardians(
+    db: Session,
+    school_id: int,
+    *,
+    search: Optional[str] = None,
+    has_login: Optional[bool] = None,
+) -> list[dict]:
+    """Every family contact the school holds, with the children each is on and
+    whether they can sign in. A guardian with no login is still somebody the
+    office rings, so they belong in the directory."""
+    stmt = select(Guardian).where(Guardian.school_id == school_id).order_by(Guardian.full_name)
+    if search:
+        like = f"%{search}%"
+        stmt = stmt.where(or_(Guardian.full_name.ilike(like), Guardian.email.ilike(like), Guardian.phone.ilike(like)))
+    if has_login is True:
+        stmt = stmt.where(Guardian.user_id.is_not(None))
+    elif has_login is False:
+        stmt = stmt.where(Guardian.user_id.is_(None))
+    guardians = list(db.execute(stmt).scalars().all())
+    if not guardians:
+        return []
+
+    links = db.execute(
+        select(StudentGuardian, Student)
+        .join(Student, StudentGuardian.student_id == Student.id)
+        .where(StudentGuardian.guardian_id.in_([g.id for g in guardians]))
+    ).all()
+    labels = section_labels(db, {s.section_id for _, s in links})
+    children: dict[int, list[dict]] = {}
+    for link, student in links:
+        children.setdefault(link.guardian_id, []).append({
+            "student_id": student.id,
+            "full_name": student.full_name,
+            "admission_no": student.admission_no,
+            "section_label": labels.get(student.section_id),
+            "relation": getattr(link.relation, "value", str(link.relation)),
+            "is_primary": link.is_primary,
+        })
+    ids = [g.user_id for g in guardians if g.user_id]
+    users = {u.id: u for u in db.execute(select(User).where(User.id.in_(ids))).scalars()} if ids else {}
+
+    return [
+        {
+            "guardian_id": g.id,
+            "user_id": g.user_id,
+            "full_name": g.full_name,
+            "phone": g.phone,
+            "email": g.email,
+            "occupation": g.occupation,
+            "has_portal_login": g.user_id is not None,
+            "is_active": users[g.user_id].is_active if g.user_id in users else None,
+            "last_login_at": users[g.user_id].last_login_at if g.user_id in users else None,
+            "children": sorted(children.get(g.id, []), key=lambda c: c["full_name"]),
+        }
+        for g in guardians
     ]
 
 

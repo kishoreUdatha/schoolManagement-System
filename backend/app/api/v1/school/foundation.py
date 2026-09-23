@@ -20,6 +20,7 @@ from app.schemas.foundation import (
     RosterRow,
     TermIn,
     TermRead,
+    GuardianDirectoryRow,
 )
 from app.services import foundation_service as svc
 
@@ -48,6 +49,15 @@ def roster(current_user: StudentManager, db: Db, academic_year_id: int = Query(.
 
 
 # --- Guardians ---
+
+@router.get("/guardians", response_model=list[GuardianDirectoryRow],
+            summary="Every family contact in the school, with or without a login")
+def all_guardians(current_user: StudentManager, db: Db,
+                  search: Optional[str] = Query(None),
+                  has_login: Optional[bool] = Query(None, description="true = only those who can sign in")):
+    return [GuardianDirectoryRow.model_validate(g) for g in svc.list_guardians(db, current_user.school_id, search=search, has_login=has_login)]
+
+
 
 @router.get("/students/{student_id}/guardians", response_model=list[GuardianRead])
 def guardians(student_id: int, current_user: StudentManager, db: Db):

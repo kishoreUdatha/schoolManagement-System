@@ -123,3 +123,24 @@ export type PtmSlot = {
 };
 
 export type PtmSessionDetail = PtmSession & { teachers: { teacher_user_id: number; teacher_name: string; slots: PtmSlot[] }[] };
+
+/** GET /api/v1/school/guardians: one family contact, login or not. */
+export type GuardianRow = {
+  guardian_id: number;
+  user_id: number | null;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  occupation: string | null;
+  has_portal_login: boolean;
+  is_active: boolean | null;
+  last_login_at: string | null;
+  children: {
+    student_id: number;
+    full_name: string;
+    admission_no: string;
+    section_label: string | null;
+    relation: string;
+    is_primary: boolean;
+  }[];
+};
