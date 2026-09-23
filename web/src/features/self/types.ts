@@ -149,3 +149,30 @@ export type Loan = {
   fine_status: "none" | "pending" | "billed" | "paid" | "waived";
   fine_note: string | null;
 };
+
+/** GET /staff/profile (MyProfileRead) — my own staff record. */
+export type MyProfile = {
+  staff_id: number;
+  user_id: number;
+  full_name: string;
+  email: string | null;
+  employee_no: string;
+  role: string;
+  designation: string | null;
+  department_name: string | null;
+  joining_date: string | null;
+  employment_type: string | null;
+  reporting_manager_name: string | null;
+  phone: string | null;
+  address: string | null;
+  emergency_contact_name: string | null;
+  emergency_contact_phone: string | null;
+  emergency_contact_relation: string | null;
+  qualification_summary: string | null;
+  experience_years: string | null;
+  bank_name: string | null;
+  bank_account_no: string | null;
+  bank_ifsc: string | null;
+  pan: string | null;
+  uan: string | null;
+};

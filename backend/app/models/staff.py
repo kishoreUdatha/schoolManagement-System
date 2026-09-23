@@ -83,6 +83,15 @@ class Staff(Base, PrimaryKeyMixin, TimestampMixin):
     other_duty_periods: Mapped[Optional[int]] = mapped_column(SmallInteger)
     other_duties: Mapped[Optional[str]] = mapped_column(String(300))
 
+    # Where this person is paid, and their tax numbers. They belong to the
+    # person rather than to a salary revision, so staff keep them up to date
+    # themselves; payroll falls back to these when a salary row has none.
+    bank_name: Mapped[Optional[str]] = mapped_column(String(120))
+    bank_account_no: Mapped[Optional[str]] = mapped_column(String(34))
+    bank_ifsc: Mapped[Optional[str]] = mapped_column(String(11))
+    pan: Mapped[Optional[str]] = mapped_column(String(10))
+    uan: Mapped[Optional[str]] = mapped_column(String(12))
+
     # Somebody signing the onboarding checklist off, once every task is ticked.
     onboarding_completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
     onboarding_completed_by_user_id: Mapped[Optional[int]] = mapped_column(

@@ -77,6 +77,7 @@ const DEFS: Def[] = [
   [1094, "Behaviour Notes", "health", "Teacher", "table", "/health-wellbeing/behaviour-notes"],
   [1095, "Weekly Progress Reports", "academics", "Teacher", "table", "/academics/weekly-progress-reports"],
   [1096, "My Students", "students", "Teacher", "table", "/students/my-students"],
+  [1097, "My Profile", "staff", "Staff", "form", "/staff/my-profile"],
 ];
 
 export const EXTRA_SCREENS: Screen[] = DEFS.map(([n, name, mod, role, layout, route]) => ({

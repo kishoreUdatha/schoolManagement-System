@@ -20,7 +20,7 @@ export const TAB_GROUPS: TabGroup[] = [
   { label: "Hiring", tabs: [[172, "Hiring requests"], [173, "Job openings"], [174, "Candidates"], [1060, "Candidate pool"], [176, "Interviews"], [177, "Offers"], [178, "Joining checklist"]] },
   { label: "Staff attendance & leave", tabs: [[179, "Attendance"], [88, "Attendance summary"], [180, "Leave policies"], [181, "Leave requests"], [182, "Leave approval"], [1061, "Balances"], [89, "Leave summary"]] },
   { label: "Payroll", tabs: [[183, "Setup"], [184, "Run payroll"], [185, "Payslips"], [1062, "Salary history"]] },
-  { label: "My records", tabs: [[1090, "My attendance"], [1091, "My leave"], [1092, "My payslips"]] },
+  { label: "My records", tabs: [[1090, "My attendance"], [1091, "My leave"], [1092, "My payslips"], [1097, "My profile"]] },
   // Academics
   { label: "School structure", tabs: [[92, "Academic years"], [93, "Terms"], [94, "Classes"], [95, "Sections"], [96, "Subjects"], [97, "Subject groups"], [107, "Rooms"], [1020, "Holidays"]] },
   { label: "Curriculum", tabs: [[98, "Curriculum"], [100, "Units & topics"], [101, "Learning outcomes"], [102, "Lesson plans"], [104, "Approve plans"], [105, "Syllabus progress"], [106, "Resources"]] },

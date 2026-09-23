@@ -105,6 +105,7 @@ from app.api.v1.staff import (
     leaves as staff_leaves_routes,
     library as staff_library,
     payslips as staff_payslips,
+    profile as staff_profile,
 )
 from app.api.v1.parent import (
     preferences as parent_preferences,
@@ -847,6 +848,12 @@ app.include_router(
     staff_payslips.router,
     prefix="/api/v1/staff/payslips",
     tags=["staff / payslips"],
+)
+
+app.include_router(
+    staff_profile.router,
+    prefix="/api/v1/staff/profile",
+    tags=["staff / my profile"],
 )
 
 app.include_router(

@@ -404,6 +404,21 @@ def get_run(db: Session, run_id: int, school_id: int) -> PayrollRun:
     return _get_run(db, run_id, school_id)
 
 
+def _bank_of(sal: Optional[StaffSalary], staff: Optional[Staff]) -> dict[str, str]:
+    """Where to pay someone: what the salary revision says, else what they
+    keep on their own record."""
+    def pick(field: str) -> str:
+        return (getattr(sal, field, None) or (getattr(staff, field, None) if staff else None) or "")
+
+    return {
+        "name": pick("bank_name"),
+        "account_no": pick("bank_account_no"),
+        "ifsc": pick("bank_ifsc"),
+        "pan": pick("pan"),
+        "uan": pick("uan"),
+    }
+
+
 def bank_file(db: Session, run_id: int, school_id: int) -> tuple[str, str]:
     """CSV the accountant uploads to the bank's bulk-transfer portal."""
     run = _get_run(db, run_id, school_id)
@@ -417,14 +432,17 @@ def bank_file(db: Session, run_id: int, school_id: int) -> tuple[str, str]:
         sal = db.get(StaffSalary, s.salary_id) if s.salary_id else None
         st = db.get(Staff, s.staff_id)
         u = db.get(User, s.user_id)
-        if not sal or not sal.bank_account_no or not sal.bank_ifsc:
+        # the salary revision may name an account; otherwise the one the
+        # person keeps on their own record
+        bank = _bank_of(sal, st)
+        if not bank["account_no"] or not bank["ifsc"]:
             missing += 1
         w.writerow([
             st.employee_no if st else "",
             u.full_name if u else "",
-            sal.bank_name if sal else "",
-            sal.bank_account_no if sal else "",
-            sal.bank_ifsc if sal else "",
+            bank["name"],
+            bank["account_no"],
+            bank["ifsc"],
             f"{s.net_pay:.2f}",
             f"Salary {run.period}",
         ])
@@ -468,6 +486,7 @@ def payslip_pdf(db: Session, slip: Payslip, run: PayrollRun) -> tuple[bytes, str
     d = slip_to_read(db, slip, run)
     school = db.get(School, run.school_id)
     sal = db.get(StaffSalary, slip.salary_id) if slip.salary_id else None
+    bank = _bank_of(sal, db.get(Staff, slip.staff_id))
     y, m = (int(p) for p in run.period.split("-"))
     month = date(y, m, 1).strftime("%B %Y")
     styles = getSampleStyleSheet()
@@ -484,8 +503,8 @@ def payslip_pdf(db: Session, slip: Payslip, run: PayrollRun) -> tuple[bytes, str
     info = [
         ["Employee", d["full_name"], "Employee no.", d["employee_no"]],
         ["Designation", d["designation"] or "", "Days paid", f"{d['paid_days']} / {d['days_in_month']}"],
-        ["PAN", (sal.pan if sal else "") or "", "UAN", (sal.uan if sal else "") or ""],
-        ["Bank A/c", (sal.bank_account_no if sal else "") or "", "LOP days", str(d["lop_days"])],
+        ["PAN", bank["pan"], "UAN", bank["uan"]],
+        ["Bank A/c", bank["account_no"], "LOP days", str(d["lop_days"])],
     ]
     t = Table(info, colWidths=[3 * cm, 5.4 * cm, 3 * cm, 5.4 * cm])
     t.setStyle(TableStyle([("FONTSIZE", (0, 0), (-1, -1), 9), ("TEXTCOLOR", (0, 0), (0, -1), colors.grey), ("TEXTCOLOR", (2, 0), (2, -1), colors.grey)]))
