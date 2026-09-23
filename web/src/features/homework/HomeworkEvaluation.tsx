@@ -12,8 +12,8 @@ import { date, dateTime, initials } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { LinkCard } from "./shared";
-import type { Homework, Submission } from "./types";
+import { LinkCard, useEach } from "./shared";
+import type { Homework, MyClasses, Submission } from "./types";
 
 import { ask } from "@/lib/dialog";
 const STATUS: Record<Submission["status"], string> = { submitted: "Submitted", approved: "Approved", rejected: "Returned" };
@@ -29,6 +29,7 @@ export function HomeworkEvaluation() {
   const id = params.get("id");
   const hw = useApi<Homework>(id ? `/api/v1/teacher/homework/${id}` : null);
   const subs = useApi<Submission[]>(id ? `/api/v1/teacher/homework/${id}/submissions` : null);
+  const classes = useApi<MyClasses>("/api/v1/teacher/my-classes");
   const [subId, setSubId] = useState<number | null>(params.get("sub") ? Number(params.get("sub")) : null);
   const [marks, setMarks] = useState<Record<number, string>>({});
   const [decision, setDecision] = useState<"approved" | "rejected">("approved");
@@ -53,13 +54,22 @@ export function HomeworkEvaluation() {
     setError(null);
   }, [s?.id, s?.teacher_remark, s?.status]);
 
+  // the sections this homework was set to, and the children in them
+  const card = classes.data?.subject_teacher_of.find((c) => c.class_subject_id === hw.data?.class_subject_id);
+  const rosterPaths = (card?.sections ?? []).map((x) => `/api/v1/teacher/sections/${x.section_id}/students`);
+  const rosters = useEach<{ id: number; admission_no: string; full_name: string }[]>(rosterPaths);
+  const byStudent = new Map((subs.data ?? []).map((x) => [x.student_id, x]));
+  const rosterRows = rosterPaths
+    .flatMap((path) => rosters.data[path] ?? [])
+    .map((r) => ({ id: r.id, full_name: r.full_name, admission_no: r.admission_no, sub: byStudent.get(r.id) }));
+
   if (!id) return <PickFirst what="homework to evaluate" href={routeOf(128)} cta="Open the homework list" />;
   if (hw.loading && !hw.data) return <Loading what="Loading the homework…" />;
   const h = hw.data;
   if (!h) return <ErrorNote>{hw.error ?? "Homework not found."}</ErrorNote>;
 
-  async function save(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function save(e: FormEvent<HTMLFormElement> | null, draft = false) {
+    e?.preventDefault();
     if (!s) return;
     setSaving(true);
     setError(null);
@@ -71,12 +81,12 @@ export function HomeworkEvaluation() {
         if (scores.length) await api.put(`/api/v1/teacher/homework/submissions/${s.id}/rubric-scores`, { scores });
       }
       await api.patch(`/api/v1/teacher/homework/submissions/${s.id}/review`, {
-        status: decision,
+        status: draft ? "submitted" : decision,
         teacher_remark: remark.trim() || null,
         ...(h?.max_marks && score.trim() !== "" ? { marks: Number(score) } : {}),
       });
-      notify(`Marked ${s.student_name ?? "the student"}.`);
-      const next = subs.data?.find((x) => x.status === "submitted" && x.id !== s.id);
+      notify(draft ? "Draft saved; they are still waiting." : `Marked ${s.student_name ?? "the student"}.`);
+      const next = draft ? null : subs.data?.find((x) => x.status === "submitted" && x.id !== s.id);
       await subs.reload();
       if (next) setSubId(next.id);
     } catch (err) {
@@ -123,8 +133,10 @@ export function HomeworkEvaluation() {
     { label: "Returned", value: n(count("rejected")), note: "sent back for revision", icon: "arrow" as const },
   ];
 
-  // The children on the left, in the order the teacher works through them.
-  const roll = list.filter((x) => !who || `${x.student_name ?? ""} ${x.student_admission_no ?? ""}`.toLowerCase().includes(who.toLowerCase()));
+  // The whole class down the left, not only those who have handed in: a
+  // teacher marking wants to see who is missing as much as who is waiting.
+  const roll = (rosterRows.length ? rosterRows : list.map((x) => ({ id: x.student_id, full_name: x.student_name ?? "—", admission_no: x.student_admission_no ?? "—", sub: x })))
+    .filter((r) => !who || `${r.full_name} ${r.admission_no}`.toLowerCase().includes(who.toLowerCase()));
   const place = list.findIndex((x) => x.id === subId);
   const step = (by: number) => {
     const next = list[place + by];
@@ -135,7 +147,7 @@ export function HomeworkEvaluation() {
     <>
       <StatCards items={stats} />
       <div className="marking">
-        <Panel title="Student submissions" sub={`${count("approved") + count("rejected")} of ${list.length} reviewed`} flush>
+        <Panel title="Student submissions" sub={`${count("approved") + count("rejected")} of ${rosterRows.length || list.length} reviewed`} flush>
           <div className="panel-pad" style={{ paddingBottom: 0 }}>
             <div className="searchbox">
               <Icon name="search" className="sm" />
@@ -143,14 +155,21 @@ export function HomeworkEvaluation() {
             </div>
           </div>
           <div className="roll">
-            {roll.map((x) => (
-              <button type="button" key={x.id} className={`roll-row ${x.id === subId ? "on" : ""}`} onClick={() => setSubId(x.id)}>
-                <span className="avatar mint">{initials(x.student_name ?? "?")}</span>
+            {roll.map((r) => (
+              <button
+                type="button"
+                key={r.id}
+                className={`roll-row ${r.sub && r.sub.id === subId ? "on" : ""} ${r.sub ? "" : "none"}`}
+                disabled={!r.sub}
+                title={r.sub ? undefined : "Nothing handed in yet"}
+                onClick={() => r.sub && setSubId(r.sub.id)}
+              >
+                <span className="avatar mint">{initials(r.full_name)}</span>
                 <span className="roll-who">
-                  {x.student_name ?? "—"}
-                  <small>{`${h.class_name ?? ""} · ${x.student_admission_no ?? "—"}`}</small>
+                  {r.full_name}
+                  <small>{`${h.class_name ?? ""} · ${r.admission_no}`}</small>
                 </span>
-                <Badge>{STATUS[x.status]}</Badge>
+                <Badge>{r.sub ? STATUS[r.sub.status] : "Not handed in"}</Badge>
               </button>
             ))}
             {roll.length ? null : <p className="muted panel-pad">{subs.loading ? "Loading…" : "Nobody has handed this in yet."}</p>}
@@ -187,16 +206,14 @@ export function HomeworkEvaluation() {
                   <Badge>{STATUS[s.status]}</Badge>
                 </div>
                 <div className="gap" />
-                <div className="assessment-prompt">
-                  <h3>{h.title}</h3>
-                  <p>{`Handed in ${dateTime(s.submitted_at)}${s.submitted_by_name && s.submitted_by_name !== s.student_name ? ` by ${s.submitted_by_name}` : ""}`}</p>
-                  <div className="gap" />
-                  <p className="muted" style={{ whiteSpace: "pre-line" }}>
-                    {s.comment || "No written response."}
-                  </p>
-                </div>
+                <h4 className="field-title">Student&apos;s note</h4>
+                <p className="quote" style={{ whiteSpace: "pre-line" }}>
+                  {s.comment || "They wrote nothing with it."}
+                </p>
+                <div className="gap" />
+                <h4 className="field-title">{s.files?.length || s.attachment_url ? "Submitted file" : "No file handed in"}</h4>
                 {s.attachment_url ? <LinkCard url={s.attachment_url} note="Handed in with the work" /> : null}
-                <FileCards files={s.files ?? []} pathOf={(a) => subFile(s.id, a.id)} note="Handed in with the work" onError={setError} />
+                <FileCards files={s.files ?? []} pathOf={(a) => subFile(s.id, a.id)} note={`Submitted ${dateTime(s.submitted_at)}`} onError={setError} />
               </>
             ) : (
               <p className="muted">{subs.loading ? "Loading…" : "Nothing has been handed in yet."}</p>
@@ -205,7 +222,7 @@ export function HomeworkEvaluation() {
           {s ? (
             <form id="evaluation-form" className="panel" onSubmit={save}>
               <div className="panel-head">
-                <h2>Evaluation</h2>
+                <h2>Evaluate submission</h2>
               </div>
               <div className="panel-body">
                 <ErrorNote>{error}</ErrorNote>
@@ -267,11 +284,19 @@ export function HomeworkEvaluation() {
                     <span>Feedback</span>
                     <textarea aria-label="Feedback" maxLength={2000} placeholder="Enter feedback" value={remark} onChange={(e) => setRemark(e.target.value)} />
                   </label>
+                  <div className="field full">
+                    <span>Attach feedback (optional)</span>
+                    <UploadZone onFiles={(fs) => reviewFiles(s.id, fs)} busy={uploading} />
+                    <FileCards files={s.review_files ?? []} pathOf={(a) => subFile(s.id, a.id)} note="Your feedback file" onRemove={(a) => removeReviewFile(s.id, a)} onError={setError} />
+                  </div>
                 </div>
               </div>
               <div className="form-footer">
                 <span>{s.reviewed_at ? `Last reviewed ${dateTime(s.reviewed_at)}${s.reviewed_by_name ? ` by ${s.reviewed_by_name}` : ""}` : "Not reviewed yet"}</span>
                 <div className="actions">
+                  <button type="button" className="btn" disabled={saving} onClick={() => save(null, true)}>
+                    Save draft
+                  </button>
                   <button type="submit" className="btn primary" disabled={saving}>
                     <Icon name="check" className="sm" />
                     {saving ? "Saving…" : place < list.length - 1 ? "Save & next student" : "Save evaluation"}
@@ -303,12 +328,7 @@ export function HomeworkEvaluation() {
               <FileCards files={h.attachments ?? []} pathOf={(a) => `/api/v1/teacher/homework/${h.id}/files/${a.id}`} note="Attached by the teacher" onError={setError} />
             </Panel>
           ) : null}
-          {s ? (
-            <Panel title="Attachments" sub="Marked copy or feedback for the student and parents">
-              <UploadZone onFiles={(fs) => reviewFiles(s.id, fs)} busy={uploading} />
-              <FileCards files={s.review_files ?? []} pathOf={(a) => subFile(s.id, a.id)} note="Your feedback file" onRemove={(a) => removeReviewFile(s.id, a)} onError={setError} />
-            </Panel>
-          ) : null}
+
         </aside>
       </div>
     </>

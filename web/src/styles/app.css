@@ -351,3 +351,7 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .marks-box span{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
 @media(max-width:1300px){.marking{grid-template-columns:260px minmax(0,1fr)}.marking>aside{grid-column:1/-1}}
 @media(max-width:800px){.marking{grid-template-columns:1fr}}
+.field-title{font-size:12.5px;font-weight:650;color:#485872;margin:0 0 7px}
+.quote{margin:0;padding:12px 14px;background:#f7faff;border:1px solid var(--line);border-radius:10px;font-size:13.5px;color:#3c5275;line-height:1.6}
+.roll-row.none{opacity:.72}
+.roll-row:disabled{cursor:default}

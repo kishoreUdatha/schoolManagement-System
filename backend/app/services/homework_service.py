@@ -624,10 +624,14 @@ def teacher_review_submission(
     data: SubmissionReview,
 ) -> HomeworkSubmission:
     sub = teacher_submission(db, submission_id, teacher_user_id, school_id)
-    if data.status not in (SubmissionStatus.approved, SubmissionStatus.rejected):
+    if data.status not in (
+        SubmissionStatus.approved,
+        SubmissionStatus.rejected,
+        SubmissionStatus.submitted,
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Review status must be approved or rejected",
+            detail="Review status must be approved, rejected, or submitted to keep it waiting",
         )
     if data.marks is not None:
         hw = db.get(Homework, sub.homework_id)
@@ -645,8 +649,11 @@ def teacher_review_submission(
         sub.marks = data.marks
     sub.status = data.status
     sub.teacher_remark = data.teacher_remark
-    sub.reviewed_by_user_id = teacher_user_id
-    sub.reviewed_at = datetime.now(timezone.utc)
+    # Left as submitted, this is a teacher saving their work part-done: the
+    # child still counts as waiting, so it is not stamped as reviewed.
+    if data.status is not SubmissionStatus.submitted:
+        sub.reviewed_by_user_id = teacher_user_id
+        sub.reviewed_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(sub)
     return sub
