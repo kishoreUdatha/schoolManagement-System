@@ -11,7 +11,7 @@ import { api, errorText } from "@/lib/api";
 import { dateTime, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
-import { downloadCsv, Kv, useYear } from "./kit";
+import { downloadCsv, useYear } from "./kit";
 
 import { ask } from "@/lib/dialog";
 type Source = { source: string; label: string; columns: string[]; filters: string[] };
@@ -354,7 +354,46 @@ export function ReportBuilder() {
 
   return (
     <>
-      <div className="two-col">
+      <div className="filterbar">
+        <label className="row" style={{ gap: 8 }}>
+          <span className="muted small">Saved reports</span>
+          <select value={savedId ?? ""} onChange={(e) => pickSaved(e.target.value)}>
+            <option value="">New report</option>
+            {saved.data?.map((d) => (
+              <option key={d.id} value={d.id}>{`${d.name} · ${d.source_label}${d.is_active ? "" : " (inactive)"}`}</option>
+            ))}
+          </select>
+        </label>
+        {chosenSaved ? (
+          <>
+            {editing ? (
+              <label className="row" style={{ gap: 6, fontSize: 13 }}>
+                <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
+                Active
+              </label>
+            ) : (
+              <button type="button" className="btn" disabled={busy} onClick={() => setEditing(true)}>
+                Edit report
+              </button>
+            )}
+            <button type="button" className="btn" disabled={busy || editing} onClick={exportFile}>
+              <Icon name="download" className="sm" />
+              Export to file
+            </button>
+            <button type="button" className="btn text" disabled={busy} onClick={remove}>
+              Delete
+            </button>
+          </>
+        ) : null}
+      </div>
+      {chosenSaved ? (
+        <p className="muted small" style={{ margin: "0 0 10px" }}>
+          {`${chosenSaved.is_active ? "Active" : "Inactive"} · ${chosenSaved.last_run_at ? `last run ${dateTime(chosenSaved.last_run_at)}, ${chosenSaved.run_count} runs` : "never run"} · ${chosenSaved.code}${chosenSaved.created_by_name ? ` · by ${chosenSaved.created_by_name}` : ""} · exported files are kept under `}
+          <Link href={EXPORTS_ROUTE}>Data exports</Link>
+          .
+        </p>
+      ) : null}
+      <div>
         <form id="report-builder" className="panel" onSubmit={run}>
           <div className="panel-pad">
             <ErrorNote>{error ?? sources.error}</ErrorNote>
@@ -427,7 +466,7 @@ export function ReportBuilder() {
             </div>
           </div>
           <div className="form-footer">
-            <span>Fields marked * are required</span>
+            <span>{editing ? "The filters on the form become this report's saved filters; the data source cannot change." : "Fields marked * are required"}</span>
             <div className="actions">
               {editing ? (
                 <>
@@ -451,62 +490,6 @@ export function ReportBuilder() {
             </div>
           </div>
         </form>
-        <aside className="stack">
-          <div className="aside-panel">
-            <h3>{"Reports & analytics"}</h3>
-            <label className="field">
-              <span>Saved reports</span>
-              <select value={savedId ?? ""} onChange={(e) => pickSaved(e.target.value)}>
-                <option value="">New report</option>
-                {saved.data?.map((d) => (
-                  <option key={d.id} value={d.id}>{`${d.name} · ${d.source_label}${d.is_active ? "" : " (inactive)"}`}</option>
-                ))}
-              </select>
-            </label>
-            <div className="gap" />
-            <Kv
-              rows={[
-                ["Academic year", y.year?.name ?? "—"],
-                ["Saved reports", saved.data ? String(saved.data.length) : "…"],
-                ["Status", chosenSaved ? (chosenSaved.is_active ? "Active" : "Inactive") : "New"],
-                ["Last run", chosenSaved?.last_run_at ? `${dateTime(chosenSaved.last_run_at)} · ${chosenSaved.run_count} runs` : "Never"],
-                ...(chosenSaved ? ([["Code", chosenSaved.code], ["Created by", chosenSaved.created_by_name ?? "—"]] as [string, string][]) : []),
-              ]}
-            />
-            {chosenSaved ? (
-              <>
-                <div className="gap" />
-                {editing ? (
-                  <label className="row" style={{ gap: 6, fontSize: 13 }}>
-                    <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
-                    Active (inactive reports stay listed here but are marked)
-                  </label>
-                ) : null}
-                <div className="row" style={{ flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-                  {!editing ? (
-                    <button type="button" className="btn" disabled={busy} onClick={() => setEditing(true)}>
-                      Edit report
-                    </button>
-                  ) : null}
-                  <button type="button" className="btn" disabled={busy || editing} onClick={exportFile}>
-                    <Icon name="download" className="sm" />
-                    Export to file
-                  </button>
-                  <button type="button" className="btn text" disabled={busy} onClick={remove}>
-                    Delete
-                  </button>
-                </div>
-                <p className="small muted" style={{ marginTop: 8 }}>
-                  {editing ? "The filters on the form become this report's saved filters; the data source cannot change." : "Exported files are kept under "}
-                  {editing ? null : <Link href={EXPORTS_ROUTE}>Data exports</Link>}
-                  {editing ? null : "."}
-                </p>
-              </>
-            ) : null}
-            <div className="gap" />
-            <p>Filters are the fixed fields each source offers; there are no operators. A saved report can be run again with different filters.</p>
-          </div>
-        </aside>
       </div>
       <div className="gap" />
       {result ? (
