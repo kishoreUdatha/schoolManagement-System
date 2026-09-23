@@ -12,9 +12,20 @@ import type { AcademicYear, SchoolClass, StudentProfile } from "./types";
 
 const RELATIONS = ["father", "mother", "guardian", "grandparent", "uncle", "aunt", "sibling", "other"];
 
+/** The people a school asks for when a child joins: both parents, and whoever else brings them. */
+type PersonKey = "father" | "mother" | "other";
+const PEOPLE: [key: PersonKey, title: string][] = [
+  ["father", "Father"],
+  ["mother", "Mother"],
+  ["other", "Another guardian"],
+];
+
+type Made = { studentId: number; name: string; logins: { who: string; email: string; password: string }[] };
+
 /**
  * SCR-056 Add Student (POST /students, then POST /students/{id}/guardians
- * when a parent is given) and SCR-058 Edit Student (PATCH /students/{id}).
+ * for each parent given, and POST .../guardians/{id}/portal-access when a
+ * parent login is asked for) and SCR-058 Edit Student (PATCH /students/{id}).
  * Same form; edit mode takes ?id= and leaves parents to Siblings & Family.
  */
 export function StudentForm({ mode }: { mode: "add" | "edit" }) {
@@ -29,6 +40,9 @@ export function StudentForm({ mode }: { mode: "add" | "edit" }) {
   const [sectionId, setSectionId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [primary, setPrimary] = useState<PersonKey>("father");
+  const [wantLogin, setWantLogin] = useState(true);
+  const [made, setMade] = useState<Made | null>(null);
 
   useEffect(() => {
     if (editing && existing.data) {
@@ -46,6 +60,54 @@ export function StudentForm({ mode }: { mode: "add" | "edit" }) {
   if (editing && !id) return <PickFirst what="student to edit" href={routeOf(55)} cta="Open the student directory" />;
   if (editing && existing.loading && !existing.data) return <Loading what="Loading the student…" />;
   const s = existing.data;
+
+  // The parent's password is returned once and never stored, so the child's
+  // record waits behind this until the office has taken it down.
+  if (made) {
+    return (
+      <section className="panel">
+        <div className="panel-pad">
+          <div className="tip" style={{ marginBottom: 16 }}>
+            <Icon name="shield" className="sm" />
+            <span>{`${made.name} is on the roll. Give the parent this password now — it is not stored and cannot be shown again.`}</span>
+          </div>
+          {made.logins.map((l) => (
+            <dl className="kv" key={l.email}>
+              <div>
+                <dt>Parent</dt>
+                <dd>{l.who}</dd>
+              </div>
+              <div>
+                <dt>Sign in with</dt>
+                <dd>{l.email}</dd>
+              </div>
+              <div>
+                <dt>Temporary password</dt>
+                <dd className="mono">{l.password}</dd>
+              </div>
+            </dl>
+          ))}
+          <div className="gap" />
+          <div className="row">
+            <button type="button" className="btn primary" onClick={() => router.push(`${routeOf(57)}?id=${made.studentId}`)}>
+              <Icon name="arrow" className="sm" />
+              Open the student
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setMade(null);
+                router.push(routeOf(56));
+              }}
+            >
+              Add another student
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -78,24 +140,44 @@ export function StudentForm({ mode }: { mode: "add" | "edit" }) {
         academic_year_id: yearId,
         admission_no: text("admission_no"),
       });
-      if (text("parent_name")) {
+      // Each parent the office filled in. The student exists by now, so a
+      // parent that will not save is said out loud rather than losing both.
+      const logins: Made["logins"] = [];
+      for (const [key, title] of PEOPLE) {
+        const name = text(`${key}_name`);
+        if (!name) continue;
+        const email = text(`${key}_email`);
+        const isPrimary = key === primary;
         try {
-          await api.post(`/api/v1/school/students/${created.id}/guardians`, {
-            full_name: text("parent_name"),
-            phone: text("parent_phone"),
-            email: text("parent_email"),
-            relation: text("relation") ?? "guardian",
-            is_primary: true,
-            can_pickup: true,
-            is_emergency_contact: true,
-            lives_with_student: true,
-          });
+          const guardians = await api.post<{ guardian_id: number; email: string | null; relation: string }[]>(
+            `/api/v1/school/students/${created.id}/guardians`,
+            {
+              full_name: name,
+              phone: text(`${key}_phone`),
+              email,
+              occupation: text(`${key}_occupation`),
+              relation: key === "other" ? (text("other_relation") ?? "guardian") : key,
+              is_primary: isPrimary,
+              can_pickup: true,
+              is_emergency_contact: true,
+              lives_with_student: true,
+            },
+          );
+          // a login for the contact the school calls first, if they gave an email
+          if (wantLogin && isPrimary && email) {
+            const mine = guardians.find((g) => g.email === email) ?? guardians[guardians.length - 1];
+            const grant = await api.post<{ email: string; temporary_password: string }>(
+              `/api/v1/school/students/${created.id}/guardians/${mine.guardian_id}/portal-access`,
+            );
+            logins.push({ who: name, email: grant.email, password: grant.temporary_password });
+          }
         } catch (err) {
-          // The student exists; say what did not save rather than losing both.
-          notify(`Student created, but the parent was not saved: ${errorText(err)}`);
-          router.push(`${routeOf(57)}?id=${created.id}`);
-          return;
+          notify(`${title} was not saved: ${errorText(err)}`);
         }
+      }
+      if (logins.length) {
+        setMade({ studentId: created.id, name: String(f.get("full_name") ?? "").trim(), logins });
+        return;
       }
       notify("Student created.");
       router.push(`${routeOf(57)}?id=${created.id}`);
@@ -193,26 +275,53 @@ export function StudentForm({ mode }: { mode: "add" | "edit" }) {
                 )}
                 {field("Roll no.", <input type="number" min={1} name="roll_no" defaultValue={s?.roll_no ?? ""} placeholder="Enter roll no." />)}
                 {field("Blood group", <input name="blood_group" maxLength={10} defaultValue={s?.blood_group ?? ""} placeholder="e.g. B+" />)}
-                {!editing ? (
-                  <>
-                    {field("Parent name", <input name="parent_name" minLength={2} placeholder="Enter parent name" />)}
-                    {field(
-                      "Relationship",
-                      <select name="relation" defaultValue="father">
-                        {RELATIONS.map((r) => (
-                          <option key={r} value={r}>
-                            {r[0].toUpperCase() + r.slice(1)}
-                          </option>
-                        ))}
-                      </select>,
-                    )}
-                    {field("Mobile number", <input type="tel" name="parent_phone" minLength={6} placeholder="Enter mobile number" />)}
-                    {field("Email address", <input type="email" name="parent_email" placeholder="Enter email address" />)}
-                  </>
-                ) : null}
                 {field("Address", <input name="address" defaultValue={s?.address ?? ""} placeholder="Enter address" />, false, true)}
               </div>
             </section>
+            {!editing ? (
+              <section>
+                <div className="form-section-title">
+                  <span className="number">03</span>
+                  <h3>Parents</h3>
+                </div>
+                <p className="muted small" style={{ margin: "0 0 12px" }}>
+                  Fill in whoever the school will deal with. Leave a block empty and it is not saved; you can add more family later on the
+                  child&apos;s profile.
+                </p>
+                {PEOPLE.map(([key, title]) => (
+                  <div key={key} className="parent-block">
+                    <div className="parent-head">
+                      <h4>{title}</h4>
+                      <label className="row" style={{ gap: 6, fontSize: 13 }}>
+                        <input type="radio" name="primary" checked={primary === key} onChange={() => setPrimary(key)} />
+                        School calls them first
+                      </label>
+                    </div>
+                    <div className="form-grid">
+                      {field(`${title === "Another guardian" ? "Their" : title + "'s"} name`, <input name={`${key}_name`} minLength={2} placeholder="Full name" />)}
+                      {key === "other"
+                        ? field(
+                            "Relationship",
+                            <select name="other_relation" defaultValue="guardian">
+                              {RELATIONS.map((r) => (
+                                <option key={r} value={r}>
+                                  {r[0].toUpperCase() + r.slice(1)}
+                                </option>
+                              ))}
+                            </select>,
+                          )
+                        : field("Occupation", <input name={`${key}_occupation`} maxLength={120} placeholder="e.g. Teacher" />)}
+                      {field("Mobile number", <input type="tel" name={`${key}_phone`} minLength={6} placeholder="Enter mobile number" />)}
+                      {field("Email address", <input type="email" name={`${key}_email`} placeholder="Their sign-in for the parent portal" />)}
+                    </div>
+                  </div>
+                ))}
+                <label className="row" style={{ gap: 8, fontSize: 13, marginTop: 4 }}>
+                  <input type="checkbox" checked={wantLogin} onChange={(e) => setWantLogin(e.target.checked)} />
+                  Create a parent login for the first contact, so they can see attendance, marks and fees. Needs their email address.
+                </label>
+              </section>
+            ) : null}
           </div>
         </div>
         <div className="form-footer">

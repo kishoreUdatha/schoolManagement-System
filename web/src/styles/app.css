@@ -293,3 +293,10 @@ option{background:#fff}
 .empty-guide strong{font-size:14.5px;font-weight:650;color:var(--ink)}
 .empty-guide p{margin:0;font-size:13px;line-height:1.55;color:var(--muted)}
 .empty-guide-action{margin-top:9px}
+/* Each parent on the add-student form: one boxed block per person, with the
+   "school calls them first" choice on its heading row. */
+.parent-block{border:1px solid var(--line);border-radius:10px;padding:14px 16px 16px;margin-bottom:12px;background:#fcfdff}
+.parent-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.parent-head h4{margin:0;font-size:13.5px;font-weight:650;color:var(--ink)}
+.parent-head label{color:#56698a;font-weight:550;white-space:nowrap}
+@media(max-width:700px){.parent-head{flex-wrap:wrap}}
