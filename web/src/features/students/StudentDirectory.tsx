@@ -106,6 +106,35 @@ export function StudentDirectory() {
     );
   }
 
+  /**
+   * Delete the ticked records (DELETE /students/{id} each). The server refuses
+   * a child with any history — attendance, marks, payments — and says so, so
+   * this is only ever for a record entered by mistake.
+   */
+  async function deletePicked() {
+    const who = chosen.length === 1 ? chosen[0].full_name : `${chosen.length} records`;
+    if (!(await ask(`Delete ${who}? This cannot be undone. A child with attendance, marks or payments is kept and told to be taken off the roll instead.`))) return;
+    setBusy(true);
+    setFailed(null);
+    let done = 0;
+    const trouble: string[] = [];
+    for (const s of chosen) {
+      try {
+        await api.delete(`/api/v1/school/students/${s.id}`);
+        done++;
+      } catch (e) {
+        trouble.push(errorText(e));
+      }
+    }
+    setBusy(false);
+    setPicked([]);
+    if (trouble.length) setFailed(trouble.join(" · "));
+    notify(done ? `${done} record${done === 1 ? "" : "s"} deleted.` : "Nothing was deleted.");
+    list.reload();
+    allCount.reload();
+    activeCount.reload();
+  }
+
   /** Take the ticked children off the roll (POST /students/{id}/deactivate each). */
   async function deactivatePicked() {
     const live = chosen.filter((s) => s.is_active);
@@ -185,6 +214,9 @@ export function StudentDirectory() {
             <button type="button" className="btn" disabled={busy} onClick={deactivatePicked}>
               <Icon name="logout" className="sm" />
               {busy ? "Working…" : "Take off the roll"}
+            </button>
+            <button type="button" className="btn danger" disabled={busy} onClick={deletePicked}>
+              Delete
             </button>
             <button type="button" className="btn text" onClick={() => setPicked([])}>
               Clear

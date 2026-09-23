@@ -318,6 +318,54 @@ def bulk_create(
     return created, errors
 
 
+# What makes a record worth keeping. Every one of these tables cascades on
+# delete, so a child with any of it must be taken off the roll instead: the
+# school would otherwise lose the register, the marks and the receipts.
+HISTORY: tuple[tuple[str, str, str], ...] = (
+    ("student_attendance", "student_id", "attendance"),
+    ("period_attendance", "student_id", "lesson attendance"),
+    ("marks", "student_id", "marks"),
+    ("fee_collections", "student_id", "fee payments"),
+    ("library_loans", "student_id", "library loans"),
+    ("homework_submissions", "student_id", "homework"),
+    ("certificate_issues", "student_id", "certificates"),
+    ("discipline_incidents", "student_id", "behaviour records"),
+    ("clinic_visits", "student_id", "clinic visits"),
+    ("test_attempts", "student_id", "online tests"),
+)
+
+
+def history_of(db: Session, student_id: int) -> list[str]:
+    """What this child has on record, in plain words."""
+    from sqlalchemy import text as sql
+
+    found = []
+    for table, column, what in HISTORY:
+        n = db.execute(sql(f"SELECT count(*) FROM {table} WHERE {column} = :id"), {"id": student_id}).scalar_one()
+        if n:
+            found.append(f"{n} {what}")
+    return found
+
+
+def delete_student(db: Session, student_id: int, school_id: int) -> str:
+    """Remove a record added by mistake. A child the school has any history
+    for cannot be deleted — that is what taking them off the roll is for."""
+    s = get_student(db, student_id, school_id)
+    kept = history_of(db, s.id)
+    if kept:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"{s.full_name} has {', '.join(kept)} on record. Deleting would take all of it with them — "
+                "take them off the roll instead."
+            ),
+        )
+    name = s.full_name
+    db.delete(s)
+    db.commit()
+    return name
+
+
 def promote_students(
     db: Session,
     tenant_id: int,

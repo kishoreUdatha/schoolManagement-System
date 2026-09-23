@@ -1,6 +1,6 @@
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
@@ -131,6 +131,20 @@ def get(
     return StudentProfileRead.model_validate(
         student_profile_service.build_profile(db, s)
     )
+
+
+@router.delete(
+    "/{student_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a record added by mistake (refused once the child has any history)",
+)
+def delete(
+    student_id: int,
+    current_user: StudentManager,
+    db: Annotated[Session, Depends(get_db)],
+):
+    student_service.delete_student(db, student_id, current_user.school_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.patch("/{student_id}", response_model=StudentRead)
