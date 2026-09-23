@@ -15,6 +15,8 @@ const WORKSPACES: { role: Role; icon: IconName; note: string }[] = [
   { role: "student", icon: "cap", note: "Learning & progress" },
   { role: "parent", icon: "users", note: "Your children" },
   { role: "accountant", icon: "money", note: "Fees & finance" },
+  // office and support staff: librarian, HR, store, front desk, warden…
+  { role: "staff", icon: "users", note: "Office & support" },
 ];
 
 /** SCR-002. Public: picking a workspace leads to sign-in for that role. */

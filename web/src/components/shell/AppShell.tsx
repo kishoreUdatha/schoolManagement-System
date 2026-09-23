@@ -296,6 +296,13 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
 export function ShellFrame({ children }: { children: ReactNode }) {
   const path = usePathname();
   const s = screenAt(path);
+  // Sign-in, the workspace chooser and the rest of the public pages draw
+  // themselves; they have no menu and no one signed in to send away.
+  if (!s || s.module === MODULES[0]) return <>{children}</>;
+  return <SignedInFrame s={s}>{children}</SignedInFrame>;
+}
+
+function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
   const viewer = useViewer(s);
   const school = useSchool(viewer.role);
   const sess = useSession();
@@ -310,7 +317,7 @@ export function ShellFrame({ children }: { children: ReactNode }) {
   }, [hydrated, sess, router]);
 
   const schoolName = sess?.user.role === "super_admin" ? "BrightCampus Platform" : (school?.name ?? "Bright International");
-  const group = s ? tabGroupOf(s.n) : undefined;
+  const group = tabGroupOf(s.n);
   return (
     <div className="app">
       <Sidebar s={s} viewer={viewer} school={school ?? null} />
@@ -322,7 +329,7 @@ export function ShellFrame({ children }: { children: ReactNode }) {
               straight on their greeting; other screens keep a compact title
               row, which also carries their buttons (Save, Add …) — put there
               by the page through PAGE_ACTIONS_SLOT. */}
-          {!s || s.layout.includes("dashboard") ? null : (
+          {s.layout.includes("dashboard") ? null : (
             <div className="page-head">
               <div>
                 <h1>{group?.label ?? MENU_LABEL[s.n] ?? s.name}</h1>
@@ -333,7 +340,7 @@ export function ShellFrame({ children }: { children: ReactNode }) {
           {group ? (
             <nav className="module-tabs page-tabs" aria-label={group.label}>
               {group.tabs.map(([n, t]) => (
-                <Link key={n} href={routeOf(n)} className={n === s?.n ? "active" : ""} aria-current={n === s?.n ? "page" : undefined}>
+                <Link key={n} href={routeOf(n)} className={n === s.n ? "active" : ""} aria-current={n === s.n ? "page" : undefined}>
                   {t}
                 </Link>
               ))}
@@ -342,7 +349,7 @@ export function ShellFrame({ children }: { children: ReactNode }) {
           {children}
           <footer className="screen-note">
             <span>{`BrightCampus · ${schoolName}`}</span>
-            <span>{s?.id ?? ""}</span>
+            <span>{s.id}</span>
           </footer>
         </main>
       </div>
