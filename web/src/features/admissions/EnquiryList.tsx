@@ -61,8 +61,8 @@ export function EnquiryList() {
     { label: "Total", value: n(s?.total), note: "All admission cycles" },
     // "New this week" in the mock: the API has no created-since count, so this shows open enquiries instead.
     { label: "Open", value: n(s?.open), note: "Not yet enrolled or lost" },
-    { label: "Follow-ups due", value: n(s?.follow_ups_due), note: "Today or overdue" },
-    { label: "Confirmed", value: n(s?.enrolled), note: s ? `Converted to students · ${s.conversion_rate.toFixed(1)}%` : "Converted to students" },
+    { label: "Due", value: n(s?.follow_ups_due), note: "Follow-ups today or overdue" },
+    { label: "Enrolled", value: n(s?.enrolled), note: s ? `Converted to students · ${s.conversion_rate.toFixed(1)}%` : "Converted to students" },
   ];
 
   const items = list.data?.items ?? [];
@@ -106,7 +106,7 @@ export function EnquiryList() {
         <StatChips items={figures} />
       </div>
       <ErrorNote>{exportError ?? list.error ?? stats.error}</ErrorNote>
-      <Panel title="All records" sub={`All enquiries${list.loading ? " · Loading…" : ""}`} flush>
+      <Panel flush>
         <DataTable
           columns={["Applicant", "Applying for", "Parent", "Source", "Counsellor", "Stage"]}
           rows={rows}

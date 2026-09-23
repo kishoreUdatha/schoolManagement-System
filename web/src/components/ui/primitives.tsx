@@ -47,7 +47,9 @@ export function Person({ name, index = 0, sub }: { name: string; index?: number;
   );
 }
 
-/** The mock's `.panel`: a titled section, padded unless `flush`. */
+/** The mock's `.panel`: a section, padded unless `flush`. Without a title it
+    is just the frame — for a table whose toolbar above it already says what
+    the rows are. */
 export function Panel({
   title,
   sub,
@@ -55,7 +57,7 @@ export function Panel({
   flush = false,
   children,
 }: {
-  title: string;
+  title?: string;
   sub?: string;
   action?: ReactNode;
   flush?: boolean;
@@ -63,13 +65,15 @@ export function Panel({
 }) {
   return (
     <section className="panel">
-      <div className="panel-head">
-        <div>
-          <h2>{title}</h2>
-          {sub ? <p>{sub}</p> : null}
+      {title || action ? (
+        <div className="panel-head">
+          <div>
+            {title ? <h2>{title}</h2> : null}
+            {sub ? <p>{sub}</p> : null}
+          </div>
+          {action}
         </div>
-        {action}
-      </div>
+      ) : null}
       <div className={flush ? "" : "panel-body"}>{children}</div>
     </section>
   );

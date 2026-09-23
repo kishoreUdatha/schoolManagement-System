@@ -267,11 +267,13 @@ option{background:#fff}
 /* One-line toolbar: search, filters and the screen's figures together. The
    search keeps a sensible width instead of stretching, so the figures sit on
    the same line; below 1100px the figures wrap under the filters. */
-.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-.toolbar .searchbox{flex:0 1 300px;min-width:180px;height:38px}
-.toolbar select,.toolbar .btn{height:38px}
-.toolbar select{max-width:170px;padding-right:28px}
-.stat-chips{display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap}
-.stat-chip{display:inline-flex;align-items:baseline;gap:5px;padding:6px 11px;border-radius:8px;background:#f2f6fd;font-size:12px;color:#56698a;white-space:nowrap;line-height:1.2}
-.stat-chip b{font-size:14.5px;color:var(--ink);font-weight:700}
-@media(max-width:1100px){.stat-chips{margin-left:0;width:100%}}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;margin-bottom:16px}
+.toolbar .searchbox{flex:1 1 220px;min-width:0;height:38px}
+.toolbar select,.toolbar .btn{height:38px;flex:0 0 auto}
+.toolbar select{max-width:160px;padding-right:28px}
+.toolbar .btn{white-space:nowrap}
+.stat-chips{display:flex;align-items:center;gap:6px;margin-left:auto;flex:0 0 auto}
+.stat-chip{display:inline-flex;align-items:baseline;gap:5px;padding:6px 10px;border-radius:8px;background:#f2f6fd;font-size:11.5px;color:#56698a;white-space:nowrap;line-height:1.2}
+.stat-chip b{font-size:14px;color:var(--ink);font-weight:700}
+/* narrow: let it wrap rather than squeeze */
+@media(max-width:1200px){.toolbar{flex-wrap:wrap}.stat-chips{margin-left:0;width:100%}}
