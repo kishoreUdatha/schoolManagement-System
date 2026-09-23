@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Avatar, Person } from "@/components/ui/primitives";
 import { ModuleGroup, PARENT } from "./ModuleGroup";
 import { heldJobs, usePermissions } from "@/lib/jobs";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
-import { MODULES, SCREENS, screen, routeOf, type Screen } from "@/lib/screens";
+import { MODULES, SCREENS, screenAt, routeOf, type Screen } from "@/lib/screens";
 import { MENU_LABEL, tabGroupOf } from "@/lib/menuGroups";
 import { HOME_SCREEN, ROLE_LABEL, session } from "@/lib/session";
 import { useApi } from "@/lib/useApi";
@@ -70,9 +71,9 @@ export function viewerFor(n: number): { who: string; role: string } {
 type Viewer = { who: string; role: string };
 
 /** The signed-in person, or the mock's viewer for this screen until known. */
-function useViewer(s: Screen): Viewer {
+function useViewer(s: Screen | undefined): Viewer {
   const sess = useSession();
-  return sess ? { who: sess.user.full_name, role: ROLE_LABEL[sess.user.role] ?? sess.user.role } : viewerFor(s.n);
+  return sess ? { who: sess.user.full_name, role: ROLE_LABEL[sess.user.role] ?? sess.user.role } : viewerFor(s?.n ?? 0);
 }
 
 /** The signed-in person's home dashboard (the school admin's before sign-in is known). */
@@ -88,7 +89,7 @@ function signOut() {
   window.location.href = routeOf(3);
 }
 
-function Sidebar({ s, viewer, school }: { s: Screen; viewer: Viewer; school: Branding | null }) {
+function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer; school: Branding | null }) {
   const { who, role } = viewer;
   const roleNav = ROLE_NAV[role];
   const home = useHome();
@@ -98,7 +99,7 @@ function Sidebar({ s, viewer, school }: { s: Screen; viewer: Viewer; school: Bra
   const perms = usePermissions();
   const own = new Set((roleNav ?? []).map(([n]) => n));
   const jobs = roleNav ? heldJobs(perms).map((j) => ({ ...j, items: j.items.filter(([n]) => !own.has(n)) })).filter((j) => j.items.length) : [];
-  const here = PARENT[s.n] ?? s.n;
+  const here = s ? (PARENT[s.n] ?? s.n) : -1;
   const scroller = useRef<HTMLDivElement>(null);
 
   // Keep the menu where it was between screens, and the current item in view.
@@ -116,7 +117,7 @@ function Sidebar({ s, viewer, school }: { s: Screen; viewer: Viewer; school: Bra
       const box = el.getBoundingClientRect();
       if (a.top < box.top || a.bottom > box.bottom) active.scrollIntoView({ block: "center" });
     }
-  }, [s.id]);
+  }, [s?.id]);
 
   return (
     <aside className="sidebar">
@@ -176,13 +177,13 @@ function Sidebar({ s, viewer, school }: { s: Screen; viewer: Viewer; school: Bra
               <div key={title}>
                 <div className="nav-label">{title.toUpperCase()}</div>
                 {links.map(([n, label, icon, mods], i) => (
-                  <ModuleGroup key={n} label={label} icon={icon} mods={mods} currentId={s.id} currentModule={s.module} tone={i} />
+                  <ModuleGroup key={n} label={label} icon={icon} mods={mods} currentId={s?.id ?? ""} currentModule={s?.module ?? ""} tone={i} />
                 ))}
               </div>
             ))}
             <div className="nav-label">MORE MODULES</div>
             {SIDE_MODULES.map(([i, icon], k) => (
-              <ModuleGroup key={i} label={MOD_LABEL(i)} icon={icon} mods={[i]} currentId={s.id} currentModule={s.module} tone={k} />
+              <ModuleGroup key={i} label={MOD_LABEL(i)} icon={icon} mods={[i]} currentId={s?.id ?? ""} currentModule={s?.module ?? ""} tone={k} />
             ))}
           </>
         )}
@@ -287,8 +288,14 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
   );
 }
 
-export function AppShell({ screen: id, actions, children }: { screen: string; actions?: ReactNode; children: ReactNode }) {
-  const s = screen(id);
+/**
+ * The chrome: sidebar, top bar and page head. It lives in the (screens)
+ * layout, so moving between screens re-renders only the content below it —
+ * the menu keeps its scroll position and its open groups.
+ */
+export function ShellFrame({ children }: { children: ReactNode }) {
+  const path = usePathname();
+  const s = screenAt(path);
   const viewer = useViewer(s);
   const school = useSchool(viewer.role);
   const sess = useSession();
@@ -303,8 +310,7 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
   }, [hydrated, sess, router]);
 
   const schoolName = sess?.user.role === "super_admin" ? "BrightCampus Platform" : (school?.name ?? "Bright International");
-  const home = useHome();
-  const group = tabGroupOf(s.n);
+  const group = s ? tabGroupOf(s.n) : undefined;
   return (
     <div className="app">
       <Sidebar s={s} viewer={viewer} school={school ?? null} />
@@ -314,19 +320,20 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
         <main className="main">
           {/* No breadcrumb: the menu shows where you are. Dashboards open
               straight on their greeting; other screens keep a compact title
-              row, which also carries their buttons (Save, Add …). */}
-          {s.layout.includes("dashboard") ? null : (
+              row, which also carries their buttons (Save, Add …) — put there
+              by the page through PAGE_ACTIONS_SLOT. */}
+          {!s || s.layout.includes("dashboard") ? null : (
             <div className="page-head">
               <div>
                 <h1>{group?.label ?? MENU_LABEL[s.n] ?? s.name}</h1>
               </div>
-              <div className="actions">{actions}</div>
+              <div className="actions" id={PAGE_ACTIONS_SLOT} />
             </div>
           )}
           {group ? (
             <nav className="module-tabs page-tabs" aria-label={group.label}>
               {group.tabs.map(([n, t]) => (
-                <Link key={n} href={routeOf(n)} className={n === s.n ? "active" : ""} aria-current={n === s.n ? "page" : undefined}>
+                <Link key={n} href={routeOf(n)} className={n === s?.n ? "active" : ""} aria-current={n === s?.n ? "page" : undefined}>
                   {t}
                 </Link>
               ))}
@@ -335,10 +342,32 @@ export function AppShell({ screen: id, actions, children }: { screen: string; ac
           {children}
           <footer className="screen-note">
             <span>{`BrightCampus · ${schoolName}`}</span>
-            <span>{s.id}</span>
+            <span>{s?.id ?? ""}</span>
           </footer>
         </main>
       </div>
     </div>
+  );
+}
+
+export const PAGE_ACTIONS_SLOT = "page-actions";
+
+/**
+ * A screen's content. The chrome around it belongs to the layout, so this
+ * only hands the page's buttons to the page head (through the slot) and
+ * renders the screen itself. `screen` is kept for the page files that name
+ * their screen id; the frame reads the screen from the address.
+ */
+export function AppShell({ actions, children }: { screen: string; actions?: ReactNode; children: ReactNode }) {
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const path = usePathname();
+  useEffect(() => {
+    setSlot(document.getElementById(PAGE_ACTIONS_SLOT));
+  }, [path]);
+  return (
+    <>
+      {actions && slot ? createPortal(actions, slot) : null}
+      {children}
+    </>
   );
 }
