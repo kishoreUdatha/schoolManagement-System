@@ -55,18 +55,18 @@ export function StatCards({ items }: { items: StatCard[] }) {
         const cls = `stat-card ${s.active ? "on" : ""}`;
         if (s.href)
           return (
-            <Link className={cls} href={s.href} key={s.label + i}>
+            <Link className={cls} href={s.href} key={s.label + i} title={s.note}>
               {inside}
             </Link>
           );
         if (s.onClick)
           return (
-            <button type="button" className={cls} onClick={s.onClick} key={s.label + i}>
+            <button type="button" className={cls} onClick={s.onClick} key={s.label + i} title={s.note}>
               {inside}
             </button>
           );
         return (
-          <div className={cls} key={s.label + i}>
+          <div className={cls} key={s.label + i} title={s.note}>
             {inside}
           </div>
         );

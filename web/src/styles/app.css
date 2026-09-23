@@ -385,9 +385,12 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .marking .panel-head{padding:14px 16px 8px}
 .marking .panel-head h2{font-size:17px}
 .stat-cards{gap:10px;margin-bottom:12px}
-.stat-card{padding:9px 12px;gap:10px}
-.stat-card-icon{width:30px;height:30px;border-radius:9px}
-.stat-card-icon .ico{width:15px;height:15px}
-.stat-card-body b{font-size:17px;line-height:1.1}
-.stat-card-label{font-size:11.5px}
-.stat-card-body small{font-size:11px}
+/* A figure and what it is, on one line: the card is a line of type, not a
+   panel. The note it used to carry is its tooltip. */
+.stat-card{padding:0 12px;gap:9px;height:50px}
+.stat-card-icon{width:26px;height:26px;border-radius:8px}
+.stat-card-icon .ico{width:14px;height:14px}
+.stat-card-body{display:flex;align-items:baseline;gap:7px}
+.stat-card-body b{font-size:17px;line-height:1.1;order:-1}
+.stat-card-label{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-card-body small{display:none}

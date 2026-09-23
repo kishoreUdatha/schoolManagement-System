@@ -17,6 +17,13 @@ import type { Homework, MyClasses, Submission } from "./types";
 
 import { ask } from "@/lib/dialog";
 const STATUS: Record<Submission["status"], string> = { submitted: "Submitted", approved: "Approved", rejected: "Returned" };
+/** Blue waiting, green marked, red sent back, grey nothing yet. */
+const TONE: Record<string, "" | "warn" | "bad" | "neutral" | "blue"> = {
+  Submitted: "blue",
+  Approved: "",
+  Returned: "bad",
+  "Not handed in": "neutral",
+};
 
 /**
  * SCR-133, live: a homework's submissions (?id= homework, ?sub= submission),
@@ -158,10 +165,20 @@ export function HomeworkEvaluation() {
   // teacher marking wants to see who is missing as much as who is waiting.
   const roll = (rosterRows.length ? rosterRows : list.map((x) => ({ id: x.student_id, full_name: x.student_name ?? "—", admission_no: x.student_admission_no ?? "—", sub: x })))
     .filter((r) => !who || `${r.full_name} ${r.admission_no}`.toLowerCase().includes(who.toLowerCase()));
-  const place = list.findIndex((x) => x.id === subId);
+  // The arrows walk the class in the order the list shows it, so they move
+  // even where a child has handed nothing in.
+  const place = roll.findIndex((r) => (missing ? r.id === missing.id : r.sub?.id === subId));
+  const show = (r: (typeof roll)[number]) => {
+    if (r.sub) {
+      setMissing(null);
+      setSubId(r.sub.id);
+    } else {
+      setMissing({ id: r.id, full_name: r.full_name, admission_no: r.admission_no });
+    }
+  };
   const step = (by: number) => {
-    const next = list[place + by];
-    if (next) setSubId(next.id);
+    const next = roll[place + by];
+    if (next) show(next);
   };
 
   return (
@@ -186,21 +203,14 @@ export function HomeworkEvaluation() {
                 type="button"
                 key={r.id}
                 className={`roll-row ${(r.sub && r.sub.id === subId && !missing) || missing?.id === r.id ? "on" : ""} ${r.sub ? "" : "none"}`}
-                onClick={() => {
-                  if (r.sub) {
-                    setMissing(null);
-                    setSubId(r.sub.id);
-                  } else {
-                    setMissing({ id: r.id, full_name: r.full_name, admission_no: r.admission_no });
-                  }
-                }}
+                onClick={() => show(r)}
               >
                 <span className="avatar mint">{initials(r.full_name)}</span>
                 <span className="roll-who">
                   <span className="roll-name">{r.full_name}</span>
                   <small>{`${h.class_name ?? ""} · ${r.admission_no}`}</small>
                 </span>
-                <Badge>{r.sub ? STATUS[r.sub.status] : "Not handed in"}</Badge>
+                <Badge tone={TONE[r.sub ? STATUS[r.sub.status] : "Not handed in"]}>{r.sub ? STATUS[r.sub.status] : "Not handed in"}</Badge>
               </button>
             ))}
             {roll.length ? null : <p className="muted panel-pad">{subs.loading ? "Loading…" : "Nobody has handed this in yet."}</p>}
@@ -216,8 +226,8 @@ export function HomeworkEvaluation() {
                   <button type="button" className="btn icon" aria-label="Previous student" disabled={place <= 0} onClick={() => step(-1)}>
                     ‹
                   </button>
-                  <span className="muted small">{`${place + 1} of ${list.length}`}</span>
-                  <button type="button" className="btn icon" aria-label="Next student" disabled={place < 0 || place >= list.length - 1} onClick={() => step(1)}>
+                  <span className="muted small">{`${place + 1} of ${roll.length}`}</span>
+                  <button type="button" className="btn icon" aria-label="Next student" disabled={place < 0 || place >= roll.length - 1} onClick={() => step(1)}>
                     ›
                   </button>
                 </span>
@@ -234,7 +244,7 @@ export function HomeworkEvaluation() {
                       <small>{`${h.class_name ?? ""} · ${missing.admission_no}`}</small>
                     </div>
                   </div>
-                  <Badge>Not handed in</Badge>
+                  <Badge tone="neutral">Not handed in</Badge>
                 </div>
                 <div className="gap" />
                 <p className="quote">
@@ -251,7 +261,7 @@ export function HomeworkEvaluation() {
                       <small>{`${h.class_name ?? ""} · ${s.student_admission_no ?? "—"}`}</small>
                     </div>
                   </div>
-                  <Badge>{STATUS[s.status]}</Badge>
+                  <Badge tone={TONE[STATUS[s.status]]}>{STATUS[s.status]}</Badge>
                 </div>
                 <div className="gap" />
                 <h4 className="field-title">Student&apos;s note</h4>
@@ -362,7 +372,7 @@ export function HomeworkEvaluation() {
                   </button>
                   <button type="submit" className="btn primary" disabled={saving}>
                     <Icon name="check" className="sm" />
-                    {saving ? "Saving…" : place < list.length - 1 ? "Save & next student" : "Save evaluation"}
+                    {saving ? "Saving…" : place < roll.length - 1 ? "Save & next student" : "Save evaluation"}
                   </button>
                 </div>
               </div>
