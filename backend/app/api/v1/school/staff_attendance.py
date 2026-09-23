@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import HrManager
 from app.database import get_db
 from app.schemas.staff_attendance import OverrideRequest, StaffAttendanceRead
 from app.services import staff_attendance_service
@@ -19,7 +19,7 @@ router = APIRouter()
     summary="List staff attendance records — filter by user, date, or month",
 )
 def list_(
-    current_user: SchoolAdminUser,
+    current_user: HrManager,
     db: Annotated[Session, Depends(get_db)],
     user_id: Optional[int] = Query(None),
     on_date: Optional[date] = Query(None, alias="date"),
@@ -44,7 +44,7 @@ def list_(
 )
 def override(
     payload: OverrideRequest,
-    current_user: SchoolAdminUser,
+    current_user: HrManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     rec = staff_attendance_service.override(

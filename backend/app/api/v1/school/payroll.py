@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrAccountant
+from app.core.deps import PayrollManager
 from app.database import get_db
 from app.schemas.payroll import (
     PayslipAdjust,
@@ -24,7 +24,8 @@ from app.services import payroll_service as svc
 
 router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
-Actor = SchoolAdminOrAccountant
+# payroll is a job of its own: the office, the accountant, or whoever holds payroll.manage
+Actor = PayrollManager
 
 
 @router.get("/settings", response_model=SettingsRead)

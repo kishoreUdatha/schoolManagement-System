@@ -77,6 +77,98 @@ export const JOBS: Job[] = [
     items: [
       [172, "Requisitions"], [173, "Job openings"], [174, "Candidates"], [1060, "Candidate pool"], [176, "Interviews"],
       [177, "Offers"], [178, "Onboarding"], [180, "Leave policies"], [1061, "Leave balances"],
+      [179, "Staff attendance"], [181, "Staff leave requests"], [182, "Leave approval"],
+    ],
+  },
+  {
+    permission: "exams.manage",
+    title: "Examinations",
+    items: [
+      [138, "Exam dashboard"], [139, "Exam types"], [140, "Exam setup"], [141, "Exam schedule"],
+      [142, "Hall allocation"], [143, "Invigilation"], [144, "Admit cards"], [145, "Marks entry"],
+      [146, "Practical marks"], [147, "Bulk marks import"], [148, "Marks verification"],
+      [149, "Grading setup", "grading.manage"], [150, "Publish results"], [152, "Report cards"], [272, "Result analysis", "reports.view"],
+    ],
+  },
+  {
+    permission: "syllabus.manage",
+    title: "Academics",
+    items: [
+      [98, "Curriculum"], [100, "Units & topics"], [101, "Learning outcomes"], [102, "Lesson plans"],
+      [104, "Lesson plan review", "lessonplans.review"], [105, "Syllabus progress"], [106, "Teaching resources"],
+      [108, "Academic calendar"], [109, "Co-curricular activities"], [107, "Rooms"],
+    ],
+  },
+  {
+    permission: "cover.manage",
+    title: "Timetable & cover",
+    items: [
+      [120, "Timetable dashboard"], [121, "Timetable setup"], [122, "Period setup"], [123, "Teacher availability"],
+      [124, "Generate timetable"], [125, "Class timetable"], [126, "Teacher timetable"], [127, "Substitutions"],
+    ],
+  },
+  {
+    permission: "health.manage",
+    title: "Health & counselling",
+    items: [
+      [216, "Health dashboard"], [217, "Medical profiles"], [218, "Clinic visits"], [219, "Medication & first aid"],
+      [220, "Immunisation & allergies"], [225, "Emergency contacts"],
+      [221, "Counselling appointments", "counselling.access"], [222, "Case notes", "counselling.access"],
+    ],
+  },
+  {
+    permission: "discipline.manage",
+    title: "Discipline",
+    items: [[223, "Behaviour incidents"], [224, "Action & follow-up"]],
+  },
+  {
+    permission: "notices.send",
+    title: "Communication",
+    items: [
+      [252, "Announcements"], [253, "Messaging inbox"], [254, "Notification campaigns"], [255, "Communication history"],
+      [296, "Notification centre"], [246, "Events calendar", "events.manage"], [247, "Create an event", "events.manage"],
+      [249, "Field trips & consent", "events.manage"], [250, "PTM setup", "events.manage"],
+    ],
+  },
+  {
+    permission: "students.manage",
+    title: "Student records",
+    items: [
+      [55, "Student directory"], [56, "Add a student"], [1010, "Bulk import"], [1011, "Student logins"],
+      [1012, "Enrolment history"], [69, "Promotion & transfer"], [70, "Exit & alumni"],
+      [71, "Parent directory", "parents.manage"], [72, "Add a parent", "parents.manage"], [76, "Parent login access", "parents.manage"],
+    ],
+  },
+  {
+    permission: "attendance.correct",
+    title: "Attendance office",
+    items: [
+      [113, "Attendance correction"], [117, "Monthly summary"], [118, "Chronic absence"], [119, "Attendance reports", "reports.view"],
+      [115, "Student leave approval", "studentleave.decide"],
+    ],
+  },
+  {
+    permission: "fees.collect",
+    title: "Fee counter",
+    items: [[158, "Fee collection"], [160, "Payment receipt"], [161, "Student ledger"], [162, "Outstanding dues"], [159, "Online payments"]],
+  },
+  {
+    permission: "payroll.manage",
+    title: "Payroll",
+    items: [[183, "Payroll setup"], [184, "Payroll processing"], [185, "Payslips & history"], [1062, "Salary history & bank files"], [277, "Payroll summary", "reports.view"]],
+  },
+  {
+    permission: "staff.manage",
+    title: "Staff records",
+    items: [[80, "Staff directory"], [81, "Add staff"], [82, "Staff profile"], [1085, "Departments"]],
+  },
+  {
+    permission: "reports.view",
+    title: "Reports",
+    items: [
+      [264, "Analytics dashboard"], [266, "Student strength"], [268, "Attendance analytics"], [270, "Academic performance"],
+      [273, "Fee collection"], [274, "Outstanding dues"], [275, "Finance summary"], [276, "Staff attendance"],
+      [282, "Communication report"], [283, "Report builder"],
     ],
   },
 ];

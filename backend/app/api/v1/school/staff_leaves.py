@@ -4,7 +4,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser
+from app.core.deps import HrManager
 from app.core.enums import StaffLeaveStatus
 from app.database import get_db
 from app.schemas.staff_leave import StaffLeaveCreate, StaffLeaveDecide, StaffLeaveFileFor, StaffLeaveRead
@@ -20,7 +20,7 @@ router = APIRouter()
     summary="All staff leaves (pending first by default)",
 )
 def list_(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: HrManager,
     db: Annotated[Session, Depends(get_db)],
     status_filter: Optional[StaffLeaveStatus] = Query(None, alias="status"),
 ):
@@ -41,7 +41,7 @@ def list_(
 )
 def file_for(
     payload: StaffLeaveFileFor,
-    current_user: SchoolAdminUser,
+    current_user: HrManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     data = payload.model_dump(exclude={"applicant_user_id"})
@@ -64,7 +64,7 @@ def file_for(
 def decide(
     leave_id: int,
     payload: StaffLeaveDecide,
-    current_user: SchoolAdminOrPrincipal,
+    current_user: HrManager,
     db: Annotated[Session, Depends(get_db)],
 ):
     l = staff_leave_service.decide(

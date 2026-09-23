@@ -321,6 +321,7 @@ TransportManager = Annotated[User, Depends(allow(UserRole.school_admin, permissi
 AdmissionsWorker = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.principal, permission="admissions.manage"))]
 HrManager = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.principal, permission="hr.manage"))]
 InventoryManager = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.accountant, permission="inventory.manage"))]
+PayrollManager = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.accountant, permission="payroll.manage"))]
 
 # Looking a student up (to issue a book, put them on a bus, give them a bed,
 # let them out at the gate) is part of several jobs.
