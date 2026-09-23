@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
@@ -7,6 +8,7 @@ import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
+import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { AcademicYear, SchoolClass } from "@/features/students/types";
 import type { ClassSubject, Staff, Subject } from "./types";
@@ -107,18 +109,34 @@ export function SubjectAssignment() {
         sub={klass ? `${klass.name} · ${rows.length} subjects · changes save at once` : "Choose a class"}
         action={
           <div className="row">
-            <select aria-label="Subject to add" value={adding} onChange={(e) => setAdding(e.target.value)} disabled={!classId || busy}>
-              <option value="">Add a subject…</option>
+            <select aria-label="Subject to add" value={adding} onChange={(e) => setAdding(e.target.value)} disabled={!classId || busy || !addable.length}>
+              {/* say why there is nothing to pick, instead of an empty list */}
+              <option value="">
+                {!classId
+                  ? "Choose a class first"
+                  : !subjects.data?.length
+                    ? "No subjects set up yet"
+                    : !addable.length
+                      ? "Every subject is on this class"
+                      : "Add a subject…"}
+              </option>
               {addable.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
               ))}
             </select>
-            <button type="button" className="btn" disabled={!adding || busy} onClick={addSubject}>
-              <Icon name="plus" className="sm" />
-              Add
-            </button>
+            {subjects.data && !subjects.data.length ? (
+              <Link href={routeOf(96)} className="btn">
+                <Icon name="plus" className="sm" />
+                Set up subjects
+              </Link>
+            ) : (
+              <button type="button" className="btn" disabled={!adding || busy} onClick={addSubject}>
+                <Icon name="plus" className="sm" />
+                Add
+              </button>
+            )}
           </div>
         }
         flush
