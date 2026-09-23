@@ -112,24 +112,25 @@ export function DepartmentSetup() {
               <SectionTitle n="01">{dept ? `Edit ${dept.name}` : "Details"}</SectionTitle>
               <div className="form-grid">
                 {!dept ? (
+                  // chips rather than a long drop-down: every choice is visible,
+                  // and nothing opens off the bottom of the screen
                   <Field label="Pick a common one, or type your own below" full>
-                    <select
-                      aria-label="Common departments"
-                      value=""
-                      onChange={(e) => {
-                        const pick = COMMON.find(([n]) => n === e.target.value);
-                        if (!pick) return;
-                        setName(pick[0]);
-                        setCode(pick[1]);
-                      }}
-                    >
-                      <option value="">Common departments…</option>
+                    <div className="pick-chips" role="group" aria-label="Common departments">
                       {COMMON.filter(([n]) => !depts.data?.some((d) => d.name.toLowerCase() === n.toLowerCase())).map(([n, c]) => (
-                        <option key={c} value={n}>
-                          {`${n} · ${c}`}
-                        </option>
+                        <button
+                          type="button"
+                          key={c}
+                          className={`pick-chip ${name === n ? "on" : ""}`}
+                          onClick={() => {
+                            setName(n);
+                            setCode(c);
+                          }}
+                        >
+                          {n}
+                          <small>{c}</small>
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </Field>
                 ) : null}
                 <Field label="Department name" required>
