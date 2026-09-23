@@ -301,7 +301,7 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
         </button>
         <div className="topsearch">
           <Icon name="search" className="sm" />
-          <input aria-label="Find screen" placeholder="Search people, classes, pages…" id="global-search" autoComplete="off" />
+          <input aria-label="Find screen" placeholder="Search…" id="global-search" autoComplete="off" />
           <kbd>⌘ K</kbd>
           <div className="search-results" id="global-results" />
         </div>
