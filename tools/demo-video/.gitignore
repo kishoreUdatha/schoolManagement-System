@@ -1,0 +1,9 @@
+kokoro/
+tts_cache/
+audio/
+video/
+*.mp4
+timeline.json
+video_path.txt
+run.log
+filter.txt

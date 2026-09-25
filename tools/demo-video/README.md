@@ -12,11 +12,16 @@ Needs the web app on :3100 and the API on :8000 (with a super admin
 ```
 
 Voice, in order:
+0. Sarvam AI Bulbul (Indian English) when `SARVAM_API_KEY` is set and the network
+   allows `api.sarvam.ai`. Female speakers: `anushka` (default), `manisha`,
+   `vidya`, `arya`; pick with `SARVAM_SPEAKER`.
 1. Google Cloud TTS `en-IN-Chirp3-HD-Aoede` when `GOOGLE_TTS_API_KEY` is set
    (`TTS_VOICE` picks another en-IN voice).
 2. Microsoft "Neerja Expressive" with `TTS_PROVIDER=edge`
    (the network must allow `speech.platform.bing.com`).
-3. RHVoice offline (not Indian English) otherwise.
+3. Kokoro offline, Indian female `hf_alpha` (run `./setup_kokoro.sh` once;
+   `TTS_VOICE=hf_beta` for the second voice).
+4. RHVoice offline (not Indian English) otherwise.
 
 The narration is in `narration.json`, one line per scene; edit it and re-run.
 Each run creates a new school (`CODE=...` to choose its code).

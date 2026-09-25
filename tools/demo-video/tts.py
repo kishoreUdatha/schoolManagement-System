@@ -3,8 +3,11 @@
   python3 tts.py <text-file> <out.wav>
 
 Voice, in order of preference:
+  0. Sarvam AI Bulbul, Indian English female (needs SARVAM_API_KEY and api.sarvam.ai
+     allowed; speaker from SARVAM_SPEAKER, default anushka).
   1. Google Cloud Text-to-Speech, Indian English female (needs GOOGLE_TTS_API_KEY;
      voice from TTS_VOICE, default en-IN-Chirp3-HD-Aoede).
+  1b. Kokoro offline, Indian female "hf_alpha" (after ./setup_kokoro.sh).
   2. Microsoft Edge "Neerja Expressive" (needs speech.platform.bing.com allowed).
   3. RHVoice (offline fallback, not Indian English).
 Clips are cached by text + voice, so re-recording costs nothing extra.
@@ -15,11 +18,18 @@ text = open(sys.argv[1], encoding="utf-8").read().strip()
 out = sys.argv[2]
 here = os.path.dirname(os.path.abspath(__file__))
 voice = os.environ.get("TTS_VOICE", "en-IN-Chirp3-HD-Aoede")
-rate = float(os.environ.get("TTS_RATE", "1.08"))
+rate = float(os.environ.get("TTS_RATE", "1.1"))
 cache = os.path.join(here, "tts_cache"); os.makedirs(cache, exist_ok=True)
 key = os.environ.get("GOOGLE_TTS_API_KEY")
-provider = "google" if key else os.environ.get("TTS_PROVIDER", "rhvoice")
-hit = os.path.join(cache, hashlib.sha1(f"{provider}|{voice}|{rate}|{text}".encode()).hexdigest() + ".wav")
+kokoro_dir = os.environ.get("KOKORO_DIR", os.path.join(here, "kokoro"))
+default = "kokoro" if os.path.exists(os.path.join(kokoro_dir, "say.mjs")) else "rhvoice"
+sarvam_key = os.environ.get("SARVAM_API_KEY")
+provider = "sarvam" if sarvam_key else "google" if key else os.environ.get("TTS_PROVIDER", default)
+if provider == "sarvam":
+    voice = os.environ.get("SARVAM_SPEAKER", "anushka")
+if provider == "kokoro":
+    voice = os.environ.get("TTS_VOICE", "hf_alpha")
+hit = os.path.join(cache, hashlib.sha1(f"{provider}|{voice}|{rate}|{os.environ.get('KOKORO_LANG', 'b')}|{text}".encode()).hexdigest() + ".wav")
 
 def done(src):
     subprocess.run(["cp", src, out], check=True); print(provider); sys.exit(0)
@@ -27,16 +37,28 @@ def done(src):
 if os.path.exists(hit):
     done(hit)
 
-if provider == "google":
+import ssl
+ctx = ssl.create_default_context(cafile=os.environ.get("SSL_CERT_FILE", "/root/.ccr/ca-bundle.crt"))
+
+if provider == "sarvam":
+    body = {"text": text, "target_language_code": "en-IN", "speaker": voice, "model": os.environ.get("SARVAM_MODEL", "bulbul:v2"),
+            "pace": rate, "loudness": 1.2, "speech_sample_rate": 24000, "enable_preprocessing": True}
+    req = urllib.request.Request("https://api.sarvam.ai/text-to-speech", data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json", "api-subscription-key": sarvam_key})
+    with urllib.request.urlopen(req, context=ctx, timeout=90) as r:
+        audio = base64.b64decode("".join(json.loads(r.read())["audios"]))
+    open(hit, "wb").write(audio)
+elif provider == "google":
     body = {"input": {"text": text}, "voice": {"languageCode": "en-IN", "name": voice},
             "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": 24000, "speakingRate": rate}}
     req = urllib.request.Request(f"https://texttospeech.googleapis.com/v1/text:synthesize?key={key}",
                                  data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
-    import ssl
-    ctx = ssl.create_default_context(cafile=os.environ.get("SSL_CERT_FILE", "/root/.ccr/ca-bundle.crt"))
     with urllib.request.urlopen(req, context=ctx, timeout=60) as r:
         audio = base64.b64decode(json.loads(r.read())["audioContent"])
     open(hit, "wb").write(audio)
+elif provider == "kokoro":
+    env = dict(os.environ, KOKORO_LANG=os.environ.get("KOKORO_LANG", "b"))
+    subprocess.run(["node", os.path.join(kokoro_dir, "say.mjs"), voice, str(rate), sys.argv[1], hit], check=True, env=env, stdout=subprocess.DEVNULL)
 elif provider == "edge":
     mp3 = hit[:-4] + ".mp3"
     subprocess.run([sys.executable, "-m", "edge_tts", "--voice", "en-IN-NeerjaExpressiveNeural", "--rate", "+8%",
