@@ -15,6 +15,7 @@ from app.core.security import (
 )
 from app.database import get_db
 from app.models.user import User
+from app.services.login_lookup import find_login_user
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenResponse, UserPublic
 
 
@@ -37,13 +38,7 @@ def _build_token_response(user: User) -> TokenResponse:
 
 @router.post("/login", response_model=TokenResponse)
 def login(req: LoginRequest, db: Annotated[Session, Depends(get_db)]):
-    user = db.execute(
-        select(User).where(
-            User.email == req.email,
-            User.role == UserRole.super_admin,
-            User.is_active.is_(True),
-        )
-    ).scalar_one_or_none()
+    user = find_login_user(db, req.email, UserRole.super_admin, req.password)
 
     if (
         not user
