@@ -576,7 +576,9 @@ function FeesStep({ s, busy, run, setProgress }: StepProps) {
   const [picked, setPicked] = useState<string[]>(() => FEE_PRESETS.filter((x) => x.on).map((x) => x.name));
   // amounts[head name][class id], the first column fills the rest
   const [amounts, setAmounts] = useState<Record<string, Record<number, string>>>({});
-  const [due, setDue] = useState(10);
+  const [dueRaw, setDue] = useState("10");
+  const due = Number(dueRaw);
+  const dueOk = Number.isInteger(due) && due >= 1 && due <= 28;
   if (!s.current || !s.classes.length) return <p className="muted">Create the academic year and classes first (steps 2 and 3); fees are set per class.</p>;
   const existingHeads = heads.data ?? [];
   const allNames = [...new Set([...FEE_PRESETS.map((x) => x.name), ...existingHeads.map((h) => h.name)])];
@@ -642,7 +644,8 @@ function FeesStep({ s, busy, run, setProgress }: StepProps) {
           </div>
           <label className="field" style={{ maxWidth: 220, marginTop: 12 }}>
             <span>Due on day of the month</span>
-            <input type="number" min={1} max={28} value={due} onChange={(e) => setDue(Math.max(1, Math.min(28, Number(e.target.value) || 10)))} />
+            <input type="number" min={1} max={28} value={dueRaw} onChange={(e) => setDue(e.target.value)} />
+            {!dueOk ? <small role="alert" style={{ color: "var(--danger, #b42318)" }}>A day from 1 to 28</small> : null}
           </label>
         </>
       ) : null}
@@ -651,7 +654,7 @@ function FeesStep({ s, busy, run, setProgress }: StepProps) {
         <button
           type="button"
           className="btn primary"
-          disabled={busy || !cells.length}
+          disabled={busy || !cells.length || !dueOk}
           onClick={() =>
             run("Fees saved for the classes.", async () => {
               const ids: Record<string, number> = {};
@@ -895,7 +898,9 @@ function ClassesStep({ s, busy, run, setProgress }: StepProps) {
   const existing = new Set(s.classes.map((c) => c.name.toLowerCase()));
   const [picked, setPicked] = useState<string[]>(() => CLASS_PRESETS.filter((c) => /^Grade ([1-9]|10)$/.test(c)));
   const [sections, setSections] = useState("A");
-  const [capacity, setCapacity] = useState(40);
+  const [capRaw, setCapacity] = useState("40");
+  const capacity = Number(capRaw);
+  const capOk = Number.isInteger(capacity) && capacity >= 1 && capacity <= 200;
   const secList = [...new Set(sections.split(/[,\s]+/).map((x) => x.trim().toUpperCase()).filter(Boolean))];
   const todo = CLASS_PRESETS.filter((c) => picked.includes(c) && !existing.has(c.toLowerCase()));
   if (!s.current) return <p className="muted">Create the academic year first (step 2); classes belong to it.</p>;
@@ -920,14 +925,15 @@ function ClassesStep({ s, busy, run, setProgress }: StepProps) {
         </label>
         <label className="field">
           <span>Students per section</span>
-          <input type="number" min={1} max={200} value={capacity} onChange={(e) => setCapacity(Number(e.target.value) || 40)} />
+          <input type="number" min={1} max={200} value={capRaw} onChange={(e) => setCapacity(e.target.value)} />
+          {!capOk ? <small role="alert" style={{ color: "var(--danger, #b42318)" }}>1 to 200 students</small> : null}
         </label>
       </div>
       <button
         type="button"
         className="btn primary"
         style={{ marginTop: 10 }}
-        disabled={busy || !todo.length || !secList.length}
+        disabled={busy || !todo.length || !secList.length || !capOk}
         onClick={() =>
           run(`${todo.length} classes created with sections ${secList.join(", ")}.`, async () => {
             let order = s.classes.length;
@@ -1002,21 +1008,29 @@ function SubjectsStep({ s, busy, run, setProgress }: StepProps) {
 
 function PeriodsStep({ s, busy, run, setProgress }: StepProps) {
   const [start, setStart] = useState("09:00");
-  const [count, setCount] = useState(8);
-  const [length, setLength] = useState(40);
-  const [breakAfter, setBreakAfter] = useState(4);
-  const [breakLen, setBreakLen] = useState(30);
+  // Kept as typed, so a field can be cleared and retyped; checked below.
+  const [raw, setRaw] = useState({ count: "8", length: "40", breakAfter: "4", breakLen: "30" });
+  const set = (k: keyof typeof raw) => (e: React.ChangeEvent<HTMLInputElement>) => setRaw((r) => ({ ...r, [k]: e.target.value }));
+  const count = Number(raw.count), length = Number(raw.length), breakAfter = Number(raw.breakAfter || 0), breakLen = Number(raw.breakLen || 0);
   const days = (s.profile?.working_days || "MON,TUE,WED,THU,FRI,SAT").split(",").map((x) => x.trim().toUpperCase()).filter((x) => WEEKDAYS.includes(x));
   const plan: { period_number: number; start_time: string; end_time: string; label: string; is_break: boolean }[] = [];
+  let problem: string | null = null;
+  if (!Number.isInteger(count) || count < 1 || count > 12) problem = "Periods a day must be between 1 and 12.";
+  else if (!Number.isInteger(length) || length < 15 || length > 120) problem = "A period must be 15 to 120 minutes long.";
+  else if (!Number.isInteger(breakAfter) || breakAfter < 0 || breakAfter > count) problem = `The break must come after period 0 to ${count}.`;
+  else if (!Number.isInteger(breakLen) || breakLen < 0 || breakLen > 90) problem = "A break can be 0 to 90 minutes.";
   let t = toMins(start || "09:00");
   let num = 1;
-  for (let i = 1; i <= count; i++) {
-    plan.push({ period_number: num++, start_time: hm(t), end_time: hm(t + length), label: `Period ${i}`, is_break: false });
-    t += length;
-    if (i === breakAfter && breakLen > 0 && i < count) {
-      plan.push({ period_number: num++, start_time: hm(t), end_time: hm(t + breakLen), label: "Break", is_break: true });
-      t += breakLen;
+  if (!problem) {
+    for (let i = 1; i <= count; i++) {
+      plan.push({ period_number: num++, start_time: hm(t), end_time: hm(t + length), label: `Period ${i}`, is_break: false });
+      t += length;
+      if (i === breakAfter && breakLen > 0 && i < count) {
+        plan.push({ period_number: num++, start_time: hm(t), end_time: hm(t + breakLen), label: "Break", is_break: true });
+        t += breakLen;
+      }
     }
+    if (t >= 24 * 60) problem = "That day would run past midnight. Start earlier or use fewer or shorter periods.";
   }
   if (s.steps.find((x) => x.key === "periods")?.done)
     return (
@@ -1034,28 +1048,32 @@ function PeriodsStep({ s, busy, run, setProgress }: StepProps) {
         </label>
         <label className="field">
           <span>Periods a day</span>
-          <input type="number" min={1} max={12} value={count} onChange={(e) => setCount(Math.max(1, Math.min(12, Number(e.target.value) || 1)))} />
+          <input type="number" min={1} max={12} value={raw.count} onChange={set("count")} />
         </label>
         <label className="field">
           <span>Minutes per period</span>
-          <input type="number" min={15} max={120} value={length} onChange={(e) => setLength(Math.max(15, Number(e.target.value) || 40))} />
+          <input type="number" min={15} max={120} value={raw.length} onChange={set("length")} />
         </label>
         <label className="field">
           <span>Break after period</span>
-          <input type="number" min={0} max={12} value={breakAfter} onChange={(e) => setBreakAfter(Number(e.target.value) || 0)} />
+          <input type="number" min={0} max={12} value={raw.breakAfter} onChange={set("breakAfter")} />
         </label>
         <label className="field">
           <span>Break minutes</span>
-          <input type="number" min={0} max={90} value={breakLen} onChange={(e) => setBreakLen(Number(e.target.value) || 0)} />
+          <input type="number" min={0} max={90} value={raw.breakLen} onChange={set("breakLen")} />
         </label>
       </div>
-      <p className="muted small" style={{ margin: "10px 0" }}>
-        {`${days.length} working day(s): ${days.join(", ")} · ${plan.map((p) => `${p.label} ${p.start_time}–${p.end_time}`).join(" · ")}`}
-      </p>
+      {problem ? (
+        <p className="small" role="alert" style={{ margin: "10px 0", color: "var(--danger, #b42318)" }}>{problem}</p>
+      ) : (
+        <p className="muted small" style={{ margin: "10px 0" }}>
+          {`${days.length} working day(s): ${days.join(", ")} · ${plan.map((p) => `${p.label} ${p.start_time}–${p.end_time}`).join(" · ")}`}
+        </p>
+      )}
       <button
         type="button"
         className="btn primary"
-        disabled={busy || !days.length}
+        disabled={busy || !days.length || !!problem}
         onClick={() =>
           run("The school day is set up.", async () => {
             for (const [i, day] of days.entries()) {
