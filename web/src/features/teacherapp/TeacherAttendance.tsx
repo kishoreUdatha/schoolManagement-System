@@ -39,7 +39,7 @@ const CHOICES: [Status, string, string][] = [
 
 /** TM-003. Daily register for a class-teacher section: tap P/A/L/½ per child, save once. */
 export function TeacherAttendance() {
-  const { notify } = useTeacherApp();
+  const { go, notify } = useTeacherApp();
   const router = useRouter();
   const search = useSearchParams();
   const mine = useApi<MyClasses>(MY_CLASSES);
@@ -64,7 +64,14 @@ export function TeacherAttendance() {
   if (mine.loading && !mine.data) return <PmLoading />;
   if (mine.error) return <PmError>{mine.error}</PmError>;
   if (!sections.length) {
-    return <PmEmpty title="No register to mark">Only a section&apos;s class teacher marks its daily attendance.</PmEmpty>;
+    return (
+      <>
+        <PmEmpty title="No register to mark">Only a section&apos;s class teacher marks its daily attendance.</PmEmpty>
+        <button className="action" onClick={() => go(16)}>
+          Mark attendance for a lesson
+        </button>
+      </>
+    );
   }
 
   const v = view.data;
@@ -106,10 +113,15 @@ export function TeacherAttendance() {
           ))}
         </div>
       ) : null}
-      <label className="field">
-        Date
-        <input type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value || todayIso())} />
-      </label>
+      <div className="between">
+        <label className="field" style={{ flex: 1 }}>
+          Date
+          <input type="date" value={date} max={todayIso()} onChange={(e) => setDate(e.target.value || todayIso())} />
+        </label>
+        <button className="text-button blue-text" style={{ marginLeft: 12 }} onClick={() => go(16)}>
+          By lesson ›
+        </button>
+      </div>
 
       <PmError>{view.error ?? error}</PmError>
       {view.loading && !v ? <PmLoading /> : null}

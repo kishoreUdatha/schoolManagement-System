@@ -34,6 +34,8 @@ export function TeacherToday() {
   const me = useSession()?.user;
   const dash = useApi<Dashboard>("/api/v1/teacher/dashboard");
   const tt = useApi<Timetable>("/api/v1/teacher/timetable");
+  const convs = useApi<{ unread_for_viewer: number }[]>("/api/v1/teacher/conversations");
+  const unread = (convs.data ?? []).reduce((n, c) => n + c.unread_for_viewer, 0);
 
   const d = dash.data;
   const next = tt.data?.next_class;
@@ -88,7 +90,18 @@ export function TeacherToday() {
       <div className="section-head">
         <h3>Quick actions</h3>
       </div>
-      <button className="action" onClick={() => go(5)}>
+      {unread > 0 ? (
+        <button className="action" onClick={() => go(12)}>
+          {`Reply to parents · ${plural(unread, "new message")}`}
+        </button>
+      ) : null}
+      <button className={unread > 0 ? "action secondary" : "action"} onClick={() => go(16)}>
+        Mark a lesson
+      </button>
+      <button className="action secondary" onClick={() => go(4)}>
+        Check homework
+      </button>
+      <button className="action secondary" onClick={() => go(5)}>
         Set homework
       </button>
       <button className="action secondary" onClick={() => go(6)}>
