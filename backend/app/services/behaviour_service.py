@@ -230,7 +230,7 @@ def list_for_child(
     )
 
 
-# ----- AI suggest (stub for 3.6; real Claude API wiring in Story 3.10) -----
+# ----- AI suggest fallback (used when Claude is not configured; see app/ai) -----
 
 POSITIVE_WORDS = (
     "excellent", "great", "good", "polite", "punctual", "active",
@@ -243,7 +243,7 @@ NEGATIVE_WORDS = (
 
 
 def ai_suggest_stub(note: str) -> dict:
-    """Heuristic suggestion until real Claude API integration in Story 3.10.
+    """Heuristic suggestion used when the Claude API is unavailable.
 
     Counts positive/negative cue words and biases all 4 dimensions accordingly.
     """
@@ -255,7 +255,7 @@ def ai_suggest_stub(note: str) -> dict:
     rationale = (
         f"Heuristic stub — counted {pos} positive cue(s) and {neg} negative cue(s) "
         f"in the note, so all dimensions suggested at {base}/5. "
-        "Claude API will replace this in Story 3.10."
+        "Set ANTHROPIC_API_KEY on the server for AI suggestions."
     )
     return {
         "punctuality": base,

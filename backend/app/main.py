@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.api.v1 import branding, health, timetable
+from app.api.v1 import ai, branding, health, timetable
 from app.api.v1.super_admin import (
     auth as super_admin_auth,
     payments as super_admin_payments,
@@ -265,6 +265,7 @@ app.include_router(
     prefix="/api/v1/timetable",
     tags=["timetable"],
 )
+app.include_router(ai.router, prefix="/api/v1/ai", tags=["ai"])
 app.include_router(
     parent_timetable.router,
     prefix="/api/v1/parent/me/children",

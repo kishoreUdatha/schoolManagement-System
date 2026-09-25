@@ -350,7 +350,7 @@ function RateModal({
             ✨ AI suggest from note
           </Button>
           <span className="text-xs text-slate-500 self-center">
-            (Heuristic stub. Story 3.10 wires real Claude API.)
+            Suggestions only — review the ratings before saving.
           </span>
         </div>
         {aiRationale && (

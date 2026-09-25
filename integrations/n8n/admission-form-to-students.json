@@ -1,0 +1,195 @@
+{
+  "name": "SMS - Admission form rows to students (AI)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "PASTE_GOOGLE_SHEET_URL"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "name": "New admission form rows",
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SMS_API_URL }}/api/v1/school/auth/login",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ email: $env.SMS_ADMIN_EMAIL, password: $env.SMS_ADMIN_PASSWORD }) }}"
+      },
+      "name": "Login",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// One text block with every new row; the AI maps whatever columns the form has.\nconst rows = $('New admission form rows').all().map(i => i.json);\nreturn [{ json: { text: rows.map(r => Object.entries(r).map(([k, v]) => `${k}: ${v}`).join('; ')).join('\\n') } }];"
+      },
+      "name": "Rows to text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SMS_API_URL }}/api/v1/ai/school/students/extract",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').item.json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        }
+      },
+      "name": "AI extract students",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Map to the bulk-import shape; blank values become null.\nconst out = $json.students.map(s => ({ full_name: s.full_name, dob: s.dob || null, gender: s.gender || null, blood_group: s.blood_group || null, address: s.address || null }));\nreturn [{ json: { academic_year_id: Number($env.SMS_ADMISSIONS_YEAR_ID), section_id: Number($env.SMS_ADMISSIONS_SECTION_ID), students: out, warnings: $json.warnings } }];"
+      },
+      "name": "To bulk payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.SMS_API_URL }}/api/v1/school/students/bulk",
+        "options": {},
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('Login').item.json.access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ academic_year_id: $json.academic_year_id, section_id: $json.section_id, students: $json.students }) }}"
+      },
+      "name": "Bulk import",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1400,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "New admission form rows": {
+      "main": [
+        [
+          {
+            "node": "Login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login": {
+      "main": [
+        [
+          {
+            "node": "Rows to text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rows to text": {
+      "main": [
+        [
+          {
+            "node": "AI extract students",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI extract students": {
+      "main": [
+        [
+          {
+            "node": "To bulk payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "To bulk payload": {
+      "main": [
+        [
+          {
+            "node": "Bulk import",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

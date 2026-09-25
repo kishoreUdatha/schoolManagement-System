@@ -30,11 +30,34 @@ docker compose up --build
 # Postgres:      localhost:5433  (user: sms, db: sms)  -- 5433 to avoid clash with host PG
 ```
 
+## AI features
+
+Set `ANTHROPIC_API_KEY` in `backend/.env` to turn them on (model: `CLAUDE_MODEL`,
+default `claude-opus-5`). Without a key the app works as before and AI buttons stay
+hidden. AI only ever drafts: people review and save through the normal screens.
+
+| Feature | Where | Saves you |
+|---|---|---|
+| Smart entry (agent) | Teacher → Smart entry | Type "Ravi, Priya absent; maths ex 5.2 due Fri" → attendance + homework drafts with real student ids |
+| Student import from photo / PDF / any list | Admin → Students → Bulk import | Reading admission registers and forms into rows |
+| Notice drafting | Admin → Notices → New notice | Writing notices from a one-line brief |
+| Behaviour ratings from a note | Teacher → Behaviour | Four ratings from one sentence |
+| Weekly parent notes | Teacher → Weekly reports | A plain-language summary per student |
+| Ask the school (RAG) | Chat button in every portal | Repeat questions to the office. Answers cite the knowledge base, notices and holidays |
+| Knowledge base | Admin → AI knowledge base | Where policies/FAQs for the assistant live |
+| MCP server | `mcp-server/` | Use the ERP from Claude Desktop or any MCP client |
+| n8n workflows | `integrations/n8n/` | Google Form admissions → students; emailed circulars → knowledge base |
+
+Code: `backend/app/ai/` (Claude client, prompts, agent loop, retrieval) and
+`backend/app/api/v1/ai.py` (endpoints).
+
 ## Project structure
 
 ```
 backend/      FastAPI app (auth, modules, AI, integrations, workers)
 frontend/     Next.js app (parent/teacher/admin portals)
+mcp-server/   MCP server exposing the ERP to AI assistants
+integrations/ n8n workflow exports
 infra/        docker, nginx, deploy scripts
 docs/         architecture, API, deployment notes
 ```

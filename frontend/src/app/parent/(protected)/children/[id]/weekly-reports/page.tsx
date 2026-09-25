@@ -22,6 +22,7 @@ type Report = {
   marks_summary: { papers: number; avg_pct: number; pass_rate_pct: number } | null;
   behaviour_avg: number | null;
   teacher_remark: string | null;
+  ai_summary: string | null;
   generated_by_name: string | null;
   shared_at: string | null;
 };
@@ -98,6 +99,11 @@ export default function ChildWeeklyReportsPage() {
                     sub=""
                   />
                 </div>
+                {r.ai_summary && (
+                  <p className="mt-3 rounded-md bg-brand-500/10 px-3 py-2 text-sm text-ink">
+                    {r.ai_summary}
+                  </p>
+                )}
                 {r.teacher_remark && (
                   <div className="mt-3 rounded-md border border-surface-border bg-surface-subtle px-3 py-2 text-sm">
                     <div className="text-xs font-medium text-ink">

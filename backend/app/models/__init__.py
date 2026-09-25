@@ -22,6 +22,7 @@ from app.models.student import Student
 from app.models.subject import ClassSubject, Subject
 from app.models.subscription import SubscriptionPayment, TenantSubscription
 from app.models.tenant import School, Tenant
+from app.models.knowledge import KnowledgeChunk, KnowledgeDocument
 from app.models.timetable import HodAssignment, Period, TimetableEntry
 from app.models.usage import TenantUsage
 from app.models.user import User, UserOtp
@@ -50,6 +51,8 @@ __all__ = [
     "NoticeRecipient",
     "ParentStudent",
     "HodAssignment",
+    "KnowledgeChunk",
+    "KnowledgeDocument",
     "Period",
     "Plan",
     "PlanModule",

@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 
+import { AskAssistant } from "@/components/ai/AskAssistant";
 import { BrandingProvider } from "@/components/BrandingProvider";
 import { SchoolAdminGuard } from "@/components/SchoolAdminGuard";
 import { SchoolAdminNav } from "@/components/SchoolAdminNav";
@@ -13,6 +14,7 @@ export default function SchoolProtectedLayout({ children }: { children: ReactNod
           <main className="flex-1 overflow-x-auto">
             <div className="mx-auto max-w-7xl px-6 py-5">{children}</div>
           </main>
+          <AskAssistant />
         </div>
       </BrandingProvider>
     </SchoolAdminGuard>

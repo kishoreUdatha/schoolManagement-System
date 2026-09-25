@@ -18,9 +18,11 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     cors_origins: str = "http://localhost:3000"
 
+    # AI features (Claude). Leave the key empty to disable them; every AI
+    # endpoint then falls back to a non-AI behaviour or returns 503.
     anthropic_api_key: str = ""
-    claude_model: str = "claude-sonnet-4-6"
-    claude_fast_model: str = "claude-haiku-4-5-20251001"
+    claude_model: str = "claude-opus-5"
+    claude_fast_model: str = "claude-haiku-4-5"
 
     aws_region: str = "ap-south-1"
     aws_access_key_id: str = ""

@@ -203,6 +203,7 @@ def generate_for_section(
             existing.marks_summary = marks
             existing.behaviour_avg = behaviour
             existing.teacher_remark = data.teacher_remark
+            existing.ai_summary = None  # figures changed; summary is stale
             existing.generated_by_user_id = teacher_user_id
             existing.shared_at = (
                 datetime.now(timezone.utc) if data.share_with_parents else None
@@ -255,6 +256,7 @@ def to_read_dict(db: Session, r: WeeklyReport) -> dict:
         "marks_summary": r.marks_summary,
         "behaviour_avg": float(r.behaviour_avg) if r.behaviour_avg is not None else None,
         "teacher_remark": r.teacher_remark,
+        "ai_summary": r.ai_summary,
         "generated_by_name": gen.full_name if gen else None,
         "shared_at": r.shared_at,
         "created_at": r.created_at,

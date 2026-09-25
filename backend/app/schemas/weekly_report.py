@@ -40,6 +40,7 @@ class WeeklyReportRead(BaseModel):
     marks_summary: Optional[dict] = None
     behaviour_avg: Optional[float] = None
     teacher_remark: Optional[str] = None
+    ai_summary: Optional[str] = None
     generated_by_name: Optional[str] = None
     shared_at: Optional[datetime] = None
     created_at: datetime

@@ -26,6 +26,7 @@ const sections: NavSection[] = [
       { href: "/teacher", label: "Dashboard", icon: LayoutDashboard, exact: true },
       { href: "/teacher/my-classes", label: "My classes", icon: GraduationCap },
       { href: "/teacher/timetable", label: "Timetable", icon: CalendarDays },
+      { href: "/teacher/smart-entry", label: "Smart entry (AI)", icon: Sparkles },
     ],
   },
   {

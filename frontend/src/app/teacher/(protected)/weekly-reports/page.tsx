@@ -1,11 +1,13 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { useAiEnabled } from "@/lib/ai";
 import { api, apiError } from "@/lib/api";
 
 type Section = { section_id: number; section_label: string };
@@ -28,6 +30,7 @@ type Report = {
   marks_summary: { papers: number; avg_pct: number; pass_rate_pct: number } | null;
   behaviour_avg: number | null;
   teacher_remark: string | null;
+  ai_summary: string | null;
   shared_at: string | null;
 };
 
@@ -48,6 +51,8 @@ export default function TeacherWeeklyReportsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const aiEnabled = useAiEnabled();
+  const [summarizing, setSummarizing] = useState(false);
 
   useEffect(() => {
     api
@@ -96,6 +101,28 @@ export default function TeacherWeeklyReportsPage() {
       setError(apiError(e));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function summarize() {
+    if (!sectionId) return;
+    setSummarizing(true);
+    setError(null);
+    try {
+      const { data } = await api.post<{ written: number; failed: number }>(
+        "/api/v1/ai/teacher/weekly-reports/summarize",
+        { section_id: sectionId, week_start: weekStart },
+        { timeout: 300_000 }
+      );
+      setNotice(
+        `Parent notes written for ${data.written} student(s)` +
+          (data.failed ? `; ${data.failed} failed, try again.` : ".")
+      );
+      await load();
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setSummarizing(false);
     }
   }
 
@@ -196,6 +223,14 @@ export default function TeacherWeeklyReportsPage() {
         </Card>
       ) : (
         <Card>
+          {aiEnabled && (
+            <CardHeader>
+              <CardTitle>Reports</CardTitle>
+              <Button variant="secondary" onClick={summarize} loading={summarizing} className="gap-2">
+                <Sparkles className="h-4 w-4" /> Write parent notes with AI
+              </Button>
+            </CardHeader>
+          )}
           <CardBody>
             <table className="min-w-full divide-y divide-surface-border text-sm">
               <thead className="text-left text-xs uppercase text-ink-subtle">
@@ -218,6 +253,12 @@ export default function TeacherWeeklyReportsPage() {
                       <div className="font-mono text-xs text-ink-subtle">
                         {r.student_admission_no}
                       </div>
+                      {r.ai_summary && (
+                        <p className="mt-1 max-w-md text-xs text-ink-muted">
+                          <Sparkles className="mr-1 inline h-3 w-3 text-brand-500" />
+                          {r.ai_summary}
+                        </p>
+                      )}
                     </td>
                     <td className="px-3 py-2 text-ink">
                       {r.attendance_pct}%

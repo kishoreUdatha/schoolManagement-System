@@ -3,6 +3,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
+from app.ai import client as ai_client, drafting
 from app.core.deps import TeacherUser
 from app.core.enums import BehaviourPeriodKind
 from app.database import get_db
@@ -90,7 +91,7 @@ def section_view(
 @router.post(
     "/ai-suggest",
     response_model=AISuggestResponse,
-    summary="AI-suggested ratings from a teacher's note (stub in 3.6, Claude API in 3.10)",
+    summary="AI-suggested ratings from a teacher's note (Claude; word-count heuristic without an API key)",
 )
 def ai_suggest(
     payload: AISuggestRequest,
@@ -101,5 +102,10 @@ def ai_suggest(
     behaviour_service._check_class_teacher_for_student(
         db, current_user.id, payload.student_id, current_user.school_id
     )
+    if ai_client.enabled():
+        try:
+            return AISuggestResponse.model_validate(drafting.suggest_behaviour(payload.note))
+        except ai_client.AIUnavailable:
+            pass  # fall back to the heuristic below
     suggestion = behaviour_service.ai_suggest_stub(payload.note)
     return AISuggestResponse.model_validate(suggestion)

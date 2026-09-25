@@ -63,6 +63,8 @@ class WeeklyReport(Base, PrimaryKeyMixin, TimestampMixin):
     behaviour_avg: Mapped[Optional[float]] = mapped_column(Numeric(4, 2))
 
     teacher_remark: Mapped[Optional[str]] = mapped_column(Text)
+    # Plain-language note for parents, written by Claude from the figures.
+    ai_summary: Mapped[Optional[str]] = mapped_column(Text)
     generated_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )

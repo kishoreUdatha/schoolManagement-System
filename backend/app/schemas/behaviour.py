@@ -73,4 +73,4 @@ class AISuggestResponse(BaseModel):
     discipline: int
     respect: int
     rationale: str
-    source: str  # 'stub' | 'claude' (future)
+    source: str  # 'stub' | 'claude'

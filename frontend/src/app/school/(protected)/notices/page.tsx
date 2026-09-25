@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { useAiEnabled } from "@/lib/ai";
 import { api, apiError } from "@/lib/api";
 
 type Audience =
@@ -274,6 +275,26 @@ function NoticeFormModal({
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const aiEnabled = useAiEnabled();
+  const [brief, setBrief] = useState("");
+  const [drafting, setDrafting] = useState(false);
+
+  async function draftWithAi() {
+    setDrafting(true);
+    setError(null);
+    try {
+      const { data } = await api.post<{ title: string; body: string }>(
+        "/api/v1/ai/school/notices/draft",
+        { brief },
+        { timeout: 120_000 }
+      );
+      setForm((f) => ({ ...f, title: data.title.slice(0, 200), body: data.body }));
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setDrafting(false);
+    }
+  }
 
   function toggleChannel(c: Channel) {
     setChannels((prev) => {
@@ -323,6 +344,23 @@ function NoticeFormModal({
       size="lg"
     >
       <form onSubmit={submit} className="space-y-4">
+        {aiEnabled && !existing && (
+          <div className="flex flex-col gap-2 rounded-lg border border-brand-500/30 bg-brand-500/5 p-3 sm:flex-row sm:items-end">
+            <label className="flex flex-1 flex-col gap-1">
+              <span className="text-sm font-medium text-ink">✨ Describe the notice in a line</span>
+              <input
+                value={brief}
+                onChange={(e) => setBrief(e.target.value)}
+                maxLength={4000}
+                placeholder="PTM for grade 2 on Sat 4 Oct, 10am-1pm, bring report card"
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <Button type="button" onClick={draftWithAi} loading={drafting} disabled={brief.trim().length < 5}>
+              Draft with AI
+            </Button>
+          </div>
+        )}
         <Input
           label="Title *"
           value={form.title}

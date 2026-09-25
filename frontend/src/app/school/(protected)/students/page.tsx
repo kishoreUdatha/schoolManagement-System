@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { useAiEnabled } from "@/lib/ai";
 import { api, apiError } from "@/lib/api";
 
 type Gender = "male" | "female" | "other";
@@ -172,7 +173,7 @@ export default function StudentsPage() {
             Promote students
           </Button>
           <Button variant="secondary" onClick={() => setOpenBulk(true)}>
-            Bulk import (CSV)
+            Bulk import (CSV / AI)
           </Button>
           <Button onClick={() => setOpenCreate(true)}>+ New student</Button>
         </div>
@@ -888,6 +889,11 @@ function BulkImportModal({
     created: number;
     errors: BulkRowError[];
   } | null>(null);
+  const aiEnabled = useAiEnabled();
+  const [aiText, setAiText] = useState("");
+  const [aiFile, setAiFile] = useState<File | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiWarnings, setAiWarnings] = useState<string[]>([]);
 
   const selectedClass = useMemo(
     () => classes.find((c) => c.id === classId) ?? null,
@@ -897,6 +903,39 @@ function BulkImportModal({
   useEffect(() => {
     if (defaultYearId) setYearId(defaultYearId);
   }, [defaultYearId]);
+
+  /** AI reads a photo / PDF / messy list and fills the CSV box for review. */
+  async function readWithAi() {
+    setAiBusy(true);
+    setError(null);
+    setAiWarnings([]);
+    try {
+      const form = new FormData();
+      if (aiText.trim()) form.append("text", aiText);
+      if (aiFile) form.append("file", aiFile);
+      const { data } = await api.post<{
+        students: { full_name: string; gender: string; dob: string; blood_group: string; address: string }[];
+        warnings: string[];
+      }>("/api/v1/ai/school/students/extract", form, { timeout: 180_000 });
+      const clean = (v: string) => (v || "").replace(/[,\n\r]+/g, " ").trim();
+      setCsv(
+        [
+          "full_name,gender,dob,blood_group,address",
+          ...data.students.map((r) =>
+            [r.full_name, r.gender, r.dob, r.blood_group, r.address].map(clean).join(",")
+          ),
+        ].join("\n")
+      );
+      setAiWarnings([
+        `AI found ${data.students.length} student(s). Check the rows below before importing.`,
+        ...data.warnings,
+      ]);
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setAiBusy(false);
+    }
+  }
 
   function parseCsv(text: string) {
     const rows = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
@@ -1036,6 +1075,44 @@ function BulkImportModal({
             </select>
           </label>
         </div>
+
+        {aiEnabled && (
+          <div className="space-y-2 rounded-lg border border-brand-500/30 bg-brand-500/5 p-3">
+            <div className="text-sm font-medium text-ink">
+              ✨ Read with AI: a photo of the admission register, a PDF of forms, or any pasted list
+            </div>
+            <textarea
+              value={aiText}
+              onChange={(e) => setAiText(e.target.value)}
+              rows={3}
+              placeholder={"e.g. 1. Meena R, girl, born 12/04/2019, O+\n2. Sai Kumar, boy, 3 Jan 2019"}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs"
+            />
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,application/pdf,.csv,.txt"
+                onChange={(e) => setAiFile(e.target.files?.[0] ?? null)}
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={readWithAi}
+                loading={aiBusy}
+                disabled={!aiText.trim() && !aiFile}
+              >
+                Read with AI
+              </Button>
+            </div>
+            {aiWarnings.length > 0 && (
+              <ul className="list-disc pl-5 text-xs text-amber-800">
+                {aiWarnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs text-slate-600">
           <Button

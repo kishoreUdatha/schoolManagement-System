@@ -75,6 +75,29 @@ services:
     # Switch back to `npm run dev` for live-reload during active development.
     command: npm start
 
+  # Optional workflow automation (see integrations/n8n/README.md).
+  # Start with: docker compose --profile automation up -d n8n
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: sms-n8n
+    profiles: ["automation"]
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      SMS_API_URL: http://backend:8000
+      SMS_ADMIN_EMAIL: ${SMS_ADMIN_EMAIL:-}
+      SMS_ADMIN_PASSWORD: ${SMS_ADMIN_PASSWORD:-}
+      SMS_ADMISSIONS_YEAR_ID: ${SMS_ADMISSIONS_YEAR_ID:-}
+      SMS_ADMISSIONS_SECTION_ID: ${SMS_ADMISSIONS_SECTION_ID:-}
+    volumes:
+      - n8n-data:/home/node/.n8n
+      - ./integrations/n8n:/workflows:ro
+    depends_on:
+      - backend
+
 volumes:
+  n8n-data:
   postgres-data:
   redis-data:
