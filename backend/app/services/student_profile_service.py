@@ -10,6 +10,7 @@ from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.attendance import StudentAttendance
 from app.models.behaviour import BehaviourRating
 from app.models.exam import Exam, ExamSubject
+from app.models.foundation import Guardian, StudentGuardian
 from app.models.homework import Homework
 from app.models.parent import ParentStudent
 from app.models.student import Student
@@ -153,22 +154,54 @@ def _recent_homework(db: Session, student: Student, limit: int = 5) -> list[dict
 
 
 def _parents(db: Session, student_id: int) -> list[dict]:
+    """Everyone on the student's family, primary contact first.
+
+    The guardians the office recorded are the answer — a portal login is
+    something a guardian may or may not have been given, so reading the login
+    table alone hides every family that was never handed one.
+    """
     rows = db.execute(
+        select(StudentGuardian, Guardian)
+        .join(Guardian, StudentGuardian.guardian_id == Guardian.id)
+        .where(StudentGuardian.student_id == student_id)
+        .order_by(StudentGuardian.is_primary.desc(), Guardian.full_name)
+    ).all()
+    people = [
+        {
+            "guardian_id": g.id,
+            "user_id": g.user_id,
+            "full_name": g.full_name,
+            "email": g.email,
+            "phone": g.phone,
+            "relation": link.relation,
+            "is_primary": link.is_primary,
+        }
+        for link, g in rows
+    ]
+    # A parent login that no guardian record accounts for (older data, before
+    # guardians were kept) would otherwise disappear from the screen.
+    seen = {p["user_id"] for p in people if p["user_id"]}
+    extra = db.execute(
         select(ParentStudent, User)
         .join(User, ParentStudent.parent_user_id == User.id)
         .where(ParentStudent.student_id == student_id)
         .order_by(User.full_name)
     ).all()
-    return [
-        {
-            "user_id": u.id,
-            "full_name": u.full_name,
-            "email": u.email,
-            "phone": u.phone,
-            "relation": link.relation,
-        }
-        for link, u in rows
-    ]
+    for link, u in extra:
+        if u.id in seen:
+            continue
+        people.append(
+            {
+                "guardian_id": None,
+                "user_id": u.id,
+                "full_name": u.full_name,
+                "email": u.email,
+                "phone": u.phone,
+                "relation": link.relation,
+                "is_primary": False,
+            }
+        )
+    return people
 
 
 def build_profile(db: Session, student: Student) -> dict:

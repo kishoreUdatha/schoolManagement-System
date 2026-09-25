@@ -3,15 +3,21 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from app.core.enums import Gender, ParentRelation
+from app.core.enums import Gender, GuardianRelation
 
 
 class ParentContact(BaseModel):
-    user_id: int
+    """A parent or guardian on the student's family. Recorded whether or not
+    that person has been given a login to the parent portal: `user_id` is set
+    only once they have one."""
+
+    guardian_id: Optional[int] = None
+    user_id: Optional[int] = None
     full_name: str
     email: Optional[str] = None
     phone: Optional[str] = None
-    relation: ParentRelation
+    relation: GuardianRelation
+    is_primary: bool = False
 
 
 class AttendanceSummary(BaseModel):

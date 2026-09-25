@@ -13,12 +13,15 @@ export function Chart({
   values = SAMPLE,
   compare,
   label,
+  showValues = false,
 }: {
   kind?: "bar" | "line";
   labels?: string[];
   values?: number[];
   compare?: number[];
   label?: string;
+  /** Print each bar's figure above it, as the mocks' attendance trend does. */
+  showValues?: boolean;
 }) {
   const sample = values === SAMPLE && !compare;
   const grid = [0, 1, 2, 3].map((i) => 20 + i * 51);
@@ -49,6 +52,11 @@ export function Chart({
           return (
             <Fragment key={i}>
               <rect x={x} y={183 - h} width="31" height={h} rx="5" fill={i === 3 ? "#2563eb" : "#73a6f5"} />
+              {showValues ? (
+                <text x={x + 15} y={183 - h - 7} textAnchor="middle" fill="#3c5170" fontSize="11" fontWeight="700" fontFamily="Manrope">
+                  {`${v}%`}
+                </text>
+              ) : null}
               {sample ? <rect x={x + 36} y={183 - h * 0.76} width="20" height={h * 0.76} rx="4" fill="#dbe9fe" /> : null}
               {compare ? <rect x={x + 36} y={183 - compare[i] * 1.55} width="20" height={compare[i] * 1.55} rx="4" fill="#dbe9fe" /> : null}
             </Fragment>

@@ -81,6 +81,7 @@ export function DataTable({
   onPage,
   empty,
   emptyState,
+  footer = true,
 }: {
   columns: string[];
   rows: Row[];
@@ -103,6 +104,8 @@ export function DataTable({
   empty?: ReactNode;
   /** Guidance for a list with nothing in it yet; used only when `empty` is left out. */
   emptyState?: EmptyState;
+  /** A short table inside a card is not a list to page through: it drops the count row. */
+  footer?: boolean;
 }) {
   const count = total ?? rows.length;
   // Tick boxes are shown only where they do something: a screen that wants
@@ -191,6 +194,7 @@ export function DataTable({
           DEFAULT_EMPTY
         )}
       </div>
+      {footer ? (
       <div className="table-footer">
         <span data-table-count="">{`Showing ${rows.length} of ${count} records`}</span>
         <div className="pages">
@@ -217,6 +221,7 @@ export function DataTable({
           )}
         </div>
       </div>
+      ) : null}
     </>
   );
 }

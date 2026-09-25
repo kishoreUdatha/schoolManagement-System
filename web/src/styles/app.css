@@ -394,3 +394,189 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .stat-card-body b{font-size:17px;line-height:1.1;order:-1}
 .stat-card-label{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-card-body small{display:none}
+
+/* A table inside one of Student 360's half-width cards keeps its last column
+   on screen: the title gives way rather than the score. */
+.dashboard-grid .two-equal .data-table td.wrap{min-width:120px;max-width:150px}
+.dashboard-grid .two-equal .data-table th,.dashboard-grid .two-equal .data-table td{padding-left:12px;padding-right:12px}
+.dashboard-grid .two-equal .data-table th:first-child,.dashboard-grid .two-equal .data-table td:first-child{padding-left:18px}
+
+/* ---- Student 360 ------------------------------------------------------
+   One card carries who the child is and the six figures that summarise
+   them: a white header, then a row of figures divided by hairlines rather
+   than boxed one by one, as the mock draws it. */
+.s360-banner{padding:0;overflow:hidden;margin-bottom:16px}
+.s360-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 22px 16px;flex-wrap:wrap}
+.s360-head h2{font-size:21px;line-height:1.2;margin:0}
+.s360-head .avatar.large{width:58px;height:58px;min-width:58px;font-size:20px;border-radius:50%;background:#e3edfd;color:#2563eb}
+.s360-meta{display:flex;flex-wrap:wrap;align-items:center;gap:0;margin-top:7px;color:#5b6e8c;font-size:13px}
+.s360-meta span+span{margin-left:12px;padding-left:12px;border-left:1px solid #dbe4f0}
+.s360-head .btn.icon-only{padding:9px 10px}
+.s360-kpis .stat-cards{grid-template-columns:repeat(6,minmax(0,1fr));gap:0;margin:0;border-top:1px solid var(--line)}
+.s360-kpis .stat-card{height:auto;padding:15px 16px;gap:11px;border:0;border-radius:0;background:transparent}
+.s360-kpis .stat-card+.stat-card{border-left:1px solid var(--line)}
+.s360-kpis a.stat-card:hover{background:#f7fbff}
+.s360-kpis .stat-card-icon{width:38px;height:38px;border-radius:11px}
+.s360-kpis .stat-card-icon .ico{width:19px;height:19px}
+.s360-kpis .stat-card-body{display:grid;gap:1px}
+.s360-kpis .stat-card-label{font-size:12px;color:#6b7c96;font-weight:600;order:0;white-space:normal}
+.s360-kpis .stat-card-body b{font-size:19px;line-height:1.25;order:1}
+@media(max-width:1240px){.s360-kpis .stat-card{padding:11px 10px;gap:8px}.s360-kpis .stat-card-icon{width:30px;height:30px;border-radius:9px}.s360-kpis .stat-card-icon .ico{width:15px;height:15px}.s360-kpis .stat-card-label{font-size:11px}.s360-kpis .stat-card-body b{font-size:16px}.s360-kpis .stat-card-go{display:none}}
+@media(max-width:900px){.s360-kpis .stat-cards{grid-template-columns:repeat(3,minmax(0,1fr))}.s360-kpis .stat-card:nth-child(3n+1){border-left:0}.s360-kpis .stat-card:nth-child(n+4){border-top:1px solid var(--line)}}
+@media(max-width:620px){.s360-kpis .stat-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.s360-kpis .stat-card:nth-child(2n+1){border-left:0}.s360-kpis .stat-card:nth-child(n+3){border-top:1px solid var(--line)}}
+
+/* A figure a card carries in its header ("Term average: 88%"). */
+.pill-soft{display:inline-block;padding:5px 11px;border-radius:999px;background:#eaf2ff;color:#2563eb;font-size:12.5px;font-weight:700}
+
+/* Rail rows: an icon tile, two lines, and the way on. */
+.rail-row{display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid #edf1f7}
+.rail-row:first-child{border-top:0}
+.rail-row>div{flex:1;min-width:0}
+.rail-row h4{font-size:13.5px;margin:0 0 2px;color:var(--ink)}
+.rail-row p{font-size:12.5px;color:var(--muted);margin:0}
+.rail-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;flex:none;background:#eaf2ff;color:#2563eb}
+.rail-icon .ico{width:17px;height:17px}
+.rail-icon.meeting{background:#efe8ff;color:#7044bf}
+.rail-icon.fee{background:#fff0df;color:#a15f17}
+.rail-icon.doc{background:#ffe9e9;color:#c0392b}
+.rail-go{color:#9fb3cf;flex:none}
+
+/* Quick actions: four tiles, two by two. */
+.s360-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.s360-actions .quick-action{display:flex;align-items:center;gap:8px;justify-content:flex-start;background:#f4f8ff;border:1px solid #e2ebf8;color:#33465f;border-radius:10px;padding:11px 12px;font-size:12.5px;font-weight:650}
+.s360-actions .quick-action:hover{background:#eaf2ff;border-color:#c9dcf7}
+.s360-actions .ico{width:16px;height:16px;color:#2563eb}
+/* Student 360: the KPI label stays on its own line, and the notes card is a
+   dated list with a dot per note rather than icon tiles. */
+.s360-kpis .stat-card-label{white-space:normal;line-height:1.3}
+.s360-kpis .stat-card{align-items:flex-start}
+.s360-kpis .stat-card-icon{margin-top:2px}
+.s360-kpis .stat-card-go{margin-top:12px}
+.note-row{display:flex;gap:11px;padding:11px 0;border-top:1px solid #edf1f7}
+.note-row:first-child{border-top:0}
+.note-row h4{font-size:13.5px;margin:0 0 3px;color:var(--ink)}
+.note-row p{font-size:12.5px;color:#5b6e8c;margin:0;line-height:1.45}
+.note-dot{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:none;background:#16a34a}
+.note-dot.ok{background:#2563eb}
+.note-dot.low{background:#f59e0b}
+/* The half-width cards' tables: tighter still, so five columns fit. */
+.dashboard-grid .two-equal .data-table th,.dashboard-grid .two-equal .data-table td{padding-left:9px;padding-right:9px}
+.dashboard-grid .two-equal .data-table th:first-child,.dashboard-grid .two-equal .data-table td:first-child{padding-left:16px}
+.dashboard-grid .two-equal .data-table th:last-child,.dashboard-grid .two-equal .data-table td:last-child{padding-right:16px}
+.dashboard-grid .two-equal .data-table td.wrap{min-width:110px;max-width:135px}
+.dashboard-grid .two-equal .badge{padding:4px 8px;font-size:11.5px}
+/* Ten tabs on a laptop: the row tightens rather than sprouting a scrollbar. */
+@media(max-width:1400px){.profile-tabs{gap:16px}.profile-tabs a{font-size:12.5px}}
+@media(max-width:1150px){.profile-tabs{gap:10px}.profile-tabs a{font-size:11.8px}}
+/* A card's head keeps its title on one line when it also carries a legend. */
+.panel-head .chart-key{flex:none;white-space:nowrap}
+@media(max-width:1240px){.panel-head .chart-key{font-size:11px;gap:10px}}
+@media(max-width:1050px){.profile-tabs{gap:7px}.profile-tabs a{font-size:11px;letter-spacing:-.1px}}
+.panel-head h2{min-width:0}
+/* The mock is drawn at about 1700px. On a 1280px laptop the same page has
+   roughly 1040px once the menu is out, so everything gives a little — the
+   rail, the padding, the type — and the layout keeps its shape instead of
+   breaking up into one column. */
+@media(max-width:1400px){
+  /* Room comes out of the chrome — a narrower menu, tighter page gutters, a
+     slimmer rail — so the cards themselves stay the size the mock drew them. */
+  .sidebar{width:215px;min-width:215px}
+  .workspace{margin-left:215px}
+  .main.main{padding-left:12px;padding-right:12px}
+  .topbar.topbar{padding-left:12px;padding-right:12px}
+  .dashboard-grid{grid-template-columns:minmax(0,1fr) 296px;gap:14px}
+  .dashboard-grid .two-equal{gap:14px}
+  .dashboard-grid .panel-head{padding:15px 17px}
+  .dashboard-grid .panel-head h2{font-size:16.5px;white-space:nowrap}
+  .dashboard-grid .data-table{font-size:12.5px}
+  .dashboard-grid .data-table th{font-size:11.2px}
+  .dashboard-grid .chart-svg{height:195px}
+  .s360-kpis .stat-card{padding:12px 11px;gap:9px}
+  .s360-kpis .stat-card-icon{width:33px;height:33px;border-radius:10px}
+  .s360-kpis .stat-card-icon .ico{width:16px;height:16px}
+  .s360-kpis .stat-card-label{font-size:11.2px}
+  .s360-kpis .stat-card-body b{font-size:17.5px}
+  .s360-kpis .stat-card-go{display:none}
+  .s360-head{padding:15px 17px 13px}
+  .s360-head h2{font-size:20px}
+}
+/* Only when even that has run out does the pair stack. */
+@media(max-width:1040px){.dashboard-grid{grid-template-columns:minmax(0,1fr)}.dashboard-grid .two-equal{grid-template-columns:minmax(0,1fr)}}
+/* The banner's "⋮": the actions that are not the two buttons. */
+.more-menu{position:relative}
+.more-menu>.btn{font-size:17px;line-height:1;padding:9px 12px}
+.more-menu-list{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:190px;background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 12px 30px rgba(22,44,80,.14);padding:6px;display:grid}
+.more-menu-list a{padding:9px 11px;border-radius:8px;font-size:13px;color:#3d506d;font-weight:600}
+.more-menu-list a:hover{background:#f1f6ff;color:var(--blue)}
+/* Recent homework keeps all five columns; the title is what gives. */
+.hw-mini .data-table td.wrap{min-width:96px;max-width:120px}
+.hw-mini .data-table th,.hw-mini .data-table td{padding-left:8px;padding-right:8px}
+.hw-mini .data-table th:first-child,.hw-mini .data-table td:first-child{padding-left:16px}
+/* Student 360 sits tighter than a dashboard: the cards are read together, so
+   the space between them is a hairline of breathing room, not a margin. */
+.s360-grid{gap:12px}
+.s360-grid .s360-stack,.s360-stack{gap:12px}
+.s360-pair{gap:12px}
+.s360-grid aside.stack{gap:12px}
+.s360-grid .panel-head{padding:13px 16px 6px}
+.s360-grid .panel-head+*{padding-top:0}
+.s360-grid .kv{gap:12px 18px}
+.s360-grid .rail-row{padding:9px 0}
+.s360-grid .note-row{padding:9px 0}
+@media(max-width:1400px){.s360-grid,.s360-pair,.s360-grid .s360-stack,.s360-grid aside.stack{gap:11px}}
+/* Two cards in a row are read across, so they end where each other ends: the
+   row sets one height and both cards fill it, instead of each stopping
+   wherever its own content ran out. */
+.s360-grid .s360-pair{align-items:stretch}
+.s360-grid .s360-pair>.panel{display:flex;flex-direction:column;height:100%;margin:0}
+.s360-grid .s360-pair>.panel>.table-wrap{flex:1}
+.s360-grid .s360-stack>.panel,.s360-grid aside.stack>.panel{margin:0}
+/* Nothing in these cards scrolls sideways: a column that will not fit is one
+   the card should not be carrying. */
+.s360-grid .table-wrap{overflow-x:hidden}
+
+/* ---- The menu folds ---------------------------------------------------
+   Full width it is the list of names it has always been (the icons are
+   there but hidden). Folded it is a rail of those icons, each keeping its
+   name as a tooltip, and the page gets the width back. */
+.nav-ico{display:none;width:18px;height:18px;flex:none;color:#4a678c}
+.nav.active .nav-ico{color:var(--blue)}
+.nav-fold{position:absolute;top:26px;right:-11px;z-index:41;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid var(--line);color:#5a6d8c;box-shadow:0 2px 6px rgba(22,44,80,.1)}
+.nav-fold:hover{color:var(--blue);border-color:#bcd4f8}
+.nav-fold .ico{width:13px;height:13px;transform:rotate(90deg)}
+.sidebar{position:fixed}
+.app.nav-rail .nav-fold .ico{transform:rotate(-90deg)}
+
+.app.nav-rail .sidebar{width:62px;min-width:62px}
+.app.nav-rail .workspace{margin-left:62px}
+.app.nav-rail .nav-ico{display:block}
+.app.nav-rail .brand{padding:0 12px;justify-content:center}
+.app.nav-rail .brand-text,
+.app.nav-rail .nav>span,
+.app.nav-rail .nav .count,
+.app.nav-rail .caret,
+.app.nav-rail .nav-label,
+.app.nav-rail .subnav-list,
+.app.nav-rail .school-switch,
+.app.nav-rail .sidebar-footer .person>div{display:none}
+.app.nav-rail .nav{justify-content:center;padding:10px 0;margin:4px 0}
+.app.nav-rail .nav-scroll{padding:0 8px}
+.app.nav-rail .sidebar-footer{padding:12px 8px;justify-content:center;gap:6px;flex-wrap:wrap}
+.app.nav-rail .sidebar-footer .person{justify-content:center}
+.app.nav-rail .brand-logo,.app.nav-rail .brand-mark{margin:0}
+@media(max-width:900px){.nav-fold{display:none}}
+/* Four columns in a half-width card: the title gives way, the rest stay. */
+@media(max-width:1400px){
+  .hw-mini .data-table td.wrap{min-width:88px;max-width:104px}
+  .hw-mini .data-table th,.hw-mini .data-table td{padding-left:7px;padding-right:7px}
+  .hw-mini .data-table th:first-child,.hw-mini .data-table td:first-child{padding-left:14px}
+  .hw-mini .data-table th:last-child,.hw-mini .data-table td:last-child{padding-right:14px}
+}
+@media(max-width:1400px){
+  .hw-mini .data-table{font-size:11.8px}
+  .hw-mini .data-table td.wrap{min-width:80px;max-width:96px}
+  .hw-mini .data-table th,.hw-mini .data-table td{padding-left:6px;padding-right:6px}
+}
+@media(max-width:1400px){
+  .hw-mini .data-table th:first-child,.hw-mini .data-table td:first-child{width:96px;max-width:96px}
+}

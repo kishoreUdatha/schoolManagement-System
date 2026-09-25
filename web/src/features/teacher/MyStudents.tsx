@@ -1,17 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
-import { Badge, Panel } from "@/components/ui/primitives";
+import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
-import { ErrorNote, Loading } from "@/components/ui/states";
-import { date, initials, label, money, pct } from "@/lib/format";
+import { ErrorNote } from "@/components/ui/states";
+import { date, label } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
-import { KV, Note } from "@/features/self/kit";
-import type { MyClasses, RosterStudent, StudentProfile } from "./types";
+import { Note } from "@/features/self/kit";
+import { Student360 } from "./Student360";
+import type { MyClasses, RosterStudent } from "./types";
 
 type SectionOption = { id: number; label: string; roles: string[]; count: number; current: boolean };
 
@@ -39,8 +39,10 @@ function sectionsOf(c: MyClasses | null): SectionOption[] {
  */
 export function MyStudents() {
   const params = useSearchParams();
+  const path = usePathname();
   const id = params.get("id");
-  return id ? <StudentDetail id={id} /> : <Roster />;
+  const section = params.get("section");
+  return id ? <Student360 id={id} back={section ? `${path}?section=${section}` : path} /> : <Roster />;
 }
 
 function Roster() {
@@ -106,172 +108,6 @@ function Roster() {
           }}
         />
       </Panel>
-    </>
-  );
-}
-
-function StudentDetail({ id }: { id: string }) {
-  const params = useSearchParams();
-  const path = usePathname();
-  const section = params.get("section");
-  const back = section ? `${path}?section=${section}` : path;
-  const res = useApi<StudentProfile>(`/api/v1/teacher/students/${id}`);
-  const s = res.data;
-
-  if (res.error)
-    return (
-      <>
-        <ErrorNote>{res.error}</ErrorNote>
-        <Link href={back} className="btn">
-          <Icon name="arrow" className="sm" />
-          Back to my students
-        </Link>
-      </>
-    );
-  if (!s) return <Loading what="Loading the student…" />;
-
-  const a = s.attendance;
-  const cls = [s.class_name, s.section_name].filter(Boolean).join(" ");
-
-  return (
-    <>
-      <div className="row" style={{ marginBottom: 16 }}>
-        <Link href={back} className="btn">
-          <Icon name="arrow" className="sm" />
-          Back to my students
-        </Link>
-      </div>
-      <section className="panel profile-banner">
-        <div className="profile-hero">
-          <div className="row">
-            <span className="avatar mint large">{initials(s.full_name)}</span>
-            <div>
-              <h2>{s.full_name}</h2>
-              <p>{`${cls || "No class"} · Admission no. ${s.admission_no}`}</p>
-              <div className="profile-meta">
-                <span>
-                  <Icon name="calendar" className="sm" />
-                  {` ${s.academic_year_name ?? "—"}`}
-                </span>
-                <span>
-                  <Icon name="users" className="sm" />
-                  {` Roll no. ${s.roll_no}`}
-                </span>
-                <Badge>{s.is_active ? "Active" : "Inactive"}</Badge>
-              </div>
-            </div>
-          </div>
-          <div className="profile-badge">
-            <strong>{pct(a.attendance_percent)}</strong>
-            <small>{`Attendance · ${a.days_marked} days marked`}</small>
-          </div>
-        </div>
-      </section>
-      <div className="gap" />
-      <div className="two-col">
-        <div className="stack">
-          <Panel title="Student details">
-            <KV
-              rows={[
-                ["Date of birth", date(s.dob)],
-                ["Gender", label(s.gender)],
-                ["Blood group", s.blood_group ?? "—"],
-                ["Address", s.address ?? "—"],
-              ]}
-            />
-          </Panel>
-          <Panel title="Parents & guardians">
-            {s.parents.length ? (
-              s.parents.map((p, i) => (
-                <div className="spread" key={p.user_id} style={{ padding: "8px 0", borderTop: i ? "1px solid var(--line)" : undefined }}>
-                  <div className="person">
-                    <span className={`avatar ${["mint", "", "peach", "lilac"][i % 4]}`}>{initials(p.full_name)}</span>
-                    <div>
-                      {p.full_name}
-                      <small>{label(p.relation)}</small>
-                    </div>
-                  </div>
-                  <span className="small muted">{[p.phone, p.email].filter(Boolean).join(" · ") || "No contact recorded"}</span>
-                </div>
-              ))
-            ) : (
-              <p className="muted">No parent or guardian is linked yet.</p>
-            )}
-          </Panel>
-          <Panel title="Exam results" sub="Published results" flush>
-            <DataTable
-              columns={["Exam", "Kind", "Percentage", "Grade", "Result"]}
-              rows={s.exams.map((e) => [e.exam_name, label(e.exam_kind), pct(e.percentage), e.overall_grade, e.is_pass ? "Pass" : "Failed"])}
-              selectable={false}
-              rowAction={false}
-              emptyState={{
-                title: "No published results yet",
-                note: "Results appear here once the student's exams are marked and published.",
-              }}
-            />
-          </Panel>
-          <Panel title="Behaviour" sub="Recent ratings, 1 to 5" flush>
-            <DataTable
-              columns={["Period", "Punctuality", "Participation", "Discipline", "Respect", "Average", "Observation"]}
-              rows={s.behaviour_recent.map((b) => [b.period_key, String(b.punctuality), String(b.participation), String(b.discipline), String(b.respect), b.average.toFixed(1), b.teacher_note ?? "—"])}
-              selectable={false}
-              rowAction={false}
-              emptyState={{
-                title: "No behaviour ratings yet",
-                note: "Weekly or monthly behaviour ratings for this student will appear here once they're rated.",
-              }}
-            />
-          </Panel>
-        </div>
-        <aside className="stack">
-          <Panel title="Attendance">
-            <div className="progress-stack">
-              <div>
-                <div className="progress-label">
-                  <span>Attendance</span>
-                  <strong>{pct(a.attendance_percent)}</strong>
-                </div>
-                <div className="bar-track">
-                  <i style={{ width: `${a.attendance_percent ?? 0}%` }} />
-                </div>
-              </div>
-              <div className="progress-label">
-                <span>Present / absent</span>
-                <strong>{`${a.days_present} / ${a.days_absent}`}</strong>
-              </div>
-              <div className="progress-label">
-                <span>Late / half day</span>
-                <strong>{`${a.days_late} / ${a.days_half_day}`}</strong>
-              </div>
-              <div className="progress-label">
-                <span>Days marked</span>
-                <strong>{a.days_marked}</strong>
-              </div>
-              <div className="progress-label">
-                <span>Fees pending</span>
-                <strong>{money(s.fees_pending_amount)}</strong>
-              </div>
-            </div>
-          </Panel>
-          <Panel title="Recent homework">
-            {s.homework_recent.length ? (
-              s.homework_recent.map((h) => (
-                <div className="timeline-item" key={h.id}>
-                  <span className="timeline-dot">
-                    <Icon name="file" />
-                  </span>
-                  <div>
-                    <h4>{h.title}</h4>
-                    <p>{`${h.subject_name ?? "—"} · due ${date(h.due_date)}${h.is_past_due ? " · past due" : ""}`}</p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="muted">No homework set recently.</p>
-            )}
-          </Panel>
-        </aside>
-      </div>
     </>
   );
 }

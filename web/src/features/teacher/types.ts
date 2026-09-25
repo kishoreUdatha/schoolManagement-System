@@ -61,7 +61,7 @@ export type StudentProfile = {
   class_name: string | null;
   academic_year_id: number;
   academic_year_name: string | null;
-  parents: { user_id: number; full_name: string; email: string | null; phone: string | null; relation: string }[];
+  parents: { guardian_id: number | null; user_id: number | null; full_name: string; email: string | null; phone: string | null; relation: string; is_primary: boolean }[];
   attendance: { days_present: number; days_absent: number; days_late: number; days_half_day: number; days_marked: number; attendance_percent: number | null };
   behaviour_recent: {
     id: number;
@@ -138,4 +138,103 @@ export type WeeklyReport = {
   generated_by_name: string | null;
   shared_at: string | null;
   created_at: string;
+};
+
+/** GET /api/v1/teacher/students/{id}/360 — one child's whole record. */
+export type Behaviour = StudentProfile["behaviour_recent"][number];
+export type Guardian360 = {
+  guardian_id: number;
+  user_id: number | null;
+  full_name: string;
+  relation: string;
+  phone: string | null;
+  email: string | null;
+  occupation: string | null;
+  address: string | null;
+  is_primary: boolean;
+  can_pickup: boolean;
+  is_emergency_contact: boolean;
+  lives_with_student: boolean;
+};
+export type Homework360 = {
+  id: number;
+  title: string;
+  subject_name: string | null;
+  due_date: string;
+  is_past_due: boolean;
+  status: string;
+  submitted_at: string | null;
+  marks: number | null;
+  max_marks: number | null;
+  teacher_remark: string | null;
+};
+export type Fee360 = { id: number; head: string | null; period: string | null; due_date: string; amount_due: number; amount_paid: number; status: string; paid_at: string | null };
+export type Doc360 = { id: number; title: string; original_name: string; category: string; size_bytes: number; content_type: string; uploaded_on: string };
+export type Student360 = {
+  id: number;
+  admission_no: string;
+  full_name: string;
+  dob: string | null;
+  gender: string | null;
+  photo_url: string | null;
+  address: string | null;
+  is_active: boolean;
+  roll_no: number;
+  joined_on: string | null;
+  section_id: number;
+  section_name: string | null;
+  class_name: string | null;
+  class_label: string | null;
+  academic_year_name: string | null;
+  class_teacher_name: string | null;
+  kpis: {
+    attendance_percent: number | null;
+    average_percent: number | null;
+    homework_done: number;
+    homework_total: number;
+    behaviour: string | null;
+    transport: string;
+    fees_pending: number;
+  };
+  today: { status: string | null; arrived_at: string | null; left_at: string | null; remark: string | null };
+  academic: {
+    columns: string[];
+    rows: { subject_name: string; marks: (number | null)[]; average: number | null }[];
+    average: number | null;
+    exams: { exam_id: number; exam_name: string; kind: string; start_date: string | null; percent: number; obtained: number; out_of: number; marked: number }[];
+  };
+  attendance: {
+    days_present: number;
+    days_absent: number;
+    days_late: number;
+    days_half_day: number;
+    days_marked: number;
+    attendance_percent: number | null;
+    trend: { label: string; date: string; status: string; value: number }[];
+    recent: { date: string; status: string; arrived_at: string | null; left_at: string | null; remark: string | null }[];
+  };
+  homework: Homework360[];
+  notes: Behaviour[];
+  parents: StudentProfile["parents"];
+  guardians: Guardian360[];
+  health: {
+    blood_group: string | null;
+    allergies: string | null;
+    chronic_conditions: string | null;
+    current_medications: string | null;
+    dietary_restrictions: string | null;
+    disabilities: string | null;
+    doctor_name: string | null;
+    doctor_phone: string | null;
+    emergency_contact_name: string | null;
+    emergency_contact_phone: string | null;
+    emergency_contact_relation: string | null;
+    notes: string | null;
+    on_file: boolean;
+  };
+  transport: { active: boolean; route_name: string | null; stop_name: string | null; direction: string | null; start_date: string | null; end_date: string | null };
+  fees: { total_due: number; total_paid: number; pending: number; rows: Fee360[] };
+  documents: Doc360[];
+  upcoming: { kind: string; title: string; on: string; note: string | null }[];
+  activity: { kind: string; on: string; title: string; note: string | null }[];
 };

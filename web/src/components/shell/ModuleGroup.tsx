@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { type IconName } from "@/components/ui/Icon";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { MENU_FIRST, MENU_LABEL, TAB_GROUPS } from "@/lib/menuGroups";
 import { MODULES, routeOf, SCREENS } from "@/lib/screens";
 
@@ -90,12 +90,15 @@ function useGroupOpen(label: string, here: boolean, currentId: string) {
  */
 export function LinkGroup({
   title,
+  icon,
   items,
   activeN,
   tone,
   currentId,
 }: {
   title: string;
+  /** Shown only when the menu is shrunk to a rail of icons. */
+  icon?: IconName;
   items: [number, string][];
   activeN: number | undefined;
   tone: number;
@@ -107,7 +110,8 @@ export function LinkGroup({
   if (items.length === 1) {
     const [n, label] = items[0];
     return (
-      <Link href={routeOf(n)} className={`nav ${n === activeN ? "active" : ""}`}>
+      <Link href={routeOf(n)} className={`nav ${n === activeN ? "active" : ""}`} title={label}>
+        {icon ? <Icon name={icon} className="nav-ico" /> : null}
         <span>{label}</span>
       </Link>
     );
@@ -115,7 +119,8 @@ export function LinkGroup({
 
   return (
     <div className={`nav-group tone-${tone % 6} ${open ? "open" : ""}`}>
-      <button type="button" className={`nav ${here ? "active" : ""}`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button type="button" className={`nav ${here ? "active" : ""}`} aria-expanded={open} onClick={() => setOpen((o) => !o)} title={title}>
+        {icon ? <Icon name={icon} className="nav-ico" /> : null}
         <span>{title}</span>
         <svg className="caret" viewBox="0 0 24 24" aria-hidden="true">
           <path d="m6 9 6 6 6-6" />
@@ -139,6 +144,7 @@ export function LinkGroup({
  */
 export function ModuleGroup({
   label,
+  icon,
   mods,
   currentId,
   currentModule,
@@ -165,7 +171,8 @@ export function ModuleGroup({
   if (screens.length === 1) {
     const only = screens[0];
     return (
-      <Link href={only.route} className={`nav ${only.n === activeN ? "active" : ""}`} aria-current={only.id === currentId ? "page" : undefined}>
+      <Link href={only.route} className={`nav ${only.n === activeN ? "active" : ""}`} aria-current={only.id === currentId ? "page" : undefined} title={MENU_LABEL[only.n] ?? label}>
+        <Icon name={icon} className="nav-ico" />
         <span>{MENU_LABEL[only.n] ?? label}</span>
       </Link>
     );
@@ -173,7 +180,8 @@ export function ModuleGroup({
 
   return (
     <div className={`nav-group tone-${tone % 6} ${open ? "open" : ""}`}>
-      <button type="button" className={`nav ${here ? "active" : ""}`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button type="button" className={`nav ${here ? "active" : ""}`} aria-expanded={open} onClick={() => setOpen((o) => !o)} title={label}>
+        <Icon name={icon} className="nav-ico" />
         <span>{label}</span>
         {count ? <span className="count">{count}</span> : null}
         <svg className="caret" viewBox="0 0 24 24" aria-hidden="true">

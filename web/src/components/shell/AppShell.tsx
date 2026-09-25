@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Avatar, Person } from "@/components/ui/primitives";
@@ -29,7 +29,7 @@ import { ask } from "@/lib/dialog";
 
 type NavLink = [screen: number, label: string, icon: IconName];
 /** A role's menu is plain links, and groups of links where a role has enough screens to need them. */
-type NavGroupDef = { title: string; items: [number, string][] };
+type NavGroupDef = { title: string; icon: IconName; items: [number, string][] };
 type RoleEntry = NavLink | NavGroupDef;
 const isGroup = (e: RoleEntry): e is NavGroupDef => !Array.isArray(e);
 const screensIn = (e: RoleEntry) => (isGroup(e) ? e.items.map(([n]) => n) : [e[0]]);
@@ -46,10 +46,10 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
   // is a tab of Messages, so it is not listed twice.
   Teacher: [
     [35, "Dashboard", "grid"], [1096, "My classes & students", "cap"], [110, "Mark attendance", "check"], [126, "My timetable", "calendar"],
-    { title: "Homework & assignments", items: [[128, "Homework"], [134, "Assignments"]] },
-    { title: "Teaching", items: [[102, "Lesson plans"], [106, "Teaching resources"], [1021, "Rubrics"]] },
-    { title: "Marks & tests", items: [[145, "Marks entry"], [1022, "Question bank"], [1023, "Online tests"]] },
-    { title: "Notes on students", items: [[1094, "Behaviour notes"], [1095, "Weekly reports"]] },
+    { title: "Homework & assignments", icon: "file", items: [[128, "Homework"], [134, "Assignments"]] },
+    { title: "Teaching", icon: "book", items: [[102, "Lesson plans"], [106, "Teaching resources"], [1021, "Rubrics"]] },
+    { title: "Marks & tests", icon: "chart", items: [[145, "Marks entry"], [1022, "Question bank"], [1023, "Online tests"]] },
+    { title: "Notes on students", icon: "message", items: [[1094, "Behaviour notes"], [1095, "Weekly reports"]] },
     [253, "Messages", "message"], [1097, "My profile", "users"],
   ],
   Parent: [[37, "Dashboard", "grid"], [57, "My children", "cap"], [60, "Attendance", "check"], [61, "Exams & results", "chart"], [131, "Homework", "book"], [78, "Payments & receipts", "money"], [251, "Parent-teacher meeting", "calendar"], [253, "Messages", "message"], [296, "Notifications", "bell"], [73, "My profile", "users"]],
@@ -125,7 +125,35 @@ function signOut() {
   window.location.href = routeOf(3);
 }
 
-function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer; school: Branding | null }) {
+/**
+ * The menu folds to a rail of icons and back. The choice is the person's, so
+ * it is remembered; it is read after mounting, so the server's first paint
+ * and the browser's agree.
+ */
+const NAV_COLLAPSED = "bc_nav_collapsed";
+
+function useNavCollapsed(): [boolean, () => void] {
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(NAV_COLLAPSED) === "1");
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+  const toggle = () =>
+    setCollapsed((v) => {
+      try {
+        localStorage.setItem(NAV_COLLAPSED, v ? "0" : "1");
+      } catch {
+        /* storage unavailable */
+      }
+      return !v;
+    });
+  return [collapsed, toggle];
+}
+
+function Sidebar({ s, viewer, school, collapsed, onToggle }: { s: Screen | undefined; viewer: Viewer; school: Branding | null; collapsed?: boolean; onToggle?: () => void }) {
   const { who, role } = viewer;
   const roleNav = ROLE_NAV[role];
   const home = useHome();
@@ -157,6 +185,11 @@ function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer;
 
   return (
     <aside className="sidebar">
+      {onToggle ? (
+        <button type="button" className="nav-fold" onClick={onToggle} aria-label={collapsed ? "Show the menu" : "Shrink the menu"} title={collapsed ? "Show the menu" : "Shrink the menu"}>
+          <Icon name="chevron" className="sm" />
+        </button>
+      ) : null}
       {/* The school you are working in heads the menu; the platform console
           (and the moment before the school loads) shows BrightCampus. */}
       <Link href={home} className={`brand ${school ? "school-brand" : ""}`} title={school?.name}>
@@ -180,6 +213,9 @@ function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer;
       <div
         className="nav-scroll"
         ref={scroller}
+        onClickCapture={(e) => {
+          if (collapsed && (e.target as HTMLElement).closest(".nav-group > .nav")) onToggle?.();
+        }}
         onScroll={(e) => {
           try {
             sessionStorage.setItem(SCROLL_KEY, String(e.currentTarget.scrollTop));
@@ -193,16 +229,17 @@ function Sidebar({ s, viewer, school }: { s: Screen | undefined; viewer: Viewer;
             {/* the person's own screens need no heading: they are the menu */}
             {roleNav.map((entry, i) =>
               isGroup(entry) ? (
-                <LinkGroup key={entry.title} title={entry.title} items={entry.items} activeN={here} tone={i} currentId={s?.id ?? ""} />
+                <LinkGroup key={entry.title} title={entry.title} icon={entry.icon} items={entry.items} activeN={here} tone={i} currentId={s?.id ?? ""} />
               ) : (
-                <Link key={entry[0] + entry[1]} className={`nav ${entry[0] === here ? "active" : ""}`} href={routeOf(entry[0])}>
+                <Link key={entry[0] + entry[1]} className={`nav ${entry[0] === here ? "active" : ""}`} href={routeOf(entry[0])} title={entry[1]}>
+                  <Icon name={entry[2]} className="nav-ico" />
                   <span>{entry[1]}</span>
                 </Link>
               ),
             )}
             {jobs.length ? <div className="nav-label">THE REST OF THE SCHOOL</div> : null}
             {jobs.map((j, i) => (
-              <LinkGroup key={j.permission} title={j.title} items={j.items} activeN={here} tone={i} currentId={s?.id ?? ""} />
+              <LinkGroup key={j.permission} title={j.title} icon="folder" items={j.items} activeN={here} tone={i} currentId={s?.id ?? ""} />
             ))}
           </>
         ) : (
@@ -301,7 +338,7 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
         </button>
         <div className="topsearch">
           <Icon name="search" className="sm" />
-          <input aria-label="Find screen" placeholder="Search…" id="global-search" autoComplete="off" />
+          <input aria-label="Find screen" placeholder="Search students, classes, pages…" id="global-search" autoComplete="off" />
           <kbd>⌘ K</kbd>
           <div className="search-results" id="global-results" />
         </div>
@@ -337,7 +374,27 @@ export function ShellFrame({ children }: { children: ReactNode }) {
   return <SignedInFrame s={s}>{children}</SignedInFrame>;
 }
 
+/**
+ * A screen that opens one record can say what the title row should read while
+ * that record is open ("Student 360" instead of the menu's own label). The
+ * default comes back when the screen lets go of it.
+ */
+type PageTitle = { title: string; note?: string };
+const TitleSlot = createContext<(t: PageTitle | null) => void>(() => {});
+
+export function usePageTitle(t: PageTitle | null) {
+  const set = useContext(TitleSlot);
+  const title = t?.title;
+  const note = t?.note;
+  useEffect(() => {
+    set(title ? { title, note } : null);
+    return () => set(null);
+  }, [set, title, note]);
+}
+
 function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
+  const [titled, setTitled] = useState<PageTitle | null>(null);
+  const [collapsed, toggleNav] = useNavCollapsed();
   const viewer = useViewer(s);
   const school = useSchool(viewer.role);
   const sess = useSession();
@@ -363,43 +420,46 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
     ? new Set([...roleNav.flatMap(screensIn), ...heldJobs(perms).flatMap((j) => j.items.map(([n]) => n))])
     : null;
   const tabs = (group?.tabs ?? []).filter(([n]) => !mine || n === s.n || mine.has(n));
+  const note = titled ? titled.note : SCREEN_NOTE[s.n];
   return (
-    <div className="app">
-      <Sidebar s={s} viewer={viewer} school={school ?? null} />
-      <button className="offcanvas-backdrop" aria-label="Close navigation" data-toggle-nav="" />
-      <div className="workspace">
-        <Topbar who={viewer.who} role={viewer.role} school={school} />
-        <main className="main">
-          {/* No breadcrumb: the menu shows where you are. Dashboards open
-              straight on their greeting; other screens keep a compact title
-              row, which also carries their buttons (Save, Add …) — put there
-              by the page through PAGE_ACTIONS_SLOT. */}
-          {s.layout.includes("dashboard") ? null : (
-            <div className="page-head">
-              <div>
-                <h1>{group?.label ?? MENU_LABEL[s.n] ?? s.name}</h1>
-                {SCREEN_NOTE[s.n] ? <p className="page-note">{SCREEN_NOTE[s.n]}</p> : null}
+    <TitleSlot.Provider value={setTitled}>
+      <div className={`app ${collapsed ? "nav-rail" : ""}`}>
+        <Sidebar s={s} viewer={viewer} school={school ?? null} collapsed={collapsed} onToggle={toggleNav} />
+        <button className="offcanvas-backdrop" aria-label="Close navigation" data-toggle-nav="" />
+        <div className="workspace">
+          <Topbar who={viewer.who} role={viewer.role} school={school} />
+          <main className="main">
+            {/* No breadcrumb: the menu shows where you are. Dashboards open
+                straight on their greeting; other screens keep a compact title
+                row, which also carries their buttons (Save, Add …) — put there
+                by the page through PAGE_ACTIONS_SLOT. */}
+            {s.layout.includes("dashboard") ? null : (
+              <div className="page-head">
+                <div>
+                  <h1>{titled?.title ?? group?.label ?? MENU_LABEL[s.n] ?? s.name}</h1>
+                  {note ? <p className="page-note">{note}</p> : null}
+                </div>
+                <div className="actions" id={PAGE_ACTIONS_SLOT} />
               </div>
-              <div className="actions" id={PAGE_ACTIONS_SLOT} />
-            </div>
-          )}
-          {group && tabs.length > 1 ? (
-            <nav className="module-tabs page-tabs" aria-label={group.label}>
-              {tabs.map(([n, t]) => (
-                <Link key={n} href={routeOf(n)} className={n === s.n ? "active" : ""} aria-current={n === s.n ? "page" : undefined}>
-                  {t}
-                </Link>
-              ))}
-            </nav>
-          ) : null}
-          {children}
-          <footer className="screen-note">
-            <span>{`BrightCampus · ${schoolName}`}</span>
-            <span>{s.id}</span>
-          </footer>
-        </main>
+            )}
+            {group && tabs.length > 1 ? (
+              <nav className="module-tabs page-tabs" aria-label={group.label}>
+                {tabs.map(([n, t]) => (
+                  <Link key={n} href={routeOf(n)} className={n === s.n ? "active" : ""} aria-current={n === s.n ? "page" : undefined}>
+                    {t}
+                  </Link>
+                ))}
+              </nav>
+            ) : null}
+            {children}
+            <footer className="screen-note">
+              <span>{`BrightCampus · ${schoolName}`}</span>
+              <span>{s.id}</span>
+            </footer>
+          </main>
+        </div>
       </div>
-    </div>
+    </TitleSlot.Provider>
   );
 }
 

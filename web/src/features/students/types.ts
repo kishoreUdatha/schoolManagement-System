@@ -52,7 +52,7 @@ export type Student = {
   created_at: string;
 };
 
-export type ParentContact = { user_id: number; full_name: string; email: string | null; phone: string | null; relation: string | null };
+export type ParentContact = { guardian_id: number | null; user_id: number | null; full_name: string; email: string | null; phone: string | null; relation: string | null; is_primary: boolean };
 
 export type StudentProfile = Omit<Student, "created_at"> & {
   section_name: string | null;
