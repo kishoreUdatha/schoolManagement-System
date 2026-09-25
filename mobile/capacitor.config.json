@@ -3,9 +3,11 @@
   "appName": "BrightCampus Parent",
   "webDir": "www",
   "server": {
-    "url": "http://192.168.29.250:3100/parent/home",
+    "url": "http://192.168.29.250:3100/app",
     "cleartext": true,
-    "allowNavigation": ["192.168.29.250"]
+    "allowNavigation": [
+      "192.168.29.250"
+    ]
   },
   "android": {
     "allowMixedContent": true

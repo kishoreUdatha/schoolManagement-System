@@ -1,0 +1,32 @@
+/* Additions for the teacher app on top of the parent pack's styles
+   (parent.css, scoped under .pm). Only what the pack has no class for. */
+
+/* Present / absent / late / half-day picker on each attendance row. */
+.pm .mark-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.pm .mark-row:last-child{border-bottom:0}
+.pm .mark-row .who{flex:1;min-width:0}
+.pm .mark-row .who strong{display:block;font-size:15px;font-weight:750;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pm .mark-row .who small{display:block;font-size:13px;color:var(--muted)}
+.pm .seg{display:flex;gap:4px;flex:none}
+.pm .seg button{min-width:36px;height:36px;border-radius:9px;border:1px solid #d5dfee;background:#fff;font-weight:800;font-size:14px;color:#5b6b85;padding:0 6px}
+.pm .seg button.on.present{background:#ddf2e8;border-color:#9fd8bf;color:#087657}
+.pm .seg button.on.absent{background:#ffe3e3;border-color:#f3aaaa;color:#b42318}
+.pm .seg button.on.late{background:#fff0d1;border-color:#f0cf8a;color:#905d08}
+.pm .seg button.on.half_day{background:#e3ebff;border-color:#b8cbf7;color:var(--blue)}
+.pm .seg button:disabled{opacity:.55}
+/* Marks: a compact number box per student. */
+.pm .mark-row input.score{width:78px;min-height:38px;margin:0;padding:6px 8px;text-align:right;font-size:16px}
+.pm .chip-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+.pm .chip-row button{border:1px solid #d5dfee;background:#fff;border-radius:999px;padding:7px 12px;font-weight:750;font-size:14px;color:#44587a}
+.pm .chip-row button.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.pm .sticky-save{position:sticky;bottom:0;background:linear-gradient(#f6f8fc00,var(--bg) 30%);padding:10px 0 4px}
+.pm .status.red{background:#ffe3e3;color:#b42318}
+.pm .role-pick{display:grid;gap:12px;margin:18px 0}
+.pm .role-pick a{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid #dbe4f3;border-radius:16px;background:#fff;text-decoration:none;color:var(--ink)}
+.pm .role-pick a strong{display:block;font-size:17px}
+.pm .role-pick a small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+/* The teacher's tab labels are longer than the parent's; let the five tabs
+   share the bar. Scoped to teacher screens (data-screen="t…") so the parent
+   app keeps its fixed-width tabs even after this file has loaded. */
+.pm .phone[data-screen^="t"] #bottom-nav button{width:auto;flex:1 1 0;min-width:0;padding:5px 2px;font-size:12px}
+.pm .phone[data-screen^="t"] #bottom-nav button span{white-space:nowrap}

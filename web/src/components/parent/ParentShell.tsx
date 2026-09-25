@@ -1,10 +1,9 @@
 "use client";
 
 /*
- * The parent app's frame, from the Parent Mobile pack: header (back, title,
- * notifications), the selected-child bar, the scrolling body, the five-tab
- * bottom navigation and the "More" menu. Full screen on a phone; a centred
- * column on a desktop.
+ * The parent app: the shared phone frame (MobileFrame: header, body, five-tab
+ * bottom navigation, "More" menu) with the parent's tabs, menu and the
+ * selected-child bar. Full screen on a phone; a centred column on a desktop.
  *
  * It also owns the parent's session and children. Screens read them with
  * useParent(): the list from GET /parent/me/children and the child picked
@@ -13,7 +12,8 @@
  */
 
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Ico, MobileFrame, useToast } from "@/components/mobile/MobileFrame";
 import { PARENT_SCREENS, parentRoute, parentScreen } from "@/lib/parentScreens";
 import { session } from "@/lib/session";
 import { useApi } from "@/lib/useApi";
@@ -58,32 +58,6 @@ export function useParent(): ParentCtx {
 }
 
 const CHILD_KEY = "bc_child";
-
-const ICONS: Record<string, string> = {
-  home: "M3 10 12 3l9 7v10H7V10m3 10v-6h5v6",
-  learn: "M3 4h7c1.5 0 2 .7 2 2 0-1.3.5-2 2-2h7v16h-7c-1.5 0-2-.7-2-2 0 1.3-.5 2-2 2H3zM12 6v12",
-  fees: "M4 6h16v14H4zM4 6V4h13M14 11h7v5h-7z",
-  inbox: "M3 5h18v13H8l-5 3zM7 9h10M7 13h7",
-  back: "m14 5-7 7 7 7M7 12h13",
-  bell: "M6 10a6 6 0 0 1 12 0v5l2 3H4l2-3zM10 21h4",
-  close: "m6 6 12 12M18 6 6 18",
-};
-
-function Ico({ name }: { name: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {name === "more" ? (
-        <>
-          <circle cx="5" cy="12" r="1.7" />
-          <circle cx="12" cy="12" r="1.7" />
-          <circle cx="19" cy="12" r="1.7" />
-        </>
-      ) : (
-        <path d={ICONS[name]} />
-      )}
-    </svg>
-  );
-}
 
 const TABS: [key: string, label: string, n: number][] = [
   ["home", "Home", 6],
@@ -150,16 +124,9 @@ export function ParentShell({ screen: n, children: body }: { screen: number; chi
     }
   }, []);
 
-  const [toast, setToast] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
-  const notify = useCallback((m: string) => {
-    setToast(m);
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => setToast(null), 3200);
-  }, []);
+  const { toast, notify } = useToast();
 
   const go = useCallback((to: number) => router.push(parentRoute(to)), [router]);
-  const [menu, setMenu] = useState(false);
 
   // The converted mock markup navigates with data-go="n"; honour it until a screen gives the element a real handler.
   const onClick = (e: React.MouseEvent) => {
@@ -176,24 +143,19 @@ export function ParentShell({ screen: n, children: body }: { screen: number; chi
 
   return (
     <Ctx.Provider value={ctx}>
-      <div className="pm">
-        <div className={`phone ${noNav ? "no-nav" : ""}`} data-screen={n} onClick={onClick}>
-          {n > 1 ? (
-            <header id="app-header">
-              <button className="icon-button" aria-label="Go back" onClick={() => router.back()}>
-                <Ico name="back" />
-              </button>
-              <h2>{n === 6 ? "BrightCampus" : s.title}</h2>
-              {isParent ? (
-                <button className="icon-button" aria-label="Notifications" onClick={() => go(7)}>
-                  <Ico name="bell" />
-                </button>
-              ) : (
-                <span style={{ width: 38 }} />
-              )}
-            </header>
-          ) : null}
-          {!s.global && isParent ? (
+      <MobileFrame
+        screen={n}
+        title={n === 6 ? "BrightCampus" : s.title}
+        showHeader={n > 1}
+        headerRight={
+          isParent ? (
+            <button className="icon-button" aria-label="Notifications" onClick={() => go(7)}>
+              <Ico name="bell" />
+            </button>
+          ) : undefined
+        }
+        subBar={
+          !s.global && isParent ? (
             <div id="child-bar">
               <button className="child-select" onClick={() => go(5)}>
                 <span className="mini-avatar">{child ? initialsOf(child.full_name) : "…"}</span>
@@ -201,58 +163,20 @@ export function ParentShell({ screen: n, children: body }: { screen: number; chi
                 <span>{child ? `${child.section_label ?? ""}⌄` : ""}</span>
               </button>
             </div>
-          ) : null}
-          <div className="scroll-body" id="screen-body">
-            {body}
-          </div>
-          {!noNav ? (
-            <nav id="bottom-nav" aria-label="Main navigation">
-              {TABS.map(([key, label, to]) => (
-                <button key={key} className={s.tab === key ? "active" : ""} onClick={() => (to ? go(to) : setMenu(true))}>
-                  <Ico name={key} />
-                  <span>{label}</span>
-                </button>
-              ))}
-            </nav>
-          ) : null}
-          <div id="pm-toast" className={toast ? "visible" : ""} role="status" aria-live="polite">
-            {toast}
-          </div>
-          {menu ? (
-            <div id="more-menu">
-              <div className="between">
-                <h2>More</h2>
-                <button className="icon-button" aria-label="Close menu" onClick={() => setMenu(false)}>
-                  <Ico name="close" />
-                </button>
-              </div>
-              {MORE.map(([label, to]) => (
-                <button
-                  key={to}
-                  className="item"
-                  onClick={() => {
-                    setMenu(false);
-                    go(to);
-                  }}
-                >
-                  <strong>{label}</strong>
-                  <span>›</span>
-                </button>
-              ))}
-              <button
-                className="item"
-                onClick={() => {
-                  session.clear();
-                  window.location.href = parentRoute(2);
-                }}
-              >
-                <strong>Sign out</strong>
-                <span>›</span>
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </div>
+          ) : null
+        }
+        noNav={noNav}
+        tabs={TABS.map(([key, label, to]) => ({ key, label, active: s.tab === key, onPress: () => go(to) }))}
+        menu={MORE.map(([label, to]) => ({ label, onPress: () => go(to) }))}
+        onSignOut={() => {
+          session.clear();
+          window.location.href = parentRoute(2);
+        }}
+        toast={toast}
+        onBodyClick={onClick}
+      >
+        {body}
+      </MobileFrame>
     </Ctx.Provider>
   );
 }
