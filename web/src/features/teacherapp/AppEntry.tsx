@@ -11,6 +11,7 @@ import { useHydrated, useSession } from "@/lib/useSession";
 function homeFor(role: string): string {
   if (role === "parent") return "/parent/home";
   if (role === "teacher") return "/teacher/today";
+  if (role === "student") return "/student/home";
   return routeOf(HOME_SCREEN[role as keyof typeof HOME_SCREEN] ?? 3);
 }
 
@@ -45,7 +46,7 @@ export function AppEntry() {
                 <small>Mark attendance, set homework and enter marks</small>
               </span>
             </Link>
-            <Link href={`${routeOf(3)}?role=student`}>
+            <Link href="/student/sign-in">
               <span className="v-icon amber">🎒</span>
               <span>
                 <strong>Student</strong>

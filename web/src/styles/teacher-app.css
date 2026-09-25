@@ -25,8 +25,8 @@
 .pm .role-pick a{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid #dbe4f3;border-radius:16px;background:#fff;text-decoration:none;color:var(--ink)}
 .pm .role-pick a strong{display:block;font-size:17px}
 .pm .role-pick a small{display:block;color:var(--muted);font-size:14px;margin-top:2px}
-/* The teacher's tab labels are longer than the parent's; let the five tabs
+/* The teacher's and student's tab labels are longer than the parent's; let the five tabs
    share the bar. Scoped to teacher screens (data-screen="t…") so the parent
    app keeps its fixed-width tabs even after this file has loaded. */
-.pm .phone[data-screen^="t"] #bottom-nav button{width:auto;flex:1 1 0;min-width:0;padding:5px 2px;font-size:12px}
-.pm .phone[data-screen^="t"] #bottom-nav button span{white-space:nowrap}
+.pm .phone[data-screen^="t"] #bottom-nav button,.pm .phone[data-screen^="s"] #bottom-nav button{width:auto;flex:1 1 0;min-width:0;padding:5px 2px;font-size:12px}
+.pm .phone[data-screen^="t"] #bottom-nav button span,.pm .phone[data-screen^="s"] #bottom-nav button span{white-space:nowrap}
