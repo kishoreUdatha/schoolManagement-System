@@ -90,3 +90,35 @@ class TimetableEntry(Base, PrimaryKeyMixin, TimestampMixin):
         nullable=False,
     )
     notes: Mapped[Optional[str]] = mapped_column(String(200))
+
+
+class HodAssignment(Base, PrimaryKeyMixin, TimestampMixin):
+    """A teacher acting as Head of Department for a section.
+
+    A teacher with at least one row here is an HOD: they can create, edit and
+    publish the timetable of each assigned section. School admins and
+    principals manage every section and need no rows here.
+    """
+
+    __tablename__ = "hod_assignments"
+    __table_args__ = (
+        UniqueConstraint(
+            "teacher_user_id", "section_id", name="uq_hod_teacher_section"
+        ),
+        Index("ix_hod_assignments_teacher_user_id", "teacher_user_id"),
+        Index("ix_hod_assignments_section_id", "section_id"),
+        Index("ix_hod_assignments_school_id", "school_id"),
+    )
+
+    tenant_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False
+    )
+    school_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("schools.id", ondelete="CASCADE"), nullable=False
+    )
+    teacher_user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    section_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("sections.id", ondelete="CASCADE"), nullable=False
+    )

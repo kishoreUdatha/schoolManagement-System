@@ -214,3 +214,27 @@ def require_school_admin_or_accountant(current_user: CurrentUser) -> User:
 SchoolAdminOrAccountant = Annotated[
     User, Depends(require_school_admin_or_accountant)
 ]
+
+
+def require_timetable_user(current_user: CurrentUser) -> User:
+    """Timetable workspace: school admin + principal (whole school) and
+    teachers (their own timetable, plus HOD-assigned sections). Per-section
+    rights are enforced in timetable_access."""
+    if current_user.role not in (
+        UserRole.school_admin,
+        UserRole.principal,
+        UserRole.teacher,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Timetable access requires an admin, principal or teacher account",
+        )
+    if current_user.tenant_id is None or current_user.school_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User must be linked to a tenant and school",
+        )
+    return current_user
+
+
+TimetableUser = Annotated[User, Depends(require_timetable_user)]

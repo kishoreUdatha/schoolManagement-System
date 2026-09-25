@@ -12,12 +12,13 @@ import json
 import sys
 import urllib.error
 import urllib.request
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 
 from sqlalchemy import select
 
 from app.core.security import hash_password
 from app.database import SessionLocal
+from app.models.academic import Section
 from app.models.subject import ClassSubject
 from app.models.timetable import Period, TimetableEntry
 from app.models.user import User
@@ -98,6 +99,11 @@ def ensure_period(day_of_week: int, period_number: int, start_h: int) -> int:
 def ensure_entry(section_id: int, period_id: int, class_subject_id: int):
     db = SessionLocal()
     try:
+        # Teachers only see published timetables.
+        sec = db.get(Section, section_id)
+        if sec.timetable_published_at is None:
+            sec.timetable_published_at = datetime.now(timezone.utc)
+            db.commit()
         existing = db.execute(
             select(TimetableEntry).where(
                 TimetableEntry.section_id == section_id,

@@ -1,18 +1,19 @@
 """Story 6.2 — Teacher's own timetable across all class-subjects they teach.
 
-Reads existing timetable_entries; this is a pure read service. The
-class-teacher role also shows up here (Section.class_teacher_user_id) so a
-homeroom teacher sees their section even for free periods.
+Reads existing timetable_entries; this is a pure read service. Only
+sections whose timetable is published are included.
 """
 from __future__ import annotations
 
-from datetime import date, datetime, time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.academic import SchoolClass, Section
 from app.models.subject import ClassSubject, Subject
+from app.models.tenant import School
 from app.models.timetable import Period, TimetableEntry
 
 
@@ -40,13 +41,17 @@ def get_for_teacher(db: Session, teacher_user_id: int, school_id: int) -> dict:
             .where(
                 TimetableEntry.school_id == school_id,
                 ClassSubject.teacher_user_id == teacher_user_id,
+                Section.timetable_published_at.is_not(None),
             )
             .order_by(Period.day_of_week, Period.period_number)
         ).all()
     )
 
-    today_iso_day = date.today().isoweekday()  # 1..7
-    now = datetime.now().time()
+    # School-local clock: servers usually run in UTC, which would shift the day.
+    school = db.get(School, school_id)
+    local_now = datetime.now(ZoneInfo(school.timezone if school else "Asia/Kolkata"))
+    today_iso_day = local_now.isoweekday()  # 1..7
+    now = local_now.time().replace(tzinfo=None, microsecond=0)
 
     by_day: dict[int, list[dict]] = {d: [] for d in range(1, 8)}
     next_class: dict | None = None
@@ -73,10 +78,17 @@ def get_for_teacher(db: Session, teacher_user_id: int, school_id: int) -> dict:
         }
         by_day[period.day_of_week].append(item)
 
-        # Find first today-or-later class whose end_time hasn't passed
-        if next_class is None:
-            if period.day_of_week == today_iso_day and period.end_time > now:
-                next_class = item
+    # Next class: first one today that hasn't ended, else the first class on
+    # the following days (wrapping round the week).
+    for offset in range(8):
+        day = (today_iso_day - 1 + offset) % 7 + 1
+        for item in by_day[day]:
+            if offset == 0 and item["end_time"] <= now:
+                continue
+            next_class = item
+            break
+        if next_class:
+            break
 
     return {
         "today_day_of_week": today_iso_day,

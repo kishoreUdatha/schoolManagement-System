@@ -255,7 +255,7 @@ export function Sidebar({
   return (
     <>
       {/* Mobile top bar */}
-      <div className="flex items-center justify-between border-b border-surface-border bg-surface-raised/95 px-4 py-2 backdrop-blur-sm md:hidden">
+      <div className="flex items-center justify-between border-b border-surface-border bg-surface-raised/95 px-4 py-2 backdrop-blur-sm md:hidden print:hidden">
         <Link
           href={brandHref}
           className="flex items-center gap-2 text-sm font-semibold text-ink"
@@ -286,7 +286,7 @@ export function Sidebar({
       {/* Desktop sidebar — pinned to viewport height so the footer
           (user info, sign out, theme toggle) is always visible even on
           tall main content pages. */}
-      <aside className="sticky top-0 hidden h-screen w-44 shrink-0 border-r border-surface-border md:flex md:flex-col">
+      <aside className="sticky top-0 hidden h-screen w-44 shrink-0 border-r border-surface-border md:flex md:flex-col print:hidden">
         {navContent}
       </aside>
 

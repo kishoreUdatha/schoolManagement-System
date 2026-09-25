@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, ClipboardCheck, LayoutDashboard } from "lucide-react";
+import { BarChart3, CalendarDays, ClipboardCheck, LayoutDashboard } from "lucide-react";
 
 import { Sidebar, type NavSection } from "@/components/Sidebar";
 
@@ -9,6 +9,7 @@ const sections: NavSection[] = [
     heading: null,
     items: [
       { href: "/principal", label: "Dashboard", icon: LayoutDashboard, exact: true },
+      { href: "/principal/timetable", label: "Timetable", icon: CalendarDays },
       { href: "/principal/reports", label: "Reports", icon: BarChart3 },
       { href: "/principal/approvals", label: "Approvals", icon: ClipboardCheck },
     ],
