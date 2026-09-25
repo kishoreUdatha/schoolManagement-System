@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Avatar, Person } from "@/components/ui/primitives";
 import { LinkGroup, ModuleGroup, PARENT } from "./ModuleGroup";
-import { heldJobs, usePermissions, type Job } from "@/lib/jobs";
+import { heldJobs, usableBy, usePermissions, type Job } from "@/lib/jobs";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { MODULES, SCREENS, screenAt, routeOf, type Screen } from "@/lib/screens";
@@ -41,7 +41,7 @@ const NAV: [title: string, links: [number, string, IconName, number[]][]][] = [
 ];
 
 const ROLE_NAV: Record<string, RoleEntry[]> = {
-  Student: [[36, "Dashboard", "grid"], [131, "My homework", "book"], [59, "My academics", "cap"], [60, "My attendance", "check"], [125, "My timetable", "calendar"], [61, "Exams & results", "chart"], [62, "My fees", "money"], [67, "My library", "book"], [63, "My documents", "file"], [246, "School events", "calendar"], [296, "Notifications", "bell"], [57, "My profile", "users"]],
+  Student: [[36, "Dashboard", "grid"], [131, "My homework", "book"], [59, "My academics", "cap"], [60, "My attendance", "check"], [125, "My timetable", "calendar"], [61, "Exams & results", "chart"], [62, "My fees", "money"], [67, "My library", "book"], [63, "My documents", "file"], [246, "School events", "calendar"], [57, "My profile", "users"]],
   // A teacher's day first, then the work that groups: the notification centre
   // is a tab of Messages, so it is not listed twice.
   Teacher: [
@@ -90,11 +90,12 @@ type Viewer = { who: string; role: string };
  * the page — but only where the job can open the whole group. Screens already
  * in the person's own menu are not repeated.
  */
-function jobMenu(job: Job, own: Set<number>): [number, string][] {
-  const listed = new Set(job.items.map(([n]) => n));
+function jobMenu(job: Job, own: Set<number>, role: string | undefined): [number, string][] {
+  const listed = new Set(job.items.filter(([n]) => usableBy(n, role)).map(([n]) => n));
   const out: [number, string][] = [];
   const seen = new Set<number>();
   for (const [n, label] of job.items) {
+    if (!listed.has(n)) continue;
     const group = tabGroupOf(n);
     const grouped = group && listed.has(group.tabs[0][0]);
     const head = grouped ? group.tabs[0][0] : n;
@@ -161,8 +162,9 @@ function Sidebar({ s, viewer, school, collapsed, onToggle }: { s: Screen | undef
   // desk…), each a section under the person's own menu; items already in
   // their menu are not repeated.
   const perms = usePermissions();
+  const sess = useSession();
   const own = new Set((roleNav ?? []).flatMap(screensIn));
-  const jobs = roleNav ? heldJobs(perms).map((j) => ({ ...j, items: jobMenu(j, own) })).filter((j) => j.items.length) : [];
+  const jobs = roleNav ? heldJobs(perms).map((j) => ({ ...j, items: jobMenu(j, own, sess?.user.role) })).filter((j) => j.items.length) : [];
   const here = s ? (PARENT[s.n] ?? s.n) : -1;
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -344,7 +346,7 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
         </div>
       </div>
       <div className="row">
-        {school ? <YearSelect admin={role === "School Admin"} /> : null}
+        {school && role !== "Student" && role !== "Parent" ? <YearSelect admin={role === "School Admin"} /> : null}
         <div className="bar-divider" />
         <Link href={routeOf(296)} aria-label="Notifications" className="btn icon">
           <Icon name="bell" />
@@ -419,7 +421,7 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
   const mine = roleNav
     ? new Set([...roleNav.flatMap(screensIn), ...heldJobs(perms).flatMap((j) => j.items.map(([n]) => n))])
     : null;
-  const tabs = (group?.tabs ?? []).filter(([n]) => !mine || n === s.n || mine.has(n));
+  const tabs = (group?.tabs ?? []).filter(([n]) => n === s.n || ((!mine || mine.has(n)) && usableBy(n, sess?.user.role)));
   const note = titled ? titled.note : SCREEN_NOTE[s.n];
   return (
     <TitleSlot.Provider value={setTitled}>

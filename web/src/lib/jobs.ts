@@ -19,6 +19,18 @@ export type Job = {
   items: [number, string, string?][];
 };
 
+/**
+ * Screens that serve only some sign-in roles, whatever permissions the person
+ * holds: the screen itself tells anyone else it is not theirs. Menus and tab
+ * rows leave them out for everyone else, rather than open a door to a note.
+ */
+export const ROLE_ONLY: Record<number, string[]> = {
+  250: ["school_admin", "teacher"], // PTM setup: the office, or a class teacher for their class
+  254: ["school_admin", "teacher"], // bulk messages
+  255: ["school_admin", "principal"], // communication history
+};
+export const usableBy = (n: number, role: string | undefined) => !role || !ROLE_ONLY[n] || ROLE_ONLY[n].includes(role);
+
 export const JOBS: Job[] = [
   {
     permission: "admissions.manage",

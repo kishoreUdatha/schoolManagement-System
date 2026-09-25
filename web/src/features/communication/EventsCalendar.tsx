@@ -18,7 +18,8 @@ const TYPE_LABEL: Record<CalendarItem["type"], string> = { event: "Events", holi
 /**
  * SCR-246, live: the combined calendar feed (events, holidays, exams,
  * parent-teacher meetings). Staff read GET /api/v1/school/calendar, where
- * drafts show too; a parent reads GET /api/v1/parent/me/calendar.
+ * drafts show too; a parent reads GET /api/v1/parent/me/calendar and a
+ * student GET /api/v1/student/calendar.
  */
 export function EventsCalendar() {
   const router = useRouter();
@@ -30,7 +31,11 @@ export function EventsCalendar() {
 
   const first = new Date(ym.y, ym.m, 1);
   const last = new Date(ym.y, ym.m + 1, 0);
-  const feed = role === null ? null : role === "parent" ? "/api/v1/parent/me/calendar" : "/api/v1/school/calendar";
+  const feed =
+    role === null ? null
+    : role === "parent" ? "/api/v1/parent/me/calendar"
+    : role === "student" ? "/api/v1/student/calendar"
+    : "/api/v1/school/calendar";
   const res = useApi<CalendarItem[]>(feed, { start: isoDay(first), end: isoDay(last) });
 
   const shown = useMemo(
