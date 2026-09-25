@@ -847,3 +847,8 @@
 .pm .invoice-amount>.v-icon{width:49px;height:57px}
 .pm .phone #app-header h2{font-size:19px}
 .pm .phone[data-screen="57"] #app-header h2{font-size:18px}}
+/* The staff workspace's global .switch is a 35px toggle with a hidden checkbox;
+   undo it for the parent app's settings rows, which use a plain checkbox. */
+.pm .switch{position:static;width:auto;height:auto;flex-shrink:1}
+.pm .switch > span{flex:1;min-width:0;padding-right:12px}
+.pm .switch input{opacity:1;width:20px;height:20px;flex:none;margin:0}
