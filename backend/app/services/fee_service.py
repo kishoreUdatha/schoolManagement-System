@@ -473,6 +473,18 @@ def _generate_extras(
     return created, skipped
 
 
+def _next_due_date(today: date, due_day: int) -> date:
+    """The next time the month's due day comes round, today included: a child
+    admitted on the 25th with fees due on the 10th owes them on the 10th of next
+    month, not a fortnight ago."""
+    y, m = today.year, today.month
+    due = date(y, m, min(due_day, monthrange(y, m)[1]))
+    if due < today:
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+        due = date(y, m, min(due_day, monthrange(y, m)[1]))
+    return due
+
+
 def generate_one_time_for_student(
     db: Session, tenant_id: int, school_id: int, student: Student
 ) -> int:
@@ -505,10 +517,7 @@ def generate_one_time_for_student(
     today = date.today()
     created = 0
     for structure, head in structures:
-        due_date = date(
-            today.year, today.month,
-            min(structure.due_day_of_month, monthrange(today.year, today.month)[1]),
-        )
+        due_date = _next_due_date(today, structure.due_day_of_month)
         base, base_note = _base_amount(
             db, student, head, structure.amount, student.academic_year_id, today
         )

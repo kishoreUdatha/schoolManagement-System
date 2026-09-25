@@ -203,6 +203,8 @@ def create_parent(
         password_hash=hash_password(raw_password),
         role=UserRole.parent,
         is_active=True,
+        # The office read this password off the screen: the parent replaces it at first sign-in.
+        must_change_password=True,
     )
     db.add(user)
     try:
@@ -375,6 +377,7 @@ def reset_password(
     u = _get_parent(db, user_id, tenant_id, school_id)
     raw = _generate_password()
     u.password_hash = hash_password(raw)
+    u.must_change_password = True
     db.commit()
     db.refresh(u)
     return u, raw

@@ -55,7 +55,7 @@ export function finishSignIn(t: Token, next: string | null, passwordRoute: strin
   }
   session.set({ access: t.access_token, refresh: t.refresh_token, user: t.user });
   clearPending();
-  if (t.requires_password_change || t.user.must_change_password) return passwordRoute;
+  if (t.requires_password_change || t.user.must_change_password) return `${passwordRoute}?next=${encodeURIComponent(safeNext(next) ?? "/parent/home")}`;
   return safeNext(next) ?? "/parent/home";
 }
 

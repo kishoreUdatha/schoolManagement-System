@@ -31,7 +31,7 @@ const NOTE: Record<Action, string> = {
 /**
  * NEW-045, live: GET /school/accounts/cheques (every cheque; counted and
  * filtered here), POST to record one against a student's pending fees
- * (GET /fees/student-fees?student_id=&status=pending), POST /{id}/action
+ * (GET /fees/student-fees?student_id=&status=outstanding), POST /{id}/action
  * to deposit, clear (credits the fees), bounce (optional charge under a
  * fee type) or return it.
  */
@@ -147,7 +147,7 @@ function NewCheque({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
   const [f, setF] = useState({ amount: "", cheque_no: "", bank_name: "", drawer_name: "", cheque_date: isoToday(), received_on: isoToday() });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fees = useApi<Paginated<StudentFee>>(student ? "/api/v1/school/fees/student-fees" : null, { student_id: student?.id, status: "pending", page_size: 200 });
+  const fees = useApi<Paginated<StudentFee>>(student ? "/api/v1/school/fees/student-fees" : null, { student_id: student?.id, status: "outstanding", page_size: 200 });
   const pending = fees.data?.items ?? [];
   const owed = sum(pending.filter((x) => picked.includes(x.id)).map((x) => x.amount_outstanding));
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });

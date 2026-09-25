@@ -31,6 +31,7 @@ export const TEACHER_SCREENS: TeacherScreen[] = [
   { id: "TM-014", n: 14, title: "Student", route: "/teacher/student", tab: "more", public: false },
   { id: "TM-015", n: 15, title: "Behaviour note", route: "/teacher/behaviour", tab: "more", public: false },
   { id: "TM-016", n: 16, title: "Lesson attendance", route: "/teacher/period-attendance", tab: "attendance", public: false },
+  { id: "TM-017", n: 17, title: "Leave requests", route: "/teacher/leave-requests", tab: "attendance", public: false },
 ];
 
 const BY_N = new Map(TEACHER_SCREENS.map((s) => [s.n, s]));

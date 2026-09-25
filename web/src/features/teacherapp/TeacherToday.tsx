@@ -4,6 +4,7 @@ import { useTeacherApp } from "@/components/teacherapp/TeacherShell";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { dayLabel, greeting, hhmm, plural, PmEmpty, PmError, PmLoading, todayIso } from "./parts";
+import { STUDENT_LEAVES, type StudentLeave } from "./TeacherLeave";
 
 type TodayClass = {
   period_id: number;
@@ -36,6 +37,8 @@ export function TeacherToday() {
   const tt = useApi<Timetable>("/api/v1/teacher/timetable");
   const convs = useApi<{ unread_for_viewer: number }[]>("/api/v1/teacher/conversations");
   const unread = (convs.data ?? []).reduce((n, c) => n + c.unread_for_viewer, 0);
+  const leaves = useApi<StudentLeave[]>(STUDENT_LEAVES, { status: "pending" });
+  const toDecide = (leaves.data ?? []).filter((l) => l.can_decide).length;
 
   const d = dash.data;
   const next = tt.data?.next_class;
@@ -90,12 +93,17 @@ export function TeacherToday() {
       <div className="section-head">
         <h3>Quick actions</h3>
       </div>
+      {toDecide > 0 ? (
+        <button className="action" onClick={() => go(17)}>
+          {`Leave to approve · ${plural(toDecide, "request")}`}
+        </button>
+      ) : null}
       {unread > 0 ? (
-        <button className="action" onClick={() => go(12)}>
+        <button className={toDecide > 0 ? "action secondary" : "action"} onClick={() => go(12)}>
           {`Reply to parents · ${plural(unread, "new message")}`}
         </button>
       ) : null}
-      <button className={unread > 0 ? "action secondary" : "action"} onClick={() => go(16)}>
+      <button className={unread > 0 || toDecide > 0 ? "action secondary" : "action"} onClick={() => go(16)}>
         Mark a lesson
       </button>
       <button className="action secondary" onClick={() => go(4)}>

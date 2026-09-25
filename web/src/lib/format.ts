@@ -33,9 +33,12 @@ export function pct(v: number | null | undefined, digits = 1): string {
 }
 
 /** "school_admin" -> "School admin". */
+/** Words that are written in capitals wherever a code value is shown. */
+const ACRONYMS: Record<string, string> = { upi: "UPI", neft: "NEFT", rtgs: "RTGS", imps: "IMPS", sms: "SMS", ptm: "PTM", pdf: "PDF", id: "ID" };
+
 export function label(v: string | null | undefined): string {
   if (!v) return "—";
-  const s = v.replace(/_/g, " ");
+  const s = v.replace(/_/g, " ").replace(/\b[a-z]+\b/g, (w) => ACRONYMS[w] ?? w);
   return s[0].toUpperCase() + s.slice(1);
 }
 

@@ -36,6 +36,7 @@ const TABS: [key: string, label: string, n: number][] = [
 const MORE: [string, number][] = [
   ["Messages from parents", 12],
   ["Lesson attendance", 16],
+  ["Leave requests", 17],
   ["My timetable", 8],
   ["My classes & students", 9],
 ];

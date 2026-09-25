@@ -690,7 +690,7 @@ function StudentsStep({ s, busy, run }: StepProps) {
   const sections = s.classes.flatMap((c) => c.sections.map((x) => ({ id: x.id, label: `${c.name} ${x.name}` })));
   const blank = { full_name: "", gender: "", dob: "", section_id: "", parent_name: "", parent_email: "", parent_phone: "", relation: "father" };
   const [f, setF] = useState(blank);
-  const [made, setMade] = useState<{ student: string; parent?: string; email?: string; password?: string }[]>([]);
+  const [made, setMade] = useState<{ student: string; parent?: string; email?: string; password?: string; linked?: boolean }[]>([]);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF((x) => ({ ...x, [k]: e.target.value }));
   if (!s.current || !sections.length) return <p className="muted">Create the academic year and classes with sections first; each student joins a section.</p>;
   const section = f.section_id || String(sections[0].id);
@@ -707,7 +707,7 @@ function StudentsStep({ s, busy, run }: StepProps) {
               {m.parent ? (
                 <>
                   {` · parent ${m.parent} (${m.email}) · `}
-                  <code>{m.password}</code>
+                  {m.linked ? "added to their existing login" : <code>{m.password}</code>}
                 </>
               ) : null}
             </div>
@@ -786,6 +786,18 @@ function StudentsStep({ s, busy, run }: StepProps) {
                 const row: (typeof made)[number] = { student: f.full_name.trim() };
                 if (f.parent_email.trim()) {
                   try {
+                    // A brother or sister is already here: link this child to that parent's login.
+                    const email = f.parent_email.trim().toLowerCase();
+                    const known = (await api.get<{ user_id: number; email: string | null }[]>("/api/v1/school/parents", { search: email })).find(
+                      (p) => (p.email ?? "").toLowerCase() === email,
+                    );
+                    if (known) {
+                      await api.post(`/api/v1/school/parents/${known.user_id}/links`, { student_id: st.id, relation: f.relation });
+                      Object.assign(row, { parent: f.parent_name.trim(), email: f.parent_email.trim(), linked: true });
+                      setMade((xs) => [...xs, row]);
+                      setF({ ...blank, section_id: section });
+                      return;
+                    }
                     const pr = await api.post<{ temporary_password: string }>("/api/v1/school/parents", {
                       full_name: f.parent_name.trim(),
                       email: f.parent_email.trim(),
