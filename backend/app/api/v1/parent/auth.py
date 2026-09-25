@@ -16,6 +16,7 @@ from app.core.security import (
 from app.database import get_db
 from app.models.tenant import Tenant
 from app.models.user import User
+from app.services.login_lookup import find_login_user
 from app.schemas.auth import LoginRequest, RefreshRequest, TokenResponse, UserPublic
 from app.services import account_access_service, comms_settings_service
 from pydantic import BaseModel, Field
@@ -63,13 +64,7 @@ def _check_tenant_active(db: Session, tenant_id: int) -> None:
 @router.post("/login", response_model=Union[TokenResponse, LoginStep],
              summary="Sign in, or start a second factor when the school requires one")
 def login(req: LoginRequest, db: Annotated[Session, Depends(get_db)]):
-    user = db.execute(
-        select(User).where(
-            User.email == req.email,
-            User.role == UserRole.parent,
-            User.is_active.is_(True),
-        )
-    ).scalar_one_or_none()
+    user = find_login_user(db, req.email, UserRole.parent, req.password)
 
     if (
         not user
