@@ -36,7 +36,7 @@ export function HomeworkEvaluation() {
   const id = params.get("id");
   const hw = useApi<Homework>(id ? `/api/v1/teacher/homework/${id}` : null);
   const subs = useApi<Submission[]>(id ? `/api/v1/teacher/homework/${id}/submissions` : null);
-  const classes = useApi<MyClasses>("/api/v1/teacher/my-classes");
+  const classes = useApi<MyClasses>(id ? "/api/v1/teacher/my-classes" : null);
   const [subId, setSubId] = useState<number | null>(params.get("sub") ? Number(params.get("sub")) : null);
   const [marks, setMarks] = useState<Record<number, string>>({});
   const [decision, setDecision] = useState<"approved" | "rejected">("approved");

@@ -159,14 +159,14 @@ function speak(text, i) {
     await click(btn('Create this day for every working day')); await settle(1200);
   });
   await scene('Step 4 · Setup wizard · Grading', 'Step six, grading. One click sets up the CBSE grading scale.', async () => { await click(btn('Use the CBSE scale')); await settle(1200); });
-  await scene('Step 4 · Setup wizard · Staff', 'Step seven, staff. Each person gets their own login. We add two teachers, Meera and Rohan, then the accountant and the principal.', async () => {
-    const people = [['Meera Joshi', `meera@${DOM}`, 'teacher', 'Class teacher'], ['Rohan Kulkarni', `rohan@${DOM}`, 'teacher', 'Science teacher'], ['Farah Khan', `accounts@${DOM}`, 'accountant', 'Accountant'], ['Anil Deshpande', `principal@${DOM}`, 'principal', 'Principal']];
+  await scene('Step 4 · Setup wizard · Staff', 'Step seven, staff. Each person gets their own login. We add two teachers, Meera and Rohan, then the accountant, the principal, and Suresh, the librarian, as office staff.', async () => {
+    const people = [['Meera Joshi', `meera@${DOM}`, 'teacher', 'Class teacher'], ['Rohan Kulkarni', `rohan@${DOM}`, 'teacher', 'Science teacher'], ['Farah Khan', `accounts@${DOM}`, 'accountant', 'Accountant'], ['Anil Deshpande', `principal@${DOM}`, 'principal', 'Principal'], ['Suresh Patil', `library@${DOM}`, 'staff', 'Librarian']];
     for (const [n, e, r, d] of people) {
       await type(L('Full name'), n, 18); await type(L('Email (their login)'), e, 12); await page.getByLabel('Role').selectOption(r); await L('Designation').fill(d);
       await click(btn('Add this person')); await settle(900);
     }
     const t = await page.locator('body').innerText();
-    for (const e of [`meera@${DOM}`, `rohan@${DOM}`, `accounts@${DOM}`, `principal@${DOM}`]) pw[e] = (t.match(new RegExp(e.replace(/\./g, '\\.') + ' · (\\S+)')) || [])[1];
+    for (const e of [`meera@${DOM}`, `rohan@${DOM}`, `accounts@${DOM}`, `principal@${DOM}`, `library@${DOM}`]) pw[e] = (t.match(new RegExp(e.replace(/\./g, '\\.') + ' · (\\S+)')) || [])[1];
   });
   await scene('Step 4 · Setup wizard · Staff', 'Their temporary passwords are listed once, to hand over. Everyone will be asked to change theirs at first sign-in.', async () => { await ring(page.locator('.wizard-passwords').first()); await pause(600); await click(btn('Next step')); await settle(1000); });
   await scene('Step 4 · Setup wizard · Fees', 'Step eight, fees. Monthly tuition of 3,200 rupees and a one time admission fee of 8,000 rupees for Grade 3, due on the tenth of the month.', async () => {

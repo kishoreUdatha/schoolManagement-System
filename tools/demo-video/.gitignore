@@ -7,3 +7,6 @@ timeline.json
 video_path.txt
 run.log
 filter.txt
+tour/
+tour_fast.log
+failed.png

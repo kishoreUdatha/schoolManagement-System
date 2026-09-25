@@ -43,8 +43,21 @@ def sync_catalogue(db: Session) -> int:
         else:
             db.add(Permission(code=code, module=module, name=name, description=description))
             added += 1
-    db.commit()
+    if not _commit_first_fill(db):
+        return 0
     return added
+
+
+def _commit_first_fill(db: Session) -> bool:
+    """Commit rows filled in on first use. A screen asks for roles and permissions
+    at the same moment, so two requests can both find the table empty: the one
+    that loses the race keeps the winner's rows instead of failing with a 500."""
+    try:
+        db.commit()
+        return True
+    except IntegrityError:
+        db.rollback()
+        return False
 
 
 def list_permissions(db: Session) -> list[Permission]:
@@ -60,24 +73,28 @@ def ensure_system_roles(db: Session, tenant_id: int, school_id: int) -> None:
     """Create the built-in roles for a school the first time they're needed."""
     sync_catalogue(db)
     perms = {p.code: p for p in db.execute(select(Permission)).scalars()}
-    existing = {r.code for r in db.execute(select(Role).where(Role.school_id == school_id)).scalars()}
-    for base in UserRole:
-        if base in (UserRole.super_admin,):
-            continue
-        code = base.value
-        if code in existing:
-            continue
-        role = Role(tenant_id=tenant_id, school_id=school_id, name=base.value.replace("_", " ").title(),
-                    code=code, base_role=base, is_system=True,
-                    description="Built-in role")
-        db.add(role)
-        db.flush()
-        codes = list(CATALOGUE) if base == UserRole.school_admin else SYSTEM_ROLE_PERMISSIONS.get(code, [])
-        for c in codes:
-            if c in perms:
-                db.add(RolePermission(tenant_id=tenant_id, school_id=school_id, role_id=role.id,
-                                      permission_id=perms[c].id))
-    db.commit()
+    try:
+        existing = {r.code for r in db.execute(select(Role).where(Role.school_id == school_id)).scalars()}
+        for base in UserRole:
+            if base in (UserRole.super_admin,):
+                continue
+            code = base.value
+            if code in existing:
+                continue
+            role = Role(tenant_id=tenant_id, school_id=school_id, name=base.value.replace("_", " ").title(),
+                        code=code, base_role=base, is_system=True,
+                        description="Built-in role")
+            db.add(role)
+            db.flush()
+            codes = list(CATALOGUE) if base == UserRole.school_admin else SYSTEM_ROLE_PERMISSIONS.get(code, [])
+            for c in codes:
+                if c in perms:
+                    db.add(RolePermission(tenant_id=tenant_id, school_id=school_id, role_id=role.id,
+                                          permission_id=perms[c].id))
+        db.commit()
+    except IntegrityError:
+        # another request created them at the same moment; theirs stand
+        db.rollback()
 
 
 def get_role(db: Session, role_id: int, school_id: int) -> Role:
