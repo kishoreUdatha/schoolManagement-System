@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { MenuSections, QUICK_ACCESS, TileGrid } from "@/components/parent/ParentMenu";
 import { initialsOf, useParent, type Child } from "@/components/parent/ParentShell";
 import { money } from "@/lib/format";
 import { parentRoute } from "@/lib/parentScreens";
@@ -119,29 +120,10 @@ function HomeFor({ childId, child }: { childId: number; child: Child }) {
           </button>
         </div>
       </section>
-      <div className="quick-actions">
-        <button className="quick-blue" onClick={() => go(9)}>
-          <span className="v-icon blue">{peopleIcon}</span>
-          <span>Attendance</span>
-        </button>
-        <button className="quick-purple" onClick={() => go(14)}>
-          <span className="v-icon purple">{hwIcon}</span>
-          <span>Homework</span>
-        </button>
-        <button className="quick-amber" onClick={() => go(23)}>
-          <span className="v-icon amber">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="2" y="5" width="20" height="15" rx="3" />
-              <path d="M2 10h20M6 15h4M14 15h4" className="cut" />
-            </svg>
-          </span>
-          <span>Fees</span>
-        </button>
-        <button className="quick-rose" onClick={() => go(18)}>
-          <span className="v-icon rose">{calendarIcon}</span>
-          <span>Timetable</span>
-        </button>
-      </div>
+      <section className="tile-card">
+        <h3>Quick access</h3>
+        <TileGrid tiles={QUICK_ACCESS} onPick={go} />
+      </section>
       <div className="section-head">
         <h3>Needs your attention</h3>
         <button className="quiet-link" onClick={() => go(7)}>
@@ -229,6 +211,10 @@ function HomeFor({ childId, child }: { childId: number; child: Child }) {
           </div>
         </>
       ) : null}
+      <div className="section-head">
+        <h3>All services</h3>
+      </div>
+      <MenuSections onPick={go} />
     </>
   );
 }

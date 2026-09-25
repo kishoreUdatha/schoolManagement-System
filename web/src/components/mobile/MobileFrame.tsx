@@ -68,6 +68,7 @@ export function MobileFrame({
   noNav,
   tabs,
   menu,
+  menuBody,
   onSignOut,
   toast,
   onBodyClick,
@@ -84,6 +85,8 @@ export function MobileFrame({
   /** Tabs with key "more" open the menu instead of calling onPress. */
   tabs: FrameTab[];
   menu: FrameMenuItem[];
+  /** Replaces the menu's list (the parent app's tile grid); `close` shuts the menu. */
+  menuBody?: (close: () => void) => ReactNode;
   onSignOut: () => void;
   toast: string | null;
   onBodyClick?: (e: React.MouseEvent) => void;
@@ -129,6 +132,7 @@ export function MobileFrame({
                 <Ico name="close" />
               </button>
             </div>
+            {menuBody?.(() => setOpen(false))}
             {menu.map((m) => (
               <button
                 key={m.label}

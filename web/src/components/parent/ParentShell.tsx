@@ -13,6 +13,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { MenuSections } from "@/components/parent/ParentMenu";
 import { Ico, MobileFrame, useToast } from "@/components/mobile/MobileFrame";
 import { PARENT_SCREENS, parentRoute, parentScreen } from "@/lib/parentScreens";
 import { session } from "@/lib/session";
@@ -67,14 +68,6 @@ const TABS: [key: string, label: string, n: number][] = [
   ["more", "More", 0],
 ];
 
-const MORE: [string, number][] = [
-  ["My children", 5], ["Student profile", 8], ["Attendance & leave", 9], ["Timetable", 18], ["Exams & results", 19],
-  ["Online tests", 101], ["Transport", 29], ["Notice board", 33], ["School calendar", 37], ["Photo gallery", 103],
-  ["Parent–teacher meeting", 39], ["Documents", 41],
-  ["Health & emergency", 43], ["Help & requests", 44], ["Parent profile", 47], ["Settings", 48], ["Authorized pickup", 49],
-  ["Library loans", 51], ["Hostel updates", 52], ["Meal menu", 53], ["Feedback", 54], ["Weekly progress", 55],
-  ["Learning resources", 56], ["Behaviour & achievements", 57], ["Projects & activities", 58],
-];
 
 export const initialsOf = (name: string) =>
   name
@@ -167,7 +160,15 @@ export function ParentShell({ screen: n, children: body }: { screen: number; chi
         }
         noNav={noNav}
         tabs={TABS.map(([key, label, to]) => ({ key, label, active: s.tab === key, onPress: () => go(to) }))}
-        menu={MORE.map(([label, to]) => ({ label, onPress: () => go(to) }))}
+        menu={[]}
+        menuBody={(close) => (
+          <MenuSections
+            onPick={(to) => {
+              close();
+              go(to);
+            }}
+          />
+        )}
         onSignOut={() => {
           session.clear();
           window.location.href = parentRoute(2);
