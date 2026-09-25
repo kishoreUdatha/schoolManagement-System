@@ -1,0 +1,51 @@
+"""Narration voice for the demo video.
+
+  python3 tts.py <text-file> <out.wav>
+
+Voice, in order of preference:
+  1. Google Cloud Text-to-Speech, Indian English female (needs GOOGLE_TTS_API_KEY;
+     voice from TTS_VOICE, default en-IN-Chirp3-HD-Aoede).
+  2. Microsoft Edge "Neerja Expressive" (needs speech.platform.bing.com allowed).
+  3. RHVoice (offline fallback, not Indian English).
+Clips are cached by text + voice, so re-recording costs nothing extra.
+"""
+import base64, hashlib, json, os, subprocess, sys, urllib.request
+
+text = open(sys.argv[1], encoding="utf-8").read().strip()
+out = sys.argv[2]
+here = os.path.dirname(os.path.abspath(__file__))
+voice = os.environ.get("TTS_VOICE", "en-IN-Chirp3-HD-Aoede")
+rate = float(os.environ.get("TTS_RATE", "1.08"))
+cache = os.path.join(here, "tts_cache"); os.makedirs(cache, exist_ok=True)
+key = os.environ.get("GOOGLE_TTS_API_KEY")
+provider = "google" if key else os.environ.get("TTS_PROVIDER", "rhvoice")
+hit = os.path.join(cache, hashlib.sha1(f"{provider}|{voice}|{rate}|{text}".encode()).hexdigest() + ".wav")
+
+def done(src):
+    subprocess.run(["cp", src, out], check=True); print(provider); sys.exit(0)
+
+if os.path.exists(hit):
+    done(hit)
+
+if provider == "google":
+    body = {"input": {"text": text}, "voice": {"languageCode": "en-IN", "name": voice},
+            "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": 24000, "speakingRate": rate}}
+    req = urllib.request.Request(f"https://texttospeech.googleapis.com/v1/text:synthesize?key={key}",
+                                 data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
+    import ssl
+    ctx = ssl.create_default_context(cafile=os.environ.get("SSL_CERT_FILE", "/root/.ccr/ca-bundle.crt"))
+    with urllib.request.urlopen(req, context=ctx, timeout=60) as r:
+        audio = base64.b64decode(json.loads(r.read())["audioContent"])
+    open(hit, "wb").write(audio)
+elif provider == "edge":
+    mp3 = hit[:-4] + ".mp3"
+    subprocess.run([sys.executable, "-m", "edge_tts", "--voice", "en-IN-NeerjaExpressiveNeural", "--rate", "+8%",
+                    "--text", text, "--write-media", mp3], check=True)
+    try:
+        import imageio_ffmpeg; ff = imageio_ffmpeg.get_ffmpeg_exe()
+    except ImportError:
+        ff = "ffmpeg"
+    subprocess.run([ff, "-y", "-loglevel", "error", "-i", mp3, "-ar", "24000", "-ac", "1", hit], check=True)
+else:
+    subprocess.run(["RHVoice-test", "-p", "slt", "-r", "105", "-i", sys.argv[1], "-o", hit], check=True)
+done(hit)
