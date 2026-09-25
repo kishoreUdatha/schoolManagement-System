@@ -69,12 +69,27 @@ class TimetableEntryRead(BaseModel):
 
 # --- Composite views ---
 
+class ClassSubjectOption(BaseModel):
+    id: int
+    subject_id: int
+    subject_name: str
+    subject_code: str
+    teacher_user_id: Optional[int] = None
+    teacher_name: Optional[str] = None
+
+
 class SectionTimetableRead(BaseModel):
     section_id: int
     section_label: Optional[str] = None
+    class_id: Optional[int] = None
+    class_name: Optional[str] = None
+    section_name: Optional[str] = None
     timetable_published_at: Optional[datetime] = None
     periods: list[PeriodRead] = []
     entries: list[TimetableEntryRead] = []
+    class_subjects: list[ClassSubjectOption] = []
+    # Filled by copy: slots left out (e.g. teacher clash), human-readable.
+    skipped: list[str] = []
 
 
 class TimetableClash(BaseModel):
@@ -91,3 +106,71 @@ class CopyTimetableRequest(BaseModel):
         default=False,
         description="If true, replaces existing entries in the destination",
     )
+
+
+# --- Workspace scope / teacher view / HOD assignments ---
+
+class ScopeSection(BaseModel):
+    id: int
+    name: str
+    published: bool
+
+
+class ScopeClass(BaseModel):
+    id: int
+    name: str
+    academic_year_id: int
+    sections: list[ScopeSection]
+
+
+class ScopeYear(BaseModel):
+    id: int
+    name: str
+    is_current: bool
+
+
+class TimetableScopeRead(BaseModel):
+    role: str
+    school_wide: bool
+    is_hod: bool
+    academic_years: list[ScopeYear]
+    classes: list[ScopeClass]
+
+
+class TeacherLite(BaseModel):
+    id: int
+    full_name: str
+
+
+class TeacherWeekEntry(BaseModel):
+    id: int
+    section_id: int
+    section_label: str
+    period_id: int
+    class_subject_id: int
+    subject_name: str
+    subject_code: str
+    notes: Optional[str] = None
+    published: bool
+
+
+class TeacherWeekRead(BaseModel):
+    teacher_user_id: int
+    teacher_name: str
+    periods: list[PeriodRead]
+    entries: list[TeacherWeekEntry]
+
+
+class HodSection(BaseModel):
+    section_id: int
+    section_label: str
+
+
+class HodAssignmentRead(BaseModel):
+    teacher_user_id: int
+    teacher_name: str
+    sections: list[HodSection]
+
+
+class HodAssignmentSet(BaseModel):
+    section_ids: list[int] = Field(default_factory=list, max_length=500)

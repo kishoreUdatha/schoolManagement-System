@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.api.v1 import branding, health
+from app.api.v1 import branding, health, timetable
 from app.api.v1.super_admin import (
     auth as super_admin_auth,
     payments as super_admin_payments,
@@ -37,7 +37,7 @@ from app.api.v1.school import (
     staff_attendance as school_staff_attendance,
     students as school_students,
     subjects as school_subjects,
-    timetable as school_timetable,
+    hod_assignments as school_hod_assignments,
     videos as school_videos,
 )
 from app.api.v1.staff import (
@@ -256,9 +256,14 @@ app.include_router(
     tags=["school / periods"],
 )
 app.include_router(
-    school_timetable.router,
-    prefix="/api/v1/school/sections",
-    tags=["school / timetable"],
+    school_hod_assignments.router,
+    prefix="/api/v1/school/hod-assignments",
+    tags=["school / hod assignments"],
+)
+app.include_router(
+    timetable.router,
+    prefix="/api/v1/timetable",
+    tags=["timetable"],
 )
 app.include_router(
     parent_timetable.router,
