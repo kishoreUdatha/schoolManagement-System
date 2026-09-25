@@ -34,14 +34,15 @@ const TABS: [key: string, label: string, n: number][] = [
 ];
 
 const MORE: [string, number][] = [
+  ["Messages from parents", 12],
+  ["Lesson attendance", 16],
+  ["Leave requests", 17],
   ["My timetable", 8],
   ["My classes & students", 9],
 ];
 
 /** Staff-workspace screens the phone app does not have yet, opened full size. */
 const WORKSPACE: [string, number][] = [
-  ["Messages", 253],
-  ["Behaviour notes", 1094],
   ["Weekly progress reports", 1095],
   ["Parent–teacher meetings", 250],
   ["My profile", 1097],

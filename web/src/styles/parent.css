@@ -847,3 +847,29 @@
 .pm .invoice-amount>.v-icon{width:49px;height:57px}
 .pm .phone #app-header h2{font-size:19px}
 .pm .phone[data-screen="57"] #app-header h2{font-size:18px}}
+/* The staff workspace's global .switch is a 35px toggle with a hidden checkbox;
+   undo it for the parent app's settings rows, which use a plain checkbox. */
+.pm .switch{position:static;width:auto;height:auto;flex-shrink:1}
+.pm .switch > span{flex:1;min-width:0;padding-right:12px}
+.pm .switch input{opacity:1;width:20px;height:20px;flex:none;margin:0}
+/* Service grid (Home and the More menu): titled cards of round icon tiles,
+   four to a row, in the style of a payments app. */
+.pm .tile-card{background:#fff;border:1px solid #e3eaf6;border-radius:18px;padding:14px 10px 6px;margin:12px 0}
+.pm .tile-card h3{margin:0 6px 10px;font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.2px}
+.pm .tile-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 2px}
+.pm .tile{display:flex;flex-direction:column;align-items:center;gap:7px;border:0;background:none;padding:4px 2px 10px;min-width:0;cursor:pointer;color:var(--ink)}
+.pm .tile-ico{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;flex:none}
+.pm .tile-ico svg{width:25px;height:25px}
+.pm .tile-ico.blue{background:#e8efff;color:#2459e0}
+.pm .tile-ico.purple{background:#f0e9ff;color:#6c3fd1}
+.pm .tile-ico.amber{background:#fff1d6;color:#b86e00}
+.pm .tile-ico.rose{background:#ffe8ef;color:#c8325c}
+.pm .tile-ico.green{background:#e2f6ec;color:#0b7a55}
+.pm .tile-ico.teal{background:#dff4f6;color:#0d7c8a}
+.pm .tile-label{font-size:12.5px;font-weight:650;line-height:1.25;text-align:center;color:#24334e;overflow-wrap:normal;word-break:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pm .tile:active .tile-ico{transform:scale(.94)}
+.pm .tile:focus-visible{outline:3px solid #93c5fd;outline-offset:2px;border-radius:12px}
+.pm #more-menu{padding-left:10px;padding-right:10px}
+.pm #more-menu .tile-card{margin:10px 0;padding:12px 2px 4px;border-color:#e6edf8}
+.pm #more-menu .tile-card h3{margin-left:10px}
+.pm #more-menu .tile-label{font-size:12px}

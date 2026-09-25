@@ -116,6 +116,7 @@ type RosterStudent = { id: number; admission_no: string; roll_no: number; full_n
 
 /** TM-010. The students of one section I teach. */
 export function TeacherClassList() {
+  const { go } = useTeacherApp();
   const section = Number(useSearchParams().get("section"));
   const roster = useApi<RosterStudent[]>(section ? `/api/v1/teacher/sections/${section}/students` : null);
   if (!section) return <PmEmpty title="Pick a class">Choose one under My classes.</PmEmpty>;
@@ -127,12 +128,13 @@ export function TeacherClassList() {
       <p className="micro" style={{ margin: "8px 0" }}>{plural(list.length, "student")}</p>
       <div className="panel">
         {list.map((s) => (
-          <div className="item" key={s.id}>
+          <button className="item" key={s.id} onClick={() => go(14, `id=${s.id}`)}>
             <span>
               <strong>{`${s.roll_no}. ${s.full_name}`}</strong>
               <small className="muted">{s.admission_no}</small>
             </span>
-          </div>
+            <span>›</span>
+          </button>
         ))}
       </div>
     </>

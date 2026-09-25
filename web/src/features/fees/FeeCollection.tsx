@@ -25,7 +25,7 @@ function yearAgo(): string {
 
 /**
  * SCR-158, live. Pick a student, pick one of their unpaid fees
- * (GET /school/fees/student-fees?student_id=&status=pending) and record money
+ * (GET /school/fees/student-fees?student_id=&status=outstanding: due and overdue) and record money
  * against it (POST /school/fees/student-fees/{id}/record-payment). The server
  * refuses more than is outstanding. Recent receipts come from
  * GET /school/accounts/collections?student_id=. Opens on ?student=<id>.
@@ -57,7 +57,7 @@ export function FeeCollection() {
   }, [presetStudent.data, presetDone]);
 
   const sid = student?.id ?? null;
-  const fees = useApi<Paginated<StudentFee>>(sid ? "/api/v1/school/fees/student-fees" : null, { student_id: sid, status: "pending", page_size: 200 });
+  const fees = useApi<Paginated<StudentFee>>(sid ? "/api/v1/school/fees/student-fees" : null, { student_id: sid, status: "outstanding", page_size: 200 });
   const receipts = useApi<Collection[]>(sid ? "/api/v1/school/accounts/collections" : null, { student_id: sid, from: yearAgo(), to: isoToday() });
   // nothing to collect until the school has raised fees for the year
   const raised = useApi<{ total: number }>("/api/v1/school/fees/student-fees", { page_size: 1 });

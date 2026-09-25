@@ -165,6 +165,7 @@ def create_staff(
         email=data.email.strip(),
         phone=data.phone.strip() if data.phone else None,
         password_hash=hash_password(raw_password),
+        must_change_password=True,
         role=role,
         is_active=True,
     )
@@ -299,6 +300,7 @@ def reset_password(db: Session, staff_id: int, school_id: int) -> tuple[Staff, s
     staff = _get_staff(db, staff_id, school_id)
     raw = _generate_password()
     staff.user.password_hash = hash_password(raw)
+    staff.user.must_change_password = True
     db.commit()
     db.refresh(staff)
     return staff, raw

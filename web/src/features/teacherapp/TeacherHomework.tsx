@@ -3,7 +3,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useTeacherApp } from "@/components/teacherapp/TeacherShell";
 import { api, errorText } from "@/lib/api";
-import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { dayLabel, MY_CLASSES, PmEmpty, PmError, PmLoading, todayIso, type MyClasses } from "./parts";
 
@@ -47,7 +46,7 @@ export function TeacherHomeworkList() {
       {list.length ? (
         <div className="panel">
           {list.map((h) => (
-            <a className="item" key={h.id} href={`${routeOf(130)}?id=${h.id}`}>
+            <button className="item" key={h.id} onClick={() => go(11, `homework=${h.id}`)}>
               <span>
                 <strong>{h.title}</strong>
                 <small className="muted">{`${h.subject_name ?? ""} · ${h.class_name ?? ""} · due ${dayLabel(h.due_date)}`}</small>
@@ -55,11 +54,11 @@ export function TeacherHomeworkList() {
                 {h.is_closed ? <span className="status amber">Closed</span> : null}
               </span>
               <span>›</span>
-            </a>
+            </button>
           ))}
         </div>
       ) : null}
-      <p className="micro">Tap homework to see submissions and mark them in the full workspace.</p>
+      <p className="micro">Tap homework to check what has been handed in.</p>
     </>
   );
 }

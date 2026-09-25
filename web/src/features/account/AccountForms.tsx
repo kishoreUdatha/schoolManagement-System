@@ -255,6 +255,8 @@ export function ResetPasswordForm() {
  */
 export function ChangePasswordForm() {
   const router = useRouter();
+  // The phone apps send people here on first sign-in and ask to be returned (?next=/teacher/today).
+  const next = useSearchParams().get("next");
   const sess = useSession();
   const hydrated = useHydrated();
   const [busy, setBusy] = useState(false);
@@ -290,7 +292,7 @@ export function ChangePasswordForm() {
       });
       const now = session.get();
       if (now) session.set({ ...now, user: { ...now.user, must_change_password: false } as SessionUser });
-      router.push(`${routeOf(HOME_SCREEN[sess!.user.role])}`);
+      router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : `${routeOf(HOME_SCREEN[sess!.user.role])}`);
     } catch (err) {
       setError(errorText(err));
     } finally {

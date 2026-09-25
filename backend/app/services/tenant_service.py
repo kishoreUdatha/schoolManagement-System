@@ -92,6 +92,10 @@ def create_tenant_with_school_admin(db: Session, data: TenantCreate) -> tuple[Te
         address=data.address,
         board=data.board,
         school_type=data.school_type,
+        # The organisation's contact details are the school's until the admin
+        # changes them, so the setup wizard does not ask for them twice.
+        phone_primary=(data.contact_mobile or None) and data.contact_mobile[:20],
+        email=data.contact_email or None,
         status=SchoolStatus.active,
         is_active=True,
     )

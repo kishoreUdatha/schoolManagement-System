@@ -13,6 +13,8 @@ import { PmEmpty, PmError, PmLoading, useGoTo, useQueryId } from "../comms/ui";
 import type { ExamListItem, ExamResult, SubjectResult } from "./types";
 
 function subjectValue(s: SubjectResult): string {
+  // An absent or exempt paper carries marks_obtained 0; say what happened instead.
+  if (s.status === "absent" || s.status === "exempt") return label(s.status);
   if (s.marks_obtained !== null) return `${s.marks_obtained} / ${s.max_marks}`;
   return s.status ? label(s.status) : "Pending";
 }
