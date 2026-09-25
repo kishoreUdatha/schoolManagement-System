@@ -28,6 +28,10 @@ export const ROLE_ONLY: Record<number, string[]> = {
   250: ["school_admin", "teacher"], // PTM setup: the office, or a class teacher for their class
   254: ["school_admin", "teacher"], // bulk messages
   255: ["school_admin", "principal"], // communication history
+  // School-wide reports are the admin's and the principal's (api/v1/school/analytics.py);
+  // an accountant holding reports.view sees the money ones.
+  ...Object.fromEntries([264, 266, 267, 268, 269, 270, 271, 272, 276, 278, 279, 282].map((n) => [n, ["school_admin", "principal"]])),
+  275: ["school_admin", "accountant"], // finance summary: the cash book
 };
 export const usableBy = (n: number, role: string | undefined) => !role || !ROLE_ONLY[n] || ROLE_ONLY[n].includes(role);
 

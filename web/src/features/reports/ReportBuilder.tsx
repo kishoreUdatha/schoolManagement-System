@@ -11,6 +11,7 @@ import { api, errorText } from "@/lib/api";
 import { dateTime, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import { downloadCsv, useYear } from "./kit";
 
 import { ask } from "@/lib/dialog";
@@ -70,7 +71,9 @@ export function ReportBuilder() {
   const saved = useApi<Definition[]>("/api/v1/school/report-definitions", { include_inactive: true });
   const y = useYear();
   const classes = useApi<SchoolClass[]>(y.yearId ? "/api/v1/school/classes" : null, { academic_year_id: y.yearId });
-  const exams = useApi<Exam[]>("/api/v1/school/exams");
+  // the exam list is the admin's and the principal's; an accountant builds money reports
+  const role = useSession()?.user.role;
+  const exams = useApi<Exam[]>(role === "school_admin" || role === "principal" ? "/api/v1/school/exams" : null);
 
   const [savedId, setSavedId] = useState<number | null>(null);
   const [name, setName] = useState("");

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser, StaffDirectoryReader, StudentManager
+from app.core.deps import SchoolAdminUser, SchoolStructureReader, StaffDirectoryReader, StudentManager
 from app.core.scoping import get_school_student
 from app.database import get_db
 from app.schemas.foundation import (
@@ -96,7 +96,8 @@ def grant_portal(student_id: int, guardian_id: int, current_user: StudentManager
 # --- Terms ---
 
 @router.get("/academic-years/{year_id}/terms", response_model=list[TermRead])
-def terms(year_id: int, current_user: SchoolAdminUser, db: Db):
+def terms(year_id: int, current_user: SchoolStructureReader, db: Db):
+    # read-only, like classes and subjects: a principal setting up an exam picks its term
     terms = svc.list_terms(db, current_user.school_id, year_id)
     return [TermRead.model_validate(t) for t in svc.terms_to_read(db, current_user.school_id, terms)]
 
