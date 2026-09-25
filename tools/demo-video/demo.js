@@ -235,7 +235,7 @@ function speak(text, i) {
   await scene('Step 10 · Teacher · Today', 'Her Today screen shows the Grade 3 A register still to mark, today\'s classes from the published timetable, and quick actions.', async () => { await pause(1500); });
   await scene('Step 11 · Daily register', 'She marks the register. Aarav and Kabir are present. Diya is absent. When she saves, Diya\'s father is alerted automatically.', async () => {
     await click(page.locator('#screen-body button.item').first()); await settle(1200);
-    const rows = page.locator('.mark-row'); const n = await rows.count();
+    const rows = page.locator('.mark-row'); await rows.first().waitFor({ timeout: 15000 }); const n = await rows.count();
     for (let i = 0; i < n; i++) { const who = await rows.nth(i).locator('.who strong').innerText(); await click(rows.nth(i).getByRole('radio', { name: /Diya/.test(who) ? 'Absent' : 'Present' })); }
     await click(page.getByRole('button', { name: /Save/ })); await settle(1500);
   }, { hold: 1200 });
@@ -267,8 +267,10 @@ function speak(text, i) {
   await signOut(); await go('/student/sign-in');
   await scene('Step 14 · Student app', 'Aarav signs in to the student app with the school code, his admission number and the password from his teacher.', async () => {
     await type(page.locator('input[name=school_code]'), CODE.toLowerCase()); await type(page.locator('input[name=admission_no]'), 'S00001'); await type(page.locator('input[name=password]'), pw['S00001'], 18);
-    await click(page.locator('button[type=submit]')); await settle(1500);
-    const p = page.locator('input[type=password]'); const n = await p.count();
+    await click(page.locator('button[type=submit]'));
+    // a password the teacher handed out must be changed first
+    await page.waitForURL(/\/student\/(change-password|home)/, { timeout: 20000 }); await settle(1200);
+    const p = page.locator('input[type=password]'); const n = /change-password/.test(page.url()) ? await p.count() : 0;
     if (n === 3) { await p.nth(0).fill(pw['S00001']); await type(p.nth(1), 'Aarav@2026', 20); await type(p.nth(2), 'Aarav@2026', 20); } else if (n === 2) { await type(p.nth(0), 'Aarav@2026', 20); await type(p.nth(1), 'Aarav@2026', 20); }
     await click(page.locator('button[type=submit]')); await settle(1500);
   });
@@ -287,8 +289,10 @@ function speak(text, i) {
     await go('/teacher/homework', 1000); await click(page.getByText('My family paragraph').first()); await settle(1200);
   });
   await scene('Step 16 · Teacher checks homework', 'She opens Aarav\'s work with the attached photo, gives nine out of ten with a remark, and approves it. Aarav and his mother see the result immediately.', async () => {
-    await click(page.locator('.panel button.item').first()); await settle(600);
-    await type(page.locator('input[inputmode=decimal]'), '9'); await type(page.locator('textarea'), 'Lovely writing, Aarav! Watch your full stops.', 20);
+    const row = page.locator('.panel button.item').first(); await row.waitFor({ timeout: 15000 }); await settle(800);
+    const marks = page.locator('input[inputmode=decimal]');
+    for (let i = 0; i < 3 && !(await marks.isVisible()); i++) { await click(row); await marks.waitFor({ timeout: 4000 }).catch(() => {}); }
+    await type(marks, '9'); await type(page.locator('textarea'), 'Lovely writing, Aarav! Watch your full stops.', 20);
     await click(page.getByRole('button', { name: 'Approve', exact: true })); await settle(1500);
   }, { hold: 1200 });
 

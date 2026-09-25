@@ -10,3 +10,5 @@ filter.txt
 tour/
 tour_fast.log
 failed.png
+out/
+tour.log

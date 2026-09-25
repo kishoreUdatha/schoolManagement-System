@@ -23,7 +23,7 @@ const ROLES = [
   { key: 'staff', title: 'Office staff', who: 'Suresh, the librarian, who is office staff with the library job', email: `library@${DOM}`, pw: 'Suresh@2026', first: pwOf[`library@${DOM}`] },
   // Parents have no web workspace: signing in takes them to the parent app (APPS).
   { key: 'parent', app: true, title: 'Parent', who: 'Neha, Aarav\'s mother', email: 'neha.mehta@family.test', pw: 'Neha@2026' },
-  { key: 'student', title: 'Student', who: 'Aarav, a Grade 3 student', admission: 'S00001', pw: 'Aarav@2026' },
+  { key: 'student', title: 'Student', who: 'Aarav, a Grade 3 student', admission: 'S00001', pw: 'Aarav@2026', first: pwOf.S00001 },
 ];
 const APPS = [
   { key: 'teacher_app', title: 'Teacher app', role: 'teacher', signIn: '/teacher/sign-in', more: '/teacher/more' },
@@ -34,6 +34,8 @@ const APPS = [
 const report = fs.existsSync(`${OUT}/report.json`) ? JSON.parse(fs.readFileSync(`${OUT}/report.json`, 'utf8')) : {};
 const save = () => fs.writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 1));
 const clean = s => (s || '').replace(/\s+/g, ' ').trim();
+// Trying the person's own password before the one handed out gives an expected 401.
+const dropLoginMisses = problems => { for (let i = problems.length - 1; i >= 0; i--) if (problems[i].kind === 'HTTP 401' && /\/auth\/login$/.test(problems[i].detail)) problems.splice(i, 1); };
 
 // Someone signing in for the first time sets their own password.
 async function firstLogin(R, r) {
@@ -59,7 +61,7 @@ async function signIn(R, r) {
     await click(page.getByRole('button', { name: 'Sign in' }));
     await page.waitForURL(u => !/sign-in/.test(String(u)), { timeout: 15000 }).catch(() => {}); await settle(1200);
     if (await page.locator('input[name=new_password]').count()) await firstLogin(R, r);
-    if (!/sign-in/.test(page.url())) return;
+    if (!/sign-in/.test(page.url())) return dropLoginMisses(R.problems);
   }
   throw new Error(`${r.key} could not sign in: ${clean(await page.locator('[role=alert]').allInnerTexts().then(a => a.join(' ')))}`);
 }
@@ -111,7 +113,7 @@ async function tourRoleIn(R, r) {
     info = info || {};
     for (const a of info.alerts || []) if (!/^(Tip|No |Nothing)/.test(a)) R.problems.push({ where: `${r.title} › ${label}`, kind: 'error note', detail: a.slice(0, 200) });
     if (info.notFound) R.problems.push({ where: `${r.title} › ${label}`, kind: 'missing page', detail: href });
-    rep.screens.push({ group, label, href, scr: info.scr, title: info.title, problems: R.problems.length - before });
+    rep.screens.push({ group, label, href, scr: info.scr, title: info.title, note: info.note, problems: R.problems.length - before });
     save();
     return info;
   };
@@ -125,7 +127,9 @@ async function tourRoleIn(R, r) {
 
   // The menu, top to bottom. Groups open to show their screens.
   const TOP = 'aside .nav-scroll a.nav:not(.nav-group a), aside .nav-scroll .nav-group > button.nav';
-  const count = await page.locator(TOP).count();
+  // Job sections arrive with the person's permissions, a moment after the page.
+  let count = -1;
+  for (let i = 0; i < 20; i++) { const c = await page.locator(TOP).count(); if (c === count && c > 0) break; count = c; await page.waitForTimeout(700); }
   for (let i = 0; i < count; i++) {
     const item = page.locator(TOP).nth(i);
     const tag = await item.evaluate(e => e.tagName);
@@ -168,9 +172,14 @@ async function tourAppIn(R, app, r) {
     R.setWhere(`${app.title} › sign in`);
     if (r.admission) { await type(page.locator('input[name=school_code]'), CODE.toLowerCase(), 15); await type(page.locator('input[name=admission_no]'), r.admission, 15); }
     else await type(page.locator('input[name=email]'), r.email, 12);
-    await type(page.locator('input[name=password]'), r.pw, 15);
-    await click(page.locator('button[type=submit]'));
-    await page.waitForSelector('#bottom-nav', { timeout: 20000 }); await settle(1000);
+    for (const pw of [r.pw, r.first].filter(Boolean)) {
+      await page.locator('button[type=submit]:not([disabled])').waitFor({ timeout: 15000 });
+      await type(page.locator('input[name=password]'), pw, 15);
+      await click(page.locator('button[type=submit]'));
+      if (await page.waitForSelector('#bottom-nav', { timeout: 12000 }).then(() => true, () => false)) break;
+    }
+    await page.waitForSelector('#bottom-nav', { timeout: 8000 }); await settle(1000);
+    dropLoginMisses(R.problems);
   });
   // Entries: the bottom bar, then the More menu (its "↗" items open the web workspace, toured above).
   const home = new URL(page.url()).pathname;
@@ -202,7 +211,16 @@ async function tourAppIn(R, app, r) {
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   const want = process.argv.slice(2);
-  for (const r of ROLES) if (!r.app) if (!want.length || want.includes(r.key)) await tourRole(r).catch(e => { log('FAILED', r.key, e.message); (report[r.key] ||= { problems: [] }).problems.push({ where: r.key, kind: 'tour stopped', detail: e.message.slice(0, 300) }); save(); });
-  for (const a of APPS) if (!want.length || want.includes(a.key)) await tourApp(a).catch(e => { log('FAILED', a.key, e.message); (report[a.key] ||= { problems: [] }).problems.push({ where: a.key, kind: 'tour stopped', detail: e.message.slice(0, 300) }); save(); });
+  // A chapter whose browser dies part-way is run once more from the start.
+  const run = async (key, fn) => {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try { return await fn(); } catch (e) {
+        log('FAILED', key, `(attempt ${attempt})`, e.message);
+        if (attempt === 2) { (report[key] ||= { problems: [] }).problems.push({ where: key, kind: 'tour stopped', detail: e.message.slice(0, 300) }); save(); }
+      }
+    }
+  };
+  for (const r of ROLES) if (!r.app && (!want.length || want.includes(r.key))) await run(r.key, () => tourRole(r));
+  for (const a of APPS) if (!want.length || want.includes(a.key)) await run(a.key, () => tourApp(a));
   save();
 })();
