@@ -23,7 +23,7 @@ ACCOUNT = {
     "School Admin": "school_admin", "Academic Coordinator": "school_admin", "IT Admin": "school_admin",
     # the app's Examinations and Admissions jobs, held by office staff (tools/qa/jobs.py)
     "Exam Coordinator": "exams", "Admission Officer": "admissions",
-    "HR": "hr", "Transport Manager": "transport", "Nurse / Medical Officer": "nurse",
+    "HR": "hr", "Transport Manager": "transport", "Discipline In-charge": "discipline", "Nurse / Medical Officer": "nurse",
     "Librarian": "staff", "Store Manager": "staff", "Security": "staff", "Hostel Warden": "staff",
     "Teacher": "teacher", "Class Teacher": "teacher", "Accountant": "accountant", "Principal": "principal",
     "Student": "student", "Parent": "parent_web",
@@ -36,29 +36,10 @@ RECORD = {
     "SCR-082": "staff", "SCR-083": "staff", "SCR-099": "class_subject", "SCR-130": "homework", "SCR-248": "event",
 }
 # Screens whose persona in the plan is not the one that uses them in this
-# build: run as the role that does, reported Blocked with the reason.
-SETUP = ("The plan lists Super Admin, but this screen works on the signed-in school's own records; the platform "
-         "team has no school of its own and manages schools from Organizations (SCR-010/012). As the super admin "
-         "the screen's data calls are refused (403).")
-MISMATCH = {
-    **{f"SCR-0{n}": ("school_admin", SETUP) for n in range(24, 33)},
-    "SCR-114": ("parent_web", "The plan lists Teacher, but SCR-114 is the parent's form for asking leave for their child; "
-                "teachers decide leave on SCR-115 and in the teacher app. As a teacher its data calls are refused (403)."),
-    "SCR-116": ("school_admin", "The plan lists Teacher, but SCR-116 is the office's review of late arrivals and early "
-                "exits across the school (admin and principal); teachers record lateness on the register. As a teacher "
-                "its data calls are refused (403)."),
-    "SCR-146": ("exams", "The plan lists Teacher, but practical/internal marks are part of the Examinations job "
-                "(exams.manage), not every teacher's; teachers enter marks on SCR-145 and in the teacher app. As a "
-                "plain teacher its data calls are refused (403)."),
-    "SCR-148": ("exams", "The plan lists Teacher, but marks sign-off belongs to the Examinations job and is by design "
-                "never done by the person who entered the marks. As a plain teacher its data calls are refused (403)."),
-    "SCR-223": ("discipline", "The plan lists Nurse / Medical Officer, but discipline incidents are the Discipline job "
-                "(discipline.manage), not the clinic's. As the nurse its data calls are refused (403)."),
-    "SCR-224": ("discipline", "The plan lists Nurse / Medical Officer, but incident follow-up is the Discipline job "
-                "(discipline.manage), not the clinic's. As the nurse its data calls are refused (403)."),
-    "SCR-258": ("school_admin", "The plan lists HR, but the document register (student and staff papers, certificates) "
-                "is kept by the office; it is not part of the Recruitment & HR job. As HR its data calls are refused (403)."),
-}
+# build: run as the role that does and reported Blocked with the reason, so the
+# plan is corrected rather than the result hidden. (None now: fix_personas.py
+# corrected the plan.) {"SCR-...": ("account", "reason")}
+MISMATCH = {}
 ALL_SCHOOLS = {"SCR-012"}  # the super admin sees every tenant by design
 # Parents have no web workspace: these screens are the parent app's.
 PARENT_APP = {"SCR-037": "/parent/home", "SCR-159": "/parent/fees", "SCR-160": "/parent/payments-receipts"}

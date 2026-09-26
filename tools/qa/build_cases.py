@@ -22,6 +22,7 @@ ACCOUNT = {
     "Admission Officer": "school_admin", "Admission / Enquiry": "school_admin", "IT Admin": "school_admin",
     "Principal": "principal", "Teacher": "teacher", "Class Teacher": "teacher",
     "Accountant": "accountant", "Fee": "accountant", "Student": "student", "Parent": "parent",
+    "Discipline In-charge": "school_admin",
 }
 # Parents have no web workspace: these screens are the parent app's.
 PARENT_APP = {"SCR-037": "/parent/home", "SCR-159": "/parent/fees", "SCR-160": "/parent/payments-receipts"}
@@ -33,16 +34,10 @@ RECORD = {
     "SCR-099": "class_subject", "SCR-130": "homework", "SCR-248": "event",
 }
 # Screens whose persona in the plan is not the one that uses them in this
-# build. They are run as the role that does, and reported as Blocked with the
-# reason, so the plan can be corrected rather than the result hidden.
-MISMATCH = {
-    **{scr: ("school_admin", "The plan lists Super Admin, but this screen works on the signed-in school's own records "
-             "(profile, branches, academic years); the platform team manages schools from Organizations (SCR-010/012). "
-             "As the super admin the screen's data calls are refused (403).")
-       for scr in ("SCR-024", "SCR-025", "SCR-026", "SCR-027", "SCR-028")},
-    "SCR-114": ("parent_web", "The plan lists Teacher, but SCR-114 is the parent's form for asking leave for their child "
-                "(teachers decide leave on SCR-115 and in the teacher app). As a teacher its data calls are refused (403)."),
-}
+# build: run as the role that does and reported Blocked with the reason, so the
+# plan is corrected rather than the result hidden. (None now: fix_personas.py
+# corrected the plan.) {"SCR-...": ("account", "reason")}
+MISMATCH = {}
 # Records the super admin may see in every school, so no cross-school check.
 ALL_SCHOOLS = {"SCR-012"}
 
@@ -58,6 +53,8 @@ for r in wb["Smoke Suite"].iter_rows(min_row=2, values_only=True):
         continue
     tid, module, scr, name, _story, _ac, role = r[:7]
     acct = ACCOUNT[role]
+    if acct == "parent" and scr not in PARENT_APP:
+        acct = "parent_web"  # a parent's web page (asking leave for a child)
     path = PARENT_APP.get(scr) if acct == "parent" else routes[scr]
     run_as, mismatch = MISMATCH.get(scr, (acct, None))
     cases.append({

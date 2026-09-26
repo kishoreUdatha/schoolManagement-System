@@ -10,10 +10,10 @@ must not show any person or the name of a **second school** on the platform, and
 screen about one record (a student, a staff member, an enquiry…) is also opened with the
 second school's record, which must be refused with no data served.
 
-Personas the app does not have as sign-ins (coordinators, IT admin, admission officer)
-are run as the school admin, who holds those duties. Cases whose persona does not use the
-screen at all are run as the role that does and reported as **Blocked** with the reason,
-so the plan can be corrected rather than the result hidden.
+Personas the app does not have as sign-ins (coordinators, IT admin) are run as the
+school admin, who holds those duties. Where the plan named a role that does not use a
+screen at all, `fix_personas.py` corrected the plan (DEF-004, 005, 009); `MISMATCH` in
+the build scripts can still run such a case as the right role and report it **Blocked**.
 
 ```bash
 # the app running (API :8000, web :3100), then a school built by the demo story
@@ -47,7 +47,7 @@ job's permissions, made by `jobs.py`.
 ```bash
 python3 jobs.py               # office staff with one job each -> jobs.json
 python3 build_rbac.py         # the RBAC Tests sheet -> rbac_cases.json
-node rbac.js                  # -> out/rbac_results.json, out/rbac_evidence/<case>.png
+node rbac.js [case ids]       # -> out/rbac_results.json (ids: rerun just those), out/rbac_evidence/
 python3 write_rbac.py         # -> Status / Actual Result / Defect ID / Tester / Evidence
 python3 write_results.py      # refresh the Defect Log with the RBAC cases
 ```

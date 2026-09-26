@@ -24,7 +24,8 @@ for row in range(2, ws.max_row + 1):
     d = defect_of.get(r["scr"]) if r["scenario"] == "authorized" else None
     actual = r["actual"]
     if d and d["status"] == "Fixed":
-        actual = f"First run failed ({d['id']}: {d['title'][0].lower() + d['title'][1:]}); fixed and run again: {actual}"
+        how = ('blocked', 'test plan corrected') if d['title'].startswith('Test plan') else ('failed', 'fixed')
+        actual = f"First run {how[0]} ({d['id']}: {d['title'][0].lower() + d['title'][1:]}); {how[1]} and run again: {actual}"
     ws.cell(row, col["Status"]).value = r["status"]
     ws.cell(row, col["Actual Result"]).value = actual
     ws.cell(row, col["Defect ID"]).value = d["id"] if d else None

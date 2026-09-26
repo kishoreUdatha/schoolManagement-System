@@ -45,6 +45,13 @@ const only = process.argv.slice(2);
     await ctx.close();
   }
   await browser.close();
-  fs.writeFileSync(`${OUT}/results.json`, JSON.stringify(results, null, 1));
+  // a run of some cases replaces just those in the last full run
+  const file = `${OUT}/results.json`;
+  if (only.length && fs.existsSync(file)) {
+    const redone = new Map(results.map(r => [r.id, r]));
+    const all = JSON.parse(fs.readFileSync(file, 'utf8')).map(r => redone.get(r.id) || r);
+    results.splice(0, results.length, ...all);
+  }
+  fs.writeFileSync(file, JSON.stringify(results, null, 1));
   log(`${results.filter(r => r.status === 'Pass').length} pass, ${results.filter(r => r.status === 'Fail').length} fail`);
 })();

@@ -28,7 +28,8 @@ def actual_for(r):
     d = by_case.get(r["id"])
     text = r["actual"]
     if d and d["status"] == "Fixed":
-        text = f"First run failed ({d['id']}: {d['title'][0].lower() + d['title'][1:]}); fixed and run again: {text}"
+        how = ('blocked', 'test plan corrected') if d['title'].startswith('Test plan') else ('failed', 'fixed')
+        text = f"First run {how[0]} ({d['id']}: {d['title'][0].lower() + d['title'][1:]}); {how[1]} and run again: {text}"
     return text
 
 
@@ -72,7 +73,7 @@ for i, d in enumerate(DEFECTS, start=2):
         "Defect ID": d["id"], "Title": d["title"], "Module": d["module"], "Screen / API": d["screen"],
         "Found In Test Case": ", ".join(d["cases"] + [rbac_ids[s] for s in d.get("rbac", []) if s in rbac_ids]), "Severity": d["sev"], "Priority": d["pri"], "Status": d["status"],
         "Environment": ENV, "Description": d["desc"], "Steps to Reproduce": d["steps"], "Expected Result": d["expected"],
-        "Actual Result": d["actual"], "Assigned To": "Development" if fixed else "QA Lead (test plan)",
+        "Actual Result": d["actual"], "Assigned To": "QA Lead (test plan)" if d["title"].startswith("Test plan") else "Development",
         "Reported By": TESTER, "Reported Date": DAY, "Target Fix": DAY if fixed else None,
         "Retest Status": d["retest"], "Retest By": TESTER if fixed else None, "Retest Date": DAY if fixed else None,
         "Root Cause": d["cause"], "Resolution Notes": d["fix"],
