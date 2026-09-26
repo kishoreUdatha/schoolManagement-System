@@ -1,0 +1,180 @@
+{
+ "admissions.manage": {
+  "email": "job.admissions-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Admissions",
+  "permissions": [
+   "admissions.decide",
+   "admissions.manage"
+  ]
+ },
+ "library.manage": {
+  "email": "job.library-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Library",
+  "permissions": [
+   "library.manage"
+  ]
+ },
+ "transport.manage": {
+  "email": "job.transport-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Transport",
+  "permissions": [
+   "transport.manage"
+  ]
+ },
+ "hostel.manage": {
+  "email": "job.hostel-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Hostel",
+  "permissions": [
+   "hostel.manage"
+  ]
+ },
+ "inventory.manage": {
+  "email": "job.inventory-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Store & inventory",
+  "permissions": [
+   "inventory.manage"
+  ]
+ },
+ "frontdesk.manage": {
+  "email": "job.frontdesk-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Front desk",
+  "permissions": [
+   "frontdesk.manage"
+  ]
+ },
+ "hr.manage": {
+  "email": "job.hr-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Recruitment & HR",
+  "permissions": [
+   "hr.manage"
+  ]
+ },
+ "exams.manage": {
+  "email": "job.exams-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Examinations",
+  "permissions": [
+   "exams.approve_results",
+   "exams.manage",
+   "grading.manage",
+   "reports.view"
+  ]
+ },
+ "syllabus.manage": {
+  "email": "job.syllabus-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Academics",
+  "permissions": [
+   "lessonplans.review",
+   "syllabus.manage"
+  ]
+ },
+ "cover.manage": {
+  "email": "job.cover-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Timetable & cover",
+  "permissions": [
+   "cover.manage"
+  ]
+ },
+ "health.manage": {
+  "email": "job.health-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Health & clinic",
+  "permissions": [
+   "health.manage"
+  ]
+ },
+ "counselling.access": {
+  "email": "job.counselling-access@sunqa.test",
+  "password": "Office@2026",
+  "job": "Counselling",
+  "permissions": [
+   "counselling.access"
+  ]
+ },
+ "fees.refund.approve": {
+  "email": "job.fees-refund-approve@sunqa.test",
+  "password": "Office@2026",
+  "job": "Fees",
+  "permissions": [
+   "fees.refund.approve"
+  ]
+ },
+ "discipline.manage": {
+  "email": "job.discipline-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Discipline",
+  "permissions": [
+   "discipline.manage"
+  ]
+ },
+ "notices.send": {
+  "email": "job.notices-send@sunqa.test",
+  "password": "Office@2026",
+  "job": "Communication",
+  "permissions": [
+   "events.manage",
+   "notices.send"
+  ]
+ },
+ "students.manage": {
+  "email": "job.students-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Student records",
+  "permissions": [
+   "parents.manage",
+   "students.manage"
+  ]
+ },
+ "attendance.correct": {
+  "email": "job.attendance-correct@sunqa.test",
+  "password": "Office@2026",
+  "job": "Attendance office",
+  "permissions": [
+   "attendance.correct",
+   "reports.view",
+   "studentleave.decide"
+  ]
+ },
+ "fees.collect": {
+  "email": "job.fees-collect@sunqa.test",
+  "password": "Office@2026",
+  "job": "Fee counter",
+  "permissions": [
+   "fees.collect"
+  ]
+ },
+ "payroll.manage": {
+  "email": "job.payroll-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Payroll",
+  "permissions": [
+   "payroll.manage",
+   "reports.view"
+  ]
+ },
+ "staff.manage": {
+  "email": "job.staff-manage@sunqa.test",
+  "password": "Office@2026",
+  "job": "Staff records",
+  "permissions": [
+   "staff.manage"
+  ]
+ },
+ "reports.view": {
+  "email": "job.reports-view@sunqa.test",
+  "password": "Office@2026",
+  "job": "Reports",
+  "permissions": [
+   "reports.view"
+  ]
+ }
+}

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.v1 import branding
 from app.core import storage
-from app.core.deps import SchoolAdminUser
+from app.core.deps import ProfileReader, SchoolAdminUser
 from app.database import get_db
 from app.schemas.school_profile import SchoolProfileRead, SchoolProfileUpdate
 from app.services import school_service
@@ -16,7 +16,7 @@ router = APIRouter()
 
 @router.get("", response_model=SchoolProfileRead, summary="Get my school's profile")
 def get_profile(
-    current_user: SchoolAdminUser,
+    current_user: ProfileReader,
     db: Annotated[Session, Depends(get_db)],
 ):
     school = school_service.get_school(

@@ -297,6 +297,32 @@ def has_permission(db: Session, user: User, code: str) -> bool:
     return code in permissions_for(db, user)
 
 
+def _custom_permissions(db: Session, user: User) -> set[str]:
+    """What the custom roles a person has been given carry (not their base role)."""
+    return set(db.execute(
+        select(Permission.code)
+        .join(RolePermission, RolePermission.permission_id == Permission.id)
+        .join(Role, Role.id == RolePermission.role_id)
+        .join(UserRoleAssignment, UserRoleAssignment.role_id == Role.id)
+        .where(UserRoleAssignment.user_id == user.id, Role.is_active.is_(True), Role.is_system.is_(False))
+    ).scalars())
+
+
+def holds_job(db: Session, user: User, *codes: str) -> bool:
+    """A member of office staff given a job (any of `codes`) through the
+    permission matrix, or a teacher given one through a custom role. The other
+    built-in roles, and a teacher's built-in permissions (sending their own
+    notices, writing remarks), are left out on purpose: they keep exactly the
+    access their role gives them."""
+    if user.role == UserRole.staff:
+        held = permissions_for(db, user)
+    elif user.role == UserRole.teacher:
+        held = _custom_permissions(db, user)
+    else:
+        return False
+    return any(c in held for c in codes)
+
+
 def my_access(db: Session, user: User) -> dict:
     roles = list(db.execute(
         select(Role).join(UserRoleAssignment, UserRoleAssignment.role_id == Role.id)

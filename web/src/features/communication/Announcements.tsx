@@ -10,6 +10,7 @@ import { api, errorText } from "@/lib/api";
 import { dateTime, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
+import { usePermissions } from "@/lib/jobs";
 import { useApi } from "@/lib/useApi";
 import { CHANNEL_LABEL, type Delivery, NOTICE_AUDIENCE, type Notice, type NoticeAudience, deliveryLine, noticeAudience, useRole } from "./shared";
 
@@ -54,7 +55,9 @@ type Item = {
  */
 export function Announcements() {
   const role = useRole();
-  const office = role === "school_admin";
+  const perms = usePermissions();
+  // the office, or office staff given the Communication job
+  const office = role === "school_admin" || (role === "staff" && Boolean(perms?.has("notices.send")));
   const path = office ? "/api/v1/school/notices" : role === "teacher" ? "/api/v1/teacher/notices" : null;
   const notices = useApi<Notice[]>(path);
   const campaigns = useApi<{ rows: CampaignRow[] }>(role === "principal" ? "/api/v1/school/event-ops/campaigns" : null);
@@ -63,8 +66,8 @@ export function Announcements() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  if (role === null) return <Loading />;
-  if (!["school_admin", "teacher", "principal"].includes(role)) return <ErrorNote>Announcements are written by the school office and teachers.</ErrorNote>;
+  if (role === null || (role === "staff" && perms === null)) return <Loading />;
+  if (!office && !["teacher", "principal"].includes(role)) return <ErrorNote>Announcements are written by the school office and teachers.</ErrorNote>;
 
   const items: Item[] = notices.data
     ? notices.data.map((n) => ({

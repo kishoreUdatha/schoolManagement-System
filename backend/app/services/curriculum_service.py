@@ -287,7 +287,7 @@ def list_resources(db: Session, user: User, cs_id: Optional[int] = None, chapter
         cs = syl.get_cs(db, cs_id, user.school_id)
         syl.check_view(db, user, cs)
         stmt = stmt.where(TeachingResource.class_subject_id == cs_id)
-    elif user.role == UserRole.teacher:
+    elif user.role == UserRole.teacher and not syl.coordinates(user):
         # a teacher without a subject filter sees their own subjects' shelf
         mine = select(ClassSubject.id).where(ClassSubject.teacher_user_id == user.id)
         stmt = stmt.where(TeachingResource.class_subject_id.in_(mine))

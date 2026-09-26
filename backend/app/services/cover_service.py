@@ -542,7 +542,12 @@ def staff_leave_file(db: Session, user: User, leave_id: int, attachment_id: int)
 def staff_leaves(db: Session, user: User, status_: Optional[StudentLeaveStatus], section_id: Optional[int],
                  start: Optional[date], end: Optional[date]) -> list[StudentLeave]:
     stmt = select(StudentLeave).where(StudentLeave.school_id == user.school_id)
-    if user.role == UserRole.teacher:
+    from app.services import rbac_service
+
+    # whoever the school gave the leave-deciding job sees every request
+    if rbac_service.holds_job(db, user, "studentleave.decide"):
+        pass
+    elif user.role == UserRole.teacher:
         mine = select(Section.id).where(Section.class_teacher_user_id == user.id)
         stmt = stmt.where(StudentLeave.section_id.in_(mine))
     elif user.role not in (UserRole.school_admin, UserRole.principal):

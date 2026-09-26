@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import AssetKeeper, LibraryReports, ReportReader, SchoolAdminOrPrincipal
+from app.core.deps import AssetKeeper, DuesReader, LibraryReports, ReportReader, SchoolAdminOrPrincipal
 from app.database import get_db
 from app.schemas.analytics import (
     ChronicAbsence,
@@ -195,12 +195,12 @@ def payroll_by_department(user: ReportReader, db: Annotated[Session, Depends(get
 
 
 @router.get("/dues-ageing", response_model=DuesAgeing)
-def dues_ageing(user: ReportReader, db: Annotated[Session, Depends(get_db)]):
+def dues_ageing(user: DuesReader, db: Annotated[Session, Depends(get_db)]):
     return analytics_service.dues_ageing(db, user.school_id)
 
 
 @router.get("/dues-ageing.csv", response_class=PlainTextResponse)
-def dues_ageing_csv(user: ReportReader, db: Annotated[Session, Depends(get_db)]):
+def dues_ageing_csv(user: DuesReader, db: Annotated[Session, Depends(get_db)]):
     data = analytics_service.dues_ageing(db, user.school_id)
     return _csv(
         "dues-ageing.csv",

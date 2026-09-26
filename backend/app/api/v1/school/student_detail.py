@@ -6,7 +6,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal
+from app.core.deps import SchoolAdminOrPrincipal, StudentRecordReader
 from app.database import get_db
 from app.services import student_detail_service
 
@@ -17,7 +17,7 @@ Db = Annotated[Session, Depends(get_db)]
 
 # Literal first: "leavers" must not be read as a student id.
 @router.get("/leavers", summary="Children who are no longer studying here")
-def leavers(user: SchoolAdminOrPrincipal, db: Db, year_id: Optional[int] = None):
+def leavers(user: StudentRecordReader, db: Db, year_id: Optional[int] = None):
     return student_detail_service.leavers(db, user.school_id, year_id=year_id)
 
 

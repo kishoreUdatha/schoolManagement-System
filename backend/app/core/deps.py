@@ -314,8 +314,8 @@ def allow(*roles: UserRole, permission: Optional[str] = None, any_of: tuple[str,
 def allow_job(*roles: UserRole, permission: str, also: tuple[str, ...] = ()):
     """Like `allow`, but the permission only widens access for the staff and
     teachers given the job: the listed roles keep exactly what they have, so a
-    principal (whose built-in permissions include the exam jobs) gains no
-    setup rights from it."""
+    principal (whose built-in permissions include many jobs) gains nothing
+    from it."""
     wanted = (permission,) + tuple(also)
 
     def _check(
@@ -326,12 +326,10 @@ def allow_job(*roles: UserRole, permission: str, also: tuple[str, ...] = ()):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="School access required")
         if current_user.role in roles:
             return current_user
-        if current_user.role in (UserRole.staff, UserRole.teacher):
-            from app.services import rbac_service
+        from app.services import rbac_service
 
-            held = rbac_service.permissions_for(db, current_user)
-            if any(p in held for p in wanted):
-                return current_user
+        if rbac_service.holds_job(db, current_user, *wanted):
+            return current_user
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have access to this")
 
     return _check
@@ -409,3 +407,40 @@ ResultApprover = Annotated[
     User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="exams.approve_results"))
 ]
 GradingSetup = Annotated[User, Depends(allow_job(UserRole.school_admin, permission="grading.manage"))]
+
+# ---------- academics, timetable cover ----------
+# Reading the curricula and co-curricular activities: the office, or whoever
+# holds the Academics job (syllabus.manage).
+AcademicsReader = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="syllabus.manage"))]
+# Arranging cover: the office, or whoever holds the Timetable & cover job.
+CoverManager = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="cover.manage"))]
+# The attendance office: the office, or whoever holds the job (attendance.correct).
+AttendanceOffice = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="attendance.correct"))]
+
+# ---------- office jobs on the school's records ----------
+# The fee counter (fees.collect): fee records, recording payments, dues.
+FeeCounter = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.accountant, permission="fees.collect"))]
+# Outstanding dues by age: the reports readers, and the fee counter.
+DuesReader = Annotated[User, Depends(allow_job(
+    UserRole.school_admin, UserRole.principal, UserRole.accountant, permission="fees.collect", also=("reports.view",)))]
+# The refund list: finance, and whoever requests or approves refunds as a job.
+RefundReader = Annotated[User, Depends(allow_job(
+    UserRole.school_admin, UserRole.accountant, UserRole.principal,
+    permission="fees.refund.approve", also=("fees.refund.request",)))]
+# Staff records (staff.manage). A job holder adds and edits teachers and
+# office staff only, never the office roles (see api/v1/school/staff.py).
+StaffManager = Annotated[User, Depends(allow_job(UserRole.school_admin, permission="staff.manage"))]
+StaffRecordReader = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="staff.manage"))]
+# Student records (students.manage): student logins, leavers, enrolments.
+StudentRecords = Annotated[User, Depends(allow_job(UserRole.school_admin, permission="students.manage"))]
+StudentRecordReader = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="students.manage"))]
+# The office's notices (notices.send given to office staff as a job).
+NoticeWriter = Annotated[User, Depends(allow_job(UserRole.school_admin, permission="notices.send"))]
+# The school's profile (its code and working week), read by the student records
+# and attendance office jobs' screens.
+ProfileReader = Annotated[User, Depends(allow_job(
+    UserRole.school_admin, permission="students.manage", also=("attendance.correct",)))]
+# Events and the photo gallery (events.manage, given to office staff as a job).
+EventsManager = Annotated[User, Depends(allow_job(UserRole.school_admin, permission="events.manage"))]
+# Parents' requests to change their contact details (parents.manage: no built-in role holds it).
+ParentsManager = Annotated[User, Depends(allow(UserRole.school_admin, permission="parents.manage"))]

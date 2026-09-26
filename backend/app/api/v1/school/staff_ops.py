@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser
+from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser, StaffRecordReader
 from app.core.enums import ClearanceArea, ExitClearanceStatus
 from app.database import get_db
 from app.services import analytics_service, staff_ops_service as svc
@@ -162,7 +162,7 @@ def delete_qualification(qualification_id: int, user: SchoolAdminUser, db: Db):
 
 
 @router.get("/{staff_id}/profile", summary="One member of staff, on one screen")
-def profile(staff_id: int, user: SchoolAdminOrPrincipal, db: Db):
+def profile(staff_id: int, user: StaffRecordReader, db: Db):
     return svc.profile(db, user.school_id, staff_id)
 
 

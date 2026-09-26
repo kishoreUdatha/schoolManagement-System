@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser
+from app.core.deps import CoverManager, SchoolAdminUser
 from app.database import get_db
 from app.services import timetable_gen_service as svc
 
@@ -34,19 +34,19 @@ class PeriodsIn(BaseModel):
 
 
 @router.get("/dashboard", summary="How complete every timetable is")
-def dashboard(user: SchoolAdminOrPrincipal, db: Db):
+def dashboard(user: CoverManager, db: Db):
     return svc.dashboard(db, user.school_id)
 
 
 @router.get("/coordinator", summary="One day across every section")
-def coordinator(user: SchoolAdminOrPrincipal, db: Db,
+def coordinator(user: CoverManager, db: Db,
                 day_of_week: int = Query(..., ge=1, le=7)):
     return svc.coordinator_view(db, user.school_id, day_of_week)
 
 
 @router.get("/sections/{section_id}/requirements",
             summary="What each subject wants against what is placed")
-def requirements(section_id: int, user: SchoolAdminOrPrincipal, db: Db):
+def requirements(section_id: int, user: CoverManager, db: Db):
     return svc.requirements(db, user.school_id, section_id)
 
 

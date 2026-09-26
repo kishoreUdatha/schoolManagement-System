@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser
+from app.core.deps import AcademicsReader, SchoolAdminOrPrincipal, SchoolAdminUser
 from app.core.enums import ActivityKind, CurriculumStatus
 from app.database import get_db
 from app.services import academics_ops_service as svc
@@ -142,7 +142,7 @@ def remove_from_group(group_id: int, subject_id: int, user: SchoolAdminUser, db:
 
 
 @router.get("/curricula", summary="Programmes, by year and status")
-def list_curricula(user: SchoolAdminOrPrincipal, db: Db,
+def list_curricula(user: AcademicsReader, db: Db,
                    academic_year_id: Optional[int] = None,
                    state: Optional[CurriculumStatus] = None):
     return svc.list_curricula(db, user.school_id,
@@ -187,12 +187,12 @@ def remove_curriculum_subject(curriculum_id: int, subject_id: int,
 
 
 @router.get("/activities", summary="Clubs, teams and everything outside the timetable")
-def list_activities(user: SchoolAdminOrPrincipal, db: Db, active_only: bool = False):
+def list_activities(user: AcademicsReader, db: Db, active_only: bool = False):
     return svc.list_activities(db, user.school_id, active_only=active_only)
 
 
 @router.get("/activities/{activity_id}", summary="One activity and its roster")
-def get_activity(activity_id: int, user: SchoolAdminOrPrincipal, db: Db):
+def get_activity(activity_id: int, user: AcademicsReader, db: Db):
     return svc.get_activity(db, user.school_id, activity_id)
 
 
@@ -225,5 +225,5 @@ def leave(activity_id: int, payload: LeaveIn, user: SchoolAdminUser, db: Db):
 
 @router.get("/students/{student_id}/activities",
             summary="What one child does outside lessons")
-def student_activities(student_id: int, user: SchoolAdminOrPrincipal, db: Db):
+def student_activities(student_id: int, user: AcademicsReader, db: Db):
     return svc.student_activities(db, user.school_id, student_id)

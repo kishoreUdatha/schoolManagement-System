@@ -71,7 +71,7 @@ for i, d in enumerate(DEFECTS, start=2):
     fixed = d["status"] == "Fixed"
     values = {
         "Defect ID": d["id"], "Title": d["title"], "Module": d["module"], "Screen / API": d["screen"],
-        "Found In Test Case": ", ".join(d["cases"] + [rbac_ids[s] for s in d.get("rbac", []) if s in rbac_ids]), "Severity": d["sev"], "Priority": d["pri"], "Status": d["status"],
+        "Found In Test Case": ", ".join(d["cases"] + [rbac_ids[s] for s in d.get("rbac", []) if s in rbac_ids]) or "Job audit (tools/qa/job_audit.js, job_doors.py)", "Severity": d["sev"], "Priority": d["pri"], "Status": d["status"],
         "Environment": ENV, "Description": d["desc"], "Steps to Reproduce": d["steps"], "Expected Result": d["expected"],
         "Actual Result": d["actual"], "Assigned To": "QA Lead (test plan)" if d["title"].startswith("Test plan") else "Development",
         "Reported By": TESTER, "Reported Date": DAY, "Target Fix": DAY if fixed else None,

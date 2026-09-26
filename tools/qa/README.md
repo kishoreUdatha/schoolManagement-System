@@ -51,3 +51,23 @@ node rbac.js [case ids]       # -> out/rbac_results.json (ids: rerun just those)
 python3 write_rbac.py         # -> Status / Actual Result / Defect ID / Tester / Evidence
 python3 write_results.py      # refresh the Defect Log with the RBAC cases
 ```
+
+# Job audit
+
+The permission matrix (web/src/lib/jobs.ts) promises each job a set of screens. For
+every job, an office staff member is given one custom role with only that job's
+permissions, and:
+
+- `job_audit.js` opens every screen the job's menu shows (as in the smoke run);
+- `job_doors.py` reads each screen's code for every API call it can make — saves and
+  actions included — and runs that endpoint's guard as the job holder (the guard only:
+  nothing is read or written). Calls that stay with another role on purpose are listed
+  in `BY_DESIGN` with the reason.
+
+```bash
+python3 build_job_audit.py    # accounts per job -> job_audit_accounts.json, job_audit_cases.json
+node job_audit.js [jobs]      # -> out/job_audit_results.json, out/job_evidence/
+cd ../../backend && PYTHONPATH=. python ../tools/qa/job_doors.py   # -> out/job_doors.json
+```
+
+(The test school needs a plan allowing more than 20 staff for the audit accounts.)

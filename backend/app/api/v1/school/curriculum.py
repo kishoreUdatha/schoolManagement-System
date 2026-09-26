@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Respon
 from sqlalchemy.orm import Session
 
 from app.core import storage
-from app.core.deps import CurrentUser
+from app.core.deps import allow_job
 from app.core.enums import ResourceKind, UserRole
 from app.database import get_db
 from app.models.user import User
@@ -20,15 +20,13 @@ from app.schemas.curriculum import (
 from app.services import curriculum_service as svc
 
 
-def _academic_staff(current_user: CurrentUser) -> User:
-    if current_user.role not in (UserRole.school_admin, UserRole.principal, UserRole.teacher) or current_user.school_id is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teaching staff access required")
-    return current_user
-
-
 router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
-Academic = Annotated[User, Depends(_academic_staff)]
+# Teaching staff, plus staff or teachers given the Academics job.
+Academic = Annotated[User, Depends(allow_job(
+    UserRole.school_admin, UserRole.principal, UserRole.teacher,
+    permission="syllabus.manage", also=("lessonplans.review",),
+))]
 
 
 # ---------- learning outcomes ----------

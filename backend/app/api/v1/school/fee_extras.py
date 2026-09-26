@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import CurrentUser, SchoolAdminOrAccountant, allow
+from app.core.deps import CurrentUser, RefundReader, SchoolAdminOrAccountant, allow
 from app.core.enums import RefundStatus, UserRole
 from app.database import get_db
 from app.models.user import User
@@ -77,7 +77,7 @@ def apply(current_user: SchoolAdminOrAccountant, db: Db, payload: ApplyLateFeesI
 
 
 @router.get("/refunds", response_model=list[RefundRead])
-def list_refunds(current_user: Finance, db: Db, status_: Optional[RefundStatus] = Query(None, alias="status"),
+def list_refunds(current_user: RefundReader, db: Db, status_: Optional[RefundStatus] = Query(None, alias="status"),
                  student_id: Optional[int] = None, frm: Optional[date] = Query(None, alias="from"),
                  to: Optional[date] = None):
     return svc.refunds_to_read(db, svc.list_refunds(db, current_user.school_id, status_, student_id, frm, to))
@@ -85,7 +85,7 @@ def list_refunds(current_user: Finance, db: Db, status_: Optional[RefundStatus] 
 
 @router.get("/refunds/options/{student_id}", response_model=list[RefundOption],
             summary="Fees this student has paid that can be refunded")
-def options(student_id: int, current_user: Finance, db: Db):
+def options(student_id: int, current_user: RefundReader, db: Db):
     return svc.student_refund_options(db, current_user.school_id, student_id)
 
 

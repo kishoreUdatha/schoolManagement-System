@@ -13,6 +13,7 @@ import { api, errorText } from "@/lib/api";
 import { date, dateTime, initials, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
+import { usePermissions } from "@/lib/jobs";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, addDays, formText, time12, today, useDebounced, type PickedStudent } from "@/features/transport/kit";
@@ -37,7 +38,11 @@ export const OUTCOMES: Record<VisitOutcome, string> = {
 export function HealthDashboardView() {
   const dash = useApi<HealthDashboard>(`${HEALTH}/dashboard`);
   const todayVisits = useApi<Visit[]>(`${HEALTH}/visits`, { on: today() });
-  const appts = useApi<Appointment[]>(`${WELL}/counselling/appointments`, { from: today(), to: today() });
+  // counselling is its own confidence: the clinic's job does not open it
+  const role = useSession()?.user.role;
+  const perms = usePermissions();
+  const counsels = role === "school_admin" || role === "principal" || Boolean(perms?.has("counselling.access"));
+  const appts = useApi<Appointment[]>(counsels ? `${WELL}/counselling/appointments` : null, { from: today(), to: today() });
   const due = useApi<Due[]>(`${HEALTH}/immunizations-due`, { within_days: 30 });
   const [week, setWeek] = useState<{ day: string; n: number }[] | null>(null);
 
@@ -135,7 +140,7 @@ export function HealthDashboardView() {
           </Panel>
         </div>
         <aside>
-          <Panel title="Today’s schedule" action={<Link href={routeOf(221)} className="btn text">View all</Link>}>
+          <Panel title="Today’s schedule" action={counsels ? <Link href={routeOf(221)} className="btn text">View all</Link> : undefined}>
             {(appts.data ?? []).map((a) => (
               <div className="event-row" key={a.id}>
                 <div className="event-time">
@@ -150,6 +155,7 @@ export function HealthDashboardView() {
               </div>
             ))}
             {appts.data && !appts.data.length ? <p className="muted">No counselling appointments today.</p> : null}
+            {!counsels ? <p className="muted">Counselling appointments are kept by the counselling team.</p> : null}
             {appts.error ? <p className="muted">{appts.error}</p> : null}
           </Panel>
         </aside>

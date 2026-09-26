@@ -8,12 +8,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import CurrentUser, SchoolAdminOrPrincipal, TeacherUser
+from app.core.deps import AttendanceOffice, CurrentUser, SchoolAdminOrPrincipal, TeacherUser
 from app.core.enums import AttendanceStatus, ContactMethod, CorrectionStatus, UserRole
 from app.core.scoping import require_linked_child
 from app.database import get_db
 from app.models.user import User
 from app.services import attendance_ops_service as svc
+from app.services import rbac_service
 
 
 router = APIRouter()
@@ -143,8 +144,9 @@ def late_and_early(user: SchoolAdminOrPrincipal, db: Db,
 @router.get("/corrections", summary="Corrections asked for")
 def list_corrections(user: CurrentUser, db: Db,
                      state: Optional[CorrectionStatus] = None):
-    # the office and the principal see every request; a teacher, the ones they made
-    if user.role in (UserRole.school_admin, UserRole.principal):
+    # the office, the principal and the attendance office job see every request;
+    # a teacher, the ones they made
+    if user.role in (UserRole.school_admin, UserRole.principal) or rbac_service.holds_job(db, user, "attendance.correct"):
         return svc.list_corrections(db, user.school_id, state=state)
     if user.role == UserRole.teacher:
         return svc.list_corrections(db, user.school_id, state=state, requested_by=user.id)
@@ -164,7 +166,7 @@ def request_correction(payload: CorrectionIn, current_user: CurrentUser, db: Db)
 @router.post("/corrections/{correction_id}/decide",
              summary="Agree or refuse — never the person who asked")
 def decide(correction_id: int, payload: DecideIn,
-           user: SchoolAdminOrPrincipal, db: Db):
+           user: AttendanceOffice, db: Db):
     return svc.decide_correction(
         db, user.school_id, user.id, correction_id, payload.approve, payload.note
     )
@@ -174,7 +176,7 @@ def decide(correction_id: int, payload: DecideIn,
 
 
 @router.get("/at-risk", summary="Who is slipping, and who has spoken to them")
-def at_risk(user: SchoolAdminOrPrincipal, db: Db,
+def at_risk(user: AttendanceOffice, db: Db,
             below: float = Query(75.0, ge=0, le=100),
             days: int = Query(120, ge=14, le=365),
             min_days: int = Query(10, ge=1)):
@@ -183,7 +185,7 @@ def at_risk(user: SchoolAdminOrPrincipal, db: Db,
 
 @router.post("/contacts", status_code=status.HTTP_201_CREATED,
              summary="Record that somebody rang home")
-def log_contact(payload: ContactIn, user: SchoolAdminOrPrincipal, db: Db):
+def log_contact(payload: ContactIn, user: AttendanceOffice, db: Db):
     return svc.log_contact(
         db, user.school_id, user.tenant_id, user.id, payload.student_id,
         method=payload.method, note=payload.note, spoke_to=payload.spoke_to,
@@ -193,5 +195,5 @@ def log_contact(payload: ContactIn, user: SchoolAdminOrPrincipal, db: Db):
 
 
 @router.get("/contacts/{student_id}", summary="What has been tried for this child")
-def contact_history(student_id: int, user: SchoolAdminOrPrincipal, db: Db):
+def contact_history(student_id: int, user: AttendanceOffice, db: Db):
     return svc.contact_history(db, user.school_id, student_id)

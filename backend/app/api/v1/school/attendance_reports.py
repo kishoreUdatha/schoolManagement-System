@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import CurrentUser, SchoolAdminOrPrincipal
+from app.core.deps import AttendanceOffice, CurrentUser
 from app.core.enums import UserRole
 from app.models.academic import Section
 from app.models.student import Student
@@ -52,7 +52,7 @@ def _csv_response(filename: str, header: list[str], rows: list[list]) -> PlainTe
     summary="Students marked absent on a given date",
 )
 def daily_absent(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: AttendanceOffice,
     db: Annotated[Session, Depends(get_db)],
     on_date: date = Query(..., alias="date"),
     class_id: Optional[int] = Query(None),
@@ -74,7 +74,7 @@ def daily_absent(
     summary="CSV export of /daily-absent",
 )
 def daily_absent_csv(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: AttendanceOffice,
     db: Annotated[Session, Depends(get_db)],
     on_date: date = Query(..., alias="date"),
     class_id: Optional[int] = Query(None),
@@ -113,7 +113,7 @@ def daily_absent_csv(
     summary="Per-class/section attendance breakdown over a date range",
 )
 def class_summary(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: AttendanceOffice,
     db: Annotated[Session, Depends(get_db)],
     from_date: date = Query(..., alias="from"),
     to_date: date = Query(..., alias="to"),
@@ -131,7 +131,7 @@ def class_summary(
     summary="CSV export of /class-summary",
 )
 def class_summary_csv(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: AttendanceOffice,
     db: Annotated[Session, Depends(get_db)],
     from_date: date = Query(..., alias="from"),
     to_date: date = Query(..., alias="to"),

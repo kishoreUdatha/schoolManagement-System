@@ -1,9 +1,10 @@
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser, StaffDirectoryReader
+from app.core.deps import SchoolAdminUser, StaffDirectoryReader, StaffManager, StaffRecordReader
+from app.core.enums import UserRole
 from app.database import get_db
 from app.schemas.staff import (
     StaffCreate,
@@ -17,6 +18,15 @@ from app.services import staff_service
 
 router = APIRouter()
 
+# roles a staff-records job holder may add or edit (the office roles stay the school admin's)
+JOB_MANAGED = ("teacher", "staff")
+
+
+def _may_manage(user, role) -> None:
+    role = getattr(role, "value", role)
+    if user.role != UserRole.school_admin and role not in JOB_MANAGED:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the school admin can add or change this role")
+
 
 @router.post(
     "",
@@ -26,9 +36,10 @@ router = APIRouter()
 )
 def create(
     payload: StaffCreate,
-    current_user: SchoolAdminUser,
+    current_user: StaffManager,
     db: Annotated[Session, Depends(get_db)],
 ):
+    _may_manage(current_user, payload.role)
     staff, raw_password = staff_service.create_staff(
         db, current_user.tenant_id, current_user.school_id, payload
     )
@@ -81,7 +92,7 @@ def next_employee_no(
 @router.get("/{staff_id}", response_model=StaffRead)
 def get(
     staff_id: int,
-    current_user: SchoolAdminOrPrincipal,
+    current_user: StaffRecordReader,
     db: Annotated[Session, Depends(get_db)],
 ):
     s = staff_service.get_staff(db, staff_id, current_user.school_id)
@@ -92,9 +103,11 @@ def get(
 def update(
     staff_id: int,
     payload: StaffUpdate,
-    current_user: SchoolAdminUser,
+    current_user: StaffManager,
     db: Annotated[Session, Depends(get_db)],
 ):
+    _may_manage(current_user, staff_service.staff_to_read_dict(
+        staff_service.get_staff(db, staff_id, current_user.school_id))["role"])
     s = staff_service.update_staff(db, staff_id, current_user.school_id, payload)
     return StaffRead.model_validate(staff_service.staff_to_read_dict(s))
 

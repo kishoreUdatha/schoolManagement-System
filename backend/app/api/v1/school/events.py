@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.api.v1.school.directory import _school_staff
 from app.core import storage
-from app.core.deps import SchoolAdminUser
+from app.core.deps import EventsManager, SchoolAdminUser
 from app.core.enums import UserRole
 from app.database import get_db
 from app.models.user import User
@@ -65,38 +65,38 @@ def list_events(current_user: Staff, db: Db, start: Optional[date] = None, end: 
 
 
 @router.post("/events", response_model=EventRead, status_code=status.HTTP_201_CREATED)
-def create_event(payload: EventIn, current_user: SchoolAdminUser, db: Db):
+def create_event(payload: EventIn, current_user: EventsManager, db: Db):
     e = svc.create_event(db, current_user.tenant_id, current_user.school_id, current_user.id, payload)
     return svc.events_to_read(db, [e])[0]
 
 
 @router.put("/events/{event_id}", response_model=EventRead)
-def update_event(event_id: int, payload: EventIn, current_user: SchoolAdminUser, db: Db):
+def update_event(event_id: int, payload: EventIn, current_user: EventsManager, db: Db):
     e = svc.update_event(db, svc.get_event(db, event_id, current_user.school_id), payload)
     return svc.events_to_read(db, [e])[0]
 
 
 @router.post("/events/{event_id}/publish", response_model=EventRead, summary="Publish and notify the audience")
-def publish_event(event_id: int, current_user: SchoolAdminUser, db: Db):
+def publish_event(event_id: int, current_user: EventsManager, db: Db):
     e = svc.publish_event(db, svc.get_event(db, event_id, current_user.school_id))
     return svc.events_to_read(db, [e])[0]
 
 
 @router.post("/events/{event_id}/cancel", response_model=EventRead)
-def cancel_event(event_id: int, current_user: SchoolAdminUser, db: Db):
+def cancel_event(event_id: int, current_user: EventsManager, db: Db):
     e = svc.cancel_event(db, svc.get_event(db, event_id, current_user.school_id))
     return svc.events_to_read(db, [e])[0]
 
 
 @router.delete("/events/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_event(event_id: int, current_user: SchoolAdminUser, db: Db):
+def delete_event(event_id: int, current_user: EventsManager, db: Db):
     svc.delete_event(db, svc.get_event(db, event_id, current_user.school_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/events/{event_id}/files", response_model=EventRead, status_code=status.HTTP_201_CREATED,
              summary="Attach a circular or permission slip (PDF, image or Word; up to 5)")
-def add_event_files(event_id: int, current_user: SchoolAdminUser, db: Db, files: list[UploadFile] = File(...)):
+def add_event_files(event_id: int, current_user: EventsManager, db: Db, files: list[UploadFile] = File(...)):
     e = svc.get_event(db, event_id, current_user.school_id)
     attachment_service.add(db, kind="event", owner_id=e.id, tenant_id=e.tenant_id, school_id=e.school_id,
                            user_id=current_user.id, files=files)
@@ -104,7 +104,7 @@ def add_event_files(event_id: int, current_user: SchoolAdminUser, db: Db, files:
 
 
 @router.delete("/events/{event_id}/files/{attachment_id}", response_model=EventRead)
-def remove_event_file(event_id: int, attachment_id: int, current_user: SchoolAdminUser, db: Db):
+def remove_event_file(event_id: int, attachment_id: int, current_user: EventsManager, db: Db):
     e = svc.get_event(db, event_id, current_user.school_id)
     attachment_service.remove(db, attachment_service.get(db, "event", e.id, attachment_id))
     return svc.events_to_read(db, [e])[0]
@@ -120,7 +120,7 @@ def event_file(event_id: int, attachment_id: int, current_user: Staff, db: Db):
 
 
 @router.get("/events/{event_id}/consents", response_model=ConsentReport)
-def consents(event_id: int, current_user: SchoolAdminUser, db: Db):
+def consents(event_id: int, current_user: EventsManager, db: Db):
     return svc.consent_report(db, svc.get_event(db, event_id, current_user.school_id))
 
 
@@ -192,7 +192,7 @@ def list_albums(current_user: Staff, db: Db):
 
 
 @router.post("/gallery", response_model=AlbumRead, status_code=status.HTTP_201_CREATED)
-def create_album(payload: AlbumIn, current_user: SchoolAdminUser, db: Db):
+def create_album(payload: AlbumIn, current_user: EventsManager, db: Db):
     a = svc.create_album(db, current_user.tenant_id, current_user.school_id, current_user.id, payload)
     return svc.albums_to_read(db, [a])[0]
 
@@ -210,33 +210,33 @@ def get_album(album_id: int, current_user: Staff, db: Db):
 
 
 @router.put("/gallery/{album_id}", response_model=AlbumRead)
-def update_album(album_id: int, payload: AlbumIn, current_user: SchoolAdminUser, db: Db):
+def update_album(album_id: int, payload: AlbumIn, current_user: EventsManager, db: Db):
     a = svc.update_album(db, svc.get_album(db, album_id, current_user.school_id), payload)
     return svc.albums_to_read(db, [a])[0]
 
 
 @router.post("/gallery/{album_id}/publish", response_model=AlbumRead)
-def publish_album(album_id: int, current_user: SchoolAdminUser, db: Db, published: bool = True):
+def publish_album(album_id: int, current_user: EventsManager, db: Db, published: bool = True):
     a = svc.set_album_published(db, svc.get_album(db, album_id, current_user.school_id), published)
     return svc.albums_to_read(db, [a])[0]
 
 
 @router.delete("/gallery/{album_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_album(album_id: int, current_user: SchoolAdminUser, db: Db):
+def delete_album(album_id: int, current_user: EventsManager, db: Db):
     svc.delete_album(db, svc.get_album(db, album_id, current_user.school_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/gallery/{album_id}/photos", response_model=list[PhotoRead], status_code=status.HTTP_201_CREATED)
 def upload_photos(
-    album_id: int, current_user: SchoolAdminUser, db: Db, files: list[UploadFile] = File(...)
+    album_id: int, current_user: EventsManager, db: Db, files: list[UploadFile] = File(...)
 ):
     a = svc.get_album(db, album_id, current_user.school_id)
     return svc.upload_photos(db, a, current_user.id, files)
 
 
 @router.patch("/gallery/photos/{photo_id}", response_model=PhotoRead)
-def caption_photo(photo_id: int, payload: CaptionIn, current_user: SchoolAdminUser, db: Db):
+def caption_photo(photo_id: int, payload: CaptionIn, current_user: EventsManager, db: Db):
     p = svc.get_photo(db, photo_id, current_user.school_id)
     p.caption = payload.caption
     db.commit()
@@ -245,7 +245,7 @@ def caption_photo(photo_id: int, payload: CaptionIn, current_user: SchoolAdminUs
 
 
 @router.delete("/gallery/photos/{photo_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_photo(photo_id: int, current_user: SchoolAdminUser, db: Db):
+def delete_photo(photo_id: int, current_user: EventsManager, db: Db):
     svc.delete_photo(db, svc.get_photo(db, photo_id, current_user.school_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrAccountant
+from app.core.deps import FeeCounter, SchoolAdminOrAccountant
 from app.core.enums import MoneyMode, PurchaseOrderStatus
 from app.database import get_db
 from app.services import finance_service
@@ -129,7 +129,7 @@ def apply_assignment(assignment_id: int, user: SchoolAdminOrAccountant, db: Db):
 
 
 @router.get("/ledger/{student_id}", summary="Every charge and receipt, with a balance")
-def ledger(student_id: int, user: SchoolAdminOrAccountant, db: Db):
+def ledger(student_id: int, user: FeeCounter, db: Db):
     return finance_service.ledger(db, user.school_id, student_id)
 
 
