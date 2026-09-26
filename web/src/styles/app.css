@@ -622,3 +622,6 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 
 /* Small phones: tiles one to a row (two did not fit a long name). */
 @media(max-width:480px){.resource-grid{grid-template-columns:minmax(0,1fr)}.resource-tile{min-width:0}}
+.profile-hero .profile-badge strong{color:#1d4ed8}
+.matrix-symbol.weekend{color:#5e6c84}
+@media(max-width:700px){.data-table input[type=checkbox],input[type=checkbox],input[type=radio]{width:20px;height:20px}}

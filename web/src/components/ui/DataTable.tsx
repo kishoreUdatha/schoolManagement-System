@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { plural } from "@/lib/format";
 import { Badge, Person } from "./primitives";
 import { EmptyGuide } from "./states";
 
@@ -196,7 +197,7 @@ export function DataTable({
       </div>
       {footer ? (
       <div className="table-footer">
-        <span data-table-count="">{`Showing ${rows.length} of ${count} records`}</span>
+        <span data-table-count="">{`Showing ${rows.length} of ${plural(count, "record")}`}</span>
         <div className="pages">
           {onPage && pages > 1 ? (
             <>
