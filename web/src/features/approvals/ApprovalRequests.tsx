@@ -7,7 +7,7 @@ import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, initials, label } from "@/lib/format";
+import { date, dateTime, initials, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
@@ -248,7 +248,7 @@ function Queue({ principal }: { principal: boolean }) {
                     </span>
                     <div>
                       <h4>Waiting for the principal</h4>
-                      <p>{`${Math.max(0, Math.floor((now - new Date(current.created_at).getTime()) / DAY))} day(s) so far`}</p>
+                      <p>{`${plural(Math.max(0, Math.floor((now - new Date(current.created_at).getTime()) / DAY)), "day")} so far`}</p>
                     </div>
                   </div>
                 ) : (

@@ -589,3 +589,36 @@ button.stat-card{text-align:left;width:100%;font:inherit}
   .sidebar,.app.nav-rail .sidebar{width:240px;min-width:240px}
 }
 @media(max-width:950px){.nav-fold{display:none}}
+
+/* ------------------------------------------------------------------
+   Readability (tools/qa/ui_audit.js). Text on the tinted chips kept the
+   chip's own hue but was a shade too light to read (WCAG AA 4.5:1); the
+   same hues, one step darker. Backgrounds and icons are unchanged.
+   ------------------------------------------------------------------ */
+.avatar.mint,.stat-card-icon.mint{color:#066a4c}
+.quick-action:nth-child(4n+3){color:#0f766e}
+.quick-action:nth-child(4n){color:#92400e}
+.matrix-symbol{color:#1f6d49}
+.matrix-symbol.weekend{color:#6b7a93}
+.calendar-day.outside{color:#8391a6}
+.lesson.peach{color:#7a5a22}
+.field .req{color:#b42335}
+.file-icon.pdf{color:#a4502f}
+.file-icon.xls{color:#1f6f52}
+.settings-nav a.active{color:#1d4ed8}
+
+/* Form fields a screen did not style itself get the app's field look
+   instead of the browser's square grey box. :where() keeps this weaker than
+   any rule a screen already has. */
+:where(select,textarea,input:not([type=checkbox],[type=radio],[type=hidden],[type=file],[type=range],[type=color])){
+  border:1px solid #d9e4f2;border-radius:8px;background-color:#fff;color:#354a6c;padding:7px 10px;font-size:13px;
+}
+:where(select){padding-right:28px}
+
+/* Phones: checkboxes and radios big enough to tap. */
+@media(max-width:700px){
+  input[type=checkbox],input[type=radio]{width:20px;height:20px}
+}
+
+/* Small phones: tiles one to a row (two did not fit a long name). */
+@media(max-width:480px){.resource-grid{grid-template-columns:minmax(0,1fr)}.resource-tile{min-width:0}}

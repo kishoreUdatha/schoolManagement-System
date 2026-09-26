@@ -8,7 +8,7 @@ import { Avatar, Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime } from "@/lib/format";
+import { date, dateTime, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -124,7 +124,7 @@ function ParentBooking() {
   const selected = t?.slots.find((x) => x.id === slotId);
   const mine = list.flatMap((x) => x.teachers.flatMap((tt) => tt.slots.filter((s) => s.state === "mine").map((s) => ({ meeting: x, teacher: tt, slot: s }))));
   const stats = [
-    { label: "Open for booking", value: String(list.filter((x) => x.booking_open).length), note: `${list.length} meeting(s) in all` },
+    { label: "Open for booking", value: String(list.filter((x) => x.booking_open).length), note: `${plural(list.length, "meeting")} in all` },
     { label: "Your bookings", value: String(mine.filter((x) => x.slot.status === "booked").length), note: "Still to happen" },
     { label: "Met", value: String(mine.filter((x) => x.slot.status === "done").length), note: "Meetings held" },
     { label: "Free times", value: String(t?.slots.filter((x) => x.state === "open").length ?? 0), note: t ? `With ${t.teacher_name}` : "Choose a teacher" },

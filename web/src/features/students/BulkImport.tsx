@@ -8,7 +8,7 @@ import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText, type Paginated } from "@/lib/api";
-import { date, label } from "@/lib/format";
+import { date, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -89,7 +89,7 @@ export function BulkImport() {
     if (!yearId || !sectionId || !section || !cls) return setError("Choose the academic year, class and section first.");
     if (!good.length) return setError("There are no rows ready to import.");
     if (tooMany) return setError(`One import takes at most ${MAX_ROWS} students. Split the file and import it in parts.`);
-    if (bad && !(await ask(`${bad} row(s) have problems and will be skipped. Import the other ${good.length}?`))) return;
+    if (bad && !(await ask(`${plural(bad, "row")} have problems and will be skipped. Import the other ${good.length}?`))) return;
     setBusy(true);
     setError(null);
     const sent: ParsedRow[] = good;
@@ -226,7 +226,7 @@ export function BulkImport() {
               {overCapacity ? (
                 <div className="tip warn" style={{ marginTop: 12 }}>
                   <Icon name="bell" className="sm" />
-                  <span>{`${good.length} rows but only ${seatsLeft} seat(s) left in this section. The server will refuse the whole import; raise the capacity or split the file.`}</span>
+                  <span>{`${good.length} rows but only ${plural(seatsLeft, "seat")} left in this section. The server will refuse the whole import; raise the capacity or split the file.`}</span>
                 </div>
               ) : null}
             </div>
@@ -277,7 +277,7 @@ export function BulkImport() {
             </Panel>
           ) : null}
 
-          <Panel title="Preview" sub={parsed.rows.length ? `${parsed.rows.length} row(s) read · line numbers match the file` : "Load a file or paste rows to check them"} flush>
+          <Panel title="Preview" sub={parsed.rows.length ? `${plural(parsed.rows.length, "row")} read · line numbers match the file` : "Load a file or paste rows to check them"} flush>
             <DataTable
               columns={["Line", "Student", "Gender", "Date of birth", "Blood group", "Parents", "Status", "Problem"]}
               rows={preview}

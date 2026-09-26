@@ -7,7 +7,7 @@ import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label, money } from "@/lib/format";
+import { date, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -216,7 +216,7 @@ export function PayrollProcessing() {
 
       {adjusting ? (
         <Dialog title={`Adjust · ${adjusting.full_name}`} onClose={() => setAdjusting(null)} onSubmit={adjust} submit="Save adjustment" busy={busy} error={err}>
-          <p>{`Gross ${money(adjusting.gross)} · deductions ${money(adjusting.total_deductions)} · net ${money(adjusting.net_pay)}. Loss-of-pay from attendance: ${Number(adjusting.lop_days_auto)} day(s).`}</p>
+          <p>{`Gross ${money(adjusting.gross)} · deductions ${money(adjusting.total_deductions)} · net ${money(adjusting.net_pay)}. Loss-of-pay from attendance: ${plural(Number(adjusting.lop_days_auto), "day")}.`}</p>
           <div className="form-grid">
             <Field label="Loss-of-pay days">
               <input name="lop_days" type="number" min={0} max={31} step="0.5" defaultValue={Number(adjusting.lop_days)} />

@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date } from "@/lib/format";
+import { date, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -296,7 +296,7 @@ export function SyllabusTree({ mode }: { mode: "view" | "edit" }) {
                   <small>Topics complete</small>
                 </div>
               </div>
-              {progress && progress.behind > 0 ? <p className="muted">{`${progress.behind} topic(s) behind plan`}</p> : null}
+              {progress && progress.behind > 0 ? <p className="muted">{`${plural(progress.behind, "topic")} behind plan`}</p> : null}
             </Panel>
           </aside>
         </div>

@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { money } from "@/lib/format";
+import { money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, Kv, formNum, formText } from "@/features/transport/kit";
@@ -162,12 +162,12 @@ export function LibrarySettings() {
           <h3>In effect now</h3>
           <Kv
             rows={[
-              ["Students", `${s.max_books_student} book(s) for ${s.loan_days_student} days`],
-              ["Staff", `${s.max_books_staff} book(s) for ${s.loan_days_staff} days`],
+              ["Students", `${plural(s.max_books_student, "book")} for ${s.loan_days_student} days`],
+              ["Staff", `${plural(s.max_books_staff, "book")} for ${s.loan_days_staff} days`],
               ["Renewals", String(s.max_renewals)],
               ["Fine", `${money(s.fine_per_day)} a day${s.max_fine_per_loan !== null ? `, at most ${money(s.max_fine_per_loan)}` : ""}`],
               ["Student fines", s.fine_fee_head_id ? `Added to fees${head ? ` (${head.name})` : ""}` : "Collected at the desk"],
-              ["Reservation hold", `${s.hold_days} day(s)`],
+              ["Reservation hold", `${plural(s.hold_days, "day")}`],
             ]}
           />
         </div>

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { dateTime, initials } from "@/lib/format";
+import { dateTime, initials, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -135,7 +135,7 @@ function Conversations({ who }: { who: "teacher" | "parent" }) {
   const weekAgo = Date.now() - 7 * 864e5;
   const stats = [
     { label: "Conversations", value: num(list.length), note: `${list.filter((c) => c.is_closed).length} closed` },
-    { label: "Unread", value: num(list.filter((c) => c.unread_for_viewer).length), note: `${list.reduce((t, c) => t + c.unread_for_viewer, 0)} message(s)` },
+    { label: "Unread", value: num(list.filter((c) => c.unread_for_viewer).length), note: `${plural(list.reduce((t, c) => t + c.unread_for_viewer, 0), "message")}` },
     { label: "Active this week", value: num(list.filter((c) => c.last_message_at && new Date(c.last_message_at).getTime() >= weekAgo).length), note: "A message in the last 7 days" },
   ];
 
@@ -403,7 +403,7 @@ function OfficeOversight() {
                 <Icon name="search" className="sm" />
                 <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search conversations" aria-label="Search conversations" />
               </div>
-              {res.data ? <p className="muted small" style={{ marginTop: 10 }}>{`${res.data.count} conversation(s) · ${res.data.awaiting_teacher} waiting on a teacher`}</p> : null}
+              {res.data ? <p className="muted small" style={{ marginTop: 10 }}>{`${plural(res.data.count, "conversation")} · ${res.data.awaiting_teacher} waiting on a teacher`}</p> : null}
             </div>
             {shown.map((c, i) => (
               <button
@@ -416,7 +416,7 @@ function OfficeOversight() {
                 <span className={`avatar ${TONES[i % 4]}`}>{initials(c.parent_name ?? "?")}</span>
                 <div>
                   <strong>{`${c.parent_name ?? "—"} ↔ ${c.teacher_name ?? "—"}`}</strong>
-                  <p>{`About ${c.student_name ?? "—"} · ${c.messages} message(s)`}</p>
+                  <p>{`About ${c.student_name ?? "—"} · ${plural(c.messages, "message")}`}</p>
                 </div>
               </button>
             ))}

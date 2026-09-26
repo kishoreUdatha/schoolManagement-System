@@ -6,7 +6,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, money } from "@/lib/format";
+import { date, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, INV, Tip, orNull, qty, today, type Item, type Move, type Supplier } from "./common";
@@ -90,7 +90,7 @@ export function StockReceipt() {
       setReference("");
       setNotes("");
     }
-    if (ok) notify(bad.length ? `${ok} line(s) received; ${bad.length} did not go in.` : `${ok} line(s) received into stock.`);
+    if (ok) notify(bad.length ? `${plural(ok, "line")} received; ${bad.length} did not go in.` : `${plural(ok, "line")} received into stock.`);
     items.reload();
     recent.reload();
   }
@@ -128,7 +128,7 @@ export function StockReceipt() {
               <ErrorNote>{error ?? suppliers.error ?? items.error}</ErrorNote>
               {failed.length ? (
                 <Tip warn>
-                  {`${failed.length} line(s) did not go in and are still below; the others are already in stock. `}
+                  {`${plural(failed.length, "line")} did not go in and are still below; the others are already in stock. `}
                   {failed.map((f) => `Line ${f.line} (${f.item}): ${f.why}`).join(" · ")}
                 </Tip>
               ) : null}

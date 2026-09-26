@@ -14,6 +14,7 @@ import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
+import { plural } from "@/lib/format";
 
 const PATH = "/api/v1/school/parent-services/canteen-menu";
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -92,7 +93,7 @@ export function CanteenMenu() {
           </table>
         </div>
         <div className="table-footer">
-          <span>{menu.loading ? "Loading…" : `${menu.data?.length ?? 0} meal slot(s) planned`}</span>
+          <span>{menu.loading ? "Loading…" : `${plural(menu.data?.length ?? 0, "meal slot")} planned`}</span>
           <button type="submit" className="btn primary" disabled={saving}>
             <Icon name="check" className="sm" />
             {saving ? "Saving…" : "Save canteen menu"}

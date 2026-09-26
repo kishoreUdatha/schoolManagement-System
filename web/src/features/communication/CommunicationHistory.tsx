@@ -5,7 +5,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
-import { date, dateTime, label } from "@/lib/format";
+import { date, dateTime, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { CHANNELS, CHANNEL_LABEL, downloadCsv, isoDay, useRole, useWindowEvent } from "./shared";
@@ -92,7 +92,7 @@ export function CommunicationHistory() {
               <span>{`This is the first ${res.data.count} messages in the window. Narrow the dates or pick a channel to see everything.`}</span>
             </div>
           ) : null}
-          <Panel title="Activity history" sub={res.data ? `${date(res.data.from_date)} to ${date(res.data.to_date)} · ${rows.length} message(s)` : "Loading…"}>
+          <Panel title="Activity history" sub={res.data ? `${date(res.data.from_date)} to ${date(res.data.to_date)} · ${plural(rows.length, "message")}` : "Loading…"}>
             {rows.map((r) => (
               <div className="timeline-item" key={r.recipient_id}>
                 <span className="timeline-dot">
@@ -159,9 +159,9 @@ export function CommunicationHistory() {
           <Panel title="Next action">
             <p className="muted small">
               {count("failed")
-                ? `${count("failed")} message(s) failed to send — worth checking the channel’s set-up.`
+                ? `${plural(count("failed"), "message")} failed to send — worth checking the channel’s set-up.`
                 : count("skipped")
-                  ? `${count("skipped")} message(s) were skipped: nothing on file for that channel. Fill in the missing contact details.`
+                  ? `${plural(count("skipped"), "message")} were skipped: nothing on file for that channel. Fill in the missing contact details.`
                   : "Nothing failed or was skipped in this window."}
             </p>
             <div className="gap" />

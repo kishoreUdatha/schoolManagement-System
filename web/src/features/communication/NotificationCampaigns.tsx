@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { dateTime } from "@/lib/format";
+import { dateTime, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -138,7 +138,7 @@ function Compose({ teacher }: { teacher: boolean }) {
     try {
       if (teacher) {
         const r = await api.post<Notice>("/api/v1/teacher/notices", body);
-        notify(`Handed to ${r.recipient_count} parent(s). ${deliveryLine(r.delivery)}.`);
+        notify(`Handed to ${plural(r.recipient_count, "parent")}. ${deliveryLine(r.delivery)}.`);
         router.push(routeOf(252));
         return;
       }
@@ -146,7 +146,7 @@ function Compose({ teacher }: { teacher: boolean }) {
       if (send) {
         try {
           const r = await api.post<Notice>(`/api/v1/school/notices/${saved.id}/send`);
-          notify(`Handed to ${r.recipient_count} recipient(s). ${deliveryLine(r.delivery)}.`);
+          notify(`Handed to ${plural(r.recipient_count, "recipient")}. ${deliveryLine(r.delivery)}.`);
         } catch (err) {
           notify(`Saved, but not sent: ${errorText(err)}`);
         }
@@ -166,7 +166,7 @@ function Compose({ teacher }: { teacher: boolean }) {
     setRunning(true);
     try {
       const r = await api.post<RunResult>("/api/v1/school/ops/scheduled-notices/run");
-      notify(r.failed_count ? `${r.sent_count} due notice(s) sent; ${r.failed_count} could not be sent: ${r.failed.map((x) => `${x.title} (${x.error})`).join("; ")}` : `${r.sent_count} due notice(s) sent.`);
+      notify(r.failed_count ? `${plural(r.sent_count, "due notice")} sent; ${r.failed_count} could not be sent: ${r.failed.map((x) => `${x.title} (${x.error})`).join("; ")}` : `${plural(r.sent_count, "due notice")} sent.`);
       due.reload();
       summary.reload();
     } catch (err) {

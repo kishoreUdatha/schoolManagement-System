@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
-import { date, money } from "@/lib/format";
+import { date, money, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { BarList, INV, MOVE_LABEL, daysUntil, qty, today, type Asset, type Assignment, type Dashboard, type LabBooking, type Move, type Valuation } from "./common";
@@ -48,7 +48,7 @@ export function InventoryDashboard() {
   const n = (v: number | undefined) => (v === undefined ? "…" : v.toLocaleString("en-IN"));
   const stats = [
     { label: "Tracked items", value: n(d?.items), note: d ? `${money(Math.round(Number(d.stock_value)))} in stock` : "Store items" },
-    { label: "Assets assigned", value: n(out.data?.length), note: d ? `Of ${d.assets} asset(s) on the register` : "Out with staff or rooms" },
+    { label: "Assets assigned", value: n(out.data?.length), note: d ? `Of ${plural(d.assets, "asset")} on the register` : "Out with staff or rooms" },
     { label: "Low stock items", value: n(d?.low_stock.length), note: "At or below reorder level" },
     {
       label: "Maintenance due",
@@ -106,7 +106,7 @@ export function InventoryDashboard() {
       </div>
       <div className="two-col dashboard-grid" style={{ marginBottom: "20px" }}>
         <div>
-          <Panel title="Stock value by category" sub={val.data ? `${money(Math.round(Number(val.data.stock_value)))} across ${val.data.items} item(s)` : "Whole store"}>
+          <Panel title="Stock value by category" sub={val.data ? `${money(Math.round(Number(val.data.stock_value)))} across ${plural(val.data.items, "item")}` : "Whole store"}>
             {val.data?.by_category.length ? (
               <BarList rows={val.data.by_category.map((c) => ({ label: c.label, value: Number(c.value) }))} format={(x) => (x >= 1000 ? `₹${Math.round(x / 1000)}k` : `₹${Math.round(x)}`)} />
             ) : (

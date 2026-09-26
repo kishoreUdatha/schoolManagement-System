@@ -7,7 +7,7 @@ import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label } from "@/lib/format";
+import { date, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { KV, clock, isoDay, monthName, weekday } from "./kit";
@@ -67,7 +67,7 @@ export function MyAttendance() {
     { label: "Present", value: v(s?.present), note: `On time in ${monthName(month)}` },
     { label: "Late", value: v(s?.late), note: "Checked in after the start time" },
     { label: "On leave", value: s ? String(s.on_leave + s.sick) : "…", note: "Leave and sick days" },
-    { label: "Absent", value: v(s?.absent), note: `${s ? s.total_days : "…"} day(s) recorded` },
+    { label: "Absent", value: v(s?.absent), note: `${plural(s ? s.total_days : "…", "day")} recorded` },
   ];
 
   const records = [...(h?.records ?? [])].sort((a, b) => b.date.localeCompare(a.date));

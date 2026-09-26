@@ -9,7 +9,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel, Person } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label, money } from "@/lib/format";
+import { date, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -175,7 +175,7 @@ export function EventDetails() {
             </div>
             <div className="table-footer">
               <span>{`${rows.length} child(ren) on this register`}</span>
-              <span className="muted small">{dirty.length ? `${dirty.length} change(s) not saved yet` : "An unticked child is uncounted, not absent"}</span>
+              <span className="muted small">{dirty.length ? `${plural(dirty.length, "change")} not saved yet` : "An unticked child is uncounted, not absent"}</span>
             </div>
           </Panel>
         </div>

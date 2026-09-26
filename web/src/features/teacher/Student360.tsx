@@ -11,7 +11,7 @@ import { StatCards } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { usePageTitle } from "@/components/shell/AppShell";
 import { KV } from "@/features/self/kit";
-import { date, dateTime, initials, label, money, pct } from "@/lib/format";
+import { date, dateTime, initials, label, money, pct, plural } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { Student360 as S360 } from "./types";
@@ -531,7 +531,7 @@ function AttendanceTab({ s }: { s: S360 }) {
 function AcademicsTab({ s }: { s: S360 }) {
   const a = s.academic;
   const marks: Row[] = a.rows.map((r) => [r.subject_name, ...r.marks.map((m) => (m === null ? "—" : pct(m, 0))), r.average === null ? "—" : pct(r.average, 0)]);
-  const exams: Row[] = a.exams.map((e) => [e.exam_name, label(e.kind), date(e.start_date), `${e.obtained} / ${e.out_of}`, pct(e.percent, 1), `${e.marked} paper(s)`]);
+  const exams: Row[] = a.exams.map((e) => [e.exam_name, label(e.kind), date(e.start_date), `${e.obtained} / ${e.out_of}`, pct(e.percent, 1), `${plural(e.marked, "paper")}`]);
   return (
     <div className="stack s360-stack">
       <Panel title="Subject marks" sub="Every published exam, as a percentage of each paper" action={a.average === null ? undefined : <Badge tone="blue">{`Average: ${pct(a.average, 0)}`}</Badge>} flush>

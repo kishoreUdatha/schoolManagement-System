@@ -8,7 +8,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Avatar, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label, money } from "@/lib/format";
+import { date, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, Kv, Modal, ModalActions, StudentPicker, addDays, formText, today, type PickedStudent } from "@/features/transport/kit";
@@ -337,7 +337,7 @@ export function ReturnBook() {
                   <input type="date" name="returned_on" defaultValue={today()} max={today()} />
                 </Field>
                 <Field label="Fine amount">
-                  <input value={loan ? `${money(loan.accruing_fine)}${loan.overdue_days ? ` · ${loan.overdue_days} day(s) late` : ""}` : ""} readOnly placeholder="Worked out by the library rules" />
+                  <input value={loan ? `${money(loan.accruing_fine)}${loan.overdue_days ? ` · ${plural(loan.overdue_days, "day")} late` : ""}` : ""} readOnly placeholder="Worked out by the library rules" />
                 </Field>
                 <Field label="Book condition">
                   <select value={damaged ? "damaged" : "good"} onChange={(e) => setDamaged(e.target.value === "damaged")}>
@@ -485,7 +485,7 @@ export function RenewReserve() {
                 </div>
                 <p className="muted small">
                   {loan
-                    ? `Renewed ${loan.renew_count} of ${settings.data?.max_renewals ?? "—"} time(s). Leave the new date blank to renew for the standard period.`
+                    ? `Renewed ${loan.renew_count} of ${plural(settings.data?.max_renewals ?? "—", "time")}. Leave the new date blank to renew for the standard period.`
                     : "Leave the new date blank to renew for the standard period."}
                 </p>
               </section>
@@ -546,7 +546,7 @@ export function RenewReserve() {
         </div>
       </form>
       <div className="gap" />
-      <Panel title="Reservations" sub={`Held copies wait ${settings.data?.hold_days ?? "—"} day(s)`} flush>
+      <Panel title="Reservations" sub={`Held copies wait ${plural(settings.data?.hold_days ?? "—", "day")}`} flush>
         <DataTable
           columns={["Title", "Member", "Status", "Hold until", "Placed"]}
           rows={rrows}
@@ -678,7 +678,7 @@ export function FineDesk() {
     { label: "Waived", value: d ? money(d.waived_amount) : "…", note: "Written off" },
   ];
   const list = d?.fines ?? [];
-  const rows: Row[] = useMemo(() => list.map((x) => [{ name: x.borrower_name, sub: label(x.borrower_type) }, x.title, x.accession_no, `${x.overdue_days} day(s)`, money(x.amount), label(x.status)]), [list]);
+  const rows: Row[] = useMemo(() => list.map((x) => [{ name: x.borrower_name, sub: label(x.borrower_type) }, x.title, x.accession_no, `${plural(x.overdue_days, "day")}`, money(x.amount), label(x.status)]), [list]);
 
   return (
     <>
@@ -776,7 +776,7 @@ export function FineDesk() {
               ["Book", `${fine.title} (${fine.accession_no})`],
               ["Issued", date(fine.issued_on)],
               ["Due / returned", `${date(fine.due_on)} / ${date(fine.returned_on)}`],
-              ["Overdue", `${fine.overdue_days} day(s)`],
+              ["Overdue", `${plural(fine.overdue_days, "day")}`],
               ["Status", label(fine.status)],
               ...(fine.received ? ([["Received", `${money(fine.received)}${fine.payment_method ? ` · ${PAY[fine.payment_method] ?? fine.payment_method}` : ""}`]] as [string, string][]) : []),
               ["Note", fine.note ?? "—"],

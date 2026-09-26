@@ -10,7 +10,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, initials, label } from "@/lib/format";
+import { date, dateTime, initials, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { usePermissions } from "@/lib/jobs";
@@ -1016,7 +1016,7 @@ export function ImmunizationAllergy() {
     setError(null);
     try {
       const r = await api.post<{ recorded: unknown[]; skipped: unknown[]; already_had_it: unknown[] }>(`${WELL}/immunisation/bulk`, { section_id: Number(f.get("section_id")), vaccine: formText(f, "vaccine"), given_on: formText(f, "given_on"), dose: formText(f, "dose"), next_due_on: formText(f, "next_due_on"), skip_student_ids: [] });
-      setDrive(`Recorded for ${r.recorded.length} student(s); ${r.already_had_it.length} already had it; ${r.skipped.length} skipped.`);
+      setDrive(`Recorded for ${plural(r.recorded.length, "student")}; ${r.already_had_it.length} already had it; ${r.skipped.length} skipped.`);
       notify("Drive recorded.");
     } catch (err) {
       setError(errorText(err));

@@ -6,7 +6,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { label } from "@/lib/format";
+import { label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -120,7 +120,7 @@ export function InterviewSchedule() {
       <ErrorNote>{win.error}</ErrorNote>
       <Panel
         title={title}
-        sub={`${win.loading ? "Loading…" : `${shown.length} interview(s) this view`} · Times in your time zone`}
+        sub={`${win.loading ? "Loading…" : `${plural(shown.length, "interview")} this view`} · Times in your time zone`}
         action={
           <button type="button" className="btn" onClick={() => setYm([now.getFullYear(), now.getMonth()])}>
             Today

@@ -10,7 +10,7 @@ import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label } from "@/lib/format";
+import { date, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf, screen } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -185,7 +185,7 @@ function History({ s }: { s: StudentProfile }) {
         </Link>
       </div>
       <ErrorNote>{list.error}</ErrorNote>
-      <Panel title="Enrolment history" sub={`${items.length} year(s) on record${list.loading ? " · Loading…" : ""}`} flush>
+      <Panel title="Enrolment history" sub={`${plural(items.length, "year")} on record${list.loading ? " · Loading…" : ""}`} flush>
         <DataTable
           columns={["Academic year", "Section", "Roll no.", "Joined", "Ended", "Outcome", "Description"]}
           rows={table}

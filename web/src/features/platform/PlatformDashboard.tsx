@@ -10,7 +10,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { useState } from "react";
 import { api, errorText, type Paginated } from "@/lib/api";
 import { notify } from "@/lib/notify";
-import { date, dateTime, money } from "@/lib/format";
+import { date, dateTime, money, plural } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import type { Health, Renewal, SchoolsByMonth, Tenant, TicketList, UsageSummary } from "./types";
@@ -40,15 +40,15 @@ export function PlatformDashboard() {
 
   async function sendReminders() {
     const count = renewals.data?.length ?? 0;
-    if (!(await ask(`Send a renewal reminder to the school admins of ${count} organization(s) whose subscription ends in the next 30 days? It goes out in-app and by email.`))) return;
+    if (!(await ask(`Send a renewal reminder to the school admins of ${plural(count, "organization")} whose subscription ends in the next 30 days? It goes out in-app and by email.`))) return;
     setSending(true);
     setSendError(null);
     try {
       const r = await api.post<{ tenants_notified?: number; notices_created?: number; tenants_due?: number }>("/api/v1/super-admin/usage/renewals/send", undefined, { within_days: 30 });
       const sent = r.tenants_notified ?? 0;
       const due = r.tenants_due ?? count;
-      if (sent < due) setSendError(`Reminders reached ${sent} of ${due} organization(s). The others have no one to receive them.`);
-      else notify(`Reminders sent to ${sent} organization(s).`);
+      if (sent < due) setSendError(`Reminders reached ${sent} of ${plural(due, "organization")}. The others have no one to receive them.`);
+      else notify(`Reminders sent to ${plural(sent, "organization")}.`);
     } catch (err) {
       setSendError(errorText(err));
     } finally {
@@ -147,7 +147,7 @@ export function PlatformDashboard() {
         <div>
           <Panel
             title="Platform activity"
-            sub={peakSchools ? `Active schools over the last six months · % of the ${peakSchools} school(s) on the platform` : "Active schools over the last six months"}
+            sub={peakSchools ? `Active schools over the last six months · % of the ${plural(peakSchools, "school")} on the platform` : "Active schools over the last six months"}
             action={
               h ? (
                 <Link href={routeOf(18)} className="live-indicator">
@@ -163,6 +163,7 @@ export function PlatformDashboard() {
                 labels={trend.map((m) => MONTHS[Number(m.month.slice(5, 7)) - 1])}
                 values={trend.map((m) => Math.round((m.active / peakSchools) * 100))}
                 label="Active schools by month"
+                scale="relative"
               />
             ) : (
               <p className="muted">{activeByMonth.loading ? "Loading…" : (activeByMonth.error ?? "No school activity recorded yet.")}</p>

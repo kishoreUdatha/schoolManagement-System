@@ -6,7 +6,7 @@ import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { ErrorNote } from "@/components/ui/states";
 import { StatStrip } from "@/components/ui/StatStrip";
-import { date, label, pct } from "@/lib/format";
+import { date, label, pct, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { StudentFrame, today } from "./StudentFrame";
 import type { ExamHistory, RemarkRow } from "./records";
@@ -50,7 +50,7 @@ export function ResultsBody({ s }: { s: StudentProfile }) {
     { label: "Exams", value: wait ? "…" : String(exams.length), note: "With results recorded" },
     { label: "This exam", value: wait ? "…" : pct(exam?.percent), note: exam ? exam.exam_name : "No exam yet" },
     { label: "Papers failed", value: wait ? "…" : String((exam?.subjects ?? []).filter((p) => p.is_pass === false).length), note: exam ? `${exam.marked} of ${exam.subjects.length} marked` : "—" },
-    { label: "Average", value: wait ? "…" : pct(exams.length ? exams.reduce((t, e) => t + Number(e.percent), 0) / exams.length : null), note: `Across ${exams.length} exam(s)` },
+    { label: "Average", value: wait ? "…" : pct(exams.length ? exams.reduce((t, e) => t + Number(e.percent), 0) / exams.length : null), note: `Across ${plural(exams.length, "exam")}` },
   ];
 
   const rows: Row[] = (exam?.subjects ?? []).map((p) => [

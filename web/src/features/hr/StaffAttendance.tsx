@@ -6,7 +6,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, initials, label } from "@/lib/format";
+import { date, initials, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import type { AttendanceStatus, StaffAttendance as Record_, StaffMember } from "./types";
@@ -84,7 +84,7 @@ export function StaffAttendance() {
     if (failed.length) setErr(`Not saved — ${failed.join("; ")}`);
     else {
       setSavedAt(new Date().toISOString());
-      notify(`Attendance saved for ${changed.length} staff member(s).`);
+      notify(`Attendance saved for ${plural(changed.length, "staff member")}.`);
     }
   }
 
@@ -218,7 +218,7 @@ export function StaffAttendance() {
         </div>
       </Panel>
       <div className="form-footer" style={{ border: "0", background: "transparent" }}>
-        <span>{savedAt ? `Last saved ${clock(savedAt)}` : changed.length ? `${changed.length} unsaved change(s)` : "No unsaved changes"}</span>
+        <span>{savedAt ? `Last saved ${clock(savedAt)}` : changed.length ? `${plural(changed.length, "unsaved change")}` : "No unsaved changes"}</span>
         <button type="submit" className="btn primary" disabled={saving}>
           <Icon name="check" className="sm" />
           {saving ? "Saving…" : "Save attendance"}

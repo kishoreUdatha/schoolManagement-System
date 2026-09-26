@@ -23,6 +23,7 @@ import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { plural } from "@/lib/format";
 
 type Year = { id: number; name: string; is_current: boolean; start_date: string; end_date: string };
 type Klass = { id: number; name: string; sections: { id: number; name: string }[] };
@@ -53,7 +54,7 @@ export function useSetupStatus() {
   const cls = classes.data ?? [];
   const steps: SetupStep[] = [
     { key: "profile", short: "School", title: "School details", why: "Address, phone and email appear on receipts, report cards and certificates.", done: Boolean(p?.address && p?.phone_primary && p?.email) },
-    { key: "year", short: "Year", title: "Academic year and terms", why: "Classes, attendance, fees and exams all belong to the current year.", done: Boolean(current && (terms.data?.length ?? 0) > 0), detail: current ? `${current.name}${terms.data ? ` · ${terms.data.length} term(s)` : ""}` : undefined },
+    { key: "year", short: "Year", title: "Academic year and terms", why: "Classes, attendance, fees and exams all belong to the current year.", done: Boolean(current && (terms.data?.length ?? 0) > 0), detail: current ? `${current.name}${terms.data ? ` · ${plural(terms.data.length, "term")}` : ""}` : undefined },
     { key: "classes", short: "Classes", title: "Classes and sections", why: "Students are admitted into a section of a class.", done: cls.length > 0 && cls.every((c) => c.sections.length > 0), detail: cls.length ? `${cls.length} classes · ${cls.reduce((n, c) => n + c.sections.length, 0)} sections` : undefined },
     { key: "subjects", short: "Subjects", title: "Subjects", why: "Needed for the timetable, homework, marks and report cards.", done: (subjects.data?.length ?? 0) > 0 && (taught.data?.length ?? 0) > 0, detail: subjects.data?.length ? `${subjects.data.length} subjects` : undefined },
     { key: "periods", short: "Periods", title: "School day (periods)", why: "The timetable is built on these periods.", done: (periods.data?.length ?? 0) > 0 },
@@ -1067,7 +1068,7 @@ function PeriodsStep({ s, busy, run, setProgress }: StepProps) {
         <p className="small" role="alert" style={{ margin: "10px 0", color: "var(--danger, #b42318)" }}>{problem}</p>
       ) : (
         <p className="muted small" style={{ margin: "10px 0" }}>
-          {`${days.length} working day(s): ${days.join(", ")} · ${plan.map((p) => `${p.label} ${p.start_time}–${p.end_time}`).join(" · ")}`}
+          {`${plural(days.length, "working day")}: ${days.join(", ")} · ${plan.map((p) => `${p.label} ${p.start_time}–${p.end_time}`).join(" · ")}`}
         </p>
       )}
       <button

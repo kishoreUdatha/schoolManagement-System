@@ -9,7 +9,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label, money, pct } from "@/lib/format";
+import { date, label, money, pct, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -55,7 +55,7 @@ export function CatalogueBrowser() {
         </select>
       </div>
       <ErrorNote>{books.error ?? dash.error}</ErrorNote>
-      <Panel title="Browse books" sub={books.data ? `${items.length} title(s)` : "Loading…"}>
+      <Panel title="Browse books" sub={books.data ? `${plural(items.length, "title")}` : "Loading…"}>
         {items.length ? (
           <div className="book-grid">
             {items.map((b, i) => (
@@ -668,7 +668,7 @@ export function LibraryReports() {
               ]}
             />
           </Panel>
-          <Panel title="Fines" sub={f ? `${f.pending} fine(s) waiting · all time` : undefined}>
+          <Panel title="Fines" sub={f ? `${plural(f.pending, "fine")} waiting · all time` : undefined}>
             <div className="bar-list">
               {amounts.map(([k, v]) => (
                 <div key={k}>

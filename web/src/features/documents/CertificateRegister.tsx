@@ -7,7 +7,7 @@ import { Panel, Person } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { EmptyGuide, ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label } from "@/lib/format";
+import { date, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -145,7 +145,7 @@ export function CertificateRegister() {
         <div className="table-footer">
           <span>{`Showing ${items.length} of ${list.data?.length ?? 0} records`}</span>
           <div className="pages">
-            <span>{waiting ? `${waiting} request(s) awaiting a decision` : "Nothing pending"}</span>
+            <span>{waiting ? `${plural(waiting, "request")} awaiting a decision` : "Nothing pending"}</span>
           </div>
         </div>
       </Panel>
@@ -195,7 +195,7 @@ function CertificateCard({ c, onClose, onChanged }: { c: Certificate; onClose: (
             ["Issued on", date(c.issued_on)],
             ["Issued by", c.issued_by_name ?? "—"],
             ["Requested by", c.requested_by_name ? `${c.requested_by_name} · ${date(c.created_at)}` : "—"],
-            ["PDF opened", `${c.print_count} time(s)`],
+            ["PDF opened", `${plural(c.print_count, "time")}`],
             ["Remarks", c.remarks ?? "—"],
           ] as [string, string][]
         ).map(([k, v]) => (

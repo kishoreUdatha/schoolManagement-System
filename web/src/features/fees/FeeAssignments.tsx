@@ -8,7 +8,7 @@ import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import type { AcademicYear } from "@/features/students/types";
 import { api, errorText } from "@/lib/api";
-import { date, money } from "@/lib/format";
+import { date, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Dialog, Field, isoToday, StudentPicker } from "./common";
@@ -66,7 +66,7 @@ export function FeeAssignments() {
     setError(null);
     try {
       const r = await api.post<{ updated: number; left_alone_count: number }>(`/api/v1/school/finance/assignments/${a.id}/apply`);
-      notify(`${r.updated} unpaid charge(s) updated for ${a.student_name ?? "the student"}.${r.left_alone_count ? ` ${r.left_alone_count} already had money against them and were left alone.` : ""}`);
+      notify(`${plural(r.updated, "unpaid charge")} updated for ${a.student_name ?? "the student"}.${r.left_alone_count ? ` ${r.left_alone_count} already had money against them and were left alone.` : ""}`);
       setOpen(null);
       list.reload();
     } catch (e) {

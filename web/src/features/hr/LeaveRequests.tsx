@@ -8,7 +8,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label } from "@/lib/format";
+import { date, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -74,7 +74,7 @@ export function LeaveRequests() {
     { label: "Requests", value: n(all.length), note: `${all.filter((l) => l.status === "rejected" || l.status === "cancelled").length} rejected or cancelled` },
     { label: "Pending", value: n(all.filter((l) => l.status === "pending").length), note: "Waiting for a decision" },
     { label: "On leave today", value: n(approved.filter((l) => l.from_date <= today() && l.to_date >= today()).length), note: "Approved leave covering today" },
-    { label: "Days approved", value: n(approved.reduce((t, l) => t + Number(l.days), 0)), note: `${approved.length} approved request(s)` },
+    { label: "Days approved", value: n(approved.reduce((t, l) => t + Number(l.days), 0)), note: `${plural(approved.length, "approved request")}` },
   ];
 
   const rows: Row[] = items.map((l) => [

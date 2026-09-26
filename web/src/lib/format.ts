@@ -51,3 +51,9 @@ export function initials(name: string): string {
     .join("")
     .toUpperCase();
 }
+
+/** "1 student", "6 students"; a formatted count ("1,200") or a placeholder ("—") works too. */
+export function plural(n: number | string | null | undefined, one: string, many = `${one}s`): string {
+  const k = Number(String(n ?? "").replace(/[^\d.-]/g, ""));
+  return `${n ?? 0} ${k === 1 && String(n ?? "").trim() !== "" ? one : many}`;
+}

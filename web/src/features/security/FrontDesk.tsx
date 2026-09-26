@@ -10,7 +10,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Avatar, Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, initials, label } from "@/lib/format";
+import { date, dateTime, initials, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -48,7 +48,7 @@ export function VisitorDashboard() {
     { label: "Visitors today", value: d ? String(d.visitors_today) : "…", note: d ? `${d.expected_today} expected` : "Checked in today" },
     { label: "Inside campus", value: d ? String(d.inside_now) : "…", note: "Checked in, not yet out" },
     { label: "Awaiting approval", value: visits.data ? String(all.filter(awaitingHost).length) : "…", note: "Expected visitors, host not answered" },
-    { label: "Gate passes pending", value: d ? String(d.gate_passes_pending) : "…", note: d ? `${d.gate_passes_today} today · ${d.open_incidents} open incident(s)` : "Early pickups" },
+    { label: "Gate passes pending", value: d ? String(d.gate_passes_pending) : "…", note: d ? `${d.gate_passes_today} today · ${plural(d.open_incidents, "open incident")}` : "Early pickups" },
   ];
   const buckets = [8, 10, 12, 14, 16, 18].map((h) => ({ h, n: all.filter((v) => v.check_in_at && new Date(v.check_in_at).getHours() >= h && new Date(v.check_in_at).getHours() < h + 2).length }));
   const max = Math.max(1, ...buckets.map((b) => b.n));

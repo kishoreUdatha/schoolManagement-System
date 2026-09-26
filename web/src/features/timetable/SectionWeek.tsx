@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { dateTime } from "@/lib/format";
+import { dateTime, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -182,7 +182,7 @@ function OfficeWeek({ mode }: { mode: "edit" | "view" }) {
         </div>
         {data ? (
           <div className="table-footer">
-            <span>{`${data.entries.length} lesson(s) placed`}</span>
+            <span>{`${plural(data.entries.length, "lesson")} placed`}</span>
             <span className="muted">{publishedAt ? `Published ${dateTime(publishedAt)} · parents and teachers can see this` : "Draft — not visible outside the office"}</span>
           </div>
         ) : null}

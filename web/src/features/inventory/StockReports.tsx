@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
-import { date, label, money } from "@/lib/format";
+import { date, label, money, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { BarList, INV, MOVE_LABEL, Tip, qty, type Move, type MoveKind, type Valuation } from "./common";
 
@@ -39,8 +39,8 @@ export function StockReports() {
   const n = (x: number | undefined) => (x === undefined ? "…" : x.toLocaleString("en-IN"));
 
   const stats = [
-    { label: "Stock value", value: v ? money(Math.round(Number(v.stock_value))) : "…", note: v ? `${n(v.items)} item(s) tracked` : "Store items" },
-    { label: "Asset value", value: v ? money(Math.round(Number(v.asset_value))) : "…", note: v ? `${n(v.assets)} asset(s) on the register` : "Asset register" },
+    { label: "Stock value", value: v ? money(Math.round(Number(v.stock_value))) : "…", note: v ? `${plural(n(v.items), "item")} tracked` : "Store items" },
+    { label: "Asset value", value: v ? money(Math.round(Number(v.asset_value))) : "…", note: v ? `${plural(n(v.assets), "asset")} on the register` : "Asset register" },
     { label: "Movements in scope", value: n(moves.data ? shown.length : undefined), note: `${qty(inQty)} in · ${qty(outQty)} out` },
     { label: "Reporting period", value: period.replace("Last ", ""), note: kind ? MOVE_LABEL[kind as MoveKind] : "Every kind" },
   ];
@@ -76,7 +76,7 @@ export function StockReports() {
       </div>
       <ErrorNote>{val.error ?? moves.error}</ErrorNote>
       <StatStrip items={stats} compact />
-      {v && v.low_stock.length ? <Tip warn>{`${v.low_stock.length} item(s) are at or below their reorder level: ${v.low_stock.map((l) => `${l.name} (${qty(l.on_hand)} of ${qty(l.reorder_level)})`).join(", ")}.`}</Tip> : null}
+      {v && v.low_stock.length ? <Tip warn>{`${plural(v.low_stock.length, "item")} are at or below their reorder level: ${v.low_stock.map((l) => `${l.name} (${qty(l.on_hand)} of ${qty(l.reorder_level)})`).join(", ")}.`}</Tip> : null}
       <div className="two-col" style={{ marginBottom: "20px" }}>
         <div>
           <Panel title="Stock value by category" sub="Priced at what the stock cost">
@@ -132,7 +132,7 @@ export function StockReports() {
       </div>
       <Panel
         title="Detailed breakdown"
-        sub={`${period} · ${shown.length} of ${all.length} movement(s)${moves.loading ? " · Loading…" : ""}`}
+        sub={`${period} · ${shown.length} of ${plural(all.length, "movement")}${moves.loading ? " · Loading…" : ""}`}
         action={
           <button type="button" className="btn" data-export="">
             <Icon name="download" className="sm" />

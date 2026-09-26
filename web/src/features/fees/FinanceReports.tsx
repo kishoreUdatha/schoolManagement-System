@@ -79,7 +79,7 @@ export function FinanceReports() {
               </div>
             }
           >
-            {months.length ? <Chart kind="line" labels={months.map((m) => monthLabel(m.month).slice(0, 3))} values={scaled(months.map((m) => Number(m.received)))} /> : <p className="muted small">{rep.loading ? "Loading…" : "Nothing received in this period."}</p>}
+            {months.length ? <Chart kind="line" labels={months.map((m) => monthLabel(m.month).slice(0, 3))} values={scaled(months.map((m) => Number(m.received)))} scale="relative" /> : <p className="muted small">{rep.loading ? "Loading…" : "Nothing received in this period."}</p>}
           </Panel>
         </div>
         <aside className="stack">

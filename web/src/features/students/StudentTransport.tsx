@@ -5,7 +5,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
-import { dateTime, initials, label, money } from "@/lib/format";
+import { dateTime, initials, label, money, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { StudentFrame, clock, today } from "./StudentFrame";
 import type { TransportAssignment, TransportRoute, Trip, Vehicle } from "./records";
@@ -176,7 +176,7 @@ function RouteMap({ stops, mine, bus }: { stops: MapStop[]; mine: number; bus: {
             })()
           : null}
       </svg>
-      <span className="map-key">{`${placed.length} of ${stops.length} stop(s) placed · green is this student's stop${bus ? " · amber is the bus" : ""} · north up, to scale`}</span>
+      <span className="map-key">{`${placed.length} of ${plural(stops.length, "stop")} placed · green is this student's stop${bus ? " · amber is the bus" : ""} · north up, to scale`}</span>
     </div>
   );
 }

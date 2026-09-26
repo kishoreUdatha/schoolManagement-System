@@ -9,7 +9,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date } from "@/lib/format";
+import { date, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { EVENT_AUDIENCE, useCurrentClasses, useRole, type EventAudience, type SchoolEvent } from "@/features/communication/shared";
@@ -149,7 +149,7 @@ function AlbumList({ canManage, onOpen }: { canManage: boolean; onOpen: (id: num
             <p>
               {`${date(a.album_date)} · ${a.audience_label || EVENT_AUDIENCE[a.audience]}`}
               <br />
-              {`${a.photo_count} photo(s)`}
+              {`${plural(a.photo_count, "photo")}`}
             </p>
             <div className="spread">
               <Badge>{a.is_published ? "Published" : "Draft"}</Badge>
@@ -331,7 +331,7 @@ function AlbumView({ id, canManage, onBack }: { id: string; canManage: boolean; 
     }
     const form = new FormData();
     Array.from(files).forEach((f) => form.append("files", f));
-    await run(() => api.upload(`${GALLERY}/${a!.id}/photos`, form), `${files.length} photo(s) added.`);
+    await run(() => api.upload(`${GALLERY}/${a!.id}/photos`, form), `${plural(files.length, "photo")} added.`);
     if (file.current) file.current.value = "";
   }
 
@@ -363,7 +363,7 @@ function AlbumView({ id, canManage, onBack }: { id: string; canManage: boolean; 
             </span>
             <div>
               <h2>{a.title}</h2>
-              <p>{`${date(a.album_date)} · ${a.audience_label || EVENT_AUDIENCE[a.audience]} · ${a.photos.length} photo(s)`}</p>
+              <p>{`${date(a.album_date)} · ${a.audience_label || EVENT_AUDIENCE[a.audience]} · ${plural(a.photos.length, "photo")}`}</p>
             </div>
           </div>
           <Badge>{a.is_published ? "Published" : "Draft"}</Badge>
@@ -603,7 +603,7 @@ function TeacherVideos() {
   return (
     <>
       <ErrorNote>{!adding ? (error ?? videos.error ?? mine.error) : null}</ErrorNote>
-      <Panel title="My learning videos" sub={`${items.length} video(s) · YouTube links shared with your classes`} flush>
+      <Panel title="My learning videos" sub={`${plural(items.length, "video")} · YouTube links shared with your classes`} flush>
         <DataTable
           columns={VIDEO_COLUMNS}
           rows={videoRows(items)}

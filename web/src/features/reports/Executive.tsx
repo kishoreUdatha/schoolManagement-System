@@ -7,7 +7,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
-import { date, dateTime, money, pct } from "@/lib/format";
+import { date, dateTime, money, pct, plural } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
@@ -76,7 +76,7 @@ export function ExecutiveDashboard() {
           {
             label: "Academic average",
             value: !d ? "—" : d.academic_average === null ? "—" : pct(d.academic_average),
-            note: !d ? "Published exams" : d.academic_average === null ? "No published marks this year" : `${d.academic_average_exams} published exam(s) this year`,
+            note: !d ? "Published exams" : d.academic_average === null ? "No published marks this year" : `${plural(d.academic_average_exams, "published exam")} this year`,
           },
           { label: "Collected this month", value: money(d?.collected_this_month), note: thisMonth ? `${money(thisMonth.raised)} raised · ${money(d?.outstanding)} outstanding` : "Fees received" },
         ]}

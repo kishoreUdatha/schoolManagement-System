@@ -10,7 +10,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime } from "@/lib/format";
+import { date, dateTime, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, Kv, SearchBox, confirmed, formText, useDebounced } from "@/features/transport/kit";
@@ -102,7 +102,7 @@ export function VisitorDirectory() {
     setError(null);
     try {
       const r = await api.post<{ created: number }>(`${VISITORS}/backfill`);
-      notify(r.created ? `${r.created} visitor record(s) created from older visits.` : "Every visit already has a visitor record.");
+      notify(r.created ? `${plural(r.created, "visitor record")} created from older visits.` : "Every visit already has a visitor record.");
       list.reload();
       everyone.reload();
     } catch (err) {
@@ -128,7 +128,7 @@ export function VisitorDirectory() {
       </div>
       <ErrorNote>{error ?? list.error}</ErrorNote>
       <div className="two-col">
-        <Panel title="Visitor directory" sub={`${items.length} visitor(s)${list.loading ? " · Loading…" : ""} · one record per phone number`} flush>
+        <Panel title="Visitor directory" sub={`${plural(items.length, "visitor")}${list.loading ? " · Loading…" : ""} · one record per phone number`} flush>
           <DataTable
             columns={["Visitor", "Organisation", "ID checked", "Visits", "Last visit", "Status"]}
             rows={rows}

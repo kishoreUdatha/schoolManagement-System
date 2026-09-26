@@ -8,7 +8,7 @@ import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, label } from "@/lib/format";
+import { date, dateTime, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, KV, confirmed, isoDay, num, usePageAction } from "./kit";
@@ -51,7 +51,7 @@ export function MyLeave() {
     {
       label: "Days available",
       value: balances.data ? (bal.length ? num(bal.reduce((n, b) => n + Number(b.available), 0)) : "—") : "…",
-      note: bal.length ? `Across ${bal.length} leave type(s)` : "No entitlement allotted yet",
+      note: bal.length ? `Across ${plural(bal.length, "leave type")}` : "No entitlement allotted yet",
     },
     { label: "Days taken", value: ready ? String(sumDays("approved")) : "…", note: `Approved in ${year}` },
     { label: "Pending", value: ready ? String(inYear.filter((l) => l.status === "pending").length) : "…", note: "Waiting for a decision" },
@@ -190,7 +190,7 @@ export function MyLeave() {
 
       <Dialog
         open={viewing !== null}
-        title={viewing ? `${kindText(viewing)} · ${viewing.days} day(s)` : "Leave"}
+        title={viewing ? `${kindText(viewing)} · ${plural(viewing.days, "day")}` : "Leave"}
         onClose={() => setViewing(null)}
         actions={
           <>
@@ -315,7 +315,7 @@ function LeaveForm({ leave, types, onClose, onSaved }: { leave: StaffLeave | nul
         </Field>
       </div>
       <p className="small muted">
-        {`${days ? `${days} calendar day(s).` : ""}${picked?.document_after_days ? ` A supporting document is needed for more than ${picked.document_after_days} day(s).` : ""} You can change or cancel the application until it is decided.`}
+        {`${days ? `${plural(days, "calendar day")}.` : ""}${picked?.document_after_days ? ` A supporting document is needed for more than ${plural(picked.document_after_days, "day")}.` : ""} You can change or cancel the application until it is decided.`}
       </p>
     </Dialog>
   );

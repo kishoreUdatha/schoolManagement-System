@@ -4,7 +4,7 @@ import { Chart } from "@/components/ui/Chart";
 import { StatStrip, type Stat } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
-import { dateTime, date, label, money, pct } from "@/lib/format";
+import { date, dateTime, label, money, pct, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { count, DateRow, Empty, Hero, lastMonths, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel } from "./parts";
 import type { AnalyticsOverview, Approval, OfficeDashboard } from "./types";
@@ -35,7 +35,13 @@ function AttendanceTrend({ overview, loading }: { overview: AnalyticsOverview | 
       }
     >
       {overview && marked ? (
-        <Chart kind="line" labels={months.map(monthLabel)} values={months.map((m) => byMonth.get(m)?.percent ?? 0)} />
+        <Chart kind="line" labels={months.map(monthLabel)} values={months.map((m) => {
+            const x = byMonth.get(m);
+            // a month nobody marked is a gap, not 0%
+            return x && x.present + x.absent + x.late + x.half_day > 0 ? x.percent : null;
+          })}
+          label="Present % by month"
+        />
       ) : (
         <Empty>{loading ? "Loading attendance…" : "No attendance has been marked in the last six months."}</Empty>
       )}
@@ -49,7 +55,7 @@ function ComingUp({ d }: { d: OfficeDashboard | null }) {
     ...(d?.upcoming_exams ?? []).map((e) => ({
       day: e.start_date,
       title: e.name,
-      sub: `${label(e.kind)} · ${e.papers_count} paper(s) · ${e.is_published ? "Published" : "Draft"}`,
+      sub: `${label(e.kind)} · ${plural(e.papers_count, "paper")} · ${e.is_published ? "Published" : "Draft"}`,
       href: "/examinations/exam-schedule",
     })),
     ...(d?.upcoming_holidays ?? []).map((h) => ({
@@ -72,7 +78,7 @@ function RecentNotices({ d }: { d: OfficeDashboard | null }) {
     <Panel title="Recent activity">
       {d?.latest_notices.length ? (
         d.latest_notices.map((n) => (
-          <TimelineRow key={n.id} icon="message" title={n.title} sub={`Notice to ${label(n.audience).toLowerCase()} · ${n.recipient_count} recipient(s)`} time={dateTime(n.sent_at)} />
+          <TimelineRow key={n.id} icon="message" title={n.title} sub={`Notice to ${label(n.audience).toLowerCase()} · ${plural(n.recipient_count, "recipient")}`} time={dateTime(n.sent_at)} />
         ))
       ) : (
         <Empty>{d ? "No notices have been sent yet." : "Loading…"}</Empty>
@@ -105,8 +111,8 @@ export function SchoolAdminDashboard() {
   const hero = !d
     ? "Here’s what is happening across your school today."
     : d.fees.overdue_count > 0
-      ? `${d.fees.overdue_count} fee record(s) are overdue — ${money(d.fees.overdue_outstanding)} in all. ${d.admissions.this_month_count} admission(s) this month.`
-      : `Nothing is overdue. ${d.admissions.this_month_count} admission(s) this month.`;
+      ? `${plural(d.fees.overdue_count, "fee record")} overdue — ${money(d.fees.overdue_outstanding)} in all. ${plural(d.admissions.this_month_count, "admission")} this month.`
+      : `Nothing is overdue. ${plural(d.admissions.this_month_count, "admission")} this month.`;
 
   return (
     <>
@@ -176,7 +182,7 @@ export function PrincipalDashboard() {
   const hero = !open
     ? "Here’s what is happening across your school today."
     : open.length
-      ? `${open.length} request(s) are waiting for your approval.`
+      ? `${plural(open.length, "request")} are waiting for your approval.`
       : "Nothing is waiting for your approval.";
 
   return (

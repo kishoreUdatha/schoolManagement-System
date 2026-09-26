@@ -6,7 +6,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label } from "@/lib/format";
+import { date, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, Modal, ModalActions, orNull, today, useNewFlag, type Lab, type LabBooking } from "./common";
@@ -113,7 +113,7 @@ export function LabBookingCalendar() {
       <ErrorNote>{list.error ?? labs.error}</ErrorNote>
       <Panel
         title={`${MONTHS[month.getMonth()]} ${month.getFullYear()}`}
-        sub={`${bookings.length} booking(s)${labs.data ? ` · ${labs.data.length} lab(s)` : ""} · double-click a day to book it${list.loading ? " · Loading…" : ""}`}
+        sub={`${plural(bookings.length, "booking")}${labs.data ? ` · ${plural(labs.data.length, "lab")}` : ""} · double-click a day to book it${list.loading ? " · Loading…" : ""}`}
         action={
           <button type="button" className="btn" onClick={() => setMonth(new Date(now.getFullYear(), now.getMonth(), 1))}>
             Today

@@ -9,7 +9,7 @@ import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, label } from "@/lib/format";
+import { date, dateTime, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -162,7 +162,7 @@ export function CounsellingCalendar() {
       <ErrorNote>{!add.open && !open ? (error ?? appts.error) : null}</ErrorNote>
       <Panel
         title={`${MONTH_NAMES[month.getMonth()]} ${month.getFullYear()}`}
-        sub={`${items.length} appointment(s) · session notes stay with the counsellor`}
+        sub={`${plural(items.length, "appointment")} · session notes stay with the counsellor`}
         action={
           <button type="button" className="btn" onClick={() => setMonth(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}>
             Today
@@ -587,7 +587,7 @@ export function IncidentList() {
     { label: "Open", value: n(every.filter(isOpen).length), note: "Reported or under review" },
     { label: "High severity", value: n(every.filter((i) => isOpen(i) && i.severity === "high").length), note: "Open and marked high" },
     { label: "This month", value: n(every.filter((i) => i.occurred_on.slice(0, 7) === today().slice(0, 7)).length), note: "Incidents that happened" },
-    { label: "Parents told", value: n(every.filter((i) => i.shared_with_parents).length), note: `Of ${every.length} incident(s)` },
+    { label: "Parents told", value: n(every.filter((i) => i.shared_with_parents).length), note: `Of ${plural(every.length, "incident")}` },
   ];
 
   async function create(e: FormEvent<HTMLFormElement>) {
@@ -1131,7 +1131,7 @@ export function EmergencyContacts() {
           <div className="filterbar">
             <SearchBox value={search} onChange={setSearch} placeholder="Search emergency contacts & escalation…" />
           </div>
-          <Panel title="Students with a thin escalation chain" sub={thin.data ? `${thin.data.count} student(s) · ${thin.data.none_at_all} with no contact at all` : "Loading…"} flush>
+          <Panel title="Students with a thin escalation chain" sub={thin.data ? `${plural(thin.data.count, "student")} · ${thin.data.none_at_all} with no contact at all` : "Loading…"} flush>
             <DataTable
               columns={["Student", "Class", "Contacts", "Availability", "Why it matters"]}
               rows={students.map((s) => [{ name: s.student_name, sub: s.admission_no }, s.section_label ?? "—", String(s.contacts), s.availability ?? "—", s.why])}

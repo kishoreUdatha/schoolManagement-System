@@ -6,7 +6,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, initials, label } from "@/lib/format";
+import { date, dateTime, initials, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import type { Checklist, StaffMember, Starter } from "./types";
@@ -81,7 +81,7 @@ export function Onboarding() {
   const stats = [
     { label: "Starters", value: n(outstanding.data?.count ?? 0), note: "Checklists with work left" },
     { label: "Tasks left", value: n(starters.reduce((t, s) => t + s.outstanding, 0)), note: `${starters.reduce((t, s) => t + s.done, 0)} already done` },
-    { label: "Overdue tasks", value: n(starters.reduce((t, s) => t + s.overdue, 0)), note: `${outstanding.data?.with_overdue ?? 0} starter(s) behind` },
+    { label: "Overdue tasks", value: n(starters.reduce((t, s) => t + s.overdue, 0)), note: `${plural(outstanding.data?.with_overdue ?? 0, "starter")} behind` },
     { label: "Active staff", value: staff.loading && !staff.data ? (staff.loading ? "…" : "—") : String(staff.data?.length ?? 0), note: "Anyone can be given a checklist" },
   ];
   const pctDone = c && c.total ? Math.round((c.done / c.total) * 100) : 0;
@@ -110,7 +110,7 @@ export function Onboarding() {
           </optgroup>
         </select>
         <span className="muted small">
-          {outstanding.data ? `${outstanding.data.count} starter(s) with work left · ${outstanding.data.with_overdue} with something overdue` : "Loading…"}
+          {outstanding.data ? `${plural(outstanding.data.count, "starter")} with work left · ${outstanding.data.with_overdue} with something overdue` : "Loading…"}
         </span>
       </div>
       <ErrorNote>{err ?? list.error ?? outstanding.error}</ErrorNote>
@@ -197,7 +197,7 @@ export function Onboarding() {
                 >
                   Complete onboarding
                 </button>
-                {!c.can_complete ? <p className="muted small">{`Tick the ${c.outstanding} remaining task(s) to sign the checklist off.`}</p> : null}
+                {!c.can_complete ? <p className="muted small">{`Tick the ${plural(c.outstanding, "remaining task")} to sign the checklist off.`}</p> : null}
               </>
             ) : null}
           </Panel>
