@@ -29,7 +29,7 @@ export function ParentSignIn() {
         savePending({ challenge: res.challenge, sent_via: res.sent_via, email, next });
         router.push(parentRoute(3));
       } else {
-        router.push(finishSignIn(res as Token, next, routeOf(7)));
+        router.push(finishSignIn(res as Token, next, "/app/set-password"));
       }
     } catch (err) {
       setError(errorText(err));

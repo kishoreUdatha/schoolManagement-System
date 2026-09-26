@@ -23,7 +23,7 @@ export function TeacherSignIn() {
   function finish(t: Token) {
     if (t.user.role !== "teacher") throw new Error("This is not a teacher account.");
     session.set({ access: t.access_token, refresh: t.refresh_token, user: t.user });
-    if (t.requires_password_change || t.user.must_change_password) router.push(`${routeOf(7)}?next=${encodeURIComponent(safeNext(next) ?? "/teacher/today")}`);
+    if (t.requires_password_change || t.user.must_change_password) router.push(`/app/set-password?next=${encodeURIComponent(safeNext(next) ?? "/teacher/today")}`);
     else router.push(safeNext(next) ?? "/teacher/today");
   }
 
