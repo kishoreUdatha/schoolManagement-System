@@ -57,6 +57,22 @@ export function DepartmentSetup() {
   const branches = useApi<Branch[]>("/api/v1/school/branches");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [addingCommon, setAddingCommon] = useState(false);
+  // the usual departments the school does not have yet, by name or code
+  const missing = COMMON.filter(([n, c]) => !depts.data?.some((d) => d.name.trim().toLowerCase() === n.toLowerCase() || d.code.toUpperCase() === c));
+  async function addCommon() {
+    setAddingCommon(true);
+    setError(null);
+    try {
+      const r = await api.post<{ added: number }>("/api/v1/school/departments/common");
+      notify(`${r.added} departments added.`);
+      depts.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setAddingCommon(false);
+    }
+  }
   // name and code follow the picker, and can be typed over
   const [name, setName] = useState<string | null>(null);
   const [code, setCode] = useState<string | null>(null);
@@ -187,6 +203,11 @@ export function DepartmentSetup() {
               <Icon name="plus" className="sm" />
               New department
             </Link>
+          ) : missing.length ? (
+            <button type="button" className="btn" disabled={addingCommon} onClick={addCommon} title={missing.map(([n]) => n).join(", ")}>
+              <Icon name="plus" className="sm" />
+              {addingCommon ? "Adding…" : `Add ${missing.length} common departments`}
+            </button>
           ) : undefined
         }
       >

@@ -34,6 +34,19 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Created | null>(null);
+  const [addingCommon, setAddingCommon] = useState(false);
+  async function addCommon() {
+    setAddingCommon(true);
+    try {
+      const r = await api.post<{ added: number }>("/api/v1/school/departments/common");
+      notify(`${r.added} departments added.`);
+      departments.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setAddingCommon(false);
+    }
+  }
 
   if (editing && !id) return <PickFirst what="member of staff to edit" href={routeOf(80)} cta="Open the staff directory" />;
   if (editing && existing.loading && !existing.data) return <Loading what="Loading the staff record…" />;
@@ -150,15 +163,21 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
                 {field(
                   "Department",
                   departments.data && !departments.data.length ? (
-                    // nothing to choose yet: send them where departments are made
-                    <Link href={routeOf(1085)} className="btn" style={{ justifyContent: "center" }}>
-                      <Icon name="plus" className="sm" />
-                      Set up departments
-                    </Link>
+                    // nothing to choose yet: add the usual ones here, or make them on Departments
+                    <div className="row" style={{ gap: 8 }}>
+                      <button type="button" className="btn" disabled={addingCommon} onClick={addCommon}>
+                        <Icon name="plus" className="sm" />
+                        {addingCommon ? "Adding…" : "Add common departments"}
+                      </button>
+                      <Link href={routeOf(1085)} className="btn">
+                        Set up departments
+                      </Link>
+                    </div>
                   ) : (
                     <select name="department_id" defaultValue={s?.department_id ?? ""}>
                       <option value="">{departments.data ? "No department" : "Loading…"}</option>
-                      {departments.data?.map((d) => (
+                      {/* a department switched off is not offered, unless this person is already in it */}
+                      {departments.data?.filter((d) => d.is_active !== false || d.id === s?.department_id).map((d) => (
                         <option key={d.id} value={d.id}>
                           {d.name}
                         </option>

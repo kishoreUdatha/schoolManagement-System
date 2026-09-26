@@ -503,6 +503,34 @@ def save_department(db: Session, user: User, data, dept_id: Optional[int] = None
     return d
 
 
+# What most schools set up: the same list the Departments screen offers to pick
+# from one at a time (web/src/features/setup/DepartmentSetup.tsx, COMMON).
+COMMON_DEPARTMENTS: list[tuple[str, str]] = [
+    ("Pre-Primary (Montessori)", "PREP"), ("Primary", "PRIM"), ("Middle School", "MID"), ("Senior School", "SEN"),
+    ("Languages", "LANG"), ("Mathematics", "MATH"), ("Science", "SCI"), ("Social Studies", "SOC"),
+    ("Computer Science", "CS"), ("Arts & Crafts", "ART"), ("Music & Dance", "MUS"), ("Physical Education", "PE"),
+    ("Administration", "ADMIN"), ("Accounts & Finance", "ACC"), ("Front Office", "FO"), ("Admissions", "ADM"),
+    ("Library", "LIB"), ("Transport", "TRANS"), ("Housekeeping & Maintenance", "MAINT"), ("Security", "SEC"),
+    ("Health & Wellness", "HLTH"), ("IT Support", "IT"),
+]
+
+
+def add_common_departments(db: Session, user: User) -> int:
+    """Add the common departments the school does not have yet (matched by
+    name or code, so nothing it made itself is duplicated or changed)."""
+    have = list_departments(db, user.school_id)
+    names = {d.name.strip().lower() for d in have}
+    codes = {d.code.upper() for d in have}
+    added = 0
+    for name, code in COMMON_DEPARTMENTS:
+        if name.lower() in names or code in codes:
+            continue
+        db.add(Department(tenant_id=user.tenant_id, school_id=user.school_id, name=name, code=code, is_active=True))
+        added += 1
+    db.commit()
+    return added
+
+
 def check_department(db: Session, school_id: int, dept_id: Optional[int]) -> None:
     if dept_id is None:
         return

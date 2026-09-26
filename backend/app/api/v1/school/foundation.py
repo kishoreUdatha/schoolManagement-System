@@ -132,6 +132,11 @@ def add_department(payload: DepartmentIn, current_user: SchoolAdminUser, db: Db)
     return DepartmentRead.model_validate(svc.department_to_read(db, svc.save_department(db, current_user, payload)))
 
 
+@router.post("/departments/common", summary="Add the usual school departments the school does not have yet")
+def add_common_departments(current_user: SchoolAdminUser, db: Db):
+    return {"added": svc.add_common_departments(db, current_user)}
+
+
 @router.put("/departments/{dept_id}", response_model=DepartmentRead)
 def update_department(dept_id: int, payload: DepartmentIn, current_user: SchoolAdminUser, db: Db):
     return DepartmentRead.model_validate(svc.department_to_read(db, svc.save_department(db, current_user, payload, dept_id)))
