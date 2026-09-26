@@ -20,6 +20,7 @@ import type { StaffOption } from "./types";
 import type { Alert, Appointment, Dose, Due, FirstAid, HealthDashboard, HealthRecord, ProfileRow, Visit, VisitOutcome } from "./types";
 
 import { ask } from "@/lib/dialog";
+import { useGreeting } from "@/features/dashboards/parts";
 export const HEALTH = "/api/v1/school/health";
 export const WELL = "/api/v1/school/wellbeing";
 
@@ -31,12 +32,9 @@ export const OUTCOMES: Record<VisitOutcome, string> = {
   referred_hospital: "Referred to hospital",
 };
 
-const WEEKDAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
 
 /** SCR-216, live: /health/dashboard, /health/visits (?on= each of the last six days), /wellbeing/counselling/appointments (today), /health/immunizations-due. */
 export function HealthDashboardView() {
-  const session = useSession();
   const dash = useApi<HealthDashboard>(`${HEALTH}/dashboard`);
   const todayVisits = useApi<Visit[]>(`${HEALTH}/visits`, { on: today() });
   const appts = useApi<Appointment[]>(`${WELL}/counselling/appointments`, { from: today(), to: today() });
@@ -56,8 +54,8 @@ export function HealthDashboardView() {
 
   const d = dash.data;
   const now = new Date();
-  const first = session?.user.full_name.split(/\s+/)[0];
-  const hour = now.getHours();
+  // name and date only once hydrated: the server renders before it knows the viewer or their clock
+  const g = useGreeting();
   const stats = [
     { label: "Visits today", value: d ? String(d.visits_today) : "…", note: d ? `${d.sent_home_today} sent home · ${d.referred_today} referred` : "Clinic visits" },
     { label: "Follow-ups", value: d ? String(d.follow_ups_due) : "…", note: "Due from earlier visits" },
@@ -70,8 +68,8 @@ export function HealthDashboardView() {
     <>
       <section className="hero">
         <div className="hero-content">
-          <div className="eyebrow">{`${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`}</div>
-          <h2>{`${hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"}${first ? `, ${first}` : ""}.`}</h2>
+          <div className="eyebrow">{g.eyebrow}</div>
+          <h2>{g.title}</h2>
           <p>Here’s what the clinic and counselling desks have today.</p>
           <Link href={routeOf(217)} className="btn white">
             <Icon name="arrow" className="sm" />

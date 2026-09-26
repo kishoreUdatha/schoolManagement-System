@@ -141,9 +141,14 @@ def late_and_early(user: SchoolAdminOrPrincipal, db: Db,
 
 
 @router.get("/corrections", summary="Corrections asked for")
-def list_corrections(user: SchoolAdminOrPrincipal, db: Db,
+def list_corrections(user: CurrentUser, db: Db,
                      state: Optional[CorrectionStatus] = None):
-    return svc.list_corrections(db, user.school_id, state=state)
+    # the office and the principal see every request; a teacher, the ones they made
+    if user.role in (UserRole.school_admin, UserRole.principal):
+        return svc.list_corrections(db, user.school_id, state=state)
+    if user.role == UserRole.teacher:
+        return svc.list_corrections(db, user.school_id, state=state, requested_by=user.id)
+    raise HTTPException(status.HTTP_403_FORBIDDEN, "School admin, principal or teacher access required")
 
 
 @router.post("/corrections", status_code=status.HTTP_201_CREATED,

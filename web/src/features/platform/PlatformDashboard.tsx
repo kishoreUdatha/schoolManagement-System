@@ -13,17 +13,12 @@ import { notify } from "@/lib/notify";
 import { date, dateTime, money } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { useSession } from "@/lib/useSession";
 import type { Health, Renewal, SchoolsByMonth, Tenant, TicketList, UsageSummary } from "./types";
 
 import { ask } from "@/lib/dialog";
+import { useGreeting } from "@/features/dashboards/parts";
 const n = (v: number | undefined) => (v === undefined ? "…" : v.toLocaleString("en-IN"));
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-}
 
 /**
  * SCR-009, live: usage/summary, usage/renewals, health, tickets and the
@@ -31,7 +26,6 @@ function greeting() {
  * "Send reminders" posts /usage/renewals/send for the same 30-day window.
  */
 export function PlatformDashboard() {
-  const sess = useSession();
   const summary = useApi<UsageSummary>("/api/v1/super-admin/usage/summary");
   const renewals = useApi<Renewal[]>("/api/v1/super-admin/usage/renewals", { within_days: 30 });
   const health = useApi<Health>("/api/v1/super-admin/health");
@@ -65,8 +59,8 @@ export function PlatformDashboard() {
   const s = summary.data;
   const h = health.data;
   const t = tickets.data;
-  const today = new Date();
-  const eyebrow = today.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).toUpperCase();
+  // name and date only once hydrated: the server renders before it knows the viewer or their clock
+  const g = useGreeting();
 
   const stats = [
     { label: "Organizations", value: n(s?.total_tenants), note: s ? `${s.active_tenants} active · ${s.suspended_tenants} suspended` : "All tenants" },
@@ -116,8 +110,8 @@ export function PlatformDashboard() {
     <>
       <section className="hero">
         <div className="hero-content">
-          <div className="eyebrow">{eyebrow}</div>
-          <h2>{`${greeting()}, ${sess?.user.full_name.split(" ")[0] ?? "there"}.`}</h2>
+          <div className="eyebrow">{g.eyebrow}</div>
+          <h2>{g.title}</h2>
           <p>Review connected schools, organization usage, billing and platform support.</p>
           <Link href={routeOf(15)} className="btn white">
             <Icon name="arrow" className="sm" />

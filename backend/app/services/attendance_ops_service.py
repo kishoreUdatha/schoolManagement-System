@@ -381,8 +381,11 @@ def correction_to_dict(db: Session, row: AttendanceCorrection) -> dict:
 
 
 def list_corrections(db: Session, school_id: int, *,
-                     state: Optional[CorrectionStatus] = None) -> list[dict]:
+                     state: Optional[CorrectionStatus] = None,
+                     requested_by: Optional[int] = None) -> list[dict]:
     stmt = select(AttendanceCorrection).where(AttendanceCorrection.school_id == school_id)
+    if requested_by is not None:
+        stmt = stmt.where(AttendanceCorrection.requested_by_user_id == requested_by)
     if state:
         stmt = stmt.where(AttendanceCorrection.status == state)
     rows = db.execute(stmt.order_by(AttendanceCorrection.created_at.desc()).limit(200)).scalars()

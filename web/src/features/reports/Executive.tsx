@@ -14,6 +14,7 @@ import { useSession } from "@/lib/useSession";
 import { TodaySchedulePanel } from "../dashboards/parts";
 import type { ActivityItem } from "../dashboards/types";
 import { monthLabel, num } from "./kit";
+import { useGreeting } from "@/features/dashboards/parts";
 
 type Overview = {
   academic_average: number | null;
@@ -38,11 +39,6 @@ function activityIcon(entity: string): IconName {
   return "file";
 }
 
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-}
-
 /**
  * SCR-264, live: GET /api/v1/school/analytics/overview (?months=6), GET /api/v1/school/holidays (?upcoming),
  * GET /api/v1/school/insights/schedule/today and GET /api/v1/school/insights/activity.
@@ -53,9 +49,8 @@ export function ExecutiveDashboard() {
   const holidays = useApi<Holiday[]>("/api/v1/school/holidays", { upcoming: true, limit: 3 });
   const activity = useApi<ActivityItem[]>("/api/v1/school/insights/activity", { limit: 3 });
   const d = res.data;
-  const first = sess?.user.full_name.split(/\s+/)[0];
-  const now = new Date();
-  const eyebrow = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).toUpperCase();
+  // name and date only once hydrated: the server renders before it knows the viewer or their clock
+  const g = useGreeting();
   const thisMonth = d?.money_by_month.at(-1);
   const att = d?.attendance_by_month ?? [];
 
@@ -63,8 +58,8 @@ export function ExecutiveDashboard() {
     <>
       <section className="hero">
         <div className="hero-content">
-          <div className="eyebrow">{eyebrow}</div>
-          <h2>{first ? `${greeting()}, ${first}.` : `${greeting()}.`}</h2>
+          <div className="eyebrow">{g.eyebrow}</div>
+          <h2>{g.title}</h2>
           <p>Here’s how your school is doing this month.</p>
           <Link href={routeOf(266)} className="btn white">
             <Icon name="arrow" className="sm" />

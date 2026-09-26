@@ -19,6 +19,7 @@ import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, formNum, form
 import { PURPOSES, VISIT_STATUS, type FrontDeskDashboard, type GatePass, type Host, type SecurityIncident, type StaffGateEntry, type Visit } from "./types";
 
 import { ask } from "@/lib/dialog";
+import { useGreeting } from "@/features/dashboards/parts";
 const FD = "/api/v1/school/front-desk";
 const clock = (iso: string | null) => (iso ? dateTime(iso).split(", ")[1] : "—");
 /** An expected visit whose host has not answered yet. */
@@ -32,19 +33,17 @@ function localInput(v: string | null): string {
 
 const awaitingHost = (v: Visit) => v.status === "expected" && v.host_user_id !== null && !v.host_approved_at && !v.host_declined_reason;
 
-const WEEKDAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
 
 /** SCR-226, live: GET /front-desk/dashboard, /front-desk/visits?on=today, /front-desk/gate-passes?on=today. */
 export function VisitorDashboard() {
-  const session = useSession();
   const dash = useApi<FrontDeskDashboard>(`${FD}/dashboard`);
   const visits = useApi<Visit[]>(`${FD}/visits`, { on: today() });
   const passes = useApi<GatePass[]>(`${FD}/gate-passes`, { on: today() });
   const d = dash.data;
   const all = visits.data ?? [];
   const now = new Date();
-  const first = session?.user.full_name.split(/\s+/)[0];
+  // name and date only once hydrated: the server renders before it knows the viewer or their clock
+  const g = useGreeting();
   const stats = [
     { label: "Visitors today", value: d ? String(d.visitors_today) : "…", note: d ? `${d.expected_today} expected` : "Checked in today" },
     { label: "Inside campus", value: d ? String(d.inside_now) : "…", note: "Checked in, not yet out" },
@@ -60,8 +59,8 @@ export function VisitorDashboard() {
     <>
       <section className="hero">
         <div className="hero-content">
-          <div className="eyebrow">{`${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`}</div>
-          <h2>{`${now.getHours() < 12 ? "Good morning" : now.getHours() < 17 ? "Good afternoon" : "Good evening"}${first ? `, ${first}` : ""}.`}</h2>
+          <div className="eyebrow">{g.eyebrow}</div>
+          <h2>{g.title}</h2>
           <p>Here’s who is on campus and who is expected today.</p>
           <Link href={routeOf(232)} className="btn white">
             <Icon name="arrow" className="sm" />
