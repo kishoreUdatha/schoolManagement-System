@@ -151,7 +151,17 @@ function useNavCollapsed(): [boolean, () => void] {
       }
       return !v;
     });
-  return [collapsed, toggle];
+  // Folding is a desktop thing: on a phone the menu slides in over the page,
+  // always at full size.
+  const [phone, setPhone] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 950px)");
+    const on = () => setPhone(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return [collapsed && !phone, toggle];
 }
 
 function Sidebar({ s, viewer, school, collapsed, onToggle }: { s: Screen | undefined; viewer: Viewer; school: Branding | null; collapsed?: boolean; onToggle?: () => void }) {

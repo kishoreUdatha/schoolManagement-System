@@ -580,3 +580,12 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 @media(max-width:1400px){
   .hw-mini .data-table th:first-child,.hw-mini .data-table td:first-child{width:96px;max-width:96px}
 }
+
+/* Phones and small tablets: the menu slides in over the page (styles.css), so
+   the page takes the whole width. Restated here because the laptop rules above
+   (and the folded rail) set the page's left margin after styles.css does. */
+@media(max-width:950px){
+  .workspace,.app.nav-rail .workspace{margin-left:0}
+  .sidebar,.app.nav-rail .sidebar{width:240px;min-width:240px}
+}
+@media(max-width:950px){.nav-fold{display:none}}
