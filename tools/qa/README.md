@@ -71,3 +71,11 @@ cd ../../backend && PYTHONPATH=. python ../tools/qa/job_doors.py   # -> out/job_
 ```
 
 (The test school needs a plan allowing more than 20 staff for the audit accounts.)
+
+# UI audit
+
+`node ui_audit.js [screen ids]` opens every screen of the RBAC sheet as the role that
+uses it, at 1440px and 390px, and measures: pages squeezed or scrolling sideways on a
+phone, form fields left in the browser's default look, broken images, controls with no
+name, text below WCAG AA contrast, and tap targets under 24px. Results in
+`out/ui_audit.json`, screenshots in `out/ui/<screen>-<width>.png`.
