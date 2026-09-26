@@ -29,8 +29,9 @@ node tour.js school_admin parent_app   # only some roles
 
 Voice, in order:
 0. Sarvam AI Bulbul (Indian English) when `SARVAM_API_KEY` is set and the network
-   allows `api.sarvam.ai`. Female speakers: `anushka` (default), `manisha`,
-   `vidya`, `arya`; pick with `SARVAM_SPEAKER`.
+   allows `api.sarvam.ai`. Model `bulbul:v3`; female speakers: `priya` (default),
+   `ritu`, `neha`, `pooja`, `simran`, `kavya`, `ishita`, `shreya`, `roopa`, `tanya`;
+   pick with `SARVAM_SPEAKER`.
 1. Google Cloud TTS `en-IN-Chirp3-HD-Aoede` when `GOOGLE_TTS_API_KEY` is set
    (`TTS_VOICE` picks another en-IN voice).
 2. Microsoft "Neerja Expressive" with `TTS_PROVIDER=edge`

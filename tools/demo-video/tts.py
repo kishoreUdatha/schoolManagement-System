@@ -4,7 +4,7 @@
 
 Voice, in order of preference:
   0. Sarvam AI Bulbul, Indian English female (needs SARVAM_API_KEY and api.sarvam.ai
-     allowed; speaker from SARVAM_SPEAKER, default anushka).
+     allowed; speaker from SARVAM_SPEAKER, default priya).
   1. Google Cloud Text-to-Speech, Indian English female (needs GOOGLE_TTS_API_KEY;
      voice from TTS_VOICE, default en-IN-Chirp3-HD-Aoede).
   1b. Kokoro offline, Indian female "hf_alpha" (after ./setup_kokoro.sh).
@@ -27,7 +27,7 @@ default = "kokoro" if os.path.exists(os.path.join(kokoro_dir, "say.mjs")) else "
 sarvam_key = os.environ.get("SARVAM_API_KEY")
 provider = os.environ.get("TTS_PROVIDER") if os.environ.get("TTS_PROVIDER") == "silent" else "sarvam" if sarvam_key else "google" if key else os.environ.get("TTS_PROVIDER", default)
 if provider == "sarvam":
-    voice = os.environ.get("SARVAM_SPEAKER", "anushka")
+    voice = os.environ.get("SARVAM_SPEAKER", "priya")
 if provider == "kokoro":
     voice = os.environ.get("TTS_VOICE", "hf_alpha")
 hit = os.path.join(cache, hashlib.sha1(f"{provider}|{voice}|{rate}|{os.environ.get('KOKORO_LANG', 'b')}|{text}".encode()).hexdigest() + ".wav")
@@ -42,8 +42,9 @@ import ssl
 ctx = ssl.create_default_context(cafile=os.environ.get("SSL_CERT_FILE", "/root/.ccr/ca-bundle.crt"))
 
 if provider == "sarvam":
-    body = {"text": text, "target_language_code": "en-IN", "speaker": voice, "model": os.environ.get("SARVAM_MODEL", "bulbul:v2"),
-            "pace": rate, "loudness": 1.2, "speech_sample_rate": 24000, "enable_preprocessing": True}
+    # bulbul:v2 (and its speakers such as anushka) is retired; v3 takes no loudness or preprocessing flags
+    body = {"text": text, "target_language_code": "en-IN", "speaker": voice, "model": os.environ.get("SARVAM_MODEL", "bulbul:v3"),
+            "pace": rate, "speech_sample_rate": 24000}
     req = urllib.request.Request("https://api.sarvam.ai/text-to-speech", data=json.dumps(body).encode(),
                                  headers={"Content-Type": "application/json", "api-subscription-key": sarvam_key})
     with urllib.request.urlopen(req, context=ctx, timeout=90) as r:
