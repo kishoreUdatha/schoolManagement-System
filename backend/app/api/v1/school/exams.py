@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser
+from app.core.deps import ExamSetup, ExamStaff, ResultApprover
 from app.database import get_db
 from app.schemas.exam import (
     MarksWindowIn,
@@ -32,7 +32,7 @@ router = APIRouter()
 )
 def create(
     payload: ExamCreate,
-    current_user: SchoolAdminUser,
+    current_user: ExamSetup,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.create_exam(
@@ -47,7 +47,7 @@ def create(
     summary="List exams (filter by academic year)",
 )
 def list_(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: ExamStaff,
     db: Annotated[Session, Depends(get_db)],
     academic_year_id: Optional[int] = Query(None),
 ):
@@ -62,7 +62,7 @@ def list_(
 @router.get("/{exam_id}", response_model=ExamRead)
 def get(
     exam_id: int,
-    current_user: SchoolAdminOrPrincipal,
+    current_user: ExamStaff,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.get_exam(db, exam_id, current_user.school_id)
@@ -73,7 +73,7 @@ def get(
 def update(
     exam_id: int,
     payload: ExamUpdate,
-    current_user: SchoolAdminUser,
+    current_user: ExamSetup,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.update_exam(db, exam_id, current_user.school_id, payload)
@@ -83,7 +83,7 @@ def update(
 @router.delete("/{exam_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(
     exam_id: int,
-    current_user: SchoolAdminUser,
+    current_user: ExamSetup,
     db: Annotated[Session, Depends(get_db)],
 ):
     exam_service.delete_exam(db, exam_id, current_user.school_id)
@@ -95,7 +95,7 @@ def delete(
 def marks_window(
     exam_id: int,
     payload: MarksWindowIn,
-    current_user: SchoolAdminUser,
+    current_user: ExamSetup,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.set_marks_window(db, exam_id, current_user.school_id, current_user.id, payload.open)
@@ -105,7 +105,7 @@ def marks_window(
 @router.get("/papers/{paper_id}/marks", summary="One paper's marks, student by student, for checking")
 def paper_marks(
     paper_id: int,
-    current_user: SchoolAdminOrPrincipal,
+    current_user: ExamStaff,
     db: Annotated[Session, Depends(get_db)],
 ):
     return exam_service.paper_marks(db, paper_id, current_user.school_id)
@@ -116,7 +116,7 @@ def paper_marks(
 def verify_paper(
     paper_id: int,
     payload: VerifyMarksIn,
-    current_user: SchoolAdminOrPrincipal,
+    current_user: ResultApprover,
     db: Annotated[Session, Depends(get_db)],
 ):
     paper = exam_service.verify_paper(db, paper_id, current_user.school_id, current_user.id, payload.verified)
@@ -128,7 +128,7 @@ def verify_paper(
 def revise(
     exam_id: int,
     payload: ReviseIn,
-    current_user: SchoolAdminUser,
+    current_user: ExamSetup,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.revise(db, exam_id, current_user.school_id, current_user.id, payload.reason)
@@ -142,7 +142,7 @@ def publish(
     # A principal is the person who answers for a result once it is out, so
     # the release is theirs to make as much as the office's. Taking it back
     # is the same decision in reverse and carries the same permission.
-    current_user: SchoolAdminOrPrincipal,
+    current_user: ResultApprover,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.publish(db, exam_id, current_user.school_id)
@@ -153,7 +153,7 @@ def publish(
              summary="Take results back off the family portal")
 def unpublish(
     exam_id: int,
-    current_user: SchoolAdminOrPrincipal,
+    current_user: ResultApprover,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.unpublish(db, exam_id, current_user.school_id)
@@ -170,7 +170,7 @@ def unpublish(
 def create_paper(
     exam_id: int,
     payload: ExamPaperCreate,
-    current_user: SchoolAdminUser,
+    current_user: ExamSetup,
     db: Annotated[Session, Depends(get_db)],
 ):
     p = exam_service.create_paper(
@@ -185,7 +185,7 @@ def create_paper(
 def update_paper(
     paper_id: int,
     payload: ExamPaperUpdate,
-    current_user: SchoolAdminUser,
+    current_user: ExamSetup,
     db: Annotated[Session, Depends(get_db)],
 ):
     p = exam_service.update_paper(db, paper_id, current_user.school_id, payload)
@@ -195,7 +195,7 @@ def update_paper(
 @router.delete("/papers/{paper_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_paper(
     paper_id: int,
-    current_user: SchoolAdminUser,
+    current_user: ExamSetup,
     db: Annotated[Session, Depends(get_db)],
 ):
     exam_service.delete_paper(db, paper_id, current_user.school_id)

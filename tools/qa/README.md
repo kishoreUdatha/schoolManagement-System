@@ -28,4 +28,26 @@ node smoke.js                 # -> out/results.json, out/evidence/<case>.png
 python3 write_results.py      # -> Status / Actual Result / Defect ID / Tester in the workbooks
 ```
 
-`write_results.py` also holds the Defect Log entries for what the run found.
+`write_results.py` writes the Defect Log from `defects.py` (what both runs found).
+
+# RBAC run
+
+Runs the 590 cases of the **RBAC Tests** sheet in `School_ERP_Functional_Testing_Extended_Coverage.xlsx`
+(two per screen). *Authorized access* is checked as in the smoke run. *Unauthorized access*:
+a signed-in user who must not have the screen opens it directly (with a real record of
+their school where the page takes one) while every API answer is watched; it passes when
+the screen's protected calls are refused and no protected data or people reach the page.
+Platform screens are attempted by a school admin, the parent's screens by a teacher, and
+every other school screen by a parent. Public pages are Not Applicable.
+
+The jobs a school gives office staff through custom roles (HR, transport, nurse,
+admissions, examinations, discipline) are signed in as real staff holding only that
+job's permissions, made by `jobs.py`.
+
+```bash
+python3 jobs.py               # office staff with one job each -> jobs.json
+python3 build_rbac.py         # the RBAC Tests sheet -> rbac_cases.json
+node rbac.js                  # -> out/rbac_results.json, out/rbac_evidence/<case>.png
+python3 write_rbac.py         # -> Status / Actual Result / Defect ID / Tester / Evidence
+python3 write_results.py      # refresh the Defect Log with the RBAC cases
+```

@@ -6,11 +6,13 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { initials, label } from "@/lib/format";
+import { date, initials, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import type { AttendanceStatus, StaffAttendance as Record_, StaffMember } from "./types";
 import { AVATAR_TONES, clock, today } from "./ui";
+
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 const STATUSES: AttendanceStatus[] = ["present", "late", "absent", "on_leave", "sick", "holiday"];
 /** The mock's select tones: present, absent, late, leave. */
@@ -96,7 +98,9 @@ export function StaffAttendance() {
     { label: "On leave", value: n(saved(["on_leave", "sick", "holiday"])), note: `${(staff.data ?? []).filter((s) => !byUser.has(s.user_id)).length} not marked yet` },
   ];
 
-  const longDay = day ? new Date(`${day}T00:00:00`).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
+  // built by hand, not toLocaleDateString: the server's and the browser's locale data
+  // format it differently, and the page would not hydrate (React #425)
+  const longDay = day ? `${WEEKDAYS[new Date(`${day}T00:00:00`).getDay()]}, ${date(day)}` : "";
 
   return (
     <form id="staff-register" onSubmit={save}>

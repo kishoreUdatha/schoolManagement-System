@@ -311,6 +311,32 @@ def allow(*roles: UserRole, permission: Optional[str] = None, any_of: tuple[str,
     return _check
 
 
+def allow_job(*roles: UserRole, permission: str, also: tuple[str, ...] = ()):
+    """Like `allow`, but the permission only widens access for the staff and
+    teachers given the job: the listed roles keep exactly what they have, so a
+    principal (whose built-in permissions include the exam jobs) gains no
+    setup rights from it."""
+    wanted = (permission,) + tuple(also)
+
+    def _check(
+        current_user: CurrentUser,
+        db: Annotated[Session, Depends(get_db)],
+    ) -> User:
+        if current_user.school_id is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="School access required")
+        if current_user.role in roles:
+            return current_user
+        if current_user.role in (UserRole.staff, UserRole.teacher):
+            from app.services import rbac_service
+
+            held = rbac_service.permissions_for(db, current_user)
+            if any(p in held for p in wanted):
+                return current_user
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have access to this")
+
+    return _check
+
+
 # ---------- staff jobs ----------
 # Each job's screens are the school admin's plus anyone whose roles carry the
 # job's permission (a librarian, a transport manager…), so a school gives a
@@ -318,6 +344,9 @@ def allow(*roles: UserRole, permission: Optional[str] = None, any_of: tuple[str,
 
 LibraryManager = Annotated[User, Depends(allow(UserRole.school_admin, permission="library.manage"))]
 TransportManager = Annotated[User, Depends(allow(UserRole.school_admin, permission="transport.manage"))]
+# The clinic: the office, or the school nurse given the Health & clinic job
+# (the same rule as the wellbeing screens).
+HealthStaff = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.principal, permission="health.manage"))]
 AdmissionsWorker = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.principal, permission="admissions.manage"))]
 HrManager = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.principal, permission="hr.manage"))]
 InventoryManager = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.accountant, permission="inventory.manage"))]
@@ -368,3 +397,15 @@ TimetableReader = Annotated[
 ReportReader = Annotated[
     User, Depends(allow(UserRole.school_admin, UserRole.principal, UserRole.accountant, permission="reports.view"))
 ]
+
+# ---------- examinations ----------
+# The office (and, where it already could, the principal) keeps its access;
+# staff or teachers given the Examinations job gain what the job describes.
+# Signing off and publishing results needs exams.approve_results as well, so
+# marks are never signed off just for having entered them.
+ExamStaff = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="exams.manage"))]
+ExamSetup = Annotated[User, Depends(allow_job(UserRole.school_admin, permission="exams.manage"))]
+ResultApprover = Annotated[
+    User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="exams.approve_results"))
+]
+GradingSetup = Annotated[User, Depends(allow_job(UserRole.school_admin, permission="grading.manage"))]

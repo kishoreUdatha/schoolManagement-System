@@ -71,7 +71,8 @@ def list_(
     summary="The employee number the next staff member will get",
 )
 def next_employee_no(
-    current_user: SchoolAdminOrPrincipal,
+    # whoever may see the staff directory: HR suggests it on an offer letter
+    current_user: StaffDirectoryReader,
     db: Annotated[Session, Depends(get_db)],
 ):
     return {"employee_no": staff_service.next_employee_no(db, current_user.school_id)}
