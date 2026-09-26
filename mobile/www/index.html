@@ -1,0 +1,113 @@
+<!doctype html>
+<!--
+  The app's own first screen, bundled in the APK. It asks which BrightCampus
+  server to use (the computer's address on the Wi-Fi, or a hosted address),
+  remembers it, and opens that server's /app page. If the server can't be
+  reached it says so and lets the address be changed, so one APK works on any
+  network and a new IP never needs a rebuild. The web app links back here
+  (http://localhost/?change=1) to change the server later.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>BrightCampus</title>
+  <style>
+    :root { --blue: #2563eb; --ink: #0f172a; --muted: #64748b; --line: #cbd5e1; --bad: #b91c1c; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: #eef2ff; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    main { width: 100%; max-width: 420px; background: #fff; border-radius: 20px; padding: 28px 22px; box-shadow: 0 10px 30px rgba(15, 23, 42, .08); }
+    .brand { color: var(--blue); font-weight: 800; letter-spacing: .02em; }
+    h1 { font-size: 24px; margin: 14px 0 6px; }
+    p { margin: 0 0 16px; color: var(--muted); }
+    label { display: block; font-weight: 600; margin-bottom: 6px; }
+    input { width: 100%; font: inherit; padding: 13px 14px; border: 1.5px solid var(--line); border-radius: 12px; }
+    input:focus { outline: none; border-color: var(--blue); }
+    small { display: block; color: var(--muted); margin-top: 6px; }
+    button { width: 100%; margin-top: 18px; font: inherit; font-weight: 700; color: #fff; background: var(--blue); border: 0; border-radius: 12px; padding: 14px; }
+    button:disabled { opacity: .6; }
+    .error { color: var(--bad); background: #fef2f2; border-radius: 10px; padding: 10px 12px; margin: 14px 0 0; display: none; }
+    .error.on { display: block; }
+    .loading { text-align: center; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <div id="loading" class="loading">Connecting…</div>
+    <form id="form" hidden>
+      <div class="brand">BrightCampus</div>
+      <h1>Connect to your school</h1>
+      <p>Enter the address of the BrightCampus server. Your school office can tell you what it is.</p>
+      <label for="server">Server address</label>
+      <input id="server" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="10.181.21.10:3100" required>
+      <small>For a server on your computer: its Wi-Fi IP address and port, e.g. 192.168.1.20:3100</small>
+      <div id="error" class="error" role="alert"></div>
+      <button id="go" type="submit">Connect</button>
+    </form>
+  </main>
+  <script>
+    var KEY = "bc_server";
+    var form = document.getElementById("form"), input = document.getElementById("server");
+    var errorBox = document.getElementById("error"), go = document.getElementById("go");
+
+    // "10.181.21.10:3100" -> "http://10.181.21.10:3100"; a bare local IP gets the usual port.
+    function normalise(text) {
+      var s = text.trim().replace(/\/+$/, "").replace(/\/app$/, "");
+      if (!/^https?:\/\//i.test(s)) s = "http://" + s;
+      try {
+        var u = new URL(s);
+        if (!u.port && u.protocol === "http:" && /^(\d+\.){3}\d+$/.test(u.hostname)) u.port = "3100";
+        return u.origin;
+      } catch (e) { return null; }
+    }
+
+    // Any answer from the server counts; a wrong address or a firewall times out.
+    function reachable(origin) {
+      return new Promise(function (resolve) {
+        var done = false, timer = setTimeout(function () { finish(false); }, 6000);
+        function finish(ok) { if (!done) { done = true; clearTimeout(timer); resolve(ok); } }
+        fetch(origin + "/app", { mode: "no-cors", cache: "no-store" }).then(function () { finish(true); }, function () { finish(false); });
+      });
+    }
+
+    function showForm(value, message) {
+      document.getElementById("loading").hidden = true;
+      form.hidden = false;
+      input.value = value || "";
+      errorBox.textContent = message || "";
+      errorBox.className = message ? "error on" : "error";
+      go.disabled = false; go.textContent = "Connect";
+    }
+
+    function openServer(origin) { location.replace(origin + "/app"); }
+
+    function cantReach(origin) {
+      return "Can't reach " + origin.replace(/^https?:\/\//, "") + ". Check the address, that the phone is on the same Wi-Fi as the server, and that the server is running.";
+    }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var origin = normalise(input.value);
+      if (!origin) return showForm(input.value, "That doesn't look like an address. Try something like 192.168.1.20:3100");
+      go.disabled = true; go.textContent = "Connecting…";
+      reachable(origin).then(function (ok) {
+        if (!ok) return showForm(input.value, cantReach(origin));
+        try { localStorage.setItem(KEY, origin); } catch (err) {}
+        openServer(origin);
+      });
+    });
+
+    var saved = null;
+    try { saved = localStorage.getItem(KEY); } catch (err) {}
+    var changing = /[?&]change=1/.test(location.search);
+    if (!saved || changing) {
+      showForm(saved ? saved.replace(/^http:\/\//, "") : "");
+    } else {
+      reachable(saved).then(function (ok) {
+        if (ok) openServer(saved);
+        else showForm(saved.replace(/^http:\/\//, ""), cantReach(saved));
+      });
+    }
+  </script>
+</body>
+</html>

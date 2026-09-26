@@ -1,13 +1,12 @@
 {
   "appId": "com.brightcampus.parent",
-  "appName": "BrightCampus Parent",
+  "appName": "BrightCampus",
   "webDir": "www",
+  "appendUserAgent": "BrightCampusApp",
   "server": {
-    "url": "http://192.168.29.250:3100/app",
+    "androidScheme": "http",
     "cleartext": true,
-    "allowNavigation": [
-      "192.168.29.250"
-    ]
+    "allowNavigation": ["*"]
   },
   "android": {
     "allowMixedContent": true

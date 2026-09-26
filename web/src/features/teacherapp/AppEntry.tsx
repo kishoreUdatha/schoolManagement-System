@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { routeOf } from "@/lib/screens";
 import { HOME_SCREEN } from "@/lib/session";
 import { useHydrated, useSession } from "@/lib/useSession";
@@ -23,6 +23,11 @@ export function AppEntry() {
   useEffect(() => {
     if (hydrated && sess) router.replace(homeFor(sess.user.role));
   }, [hydrated, sess, router]);
+
+  // Inside the Android app (mobile/, which tags its user agent), offer a way
+  // back to its own first screen to connect to a different server.
+  const [inApp, setInApp] = useState(false);
+  useEffect(() => setInApp(navigator.userAgent.includes("BrightCampusApp")), []);
 
   return (
     <div className="pm">
@@ -55,6 +60,12 @@ export function AppEntry() {
             </Link>
           </div>
           <p className="micro">Office staff sign in from the school workspace on a computer.</p>
+          {inApp ? (
+            <p className="micro">
+              {`Connected to ${typeof window === "undefined" ? "" : window.location.host}. `}
+              <a href="http://localhost/?change=1">Change server</a>
+            </p>
+          ) : null}
         </div>
       </div>
     </div>

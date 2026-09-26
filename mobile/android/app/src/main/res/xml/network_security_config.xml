@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Android refuses plain HTTP unless an app says otherwise. The school server
-  is on the local network without a certificate, so cleartext is allowed to
-  it and nowhere else. Once the server is hosted over HTTPS, delete this file
-  and the manifest line that points at it.
+  Android refuses plain HTTP unless an app says otherwise. The server's address
+  is typed in on the phone (www/index.html) and is usually a computer on the
+  local network without a certificate, so plain HTTP is allowed to any address.
+  Once the server is hosted over HTTPS, delete this file and the manifest line
+  that points at it.
 -->
 <network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">192.168.29.250</domain>
-        <domain includeSubdomains="false">localhost</domain>
-        <domain includeSubdomains="false">10.0.2.2</domain>
-    </domain-config>
+    <base-config cleartextTrafficPermitted="true" />
 </network-security-config>
