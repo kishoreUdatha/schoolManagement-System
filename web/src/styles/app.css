@@ -625,3 +625,65 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .profile-hero .profile-badge strong{color:#1d4ed8}
 .matrix-symbol.weekend{color:#5e6c84}
 @media(max-width:700px){.data-table input[type=checkbox],input[type=checkbox],input[type=radio]{width:20px;height:20px}}
+
+/* ------------------------------------------------------------------
+   Phones: a list's rows become cards. The first column is the card's
+   title; every other column is a labelled line (the label comes from the
+   column's heading, data-label); the row's buttons sit along the bottom.
+   Nothing scrolls sideways and no column is hidden off the edge.
+   ------------------------------------------------------------------ */
+@media(max-width:700px){
+  .table-wrap:has(> .data-table.stackable){overflow:visible;padding:12px}
+  .data-table.stackable{white-space:normal}
+  .data-table.stackable thead{display:none}
+  .data-table.stackable,.data-table.stackable tbody,.data-table.stackable tr,.data-table.stackable td{display:block;width:100%}
+  .data-table.stackable tr{position:relative;background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px 14px;margin:0 0 10px;box-shadow:0 1px 2px rgba(15,31,77,.04)}
+  .data-table.stackable tbody tr:hover{background:#fff}
+  .data-table.stackable tbody tr:last-child{margin-bottom:0}
+  .data-table.stackable td,.data-table.stackable td:first-child,.data-table.stackable td:last-child{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    padding:8px 0!important;border:0;border-bottom:1px dashed #edf1f7;text-align:right;min-width:0;max-width:none;
+  }
+  .data-table.stackable td::before{content:attr(data-label);flex:none;max-width:45%;text-align:left;color:var(--muted);font-size:12px;font-weight:600}
+  .data-table.stackable td>*{min-width:0}
+  /* the title line: the record itself, no label */
+  .data-table.stackable td.lead{justify-content:flex-start;text-align:left;padding:10px 34px 10px 0!important;font-size:14px;border-bottom:1px solid var(--line)}
+  .data-table.stackable td.lead::before{display:none}
+  .data-table.stackable td.lead .person{max-width:none}
+  /* its tick box in the corner */
+  .data-table.stackable td.checkcell{position:absolute;top:12px;right:12px;width:auto;padding:0!important;border:0}
+  .data-table.stackable td.checkcell::before{display:none}
+  /* its buttons along the bottom */
+  .data-table.stackable td.row-actions{justify-content:flex-end;border-bottom:0;padding-top:10px!important}
+  .data-table.stackable td.row-actions::before{display:none}
+  .data-table.stackable td.row-actions .btn{min-height:34px;padding:7px 14px;font-size:13px}
+  .data-table.stackable td:nth-last-child(2):not(.lead){border-bottom:0}
+  .data-table.stackable .row-progress{justify-content:flex-end}
+  .table-footer{flex-wrap:wrap;gap:10px;padding:12px 14px}
+}
+@media(max-width:700px){.data-table.stackable td:last-child{border-bottom:0}}
+
+/* Phones: filters in a tidy grid — search across the top, then the
+   dropdowns two to a row, then any buttons; the count chips scroll. */
+@media(max-width:700px){
+  .filterbar,.toolbar{display:flex;flex-wrap:wrap;gap:8px}
+  .filterbar .searchbox,.toolbar .searchbox{flex:1 1 100%;min-width:0}
+  .filterbar select,.toolbar select,.filterbar input[type=date],.toolbar input[type=date]{flex:1 1 calc(50% - 4px);max-width:none;min-width:0}
+  .filterbar .btn,.toolbar .btn{flex:1 1 auto;justify-content:center}
+  .stat-chips{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .stat-chips::-webkit-scrollbar{display:none}
+}
+
+/* Phones: a row of tabs that runs past the edge fades out there, so it is
+   plain there are more. */
+@media(max-width:700px){
+  .module-tabs{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);padding-right:24px;scrollbar-width:none}
+  .module-tabs::-webkit-scrollbar{display:none}
+}
+
+/* Phones: the page's own buttons sit in one row under the title. */
+@media(max-width:700px){
+  .page-head{flex-direction:column;align-items:stretch;gap:12px}
+  .page-head .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .page-head .actions>.btn,.page-head .actions>a.btn{flex:1 1 auto;justify-content:center}
+}

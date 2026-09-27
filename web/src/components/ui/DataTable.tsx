@@ -123,7 +123,7 @@ export function DataTable({
   return (
     <>
       <div className="table-wrap">
-        <table className="data-table" data-filterable="">
+        <table className="data-table stackable" data-filterable="">
           <thead>
             <tr>
               {picking ? (
@@ -160,12 +160,17 @@ export function DataTable({
                   </td>
                 ) : null}
                 {columns.map((c, j) => (
-                  <td key={c} className={WRAP_COLUMNS.includes(c) ? "wrap" : ""} data-col={c.toLowerCase()}>
+                  <td
+                    key={c}
+                    className={[WRAP_COLUMNS.includes(c) ? "wrap" : "", j === 0 ? "lead" : ""].filter(Boolean).join(" ") || undefined}
+                    data-col={c.toLowerCase()}
+                    data-label={c}
+                  >
                     <Display column={c} cell={row[j] ?? ""} index={i} />
                   </td>
                 ))}
                 {rowAction ? (
-                  <td className="right">
+                  <td className="right row-actions">
                     {actions ? (
                       <div className="row" style={{ justifyContent: "flex-end", gap: 6 }}>
                         {actions(i)}

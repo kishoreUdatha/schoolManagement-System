@@ -455,7 +455,15 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
               </div>
             )}
             {group && tabs.length > 1 ? (
-              <nav className="module-tabs page-tabs" aria-label={group.label}>
+              <nav
+                className="module-tabs page-tabs"
+                aria-label={group.label}
+                ref={(el) => {
+                  // on a narrow screen the row scrolls: bring this page's tab into view
+                  const a = el?.querySelector<HTMLElement>("a.active");
+                  if (el && a && el.scrollWidth > el.clientWidth) el.scrollLeft = a.offsetLeft - (el.clientWidth - a.offsetWidth) / 2;
+                }}
+              >
                 {tabs.map(([n, t]) => (
                   <Link key={n} href={routeOf(n)} className={n === s.n ? "active" : ""} aria-current={n === s.n ? "page" : undefined}>
                     {t}
