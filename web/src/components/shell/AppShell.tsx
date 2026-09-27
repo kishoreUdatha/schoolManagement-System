@@ -341,7 +341,7 @@ function YearSelect({ admin }: { admin: boolean }) {
   );
 }
 
-function Topbar({ who, role, school }: { who: string; role: string; school: Branding | null }) {
+function Topbar({ who, role, school, pages }: { who: string; role: string; school: Branding | null; pages: Set<number> | null }) {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -350,7 +350,14 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
         </button>
         <div className="topsearch">
           <Icon name="search" className="sm" />
-          <input aria-label="Find screen" placeholder="Search students, classes, pages…" id="global-search" autoComplete="off" />
+          <input
+            aria-label="Go to a page"
+            placeholder="Go to a page…"
+            id="global-search"
+            autoComplete="off"
+            // the pages in this person's own menu: the search offers only doors that open
+            data-screens={pages ? [...pages].join(",") : undefined}
+          />
           <kbd>⌘ K</kbd>
           <div className="search-results" id="global-results" />
         </div>
@@ -439,7 +446,7 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
         <Sidebar s={s} viewer={viewer} school={school ?? null} collapsed={collapsed} onToggle={toggleNav} />
         <button className="offcanvas-backdrop" aria-label="Close navigation" data-toggle-nav="" />
         <div className="workspace">
-          <Topbar who={viewer.who} role={viewer.role} school={school} />
+          <Topbar who={viewer.who} role={viewer.role} school={school} pages={mine} />
           <main className="main">
             {/* No breadcrumb: the menu shows where you are. Dashboards open
                 straight on their greeting; other screens keep a compact title

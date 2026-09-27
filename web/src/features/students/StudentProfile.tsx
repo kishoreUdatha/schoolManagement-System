@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, initials, label, money, pct } from "@/lib/format";
+import { date, initials, label, money, pct, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -88,7 +88,7 @@ export function StudentBanner({ s, tab }: { s: Profile; tab: StudentTab | null }
         </div>
         <div className="profile-badge">
           <strong>{pct(s.attendance.attendance_percent)}</strong>
-          <small>{`Attendance · ${s.attendance.days_marked} days marked`}</small>
+          <small>{`Attendance · ${plural(s.attendance.days_marked, "day")} marked`}</small>
         </div>
       </div>
       <StudentTabs id={String(s.id)} tab={tab} />

@@ -28,12 +28,14 @@ export function ExamDashboard() {
 
   const upcoming = c.exams.filter((e) => e.end_date >= today).sort((a, b) => a.start_date.localeCompare(b.start_date));
   const awaiting = d ? d.rows.filter((r) => r.marks_complete && !r.verified).length : undefined;
-  const n = (v: number | undefined) => (v === undefined ? "…" : v.toLocaleString("en-IN"));
+  // "…" only while something is on its way; with no exam chosen there is nothing to count
+  const waiting = c.examsLoading || (Boolean(c.examId) && dash.loading);
+  const n = (v: number | undefined) => (v === undefined ? (waiting ? "…" : "—") : v.toLocaleString("en-IN"));
 
   const stats = [
     { label: "Upcoming exams", value: n(c.examsLoading ? undefined : upcoming.length), note: "In the selected academic year" },
     { label: "Students registered", value: n(d?.candidates), note: d ? `Across ${d.papers} paper${d.papers === 1 ? "" : "s"}` : "Candidates for this exam" },
-    { label: "Marks entered", value: d ? pct(d.marks_percent, 0) : "…", note: d ? `${d.marks_entered.toLocaleString("en-IN")} of ${d.candidates.toLocaleString("en-IN")} entries` : "For this exam" },
+    { label: "Marks entered", value: d ? pct(d.marks_percent, 0) : waiting ? "…" : "—", note: d ? `${d.marks_entered.toLocaleString("en-IN")} of ${d.candidates.toLocaleString("en-IN")} entries` : "For this exam" },
     { label: "Awaiting verification", value: n(awaiting), note: "Fully marked, not signed off" },
   ];
 

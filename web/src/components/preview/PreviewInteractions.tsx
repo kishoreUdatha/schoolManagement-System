@@ -97,7 +97,8 @@ export function PreviewInteractions() {
         box.classList.remove("open");
         return;
       }
-      const found = SCREENS.filter((s) => `${s.name} ${s.id} ${s.module} ${s.role}`.toLowerCase().includes(q)).slice(0, 9);
+      const allowed = global!.dataset.screens ? new Set(global!.dataset.screens.split(",").map(Number)) : null;
+      const found = SCREENS.filter((s) => (!allowed || allowed.has(s.n)) && `${s.name} ${s.module}`.toLowerCase().includes(q)).slice(0, 9);
       found.forEach((s) => {
         const a = document.createElement("a");
         a.href = s.route;
@@ -107,13 +108,13 @@ export function PreviewInteractions() {
           router.push(s.route);
         });
         const small = document.createElement("small");
-        small.textContent = `${s.id} · ${s.moduleShort}`;
+        small.textContent = s.moduleShort;
         a.append(small);
         box.append(a);
       });
       if (!found.length) {
         const el = document.createElement("a");
-        el.textContent = "No matching screens";
+        el.textContent = "No page by that name in your menu";
         box.append(el);
       }
       box.classList.add("open");

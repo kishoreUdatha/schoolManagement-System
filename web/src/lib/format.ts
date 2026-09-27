@@ -24,7 +24,8 @@ export function money(v: number | string | null | undefined): string {
   if (v === null || v === undefined || v === "") return "—";
   const n = Number(v);
   if (Number.isNaN(n)) return String(v);
-  return "₹" + n.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  // a minus sign before the rupee: "−₹8,000", not "₹-8,000"
+  return (n < 0 ? "−₹" : "₹") + Math.abs(n).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 }
 
 /** 81.25 -> "81.3%"; null -> "—". */

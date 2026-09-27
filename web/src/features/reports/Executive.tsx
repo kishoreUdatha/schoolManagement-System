@@ -113,7 +113,7 @@ export function ExecutiveDashboard() {
               </div>
             }
           >
-            {att.length ? <Chart kind="line" labels={att.map((m) => monthLabel(m.month).slice(0, 3))} values={att.map((m) => m.percent)} /> : <p className="muted">{res.loading ? "Loading…" : "No attendance yet."}</p>}
+            {att.length ? <Chart kind="line" labels={att.map((m) => monthLabel(m.month).slice(0, 3))} values={att.map((m) => (m.present + m.absent + m.late + m.half_day > 0 ? m.percent : null))} label="Attendance % by month" /> : <p className="muted">{res.loading ? "Loading…" : "No attendance yet."}</p>}
           </Panel>
         </div>
         <aside>

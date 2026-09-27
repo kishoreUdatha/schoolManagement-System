@@ -22,7 +22,7 @@ const EXPORT_EVENT = "bc:report-export";
 
 /** The page-head export buttons. The page is a server component, so they
  *  ask the live report (below them) to download what it has loaded. */
-export function ExportButtons({ labels = ["Export", "Export report"] }: { labels?: string[] }) {
+export function ExportButtons({ labels = ["Export report"] }: { labels?: string[] }) {
   return (
     <>
       {labels.map((l, i) => (

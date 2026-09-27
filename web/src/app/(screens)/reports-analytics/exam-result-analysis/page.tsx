@@ -12,7 +12,7 @@ export const metadata = { title: "SCR-272 · Exam Result Analysis · BrightCampu
 
 export default function Page() {
   return (
-    <AppShell screen="SCR-272" actions={<ExportButtons labels={["Export", "Export analysis"]} />}>
+    <AppShell screen="SCR-272" actions={<ExportButtons labels={["Export analysis"]} />}>
       <Suspense>
         <ExamReport view="result" />
       </Suspense>

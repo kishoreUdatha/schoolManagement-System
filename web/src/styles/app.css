@@ -687,3 +687,14 @@ button.stat-card{text-align:left;width:100%;font:inherit}
   .page-head .actions{display:flex;gap:8px;flex-wrap:wrap}
   .page-head .actions>.btn,.page-head .actions>a.btn{flex:1 1 auto;justify-content:center}
 }
+
+/* Upload boxes: the browser's own "Choose Files" button drawn as the app's
+   button; the whole dashed box reads as the place to drop a file. */
+.upload-zone input[type=file]{color:#5a6d8c;font-size:12.5px}
+.upload-zone input[type=file]::file-selector-button{margin-right:10px;padding:7px 14px;border:1px solid #cddcf3;border-radius:8px;background:#fff;color:#1d4ed8;font:inherit;font-weight:700;cursor:pointer}
+.upload-zone input[type=file]::file-selector-button:hover{background:#eef4ff;border-color:#b8cff5}
+.upload-zone:hover,.upload-zone:focus-within{border-color:#6f9ff0;background:#f3f8ff}
+
+/* The menu's scrolling list fades out at its top and bottom edges, so an
+   item half under the school's name reads as "more above", not as clipped. */
+.nav-scroll{-webkit-mask-image:linear-gradient(transparent,#000 16px,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(transparent,#000 16px,#000 calc(100% - 16px),transparent)}
