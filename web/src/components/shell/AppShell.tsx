@@ -199,9 +199,7 @@ function Sidebar({ s, viewer, school, collapsed, onToggle }: { s: Screen | undef
           school.logo_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img className="brand-logo" src={school.logo_url} alt="" />
-          ) : (
-            <span className="brand-mark school">{initials(school.name)}</span>
-          )
+          ) : null
         ) : (
           <span className="brand-mark">
             <Icon name="book" />
@@ -280,10 +278,6 @@ function useSchool(role: string) {
   const sess = useSession();
   const { data } = useApi<Branding>(sess && role !== "Super Admin" ? "/api/v1/branding/me" : null);
   return data;
-}
-
-function initials(name: string) {
-  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
 
 /**

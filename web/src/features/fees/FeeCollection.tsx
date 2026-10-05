@@ -226,26 +226,6 @@ export function FeeCollection() {
         </form>
       </div>
       <aside className="stack">
-        <div className="payment-summary">
-          <h3>Amount to collect</h3>
-          <div className="checkout-total">{fee ? money(Number(amount) || 0) : "—"}</div>
-          <p className="stat-note">{fee ? `${fee.fee_head_name} · ${fee.period}` : "Choose a fee"}</p>
-          <div className="gap" />
-          <dl className="kv">
-            <div>
-              <dt>Student</dt>
-              <dd>{student?.full_name ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Class</dt>
-              <dd>{student?.section_label ?? fee?.section_label ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Due date</dt>
-              <dd>{fee ? date(fee.due_date) : "—"}</dd>
-            </div>
-          </dl>
-        </div>
         <Panel title="Recent receipts">
           {recent.map((c) => (
             <div className="event-row" key={c.id}>
