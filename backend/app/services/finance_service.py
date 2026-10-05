@@ -668,6 +668,7 @@ def finance_report(
         .join(ExpenseCategory, ExpenseCategory.id == Expense.category_id, isouter=True)
         .where(
             Expense.school_id == school_id,
+            Expense.is_void.is_(False),
             Expense.spent_on >= frm,
             Expense.spent_on <= to,
         )
@@ -687,7 +688,7 @@ def finance_report(
     by_month_out: dict[str, Decimal] = {}
     spent = ZERO
     for e, category in expenses:
-        amt = _money(e.amount) + _money(e.tax_amount)
+        amt = _money(e.amount)  # already includes the tax (ExpenseIn caps tax at the amount)
         spent += amt
         label = category or "Uncategorised"
         by_category[label] = by_category.get(label, ZERO) + amt

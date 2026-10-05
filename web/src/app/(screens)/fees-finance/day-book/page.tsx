@@ -1,0 +1,20 @@
+// NEW-053 · Day Book
+// Module: Fees & Finance · Role: Accountant · Release: Extension
+// New screen (no mock): books of account (double entry)
+// Wired: GET /api/v1/school/books/day-book?from=&to=&source=&page=. Hand-maintained.
+
+import { AppShell } from "@/components/shell/AppShell";
+import { ClientOnly } from "@/features/fees/common";
+import { DayBook } from "@/features/books/Ledgers";
+
+export const metadata = { title: "NEW-053 · Day Book · BrightCampus" };
+
+export default function Page() {
+  return (
+    <AppShell screen="NEW-053">
+      <ClientOnly>
+        <DayBook />
+      </ClientOnly>
+    </AppShell>
+  );
+}

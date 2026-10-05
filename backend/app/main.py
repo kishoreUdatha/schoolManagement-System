@@ -26,6 +26,7 @@ from app.api.v1.school import (
     academic_years as school_academic_years,
     academics_ops as school_academics_ops,
     accounts as school_accounts,
+    books as school_books,
     admissions as school_admissions,
     analytics as school_analytics,
     applications as school_applications,
@@ -932,6 +933,12 @@ app.include_router(
     school_accounts.router,
     prefix="/api/v1/school/accounts",
     tags=["school / accounts"],
+)
+
+app.include_router(
+    school_books.router,
+    prefix="/api/v1/school/books",
+    tags=["school / books of account"],
 )
 
 app.include_router(

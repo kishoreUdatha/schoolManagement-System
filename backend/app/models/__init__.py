@@ -393,3 +393,4 @@ from app.models.parent_services import (  # noqa: E402,F401  parent services are
 
 from app.models.whatsapp import SchoolWhatsappConfig, SchoolWhatsappTemplate  # noqa: E402,F401  per-school WhatsApp
 from app.models.platform_messaging import PlatformMessageLog, PlatformMessagingChannel  # noqa: E402,F401  platform WhatsApp / SMS
+from app.models.ledger import JournalEntry, JournalLine, LedgerAccount  # noqa: E402,F401  double-entry books
