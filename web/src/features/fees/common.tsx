@@ -83,30 +83,50 @@ export function Notice({ children }: { children: ReactNode }) {
 /**
  * Type-ahead over the school's active students
  * (GET /api/v1/school/directory/students?search=), as the old frontend did.
+ * Matches show from the first letter; arrow keys and Enter pick one, and a
+ * search with no match says so rather than showing nothing.
  */
 export function StudentPicker({ value, onChange, label: text = "Student", required = true }: { value: PickedStudent | null; onChange: (s: PickedStudent | null) => void; label?: string; required?: boolean }) {
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<PickedStudent[]>([]);
   const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [searched, setSearched] = useState("");
+  const [active, setActive] = useState(0);
 
   useEffect(() => {
     const term = q.trim();
-    if (term.length < 2) {
+    if (!term) {
       setHits([]);
+      setSearched("");
+      setBusy(false);
       return;
     }
     let live = true;
+    setBusy(true);
     const t = setTimeout(() => {
       api
         .get<PickedStudent[]>("/api/v1/school/directory/students", { search: term })
         .then((r) => live && setHits(r))
-        .catch(() => live && setHits([]));
-    }, 250);
+        .catch(() => live && setHits([]))
+        .finally(() => {
+          if (!live) return;
+          setBusy(false);
+          setSearched(term);
+          setActive(0);
+        });
+    }, 200);
     return () => {
       live = false;
       clearTimeout(t);
     };
   }, [q]);
+
+  const pick = (s: PickedStudent) => {
+    onChange(s);
+    setQ("");
+    setOpen(false);
+  };
 
   if (value) {
     return (
@@ -120,6 +140,8 @@ export function StudentPicker({ value, onChange, label: text = "Student", requir
       </Field>
     );
   }
+  const term = q.trim();
+  const showList = open && term.length > 0;
   return (
     <Field label={text} required={required}>
       <div style={{ position: "relative" }}>
@@ -130,31 +152,72 @@ export function StudentPicker({ value, onChange, label: text = "Student", requir
             setOpen(true);
           }}
           onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 150)}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowDown" && hits.length) {
+              e.preventDefault();
+              setOpen(true);
+              setActive((active + 1) % hits.length);
+            } else if (e.key === "ArrowUp" && hits.length) {
+              e.preventDefault();
+              setActive((active - 1 + hits.length) % hits.length);
+            } else if (e.key === "Enter" && showList && hits[active]) {
+              e.preventDefault();
+              pick(hits[active]);
+            } else if (e.key === "Escape") {
+              setOpen(false);
+            }
+          }}
           placeholder="Type a name or admission number…"
           aria-label={`Search ${text.toLowerCase()}`}
+          aria-autocomplete="list"
+          aria-expanded={showList}
+          autoComplete="off"
           required={required}
         />
-        {open && hits.length ? (
-          <div className="search-results open" style={{ top: 44, right: 0 }}>
-            {hits.map((s) => (
+        {showList ? (
+          <div className="search-results open picker-results" role="listbox" style={{ top: 44, right: 0 }}>
+            {hits.map((s, i) => (
               <a
                 key={s.id}
                 href="#"
+                role="option"
+                aria-selected={i === active}
+                className={i === active ? "active" : ""}
+                onMouseEnter={() => setActive(i)}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={(e) => {
                   e.preventDefault();
-                  onChange(s);
-                  setQ("");
-                  setOpen(false);
+                  pick(s);
                 }}
               >
-                {s.full_name}
-                <small>{`${s.admission_no}${s.section_label ? ` · ${s.section_label}` : ""}`}</small>
+                <Highlight text={s.full_name} term={term} />
+                <small>
+                  <Highlight text={s.admission_no} term={term} />
+                  {s.section_label ? ` · ${s.section_label}` : ""}
+                </small>
               </a>
             ))}
+            {!hits.length ? (
+              <div className="picker-empty">{busy || searched !== term ? "Searching…" : `No student matches “${term}”. Try part of the name or the admission number.`}</div>
+            ) : null}
           </div>
         ) : null}
       </div>
     </Field>
+  );
+}
+
+/** The text with the searched part in bold. */
+function Highlight({ text, term }: { text: string; term: string }) {
+  const i = term ? text.toLowerCase().indexOf(term.toLowerCase()) : -1;
+  if (i < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, i)}
+      <strong>{text.slice(i, i + term.length)}</strong>
+      {text.slice(i + term.length)}
+    </>
   );
 }
 
