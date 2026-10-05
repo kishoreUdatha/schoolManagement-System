@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
+import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { date, dateTime, money } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
-import { DownloadButton, modeLabel } from "./common";
+import { DownloadButton, isoToday, MODES, modeLabel, monthStart } from "./common";
+import { DateRange } from "./IncomeList";
 import type { Collection, OnlineOrder } from "./types";
 
 const ONES = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
@@ -83,7 +86,7 @@ export function PaymentReceipt() {
     return isParent ? (
       <PickFirst what="payment" href={routeOf(159)} cta="Open fees and payments" />
     ) : (
-      <PickFirst what="receipt" href={routeOf(158)} cta="Open fee collection" />
+      <ReceiptList />
     );
   }
 
@@ -133,6 +136,12 @@ export function PaymentReceipt() {
   }
 
   return (
+    <>
+    {receiptId && !isParent ? (
+      <Link href={routeOf(160)} className="btn text" style={{ marginBottom: 12 }}>
+        ← All receipts
+      </Link>
+    ) : null}
     <article className="invoice">
       <div className="spread">
         <Link href="/screens" className="brand">
@@ -194,5 +203,70 @@ export function PaymentReceipt() {
         </>
       ) : null}
     </article>
+    </>
+  );
+}
+
+/**
+ * Every counter receipt in a date range (GET /school/accounts/collections),
+ * searchable by student or receipt number. Opening one shows it for printing.
+ */
+function ReceiptList() {
+  const router = useRouter();
+  const [from, setFrom] = useState(monthStart());
+  const [to, setTo] = useState(isoToday());
+  const [mode, setMode] = useState("");
+  const [q, setQ] = useState("");
+  const list = useApi<Collection[]>("/api/v1/school/accounts/collections", { from, to, mode: mode || undefined });
+  const term = q.trim().toLowerCase();
+  const rows = (list.data ?? []).filter(
+    (c) => !term || c.student_name.toLowerCase().includes(term) || c.receipt_no.toLowerCase().includes(term),
+  );
+  const total = rows.reduce((t, c) => t + Number(c.amount), 0);
+  return (
+    <>
+      <div className="filterbar">
+        <div className="searchbox">
+          <Icon name="search" className="sm" />
+          <input type="search" placeholder="Student or receipt number" aria-label="Search receipts" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+        <select aria-label="Payment method" value={mode} onChange={(e) => setMode(e.target.value)}>
+          <option value="">All methods</option>
+          {MODES.map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
+        </select>
+        <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} />
+      </div>
+      <ErrorNote>{list.error}</ErrorNote>
+      <Panel
+        title="Receipts"
+        sub={list.data ? `${rows.length} receipt${rows.length === 1 ? "" : "s"} · ${money(total)} received · ${date(from)} – ${date(to)}` : "Fee payments taken at the counter"}
+        action={
+          <Link className="btn primary" href={routeOf(158)}>
+            <Icon name="plus" className="sm" />
+            Collect a fee
+          </Link>
+        }
+        flush
+      >
+        <DataTable
+          columns={["Receipt", "Date", "Student", "Fee", "Method", "Amount", "Collected by"]}
+          rows={rows.map((c) => [
+            c.receipt_no,
+            date(c.collected_on),
+            { name: c.student_name, sub: c.section_label ?? undefined },
+            `${c.fee_head_name}${c.period === "ONETIME" ? "" : ` · ${c.period}`}`,
+            modeLabel(c.mode),
+            money(c.amount),
+            c.collected_by_name ?? "—",
+          ])}
+          onView={(i) => router.push(`${routeOf(160)}?receipt=${rows[i].id}`)}
+          empty={list.loading ? "Loading…" : term ? "No receipt matches that search." : "No fees were collected in these dates."}
+        />
+      </Panel>
+    </>
   );
 }
