@@ -11,7 +11,7 @@ import { date, dateTime, money } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
-import { DownloadButton, isoToday, MODES, modeLabel, monthStart } from "./common";
+import { DownloadButton, isoToday, MODES, modeLabel, monthLabel, monthStart } from "./common";
 import { DateRange } from "./IncomeList";
 import type { Collection, OnlineOrder } from "./types";
 
@@ -44,6 +44,12 @@ export function rupeesInWords(v: number | string): string {
   if (r) parts.push(under1000(r));
   const words = `${parts.join(" ") || "zero"} rupees${paise ? ` and ${under1000(paise)} paise` : ""} only`;
   return words[0].toUpperCase() + words.slice(1);
+}
+
+/** "ONETIME" -> "One-time"; "2026-10" -> "Oct 2026". */
+function periodLabel(p: string): string {
+  if (p === "ONETIME") return "One-time";
+  return /^\d{4}-\d{2}$/.test(p) ? monthLabel(p) : p;
 }
 
 type Receipt = {
@@ -80,7 +86,7 @@ export function PaymentReceipt() {
   const parentOrders = useApi<OnlineOrder[]>(sess && isParent && child && orderId ? `/api/v1/parent/me/children/${child}/payments` : null);
   const schoolOrders = useApi<OnlineOrder[]>(sess && !isParent && child && orderId ? "/api/v1/school/payments/online" : null, { student_id: child });
   const counter = useApi<Collection>(sess && !isParent && receiptId ? `/api/v1/school/accounts/collections/${receiptId}` : null);
-  const school = useApi<{ name: string; address: string | null }>(sess ? "/api/v1/branding/me" : null);
+  const school = useApi<{ name: string; address: string | null; logo_url: string | null }>(sess ? "/api/v1/branding/me" : null);
 
   if (!(child && orderId) && !receiptId) {
     return isParent ? (
@@ -104,7 +110,7 @@ export function PaymentReceipt() {
       issued: o.paid_at ? dateTime(o.paid_at) : dateTime(o.created_at),
       parent: o.parent_name,
       method: "Online",
-      rows: o.items.map((i) => [i.fee_head_name, i.period, money(i.applied_amount ?? i.amount)]),
+      rows: o.items.map((i) => [i.fee_head_name, periodLabel(i.period), money(i.applied_amount ?? i.amount)]),
       total: o.amount,
       received: o.status === "paid",
       status: o.status === "paid" ? "PAID" : o.status === "failed" ? "FAILED" : "NOT PAID",
@@ -121,7 +127,7 @@ export function PaymentReceipt() {
       issued: date(c.collected_on),
       parent: null,
       method: modeLabel(c.mode),
-      rows: [[c.fee_head_name, c.period, money(c.amount)]],
+      rows: [[c.fee_head_name, periodLabel(c.period), money(c.amount)]],
       total: c.amount,
       received: true,
       status: "PAID",
@@ -144,15 +150,17 @@ export function PaymentReceipt() {
     ) : null}
     <article className="invoice">
       <div className="spread">
-        <Link href="/screens" className="brand">
-          <span className="brand-mark">
-            <Icon name="book" />
-          </span>
-          <span>
-            BrightCampus
-            <small>SCHOOL ERP</small>
-          </span>
-        </Link>
+        {/* The school issues the receipt: its logo, name and address head it. */}
+        <div className="receipt-school">
+          {school.data?.logo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={school.data.logo_url} alt="" />
+          ) : null}
+          <div>
+            <h3>{school.data?.name ?? ""}</h3>
+            {school.data?.address ? <p className="small muted">{school.data.address}</p> : null}
+          </div>
+        </div>
         <div className="right">
           <h2>{r.received ? "Payment receipt" : "Payment status"}</h2>
           <p className="small muted">{r.number}</p>
@@ -163,12 +171,6 @@ export function PaymentReceipt() {
           <p>Student</p>
           <h3>{r.student}</h3>
           <p>{r.sub}</p>
-          {school.data ? (
-            <p className="small muted">
-              {school.data.name}
-              {school.data.address ? ` · ${school.data.address}` : ""}
-            </p>
-          ) : null}
         </div>
         <div className="right">
           <p>{`Issued on: ${r.issued}`}</p>
@@ -176,7 +178,7 @@ export function PaymentReceipt() {
           <p>{`Payment method: ${r.method}`}</p>
         </div>
       </div>
-      <DataTable columns={["Fee description", "Period", "Amount"]} rows={r.rows} selectable={false} rowAction={false} />
+      <DataTable columns={["Fee description", "Period", "Amount"]} rows={r.rows} selectable={false} rowAction={false} footer={false} />
       <div className="invoice-total">
         {/* Concessions and fines are already inside each fee's amount; the API does not split them out per receipt. */}
         <div className="grand">
@@ -258,7 +260,7 @@ function ReceiptList() {
             c.receipt_no,
             date(c.collected_on),
             { name: c.student_name, sub: c.section_label ?? undefined },
-            `${c.fee_head_name}${c.period === "ONETIME" ? "" : ` · ${c.period}`}`,
+            `${c.fee_head_name}${c.period === "ONETIME" ? "" : ` · ${periodLabel(c.period)}`}`,
             modeLabel(c.mode),
             money(c.amount),
             c.collected_by_name ?? "—",
