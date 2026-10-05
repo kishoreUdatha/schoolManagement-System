@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Chart } from "@/components/ui/Chart";
-import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
@@ -10,12 +9,9 @@ import { ErrorNote } from "@/components/ui/states";
 import { date, money, pct } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { useHydrated, useSession } from "@/lib/useSession";
+import { useHydrated } from "@/lib/useSession";
 import { lastSixMonths, modeLabel, monthLabel, monthStart, isoToday, scaled } from "./common";
 import type { Collection, FinanceDashboard, Refund } from "./types";
-
-const DAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
 
 /**
  * SCR-154, live: GET /school/finance/dashboard (school-wide figures, ageing,
@@ -23,7 +19,6 @@ const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", 
  * receipts) and /school/fees/refunds?status=requested.
  */
 export function FeeDashboard() {
-  const sess = useSession();
   // Dates only in the browser, so the prerendered page never disagrees with it.
   const hydrated = useHydrated();
   const dash = useApi<FinanceDashboard>("/api/v1/school/finance/dashboard");
@@ -31,11 +26,6 @@ export function FeeDashboard() {
   const refunds = useApi<Refund[]>("/api/v1/school/fees/refunds", { status: "requested" });
 
   const d = dash.data;
-  const now = new Date();
-  const first = sess?.user.full_name.split(/\s+/)[0];
-  const hour = now.getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-
   const stats = [
     { label: "Collected this month", value: d ? money(d.collected_this_month) : "…", note: d ? `${money(d.collected_today)} collected today` : "School-wide" },
     { label: "Outstanding", value: d ? money(d.outstanding) : "…", note: "Across all unpaid fees" },
@@ -53,18 +43,6 @@ export function FeeDashboard() {
   return (
     <>
       <ErrorNote>{dash.error ?? receipts.error}</ErrorNote>
-      <section className="hero">
-        <div className="hero-content">
-          <div className="eyebrow">{hydrated ? `${DAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}` : " "}</div>
-          <h2>{hydrated ? (first ? `${greeting}, ${first}.` : `${greeting}.`) : "Welcome."}</h2>
-          <p>Here’s where the school’s fees stand today.</p>
-          <Link href="/reports-analytics/executive-analytics-dashboard" className="btn white">
-            <Icon name="arrow" className="sm" />
-            View school overview
-          </Link>
-        </div>
-        <HeroArt />
-      </section>
       <StatStrip items={stats} />
       <div className="dashboard-actions">
         <span className="small strong muted">Quick actions</span>
