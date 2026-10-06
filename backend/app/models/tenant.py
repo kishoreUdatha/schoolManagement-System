@@ -1,7 +1,8 @@
+from decimal import Decimal
 from datetime import time
 from typing import Optional
 
-from sqlalchemy import BigInteger, Enum as SAEnum, ForeignKey, SmallInteger, String, Text, Time
+from sqlalchemy import Numeric, BigInteger, Enum as SAEnum, ForeignKey, SmallInteger, String, Text, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import SchoolStatus, TenantStatus
@@ -66,7 +67,9 @@ class School(Base, PrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     break_end_time: Mapped[Optional[time]] = mapped_column(Time)
 
     # --- Identity shown on the profile and the platform's schools list ---
-    board: Mapped[Optional[str]] = mapped_column(String(40))  # CBSE, ICSE, State Board, ...
+    board: Mapped[Optional[str]] = mapped_column(String(40))
+    # a fee waiver above this needs the principal or school admin; null: no limit
+    waiver_approval_above: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=Decimal("1000"))  # CBSE, ICSE, State Board, ...
     school_type: Mapped[Optional[str]] = mapped_column(String(60))
     website: Mapped[Optional[str]] = mapped_column(String(255))
     accent_color: Mapped[Optional[str]] = mapped_column(String(7))  # '#RRGGBB'

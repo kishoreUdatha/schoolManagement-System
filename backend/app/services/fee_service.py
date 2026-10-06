@@ -769,6 +769,85 @@ def record_payments(db: Session, school_id: int, data, recorded_by_user_id: int)
             "total": sum((a for _, a in fees), Decimal("0"))}
 
 
+def waive_or_request(db: Session, user, fee_id: int, reason: str) -> dict:
+    """Write off what is left of a fee, with the reason on record. The school
+    admin and principal waive straight away; an accountant does too up to the
+    school's limit, and above it the waiver goes to the principal to approve."""
+    from app.core.enums import ApprovalKind, ApprovalStatus, UserRole
+    from app.models.approval import ApprovalRequest
+    from app.models.tenant import School
+    from app.services import rbac_service
+
+    reason = (reason or "").strip()
+    if len(reason) < 3:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Give the reason for the waiver")
+    sf = db.get(StudentFee, fee_id)
+    if not sf or sf.school_id != user.school_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fee record not found")
+    approver = user.role in (UserRole.school_admin, UserRole.principal)
+    if not approver and not rbac_service.has_permission(db, user, "fees.waive"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Waiving fees isn't among your permissions")
+    if sf.status != FeeStatus.pending:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Only an unpaid fee can be waived; this one is {sf.status.value}")
+    amount = sf.amount_due - sf.amount_paid
+    limit = db.get(School, user.school_id).waiver_approval_above
+    if not approver and limit is not None and amount > limit:
+        waiting = db.execute(select(ApprovalRequest.id).where(
+            ApprovalRequest.school_id == user.school_id, ApprovalRequest.kind == ApprovalKind.fee_waiver,
+            ApprovalRequest.status == ApprovalStatus.pending,
+            ApprovalRequest.payload["fee_ref"].astext == str(sf.id),
+        )).first()
+        if waiting:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This waiver is already waiting for approval")
+        from app.models.fee import FeeHead
+        from app.models.student import Student
+
+        st = db.get(Student, sf.student_id)
+        head = db.get(FeeHead, sf.fee_head_id)
+        a = ApprovalRequest(
+            tenant_id=user.tenant_id, school_id=user.school_id, kind=ApprovalKind.fee_waiver,
+            status=ApprovalStatus.pending, requested_by_user_id=user.id, reason=reason,
+            payload={"student": f"{st.full_name} ({st.admission_no})", "fee": f"{head.name} {'' if sf.period == 'ONETIME' else sf.period}".strip(),
+                     "amount": f"Rs {amount:,.2f}", "fee_ref": str(sf.id)},
+        )
+        db.add(a)
+        db.commit()
+        return {"status": "requested", "approval_id": a.id, "limit": limit}
+    apply_waiver(db, sf, user.id, reason)
+    db.commit()
+    return {"status": "waived", "fee": get_student_fee(db, sf.id, user.school_id)}
+
+
+def check_reduction(db: Session, user, fee_id: int, new_amount) -> None:
+    """Lowering a charge is a waiver by another name: an accountant may lower
+    one only by up to the school's waiver limit."""
+    from app.core.enums import UserRole
+    from app.models.tenant import School
+
+    if new_amount is None or user.role in (UserRole.school_admin, UserRole.principal):
+        return
+    sf = db.get(StudentFee, fee_id)
+    if not sf or sf.school_id != user.school_id:
+        return  # correct_charge reports the missing fee
+    limit = db.get(School, user.school_id).waiver_approval_above
+    if limit is not None and sf.amount_due - Decimal(new_amount) > limit:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Lowering a fee by more than Rs {limit:,.0f} needs the principal. Waive it instead, with the reason, and it goes to them.")
+
+
+def apply_waiver(db: Session, sf: StudentFee, by_user_id: int, reason: str) -> None:
+    """Waive the fee and note why (caller commits)."""
+    db.refresh(sf, with_for_update=True)
+    if sf.status != FeeStatus.pending:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Only an unpaid fee can be waived; this one is {sf.status.value}")
+    sf.status = FeeStatus.waived
+    sf.recorded_by_user_id = by_user_id
+    note = f"Waived: {reason}"
+    sf.notes = (f"{sf.notes} · {note}" if sf.notes else note)[:300]
+
+
 def waive(
     db: Session, fee_id: int, school_id: int, recorded_by_user_id: int
 ) -> dict:

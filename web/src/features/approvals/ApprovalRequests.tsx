@@ -11,7 +11,7 @@ import { date, dateTime, initials, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { useHydrated, useSession } from "@/lib/useSession";
-import { KIND_EFFECT, KIND_LABEL, STATUS_LABEL, type Approval, type ApprovalKind, type ApprovalStatus, type Exam } from "./types";
+import { KIND_EFFECT, KIND_LABEL, STATUS_LABEL, SYSTEM_KINDS, type Approval, type ApprovalKind, type ApprovalStatus, type Exam } from "./types";
 
 import { ask } from "@/lib/dialog";
 const TONES = ["mint", "", "peach", "lilac"];
@@ -33,7 +33,8 @@ export function NewApprovalButton() {
 /** A payload value as a person reads it; exam ids become exam names when known. */
 function payloadRows(a: Approval, exams: Map<number, string>): [string, string][] {
   return Object.entries(a.payload ?? {})
-    .filter(([, v]) => v !== null && v !== undefined && v !== "")
+    // *_ref keys are the system's own pointers (the fee, the payroll run), not details to read
+    .filter(([k, v]) => v !== null && v !== undefined && v !== "" && !k.endsWith("_ref"))
     .map(([k, v]) => {
       if (k === "exam_id") return ["Exam", exams.get(Number(v)) ?? `Exam #${v}`];
       const text = typeof v === "object" ? JSON.stringify(v) : String(v);
@@ -115,7 +116,7 @@ function Queue({ principal }: { principal: boolean }) {
     setBusy(true);
     setError(null);
     try {
-      await api.post<Approval>(`/api/v1/principal/approvals/${a.id}/decide`, { status: decision, decision_remark: remark.trim() || null });
+      await api.post<Approval>(`${base}/${a.id}/decide`, { status: decision, decision_remark: remark.trim() || null });
       notify(`${KIND_LABEL[a.kind]} ${decision === "approved" ? "approved" : "rejected"}.`);
       setRemark("");
       setPicked(null);
@@ -209,7 +210,7 @@ function Queue({ principal }: { principal: boolean }) {
               <p className="muted small" style={{ marginTop: 10 }}>
                 {KIND_EFFECT[current.kind]}
               </p>
-              {principal && current.status === "pending" ? (
+              {current.status === "pending" ? (
                 <div className="stack" style={{ marginTop: 14 }}>
                   <label className="field">
                     <span>Decision remark</span>
@@ -383,11 +384,13 @@ function FileRequest({ exams, onClose, onFiled }: { exams: Exam[]; onClose: () =
         {field(
           "Request type",
           <select value={kind} onChange={(e) => setKind(e.target.value as ApprovalKind)}>
-            {Object.entries(KIND_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
+            {Object.entries(KIND_LABEL)
+              .filter(([k]) => !SYSTEM_KINDS.includes(k as ApprovalKind))
+              .map(([k, v]) => (
+                <option key={k} value={k}>
+                  {v}
+                </option>
+              ))}
           </select>,
           true,
         )}

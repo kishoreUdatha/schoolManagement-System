@@ -195,3 +195,19 @@ class Concession(Base, PrimaryKeyMixin, TimestampMixin, _School):
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
     apply_to_pending_on_approval: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
+
+
+class CashDeposit(Base, PrimaryKeyMixin, TimestampMixin, _School):
+    """Cash from the counter taken to the bank. Its journal voucher moves the
+    amount from Cash in hand to the Bank account in the books."""
+
+    __audited__ = True
+    __tablename__ = "cash_deposits"
+    __table_args__ = (Index("ix_cash_deposits_school_date", "school_id", "deposited_on"),)
+
+    deposited_on: Mapped[date] = mapped_column(Date, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    slip_no: Mapped[Optional[str]] = mapped_column(String(60))
+    notes: Mapped[Optional[str]] = mapped_column(String(300))
+    journal_entry_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("journal_entries.id", ondelete="SET NULL"))
+    deposited_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))

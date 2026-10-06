@@ -299,6 +299,9 @@ def allow(*roles: UserRole, permission: Optional[str] = None, any_of: tuple[str,
         if current_user.school_id is None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="School access required")
         if current_user.role in roles:
+            if current_user.role == UserRole.accountant and wanted:
+                # the accountant's access is what the school ticked for the role
+                _accountant_holds(db, current_user, wanted)
             return current_user
         if wanted:
             from app.services import rbac_service
@@ -309,6 +312,17 @@ def allow(*roles: UserRole, permission: Optional[str] = None, any_of: tuple[str,
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have access to this")
 
     return _check
+
+
+def _accountant_holds(db: Session, user: User, wanted: tuple[str, ...]) -> None:
+    """An accountant gets an area only while the school's permission settings
+    give the Accountant role one of its permissions (Settings → Roles &
+    permissions), so unticking Payroll there takes payroll away."""
+    from app.services import rbac_service
+
+    if not any(p in rbac_service.permissions_for(db, user) for p in wanted):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="The school's permission settings don't give the accountant this. Ask the school admin.")
 
 
 def allow_job(*roles: UserRole, permission: str, also: tuple[str, ...] = ()):
@@ -325,6 +339,8 @@ def allow_job(*roles: UserRole, permission: str, also: tuple[str, ...] = ()):
         if current_user.school_id is None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="School access required")
         if current_user.role in roles:
+            if current_user.role == UserRole.accountant:
+                _accountant_holds(db, current_user, wanted)
             return current_user
         from app.services import rbac_service
 

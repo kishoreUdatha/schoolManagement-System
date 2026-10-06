@@ -249,6 +249,9 @@ export type Run = {
   total_net: string;
   total_employer_cost: string;
   skipped_without_salary: string[];
+  /** the principal's (or school admin's) approval; an accountant pays only after it */
+  approved_at?: string | null;
+  approved_by_name?: string | null;
   finalized_at: string | null;
   paid_on: string | null;
   payment_ref: string | null;

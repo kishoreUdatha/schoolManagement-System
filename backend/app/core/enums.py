@@ -108,6 +108,8 @@ class ApprovalKind(str, enum.Enum):
     attendance_edit = "attendance_edit"
     staff_leave = "staff_leave"
     result_publishing = "result_publishing"
+    fee_waiver = "fee_waiver"  # an accountant's waiver above the school's limit
+    payroll_run = "payroll_run"  # a finalised payroll, before it is paid
 
 
 class ApprovalStatus(str, enum.Enum):

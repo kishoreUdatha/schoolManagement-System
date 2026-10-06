@@ -56,7 +56,7 @@ def salary_history(staff_id: int, current_user: Actor, db: Db):
     summary="Set the salary from a date (same date = correct it; later date = revision)",
 )
 def set_salary(staff_id: int, payload: SalaryIn, current_user: Actor, db: Db):
-    s = svc.set_salary(db, current_user.tenant_id, current_user.school_id, staff_id, payload)
+    s = svc.set_salary(db, current_user.tenant_id, current_user.school_id, staff_id, payload, current_user)
     return SalaryRead.model_validate(svc.salary_to_read(s))
 
 
@@ -91,7 +91,7 @@ def adjust(run_id: int, slip_id: int, payload: PayslipAdjust, current_user: Acto
 
 @router.post("/runs/{run_id}/finalize", response_model=RunRead)
 def finalize(run_id: int, current_user: Actor, db: Db):
-    return RunRead.model_validate(svc.run_to_read(db, svc.finalize(db, run_id, current_user.school_id, current_user.id)))
+    return RunRead.model_validate(svc.run_to_read(db, svc.finalize(db, run_id, current_user.school_id, current_user)))
 
 
 @router.post("/runs/{run_id}/reopen", response_model=RunRead)
@@ -101,7 +101,7 @@ def reopen(run_id: int, current_user: Actor, db: Db):
 
 @router.post("/runs/{run_id}/paid", response_model=RunRead)
 def mark_paid(run_id: int, payload: RunPaid, current_user: Actor, db: Db):
-    return RunRead.model_validate(svc.run_to_read(db, svc.mark_paid(db, run_id, current_user.school_id, payload)))
+    return RunRead.model_validate(svc.run_to_read(db, svc.mark_paid(db, run_id, current_user.school_id, payload, current_user)))
 
 
 @router.delete("/runs/{run_id}", status_code=status.HTTP_204_NO_CONTENT)

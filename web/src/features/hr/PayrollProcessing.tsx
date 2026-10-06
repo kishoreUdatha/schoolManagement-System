@@ -11,6 +11,7 @@ import { date, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import type { Payslip, Run, RunDetail } from "./types";
 import { Dialog, Field, NewLink, downloadAuthed, monthLabel, today, useNewFlag } from "./ui";
 
@@ -122,6 +123,9 @@ export function PayrollProcessing() {
     money(p.net_pay),
     Number(p.lop_days) > 0 ? `LOP ${Number(p.lop_days)} days` : label(p.run_status),
   ]);
+  // the school admin and principal approve; anyone else pays only once they have
+  const sessRole = useSession()?.user.role;
+  const approver = sessRole === "school_admin" || sessRole === "principal";
   const draft = r?.status === "draft";
 
   return (
@@ -164,9 +168,16 @@ export function PayrollProcessing() {
                 <button type="button" className="btn" disabled={busy} onClick={async () => (await ask("Reopen this finalised payroll for changes? Payslips can be edited again until it is finalised.")) && act(() => api.post(`${BASE}/${r.id}/reopen`), "Reopened for changes.")}>
                   Reopen
                 </button>
-                <button type="button" className="btn primary" disabled={busy} onClick={() => setPaying(true)}>
-                  Mark as paid
-                </button>
+                {r.approved_at || approver ? (
+                  <button type="button" className="btn primary" disabled={busy} onClick={() => setPaying(true)}>
+                    Mark as paid
+                  </button>
+                ) : (
+                  <span className="badge warn" title="The principal approves it under Approval requests">
+                    Waiting for the principal's approval
+                  </span>
+                )}
+                {r.approved_at ? <span className="badge">{`Approved${r.approved_by_name ? ` by ${r.approved_by_name}` : ""}`}</span> : null}
               </>
             ) : null}
             {!draft ? (

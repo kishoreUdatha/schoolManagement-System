@@ -94,8 +94,13 @@ def current_salary(db: Session, staff_id: int, on: date) -> Optional[StaffSalary
     ).scalar_one_or_none()
 
 
-def set_salary(db: Session, tenant_id: int, school_id: int, staff_id: int, data: SalaryIn) -> StaffSalary:
+def set_salary(db: Session, tenant_id: int, school_id: int, staff_id: int, data: SalaryIn, actor=None) -> StaffSalary:
     staff = _staff(db, staff_id, school_id)
+    from app.core.enums import UserRole
+
+    if actor is not None and staff.user_id == actor.id and actor.role != UserRole.school_admin:
+        # nobody sets their own pay; the school admin answers to nobody here
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can't change your own salary. Ask the school admin.")
     existing = db.execute(
         select(StaffSalary).where(StaffSalary.staff_id == staff.id, StaffSalary.effective_from == data.effective_from)
     ).scalar_one_or_none()
@@ -308,17 +313,51 @@ def adjust_slip(db: Session, run_id: int, slip_id: int, school_id: int, data: Pa
     return slip
 
 
-def finalize(db: Session, run_id: int, school_id: int, actor_id: int) -> PayrollRun:
+def _approver(user) -> bool:
+    from app.core.enums import UserRole
+
+    return user.role in (UserRole.school_admin, UserRole.principal)
+
+
+def finalize(db: Session, run_id: int, school_id: int, actor) -> PayrollRun:
+    """Lock the payslips. Finalised by the school admin or principal, the run
+    is approved with it; finalised by anyone else, it goes to the principal."""
+    from app.core.enums import ApprovalKind, ApprovalStatus
+    from app.models.approval import ApprovalRequest
+
     run = _get_run(db, run_id, school_id)
     _require_draft(run)
     if not db.execute(select(Payslip.id).where(Payslip.run_id == run.id)).first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No payslips in this run")
+    now = datetime.now(timezone.utc)
     run.status = PayrollRunStatus.finalized
-    run.finalized_at = datetime.now(timezone.utc)
-    run.finalized_by_user_id = actor_id
+    run.finalized_at = now
+    run.finalized_by_user_id = actor.id
+    if _approver(actor):
+        run.approved_at, run.approved_by_user_id = now, actor.id
+    else:
+        staff, net = db.execute(
+            select(func.count(Payslip.id), func.coalesce(func.sum(Payslip.net_pay), 0)).where(Payslip.run_id == run.id)
+        ).one()
+        db.add(ApprovalRequest(
+            tenant_id=run.tenant_id, school_id=school_id, kind=ApprovalKind.payroll_run, status=ApprovalStatus.pending,
+            requested_by_user_id=actor.id, reason=f"Payroll for {run.period} is ready to pay.",
+            payload={"period": run.period, "staff": str(staff), "net_pay": f"Rs {Decimal(net):,.2f}", "run_ref": str(run.id)},
+        ))
     db.commit()
     db.refresh(run)
     return run
+
+
+def apply_approval(db: Session, a) -> None:
+    """The principal approved a payroll run (approval_service applies it)."""
+    run = db.get(PayrollRun, int((a.payload or {}).get("run_ref") or 0))
+    if not run or run.school_id != a.school_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="That payroll run no longer exists")
+    if run.status != PayrollRunStatus.finalized:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="That payroll was reopened; it has to be finalised again")
+    run.approved_at = datetime.now(timezone.utc)
+    run.approved_by_user_id = a.reviewed_by_user_id
 
 
 def reopen(db: Session, run_id: int, school_id: int) -> PayrollRun:
@@ -327,15 +366,30 @@ def reopen(db: Session, run_id: int, school_id: int) -> PayrollRun:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Only finalized (unpaid) runs can be reopened")
     run.status = PayrollRunStatus.draft
     run.finalized_at = None
+    # a reopened run is approved afresh once finalised again
+    run.approved_at = run.approved_by_user_id = None
+    from app.core.enums import ApprovalKind, ApprovalStatus
+    from app.models.approval import ApprovalRequest
+
+    for a in db.execute(select(ApprovalRequest).where(
+        ApprovalRequest.school_id == school_id, ApprovalRequest.kind == ApprovalKind.payroll_run,
+        ApprovalRequest.status == ApprovalStatus.pending, ApprovalRequest.payload["run_ref"].astext == str(run.id),
+    )).scalars():
+        a.status = ApprovalStatus.rejected
+        a.decision_remark = "Withdrawn: the payroll was reopened"
+        a.decided_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(run)
     return run
 
 
-def mark_paid(db: Session, run_id: int, school_id: int, data: RunPaid) -> PayrollRun:
+def mark_paid(db: Session, run_id: int, school_id: int, data: RunPaid, actor=None) -> PayrollRun:
     run = _get_run(db, run_id, school_id)
     if run.status != PayrollRunStatus.finalized:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Finalize the payroll before marking it paid")
+    if run.approved_at is None and not (actor is not None and _approver(actor)):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="This payroll is waiting for the principal's approval before it can be paid")
     run.status = PayrollRunStatus.paid
     run.paid_on = data.paid_on
     run.payment_ref = data.payment_ref
@@ -385,6 +439,8 @@ def run_to_read(db: Session, run: PayrollRun, *, with_slips: bool = False, skipp
         "total_employer_cost": sum((s.gross + s.pf_employer + s.esi_employer for s in slips), ZERO),
         "skipped_without_salary": skipped or [],
         "finalized_at": run.finalized_at,
+        "approved_at": run.approved_at,
+        "approved_by_name": (db.get(User, run.approved_by_user_id).full_name if run.approved_by_user_id else None),
         "paid_on": run.paid_on,
         "payment_ref": run.payment_ref,
         "created_at": run.created_at,

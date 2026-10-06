@@ -84,6 +84,9 @@ class RunRead(BaseModel):
     total_employer_cost: Money
     skipped_without_salary: list[str] = []
     finalized_at: Optional[datetime] = None
+    # the principal's (or school admin's) approval, needed before an accountant pays it
+    approved_at: Optional[datetime] = None
+    approved_by_name: Optional[str] = None
     paid_on: Optional[date] = None
     payment_ref: Optional[str] = None
     created_at: datetime

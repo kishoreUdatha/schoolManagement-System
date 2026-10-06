@@ -19,6 +19,7 @@ export const NOT_IN_MENU = new Set([
   56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, // add / edit student and the per-student tabs
   72, 73, 74, 76, 79, // add parent and the per-parent pages
   81, 82, 83, // add / edit staff, staff profile
+  161, // a student's fee ledger: opened from the student, under Fee collection
   99, 103, 129, 130, 135, 156, 175, 187, 188, 190, 199, 200, 247, 248, // create / edit forms and record details
   // Other roles' own screens: these groups are the school admin's menu, and the
   // backend answers "access required" to an admin on them. Each role reaches

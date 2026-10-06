@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
+import { api, errorText } from "@/lib/api";
 import { date, dateTime, money } from "@/lib/format";
+import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
@@ -335,7 +337,7 @@ function DayClose({ day, receipts }: { day: string; receipts: Collection[] }) {
       <div className="panel-head">
         <div>
           <h2>{`Day close · ${date(day)}`}</h2>
-          <p>{`${receipts.length} receipt${receipts.length === 1 ? "" : "s"} · ${money(total)} in all · cash in the drawer should be ${money(cash)}`}</p>
+          <p>{`${receipts.length} receipt${receipts.length === 1 ? "" : "s"} · ${money(total)} in all · ${money(cash)} of it taken in cash this day`}</p>
         </div>
         <button type="button" className="btn" onClick={() => window.print()}>
           <Icon name="file" className="sm" />
@@ -388,6 +390,7 @@ function DayClose({ day, receipts }: { day: string; receipts: Collection[] }) {
               </tbody>
             </table>
           </div>
+          <BankDeposit day={day} />
           <div className="day-close-sign">
             <span>Counted by</span>
             <span>Checked by</span>
@@ -411,5 +414,104 @@ export function PrintReceiptAction() {
       <Icon name="download" className="sm" />
       Print receipt
     </button>
+  );
+}
+
+type CashInHand = { on: string; cash_in_hand: string; deposits: { id: number; amount: string; slip_no: string | null; voucher_no: string | null; deposited_by_name: string | null }[] };
+
+/**
+ * Cash taken to the bank on the day close: what is in the drawer
+ * (GET /accounts/cash-in-hand), what was already deposited, and a form to
+ * record a deposit (POST /accounts/deposits). The deposit posts a contra
+ * voucher, Bank Dr / Cash Cr, so the books move it from cash to bank.
+ */
+function BankDeposit({ day }: { day: string }) {
+  const r = useApi<CashInHand>("/api/v1/school/accounts/cash-in-hand", { on: day });
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [slip, setSlip] = useState("");
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const d = r.data;
+  if (!d) return null;
+  const inHand = Number(d.cash_in_hand);
+  const banked = d.deposits.reduce((t, x) => t + Number(x.amount), 0);
+
+  async function save(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.post<{ voucher_no: string | null }>("/api/v1/school/accounts/deposits", {
+        deposited_on: day,
+        amount,
+        slip_no: slip.trim() || null,
+        notes: notes.trim() || null,
+      });
+      notify(`${money(amount)} recorded as deposited to the bank${res.voucher_no ? ` (voucher ${res.voucher_no})` : ""}.`);
+      setOpen(false);
+      setSlip("");
+      setNotes("");
+      r.reload();
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="bank-deposit">
+      <div className="spread">
+        <div>
+          <strong>{`Cash not yet in the bank: ${money(inHand)}`}</strong>
+          <p className="muted small">This day's cash and any earlier cash not yet deposited: what the drawer should hold.</p>
+          <p className="muted small">
+            {banked
+              ? `${money(banked)} taken to the bank today: ${d.deposits.map((x) => `${money(x.amount)}${x.slip_no ? ` (slip ${x.slip_no})` : ""}`).join(", ")}.`
+              : "Nothing deposited to the bank on this day yet."}
+          </p>
+        </div>
+        {inHand > 0 && !open ? (
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setAmount(String(inHand));
+              setOpen(true);
+            }}
+          >
+            <Icon name="download" className="sm" />
+            Record bank deposit
+          </button>
+        ) : null}
+      </div>
+      {open ? (
+        <form className="bank-deposit-form" onSubmit={save}>
+          <ErrorNote>{error}</ErrorNote>
+          <label className="field">
+            <span>Amount deposited</span>
+            <input type="number" min={1} max={inHand} step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          </label>
+          <label className="field">
+            <span>Deposit slip no.</span>
+            <input value={slip} maxLength={60} onChange={(e) => setSlip(e.target.value)} placeholder="From the bank's counterfoil" />
+          </label>
+          <label className="field">
+            <span>Notes</span>
+            <input value={notes} maxLength={300} onChange={(e) => setNotes(e.target.value)} placeholder="Bank and branch (optional)" />
+          </label>
+          <div className="row" style={{ gap: 8, alignSelf: "end" }}>
+            <button type="submit" className="btn primary" disabled={busy}>
+              {busy ? "Saving…" : "Save deposit"}
+            </button>
+            <button type="button" className="btn" onClick={() => setOpen(false)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : null}
+    </div>
   );
 }

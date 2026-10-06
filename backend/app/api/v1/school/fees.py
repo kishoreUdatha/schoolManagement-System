@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query, status
@@ -5,7 +6,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import FeeCounter, FeeHeadReader, SchoolAdminOrAccountant
+from app.core.deps import FeeCounter, FeeHeadReader, SchoolAdminOrAccountant, SchoolAdminUser
 from app.database import get_db
 from app.schemas.common import PaginatedResponse
 from app.schemas.fee import (
@@ -23,6 +24,15 @@ from app.schemas.fee import (
     StudentFeeRead,
 )
 from app.services import fee_service
+
+
+class WaiveIn(BaseModel):
+    reason: str = Field(..., min_length=3, max_length=200)
+
+
+class WaiverLimitIn(BaseModel):
+    # None: an accountant's waivers never need approval
+    waiver_approval_above: Optional[Decimal] = Field(None, ge=0)
 
 
 router = APIRouter()
@@ -283,19 +293,40 @@ def correct_charge(
     current_user: SchoolAdminOrAccountant,
     db: Annotated[Session, Depends(get_db)],
 ):
+    fee_service.check_reduction(db, current_user, fee_id, payload.amount_due)
     return StudentFeeRead.model_validate(
         fee_service.correct_charge(db, fee_id, current_user.school_id, current_user.id, payload)
     )
 
 
+@router.get("/waiver-limit", summary="Fee waivers above this need the principal or school admin")
+def waiver_limit(current_user: SchoolAdminOrAccountant, db: Annotated[Session, Depends(get_db)]):
+    from app.models.tenant import School
+
+    return {"waiver_approval_above": db.get(School, current_user.school_id).waiver_approval_above}
+
+
+@router.put("/waiver-limit", summary="Set the waiver limit (school admin)")
+def set_waiver_limit(payload: WaiverLimitIn, current_user: SchoolAdminUser, db: Annotated[Session, Depends(get_db)]):
+    from app.models.tenant import School
+
+    school = db.get(School, current_user.school_id)
+    school.waiver_approval_above = payload.waiver_approval_above
+    db.commit()
+    return {"waiver_approval_above": school.waiver_approval_above}
+
+
 @router.post(
     "/student-fees/{fee_id}/waive",
-    response_model=StudentFeeRead,
 )
 def waive(
     fee_id: int,
+    payload: WaiveIn,
     current_user: SchoolAdminOrAccountant,
     db: Annotated[Session, Depends(get_db)],
 ):
-    data = fee_service.waive(db, fee_id, current_user.school_id, current_user.id)
-    return StudentFeeRead.model_validate(data)
+    """Waived now, or sent to the principal when it is above the school's limit."""
+    out = fee_service.waive_or_request(db, current_user, fee_id, payload.reason)
+    if out.get("fee"):
+        out["fee"] = StudentFeeRead.model_validate(out["fee"])
+    return out

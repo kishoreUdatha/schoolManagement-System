@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import CurrentUser, SchoolAdminOrPrincipal
 from app.core.enums import ApprovalKind, ApprovalStatus
 from app.database import get_db
-from app.schemas.approval import ApprovalCreate, ApprovalRead
+from app.schemas.approval import ApprovalCreate, ApprovalDecide, ApprovalRead
 from app.services import approval_service
 
 
@@ -67,3 +67,15 @@ def list_(
         ApprovalRead.model_validate(approval_service.to_read_dict(db, a))
         for a in items
     ]
+
+
+
+@router.post("/{approval_id}/decide", response_model=ApprovalRead, summary="Approve or reject (school admin or principal)")
+def decide_school(
+    approval_id: int,
+    payload: ApprovalDecide,
+    current_user: SchoolAdminOrPrincipal,
+    db: Annotated[Session, Depends(get_db)],
+):
+    a = approval_service.decide(db, approval_id, current_user.school_id, current_user.id, payload)
+    return ApprovalRead.model_validate(approval_service.to_read_dict(db, a))

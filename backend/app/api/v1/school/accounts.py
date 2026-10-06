@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query, Response, status
@@ -194,6 +195,31 @@ class SendIn(BaseModel):
 @router.post("/collections/{collection_id}/send", summary="Send the receipt to the parents or the student, as a notice")
 def send_receipt(collection_id: int, payload: SendIn, current_user: Actor, db: Db):
     return receipt_service.send(db, current_user, collection_id, payload.to)
+
+
+class DepositIn(BaseModel):
+    deposited_on: date
+    amount: Decimal = Field(..., gt=0)
+    slip_no: Optional[str] = Field(None, max_length=60)
+    notes: Optional[str] = Field(None, max_length=300)
+
+
+@router.get("/cash-in-hand", summary="Cash that should be in the drawer at the end of a day")
+def cash_in_hand(current_user: Actor, db: Db, on: Optional[date] = Query(None)):
+    on = on or date.today()
+    return {"on": on, "cash_in_hand": svc.cash_in_hand(db, current_user.school_id, on),
+            "deposits": svc.deposits(db, current_user.school_id, on, on)}
+
+
+@router.get("/deposits", summary="Cash taken to the bank in a date range")
+def list_deposits(current_user: Actor, db: Db, frm: Optional[date] = Query(None, alias="from"), to: Optional[date] = Query(None)):
+    f, t = _range(frm, to)
+    return svc.deposits(db, current_user.school_id, f, t)
+
+
+@router.post("/deposits", status_code=status.HTTP_201_CREATED, summary="Record cash paid into the bank (a contra voucher)")
+def record_deposit(payload: DepositIn, current_user: Actor, db: Db):
+    return svc.record_deposit(db, current_user, payload.deposited_on, payload.amount, payload.slip_no, payload.notes)
 
 
 @router.get("/cash-book", response_model=CashBook, summary="Money in and out for a period")

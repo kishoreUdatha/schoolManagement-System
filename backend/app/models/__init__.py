@@ -9,6 +9,7 @@ from app.models.academics_ops import (
 from app.models.hr_ops import OnboardingTask, Requisition
 from app.models.academic import AcademicYear, SchoolClass, Section
 from app.models.accounts import (
+    CashDeposit,
     Cheque,
     Concession,
     Expense,

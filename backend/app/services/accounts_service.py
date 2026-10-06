@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.core.enums import ChequeStatus, ConcessionKind, FeeStatus, MoneyMode, PayrollRunStatus, StorePayment
 from app.core.scoping import get_school_student, section_label, section_labels
-from app.models.accounts import Cheque, Concession, Expense, ExpenseCategory, FeeCollection, OtherIncome
+from app.models.accounts import CashDeposit, Cheque, Concession, Expense, ExpenseCategory, FeeCollection, OtherIncome
 from app.models.document import Document
 from app.models.fee import FeeHead, StudentFee
 from app.models.inventory import StoreSale, Supplier
@@ -585,6 +585,14 @@ def cash_book(db: Session, school_id: int, frm: date, to: date) -> dict:
         by_mode[vp.mode.value]["out"] += vp.amount
         daily[vp.paid_on]["out"] += vp.amount
 
+    deposited = ZERO
+    for dep in db.execute(select(CashDeposit).where(
+        CashDeposit.school_id == school_id, CashDeposit.deposited_on.between(frm, to)
+    )).scalars():
+        deposited += dep.amount
+        by_mode[MoneyMode.cash.value]["out"] += dep.amount
+        by_mode[MoneyMode.bank_transfer.value]["in"] += dep.amount
+
     total_in = sum(fees_by_mode.values(), ZERO) + sum(other.values(), ZERO) + sum(store.values(), ZERO)
     total_out = sum(by_cat.values(), ZERO) + payroll + refunds + vendors
     return {
@@ -596,5 +604,67 @@ def cash_book(db: Session, school_id: int, frm: date, to: date) -> dict:
         "total_out": total_out,
         "net": total_in - total_out,
         "by_mode": {k: v for k, v in by_mode.items()},
+        # cash taken to the bank: moves between cash and bank, not money in or out
+        "deposited_to_bank": deposited,
         "daily": [{"date": d, "in": v["in"], "out": v["out"]} for d, v in sorted(daily.items())],
     }
+
+
+
+# --- Cash taken to the bank ---
+
+def cash_in_hand(db: Session, school_id: int, on: date) -> Decimal:
+    """Cash collected and spent up to and including `on` this financial year,
+    less what was already taken to the bank: what should be in the drawer."""
+    from app.services.books_service import fy_start
+
+    book = cash_book(db, school_id, fy_start(on), on)
+    cash = book["by_mode"].get(MoneyMode.cash.value, {"in": ZERO, "out": ZERO})
+    return cash["in"] - cash["out"]
+
+
+def deposits(db: Session, school_id: int, frm: date, to: date) -> list[dict]:
+    rows = db.execute(select(CashDeposit).where(
+        CashDeposit.school_id == school_id, CashDeposit.deposited_on.between(frm, to)
+    ).order_by(CashDeposit.deposited_on.desc(), CashDeposit.id.desc())).scalars().all()
+    names = dict(db.execute(select(User.id, User.full_name).where(
+        User.id.in_({r.deposited_by_user_id for r in rows if r.deposited_by_user_id} or {-1})
+    )).all())
+    from app.models.ledger import JournalEntry
+
+    jvs = dict(db.execute(select(JournalEntry.id, JournalEntry.entry_no).where(
+        JournalEntry.id.in_({r.journal_entry_id for r in rows if r.journal_entry_id} or {-1})
+    )).all())
+    return [{"id": r.id, "deposited_on": r.deposited_on, "amount": r.amount, "slip_no": r.slip_no, "notes": r.notes,
+             "deposited_by_name": names.get(r.deposited_by_user_id), "voucher_no": jvs.get(r.journal_entry_id)}
+            for r in rows]
+
+
+def record_deposit(db: Session, user: User, deposited_on: date, amount: Decimal, slip_no: Optional[str],
+                   notes: Optional[str]) -> dict:
+    """Cash from the counter paid into the bank: a contra voucher (Bank Dr,
+    Cash Cr) in the books, and the cash book moves it from cash to bank."""
+    from app.services import books_service
+
+    if amount <= 0:
+        raise _400("Enter the amount deposited")
+    if deposited_on > date.today():
+        raise _400("The deposit date is in the future")
+    in_hand = cash_in_hand(db, user.school_id, deposited_on)
+    if amount > in_hand:
+        raise _400(f"Only Rs {in_hand:,.2f} cash is in hand on {deposited_on:%d %b %Y}")
+    chart = books_service.ensure_chart(db, user)
+    jv = books_service.create_journal(db, user, {
+        "entry_date": deposited_on,
+        "narration": f"Cash deposited to bank{f' · slip {slip_no.strip()}' if slip_no and slip_no.strip() else ''}",
+        "reference": (slip_no or "").strip() or None,
+        "description": (notes or "").strip() or None,
+        "status": "posted",
+        "lines": [{"account_id": chart["bank"].id, "debit": amount}, {"account_id": chart["cash"].id, "credit": amount}],
+    })
+    dep = CashDeposit(tenant_id=user.tenant_id, school_id=user.school_id, deposited_on=deposited_on, amount=amount,
+                      slip_no=(slip_no or "").strip() or None, notes=(notes or "").strip() or None,
+                      journal_entry_id=jv["id"], deposited_by_user_id=user.id)
+    db.add(dep)
+    db.commit()
+    return {"id": dep.id, "voucher_no": jv.get("entry_no"), "cash_in_hand": in_hand - amount}

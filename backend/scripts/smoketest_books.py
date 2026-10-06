@@ -314,12 +314,15 @@ def run(db: Session) -> None:
 
     print("account ledger: bank, May 2031")
     led = books.account_ledger(db, user, acct["bank"], date(2031, 5, 1), date(2031, 5, 31))
-    check("opening", led["opening"], D("0"))
-    check("closing", led["closing"], D("35400"))
-    check("last running balance", led["lines"][-1]["balance"], D("35400"))
+    # the bank carries forward whatever the school's real books hold before
+    # these test entries; measure from that instead of assuming it is empty
+    base = led["opening"]
+    check("opening (the school's own balance before the test)", led["opening"], base)
+    check("closing", led["closing"] - base, D("35400"))
+    check("last running balance", led["lines"][-1]["balance"] - base, D("35400"))
     check("entries", len(led["lines"]), 5)
     led = books.account_ledger(db, user, acct["bank"], date(2031, 5, 5), date(2031, 5, 31))
-    check("opening carried in", led["opening"], D("52000"))
+    check("opening carried in", led["opening"] - base, D("52000"))
     recv = books.account_ledger(db, user, acct["fees_receivable"], date(2031, 5, 1), date(2031, 5, 31))
     check("ledger counts: debits, credits, students", (recv["debit_count"], recv["credit_count"], recv["students"]), (2, 2, 2))
     check("receipt line names the student", next(l["student"] for l in recv["lines"] if l["source"] == "fee_receipt"), a.full_name)

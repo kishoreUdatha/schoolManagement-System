@@ -114,6 +114,9 @@ class PayrollRun(Base, PrimaryKeyMixin, TimestampMixin):
     finalized_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
+    # the principal's (or school admin's) approval, needed before an accountant marks it paid
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    approved_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
     paid_on: Mapped[Optional[date]] = mapped_column(Date)
     payment_ref: Mapped[Optional[str]] = mapped_column(String(120))
 

@@ -195,6 +195,7 @@ class CashBook(BaseModel):
     net: Decimal
     by_mode: dict[str, dict[str, Decimal]]  # {"cash": {"in": x, "out": y}}
     daily: list[dict]  # [{date, in, out}]
+    deposited_to_bank: Decimal = Decimal("0")
 
 
 class ConcessionUpdate(BaseModel):

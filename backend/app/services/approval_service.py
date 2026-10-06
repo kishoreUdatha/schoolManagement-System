@@ -123,11 +123,12 @@ def decide(
     # If approving, attempt to apply the change BEFORE committing the
     # approval. If the apply fails, the approval stays pending and the
     # principal sees a clear error.
+    # the reviewer is known to the apply handlers (a payroll run records who approved it)
+    a.reviewed_by_user_id = reviewer_user_id
     if data.status == ApprovalStatus.approved:
         _apply(db, a)
 
     a.status = data.status
-    a.reviewed_by_user_id = reviewer_user_id
     a.decision_remark = data.decision_remark
     a.decided_at = datetime.now(timezone.utc)
     db.commit()
@@ -152,6 +153,18 @@ def _apply(db: Session, a: ApprovalRequest) -> None:
     elif a.kind == ApprovalKind.staff_leave:
         # Wired in once Story 8.2 lands the Leave model.
         return
+    elif a.kind == ApprovalKind.fee_waiver:
+        from app.models.fee import StudentFee
+        from app.services import fee_service
+
+        sf = db.get(StudentFee, int((a.payload or {}).get("fee_ref") or 0))
+        if not sf or sf.school_id != a.school_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="That fee no longer exists")
+        fee_service.apply_waiver(db, sf, a.requested_by_user_id, a.reason or "approved waiver")
+    elif a.kind == ApprovalKind.payroll_run:
+        from app.services import payroll_service
+
+        payroll_service.apply_approval(db, a)
 
 
 def _apply_result_publishing(db: Session, a: ApprovalRequest) -> None:
