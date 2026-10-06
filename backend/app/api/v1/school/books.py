@@ -54,8 +54,26 @@ def day_book(
 
 
 @router.get("/trial-balance")
-def trial_balance(user: Actor, db: Db, frm: From = None, to: Optional[date] = None):
-    return svc.trial_balance(db, user, frm, to)
+def trial_balance(user: Actor, db: Db, frm: From = None, to: Optional[date] = None, account_id: Optional[int] = None):
+    return svc.trial_balance(db, user, frm, to, account_id=account_id)
+
+
+@router.get("/trial-balance.xlsx", summary="Trial balance as an Excel sheet")
+def trial_balance_xlsx(user: Actor, db: Db, frm: From = None, to: Optional[date] = None, account_id: Optional[int] = None):
+    body, name = books_export.trial_balance_xlsx(db, user, frm, to, account_id)
+    return Response(
+        body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
+
+
+@router.get("/trial-balance.pdf", summary="Trial balance as a PDF")
+def trial_balance_pdf(user: Actor, db: Db, frm: From = None, to: Optional[date] = None, account_id: Optional[int] = None):
+    body, name = books_export.trial_balance_pdf(db, user, frm, to, account_id)
+    return Response(
+        body, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
 
 
 Category = Annotated[Optional[str], Query(max_length=60)]

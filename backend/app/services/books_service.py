@@ -624,11 +624,14 @@ def account_ledger(
     }
 
 
-def trial_balance(db: Session, user: User, frm: Optional[date], to: Optional[date]) -> dict:
+def trial_balance(
+    db: Session, user: User, frm: Optional[date], to: Optional[date], *, account_id: Optional[int] = None,
+) -> dict:
     """Opening, movement and closing for every account with anything in it.
-    Closing balances are split into debit and credit columns, which must agree."""
+    Closing balances are split into debit and credit columns, which must
+    agree. `balanced` and `difference` are always for the whole book; an
+    account filter only narrows the rows and their totals."""
     frm, to = _window(frm, to)
-    accts = _accounts(db, user.school_id)
     rows_all = entries(db, user, None, to)
     accts = _accounts(db, user.school_id)  # entries() may have added accounts
     open_dr, open_cr = defaultdict(lambda: ZERO), defaultdict(lambda: ZERO)
@@ -643,26 +646,32 @@ def trial_balance(db: Session, user: User, frm: Optional[date], to: Optional[dat
             else:
                 mov_dr[aid] += ln["debit"]
                 mov_cr[aid] += ln["credit"]
+    cols = ("opening_debit", "opening_credit", "debit", "credit", "closing_debit", "closing_credit")
     rows = []
-    tot = defaultdict(lambda: ZERO)
     for a in sorted(accts.values(), key=lambda a: (KINDS.index(a.kind), a.code)):
         o = open_dr[a.id] - open_cr[a.id]
         c = o + mov_dr[a.id] - mov_cr[a.id]
         if not (o or mov_dr[a.id] or mov_cr[a.id]):
             continue
-        row = {
+        rows.append({
             "account_id": a.id, "code": a.code, "name": a.name, "kind": a.kind,
+            "category": a.category or default_category(a.system_key, a.kind, a.code),
             "opening_debit": o if o > 0 else ZERO, "opening_credit": -o if o < 0 else ZERO,
             "debit": mov_dr[a.id], "credit": mov_cr[a.id],
             "closing_debit": c if c > 0 else ZERO, "closing_credit": -c if c < 0 else ZERO,
-        }
-        for k in ("opening_debit", "opening_credit", "debit", "credit", "closing_debit", "closing_credit"):
-            tot[k] += row[k]
-        rows.append(row)
+        })
+    whole = {k: sum((r[k] for r in rows), ZERO) for k in cols}
+    if account_id:
+        rows = [r for r in rows if r["account_id"] == account_id]
     return {
         "from_date": frm, "to_date": to, "rows": rows,
-        "totals": dict(tot) or {k: ZERO for k in ("opening_debit", "opening_credit", "debit", "credit", "closing_debit", "closing_credit")},
-        "balanced": tot["closing_debit"] == tot["closing_credit"],
+        "totals": {k: sum((r[k] for r in rows), ZERO) for k in cols},
+        "balanced": whole["closing_debit"] == whole["closing_credit"],
+        "difference": whole["closing_debit"] - whole["closing_credit"],
+        "accounts": [
+            {"id": a.id, "code": a.code, "name": a.name, "kind": a.kind}
+            for a in sorted(accts.values(), key=lambda a: (KINDS.index(a.kind), a.code))
+        ],
     }
 
 

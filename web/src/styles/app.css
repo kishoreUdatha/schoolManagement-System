@@ -682,3 +682,15 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 @media(max-width:1150px){.bs-filters{grid-template-columns:1fr 1fr}.bs-exports{grid-column:1/-1;justify-content:flex-start}.bs-cards{grid-template-columns:1fr 1fr}}
 @media(max-width:900px){.bs-grid{grid-template-columns:1fr}}
 @media print{.bs-exports{display:none!important}.bs-grid{grid-template-columns:1fr 1fr}}
+
+/* Trial balance (features/books/TrialBalance). */
+.tb-filters{grid-template-columns:170px minmax(220px,360px) 96px}
+.tb-table thead th{text-align:left}
+.tb-table thead th.tb-group{text-align:center;border-bottom:1px solid #cfdcef}
+.tb-table thead tr:first-child th[rowspan]{vertical-align:middle}
+.tb-table td.strong{font-weight:700}
+.tb-badge{margin-left:12px;vertical-align:middle;font-size:12px}
+@media(max-width:800px){.tb-filters{grid-template-columns:1fr 1fr}}
+.tb-table th,.tb-table td{padding:7px 9px!important;font-size:12.5px}
+.tb-table thead th{font-size:12px}
+.tb-table td.num{min-width:84px}

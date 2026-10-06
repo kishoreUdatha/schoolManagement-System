@@ -50,6 +50,7 @@ export type TrialRow = {
   code: string;
   name: string;
   kind: Kind;
+  category: string;
   opening_debit: string;
   opening_credit: string;
   debit: string;
@@ -58,7 +59,15 @@ export type TrialRow = {
   closing_credit: string;
 };
 type Cols = "opening_debit" | "opening_credit" | "debit" | "credit" | "closing_debit" | "closing_credit";
-export type TrialBalance = { from_date: string; to_date: string; rows: TrialRow[]; totals: Record<Cols, string>; balanced: boolean };
+export type TrialBalance = {
+  from_date: string;
+  to_date: string;
+  rows: TrialRow[];
+  totals: Record<Cols, string>;
+  balanced: boolean;
+  difference: string;
+  accounts: { id: number; code: string; name: string; kind: Kind }[];
+};
 
 export type StatementRow = { account_id: number; code: string; name: string; amount: string };
 

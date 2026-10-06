@@ -202,6 +202,9 @@ def run(db: Session) -> None:
     check("salaries (finalized run left out)", closing.get(acct["salaries"]), D("20000"))
     check("employer PF", closing.get(acct["employer_contrib"]), D("1800"))
     check("payroll deductions payable", closing.get(acct["payroll_deductions"]), D("-4200"))
+    narrow = books.trial_balance(db, user, FY_FROM, FY_TO, account_id=acct["bank"])
+    check("trial balance account filter", ([r["account_id"] for r in narrow["rows"]], narrow["balanced"]), ([acct["bank"]], True))
+    check("trial balance group column", next(r["category"] for r in tb["rows"] if r["account_id"] == acct["bank"]), "Cash and bank")
     check("capital (void voucher left out)", closing.get(acct["capital"]), D("-50000"))
 
     print("income and expenditure")
@@ -233,6 +236,9 @@ def run(db: Session) -> None:
     xlsx, _ = books_export.balance_sheet_xlsx(db, user, FY_TO)
     pdf, _ = books_export.balance_sheet_pdf(db, user, FY_TO)
     check("balance sheet exports", (xlsx[:2], pdf[:4]), (b"PK", b"%PDF"))
+    xlsx, _ = books_export.trial_balance_xlsx(db, user, FY_FROM, FY_TO)
+    pdf, _ = books_export.trial_balance_pdf(db, user, FY_FROM, FY_TO)
+    check("trial balance exports", (xlsx[:2], pdf[:4]), (b"PK", b"%PDF"))
 
     print("account ledger: bank, May 2031")
     led = books.account_ledger(db, user, acct["bank"], date(2031, 5, 1), date(2031, 5, 31))

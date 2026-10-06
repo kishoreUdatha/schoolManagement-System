@@ -1,11 +1,11 @@
 // NEW-055 · Trial Balance
 // Module: Fees & Finance · Role: Accountant · Release: Extension
 // New screen (no mock): books of account (double entry)
-// Wired: GET /api/v1/school/books/trial-balance?from=&to=. Hand-maintained.
+// Wired: GET /api/v1/school/books/trial-balance?from=&to=&account_id= (+ .xlsx, .pdf). Hand-maintained.
 
 import { AppShell } from "@/components/shell/AppShell";
 import { ClientOnly } from "@/features/fees/common";
-import { TrialBalance } from "@/features/books/Statements";
+import { TrialBalance } from "@/features/books/TrialBalance";
 
 export const metadata = { title: "NEW-055 · Trial Balance · BrightCampus" };
 

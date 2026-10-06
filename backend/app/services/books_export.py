@@ -349,3 +349,77 @@ def balance_sheet_pdf(db: Session, user: User, as_of: Optional[date], account_id
     ]
     doc.build(story)
     return buf.getvalue(), f"balance-sheet_{rep['as_of']}.pdf"
+
+
+# ---------- trial balance ----------
+
+TB_COLUMNS = ["#", "Account code", "Account head", "Account group", "Opening Dr (₹)", "Opening Cr (₹)",
+              "Transactions Dr (₹)", "Transactions Cr (₹)", "Closing Dr (₹)", "Closing Cr (₹)"]
+_TB_KEYS = ("opening_debit", "opening_credit", "debit", "credit", "closing_debit", "closing_credit")
+
+
+def _tb(db: Session, user: User, frm, to, account_id) -> tuple[dict, str, str]:
+    rep = books_service.trial_balance(db, user, frm, to, account_id=account_id)
+    school = db.get(School, user.school_id)
+    title = f"Trial balance as on {rep['to_date']:%d %b %Y} (transactions from {rep['from_date']:%d %b %Y})"
+    return rep, school.name if school else "", title
+
+
+def _tb_lines(rep: dict) -> list[tuple[str, list]]:
+    out = [("row", [i, r["code"], r["name"], r["category"], *[r[k] for k in _TB_KEYS]]) for i, r in enumerate(rep["rows"], 1)]
+    out.append(("grand", ["", "", "Grand total", "", *[rep["totals"][k] for k in _TB_KEYS]]))
+    return out
+
+
+def trial_balance_xlsx(db: Session, user: User, frm, to, account_id=None) -> tuple[bytes, str]:
+    rep, school, title = _tb(db, user, frm, to, account_id)
+    body = _xlsx("Trial balance", [school, title], TB_COLUMNS, _tb_lines(rep),
+                 [5, 12, 32, 20, 16, 16, 18, 18, 16, 16], num_from=4)
+    return body, f"trial-balance_{rep['to_date']}.xlsx"
+
+
+def trial_balance_pdf(db: Session, user: User, frm, to, account_id=None) -> tuple[bytes, str]:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    rep, school, title = _tb(db, user, frm, to, account_id)
+    styles = getSampleStyleSheet()
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=1.2 * cm, bottomMargin=1.2 * cm,
+                            leftMargin=1 * cm, rightMargin=1 * cm, title=title)
+    data = [
+        ["#", "Code", "Account head", "Account group", "Opening balance (Rs)", "", "Transactions (Rs)", "", "Closing balance (Rs)", ""],
+        ["", "", "", "", "Dr", "Cr", "Dr", "Cr", "Dr", "Cr"],
+    ]
+    for kind, cells in _tb_lines(rep):
+        data.append([str(c) if j < 4 else inr(c) for j, c in enumerate(cells)])
+    last = len(data) - 1
+    style = [
+        ("SPAN", (4, 0), (5, 0)), ("SPAN", (6, 0), (7, 0)), ("SPAN", (8, 0), (9, 0)),
+        *[("SPAN", (i, 0), (i, 1)) for i in range(4)],
+        ("FONTNAME", (0, 0), (-1, 1), "Helvetica-Bold"),
+        ("BACKGROUND", (0, 0), (-1, 1), colors.HexColor("#E8F0FE")),
+        ("ALIGN", (4, 0), (-1, -1), "RIGHT"), ("ALIGN", (4, 0), (-1, 0), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8.2),
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.HexColor("#DCE5F2")),
+        ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("FONTNAME", (0, last), (-1, last), "Helvetica-Bold"),
+        ("BACKGROUND", (0, last), (-1, last), colors.HexColor("#DCE7FB")),
+    ]
+    table = Table(data, colWidths=[0.8 * cm, 1.5 * cm, 5.6 * cm, 3.4 * cm] + [2.65 * cm] * 6, repeatRows=2)
+    table.setStyle(TableStyle(style))
+    t = rep["totals"]
+    story = [
+        Paragraph(f"<b>{escape(school)}</b>", styles["Title"]),
+        Paragraph(escape(title), styles["Normal"]),
+        Spacer(1, 6),
+        Paragraph("Debits equal credits." if rep["balanced"] else f"Out of balance by {inr(rep['difference'])}.", styles["Normal"]),
+        Spacer(1, 10),
+        table,
+    ]
+    doc.build(story)
+    return buf.getvalue(), f"trial-balance_{rep['to_date']}.pdf"
