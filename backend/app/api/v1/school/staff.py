@@ -13,7 +13,7 @@ from app.schemas.staff import (
     StaffRead,
     StaffUpdate,
 )
-from app.services import staff_service
+from app.services import rbac_service, staff_service
 
 
 router = APIRouter()
@@ -28,6 +28,12 @@ def _may_manage(user, role) -> None:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the school admin can add or change this role")
 
 
+def _may_give_job(db, user, role_id, removing: bool = False) -> None:
+    if (role_id is not None or removing) and not rbac_service.may_give_roles(db, user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="Only the school admin, or someone who manages roles, can set a job role")
+
+
 @router.post(
     "",
     response_model=StaffCreateResponse,
@@ -40,9 +46,13 @@ def create(
     db: Annotated[Session, Depends(get_db)],
 ):
     _may_manage(current_user, payload.role)
+    _may_give_job(db, current_user, payload.job_role_id)
     staff, raw_password = staff_service.create_staff(
         db, current_user.tenant_id, current_user.school_id, payload
     )
+    if payload.job_role_id:
+        rbac_service.set_job_role(db, current_user, staff.user_id, payload.job_role_id)
+        db.commit()
     return StaffCreateResponse(
         staff=StaffRead.model_validate(staff_service.staff_to_read_dict(staff)),
         temporary_password=raw_password,
@@ -63,6 +73,7 @@ def list_(
         None, alias="status", description="'active' or 'inactive'"
     ),
     search: Optional[str] = Query(None),
+    job_role_id: Optional[int] = Query(None, description="People with this job (custom role)"),
 ):
     items = staff_service.list_staff(
         db,
@@ -71,6 +82,7 @@ def list_(
         designation=designation,
         status_filter=status_filter,
         search=search,
+        job_role_id=job_role_id,
     )
     return [
         StaffRead.model_validate(staff_service.staff_to_read_dict(s)) for s in items
@@ -108,7 +120,13 @@ def update(
 ):
     _may_manage(current_user, staff_service.staff_to_read_dict(
         staff_service.get_staff(db, staff_id, current_user.school_id))["role"])
+    if "job_role_id" in payload.model_fields_set:
+        _may_give_job(db, current_user, payload.job_role_id, removing=True)
     s = staff_service.update_staff(db, staff_id, current_user.school_id, payload)
+    if "job_role_id" in payload.model_fields_set:
+        rbac_service.set_job_role(db, current_user, s.user_id, payload.job_role_id)
+        db.commit()
+        db.refresh(s)
     return StaffRead.model_validate(staff_service.staff_to_read_dict(s))
 
 

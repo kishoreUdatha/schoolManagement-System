@@ -75,3 +75,35 @@ SYSTEM_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "parent": [],
     "student": [],
 }
+
+
+# The jobs a school has beyond the four staff logins, set up for every school
+# as ordinary custom roles it can rename, change or delete:
+# code -> (name, the login they sign in with, what they may do, description).
+STARTER_ROLES: dict[str, tuple[str, str, list[str], str]] = {
+    "vice_principal": ("Vice Principal", "principal", [
+        "admissions.manage", "admissions.decide", "syllabus.manage", "lessonplans.review", "exams.manage",
+        "exams.approve_results", "reportcards.remark", "attendance.correct", "studentleave.decide",
+        "cover.manage", "discipline.manage", "discipline.share", "notices.send", "events.manage", "reports.view",
+    ], "Deputises for the principal on academics and discipline"),
+    "academic_coordinator": ("Academic Coordinator", "teacher", [
+        "syllabus.manage", "lessonplans.review", "exams.manage", "grading.manage", "cover.manage",
+        "reportcards.remark", "notices.send", "reports.view",
+    ], "Syllabus, lesson plans, exams and cover across classes"),
+    "class_coordinator": ("Class Coordinator", "teacher", [
+        "attendance.correct", "studentleave.decide", "discipline.manage", "reportcards.remark", "notices.send",
+    ], "Looks after a grade or wing: attendance, leave and discipline"),
+    "librarian": ("Librarian", "staff", ["library.manage"], "Runs the library"),
+    "lab_assistant": ("Lab Assistant", "staff", ["inventory.manage"], "Keeps the labs and their stock"),
+    "receptionist": ("Receptionist / Front Office", "staff", ["frontdesk.manage", "admissions.manage"],
+                     "Visitors, gate passes, early pickup and admission enquiries"),
+    "office_clerk": ("Office Clerk", "staff", ["students.manage", "parents.manage", "admissions.manage",
+                                               "reports.view"], "Student records, parent logins and admissions paperwork"),
+    "transport_incharge": ("Transport In-charge", "staff", ["transport.manage"], "Routes, vehicles and trips"),
+    "counsellor": ("Counsellor", "staff", ["counselling.access", "discipline.manage"], "Counselling cases and student welfare"),
+    "nurse": ("Nurse", "staff", ["health.manage"], "The clinic and students' health records"),
+    "hostel_warden": ("Hostel Warden", "staff", ["hostel.manage"], "Rooms, allocations and roll call"),
+    "it_admin": ("IT Admin", "staff", ["settings.manage", "audit.view"], "School setup and the audit log"),
+    "hr": ("HR", "staff", ["hr.manage", "staff.manage", "reports.view"], "Staff records, recruitment and leave"),
+    "support_staff": ("Support Staff", "staff", [], "Drivers, attendants, housekeeping and security"),
+}

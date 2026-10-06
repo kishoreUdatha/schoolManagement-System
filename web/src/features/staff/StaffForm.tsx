@@ -9,7 +9,7 @@ import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { EMPLOYMENT_LABEL, ROLE_LABEL, type Department, type EmploymentType, type Staff, type StaffRole } from "./types";
+import { EMPLOYMENT_LABEL, jobRolesOf, ROLE_LABEL, type Department, type EmploymentType, type JobRole, type Staff, type StaffRole } from "./types";
 
 /** The form id the page-head button submits. */
 export const STAFF_FORM = "staff-form";
@@ -32,6 +32,9 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
   // new staff get the school's next number; it stays editable for schools with their own series
   const suggested = useApi<{ employee_no: string }>(editing ? null : "/api/v1/school/staff/next-employee-no");
   const [saving, setSaving] = useState(false);
+  const [login, setLogin] = useState<StaffRole>("teacher");
+  // the jobs a school has set up; someone who cannot read roles simply does not see the field
+  const roleList = useApi<JobRole[]>("/api/v1/school/roles");
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Created | null>(null);
   const [addingCommon, setAddingCommon] = useState(false);
@@ -48,6 +51,7 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
     }
   }
 
+  const jobs = jobRolesOf(roleList.data);
   if (editing && !id) return <PickFirst what="member of staff to edit" href={routeOf(80)} cta="Open the staff directory" />;
   if (editing && existing.loading && !existing.data) return <Loading what="Loading the staff record…" />;
   if (editing && !existing.data) return <ErrorNote>{existing.error ?? "Staff member not found."}</ErrorNote>;
@@ -109,13 +113,17 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
     setSaving(true);
     setError(null);
     try {
+      const job = text("job_role_id");
+      const jobId = job ? Number(job) : null;
       if (editing) {
-        await api.patch(`/api/v1/school/staff/${id}`, common);
+        // the job role goes only when it changed: setting one needs the right to give roles
+        const was = existing.data?.job_roles?.[0]?.id ?? null;
+        await api.patch(`/api/v1/school/staff/${id}`, jobId === was || !roleList.data ? common : { ...common, job_role_id: jobId });
         notify("Staff record updated.");
         router.push(`${routeOf(82)}?id=${id}`);
         return;
       }
-      const res = await api.post<Created>("/api/v1/school/staff", { ...common, email: text("email"), role: text("role") ?? "teacher" });
+      const res = await api.post<Created>("/api/v1/school/staff", { ...common, email: text("email"), role: text("role") ?? "teacher", job_role_id: jobId });
       notify("Staff member created.");
       setCreated(res);
     } catch (err) {
@@ -186,12 +194,34 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
                   ),
                 )}
                 {field("Designation", <input name="designation" maxLength={120} defaultValue={s?.designation ?? ""} placeholder="e.g. Mathematics Teacher" />)}
+                {roleList.error ? null : field(
+                  "Job role",
+                  <select
+                    name="job_role_id"
+                    // remount once the roles arrive, so the current job is selected (not "None")
+                    key={roleList.data ? "roles" : "loading"}
+                    disabled={!roleList.data}
+                    defaultValue={s?.job_roles?.[0]?.id ?? ""}
+                    onChange={(e) => {
+                      // a new record signs in the way its job does (a Librarian as non-teaching staff)
+                      const j = jobs.find((x) => String(x.id) === e.target.value);
+                      if (!editing && j && j.base_role in ROLE_LABEL) setLogin(j.base_role as StaffRole);
+                    }}
+                  >
+                    <option value="">{roleList.loading ? "Loading…" : "None (just their login)"}</option>
+                    {jobs.map((j) => (
+                      <option key={j.id} value={j.id}>
+                        {j.name}
+                      </option>
+                    ))}
+                  </select>,
+                )}
                 {field(
-                  "Role",
+                  "Signs in as",
                   editing ? (
                     <input value={s ? ROLE_LABEL[s.role] : ""} readOnly />
                   ) : (
-                    <select name="role" defaultValue="teacher" required>
+                    <select name="role" value={login} onChange={(e) => setLogin(e.target.value as StaffRole)} required>
                       {(Object.keys(ROLE_LABEL) as StaffRole[]).map((r) => (
                         <option key={r} value={r}>
                           {ROLE_LABEL[r]}
@@ -257,7 +287,7 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
                 {field("Other duty periods a week", <input type="number" name="other_duty_periods" min={0} max={80} defaultValue={s?.other_duty_periods ?? ""} placeholder="0" />)}
                 {field("Other duties", <input name="other_duties" maxLength={300} defaultValue={s?.other_duties ?? ""} placeholder="e.g. Exam cell, bus duty" />, false, true)}
               </div>
-              {editing ? <p className="muted small">Email and role cannot be changed after creation. To change either, deactivate this account and create a new one.</p> : null}
+              {editing ? <p className="muted small">Email and how they sign in cannot be changed after creation; the job role can. To change the login, deactivate this account and create a new one.</p> : null}
             </section>
           </div>
         </div>

@@ -14,6 +14,7 @@ from app.models.staff import Staff
 from app.models.subscription import TenantSubscription
 from app.models.user import User
 from app.schemas.staff import StaffCreate, StaffUpdate
+from app.services import rbac_service
 from app.services import foundation_service
 
 
@@ -214,6 +215,7 @@ def list_staff(
     designation: Optional[str] = None,
     status_filter: Optional[str] = None,  # "active" | "inactive" | None
     search: Optional[str] = None,
+    job_role_id: Optional[int] = None,
 ) -> list[Staff]:
     stmt = (
         select(Staff)
@@ -225,6 +227,12 @@ def list_staff(
         stmt = stmt.where(User.role == _STAFF_ROLE_MAP[role])
     if designation:
         stmt = stmt.where(Staff.designation.ilike(f"%{designation}%"))
+    if job_role_id:
+        from app.models.rbac import UserRoleAssignment
+
+        stmt = stmt.where(User.id.in_(
+            select(UserRoleAssignment.user_id).where(UserRoleAssignment.role_id == job_role_id)
+        ))
     if status_filter == "active":
         stmt = stmt.where(User.is_active.is_(True))
     elif status_filter == "inactive":
@@ -254,6 +262,7 @@ def update_staff(
     user = staff.user
 
     updates = data.model_dump(exclude_unset=True)
+    updates.pop("job_role_id", None)  # the route sets it, with its own check
 
     if "full_name" in updates:
         user.full_name = updates.pop("full_name").strip()
@@ -364,4 +373,5 @@ def staff_to_read_dict(s: Staff) -> dict:
         "role": u.role.value,
         "is_active": u.is_active,
         "last_login_at": u.last_login_at,
+        "job_roles": rbac_service.job_roles(object_session(s), [u.id]).get(u.id, []),
     }

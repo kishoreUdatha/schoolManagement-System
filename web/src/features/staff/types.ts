@@ -51,7 +51,17 @@ export type Staff = {
   role: StaffRole;
   is_active: boolean;
   last_login_at: string | null;
+  /** their jobs: custom roles such as Librarian */
+  job_roles?: JobRoleRef[];
 } & StaffExtra;
+
+export type JobRoleRef = { id: number; name: string };
+/** A job a member of staff can be given (GET /roles, the non-built-in ones). */
+export type JobRole = { id: number; name: string; base_role: string; is_system: boolean; is_active: boolean; description: string | null };
+
+/** The job roles a school has set up, active ones, by name. */
+export const jobRolesOf = (roles: JobRole[] | null | undefined) =>
+  (roles ?? []).filter((r) => !r.is_system && r.is_active).sort((a, b) => a.name.localeCompare(b.name));
 
 /**
  * One member of staff: the staff profile passes it to the school-wide screens

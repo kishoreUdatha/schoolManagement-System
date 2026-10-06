@@ -11,7 +11,7 @@ import { ErrorNote } from "@/components/ui/states";
 import { date } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { ROLE_LABEL, type Staff, type StaffLeave, type StaffRole } from "./types";
+import { jobRolesOf, ROLE_LABEL, type JobRole, type Staff, type StaffLeave, type StaffRole } from "./types";
 import { downloadCsv, todayIso } from "./util";
 
 const COLUMNS = ["Staff member", "Employee no.", "Department", "Designation", "Joining date", "Status"];
@@ -19,7 +19,8 @@ const COLUMNS = ["Staff member", "Employee no.", "Department", "Designation", "J
 /** SCR-080, live: GET /api/v1/school/staff with role, status and search. */
 export function StaffDirectory() {
   const router = useRouter();
-  const [role, setRole] = useState<"" | StaffRole>("");
+  // a login type ("teacher"), or a job role as "job:<id>"
+  const [role, setRole] = useState<string>("");
   const [status, setStatus] = useState("");
   const [typed, setTyped] = useState("");
   const [search, setSearch] = useState("");
@@ -29,7 +30,9 @@ export function StaffDirectory() {
     return () => clearTimeout(t);
   }, [typed]);
 
-  const list = useApi<Staff[]>("/api/v1/school/staff", { role, status, search });
+  const jobId = role.startsWith("job:") ? Number(role.slice(4)) : undefined;
+  const list = useApi<Staff[]>("/api/v1/school/staff", { role: jobId ? "" : role, job_role_id: jobId, status, search });
+  const jobs = jobRolesOf(useApi<JobRole[]>("/api/v1/school/roles").data);
   const all = useApi<Staff[]>("/api/v1/school/staff");
   const approved = useApi<StaffLeave[]>("/api/v1/school/staff-leaves", { status: "approved" });
 
@@ -49,11 +52,13 @@ export function StaffDirectory() {
   const cells = (s: Staff) => [
     s.employee_no,
     s.department_name ?? "—",
-    s.designation ?? ROLE_LABEL[s.role] ?? "—",
+    s.designation ?? s.job_roles?.[0]?.name ?? ROLE_LABEL[s.role] ?? "—",
     date(s.joining_date),
     !s.is_active ? "Inactive" : onLeave?.has(s.user_id) ? "On leave" : "Active",
   ];
-  const rows: Row[] = items.map((s) => [{ name: s.full_name, sub: [ROLE_LABEL[s.role], s.email].filter(Boolean).join(" · ") }, ...cells(s)]);
+  // the job (Librarian) says more than the login type (Non-teaching staff)
+  const job = (s: Staff) => (s.job_roles?.length ? s.job_roles.map((j) => j.name).join(", ") : ROLE_LABEL[s.role]);
+  const rows: Row[] = items.map((s) => [{ name: s.full_name, sub: [job(s), s.email].filter(Boolean).join(" · ") }, ...cells(s)]);
 
   return (
     <>
@@ -63,13 +68,24 @@ export function StaffDirectory() {
           <Icon name="search" className="sm" />
           <input value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Search by name, email or employee no.…" aria-label="Search staff" />
         </div>
-        <select aria-label="Filter by role" value={role} onChange={(e) => setRole(e.target.value as "" | StaffRole)}>
+        <select aria-label="Filter by role" value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="">All roles</option>
-          {(Object.keys(ROLE_LABEL) as StaffRole[]).map((r) => (
-            <option key={r} value={r}>
-              {ROLE_LABEL[r]}
-            </option>
-          ))}
+          <optgroup label="Signs in as">
+            {(Object.keys(ROLE_LABEL) as StaffRole[]).map((r) => (
+              <option key={r} value={r}>
+                {ROLE_LABEL[r]}
+              </option>
+            ))}
+          </optgroup>
+          {jobs.length ? (
+            <optgroup label="Job role">
+              {jobs.map((j) => (
+                <option key={j.id} value={`job:${j.id}`}>
+                  {j.name}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
         </select>
         <select aria-label="Filter by status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">All statuses</option>
@@ -81,7 +97,7 @@ export function StaffDirectory() {
           type="button"
           className="btn"
           disabled={!items.length}
-          onClick={() => downloadCsv("staff-directory.csv", ["Name", "Role", "Email", "Phone", ...COLUMNS.slice(1)], items.map((s) => [s.full_name, ROLE_LABEL[s.role], s.email ?? "", s.phone ?? "", ...cells(s)]))}
+          onClick={() => downloadCsv("staff-directory.csv", ["Name", "Signs in as", "Job role", "Email", "Phone", ...COLUMNS.slice(1)], items.map((s) => [s.full_name, ROLE_LABEL[s.role], (s.job_roles ?? []).map((j) => j.name).join(", "), s.email ?? "", s.phone ?? "", ...cells(s)]))}
         >
           <Icon name="download" className="sm" />
           Export

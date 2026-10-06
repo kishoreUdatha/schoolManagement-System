@@ -91,6 +91,9 @@ def ensure_system_roles(db: Session, tenant_id: int, school_id: int) -> None:
                 if c in perms:
                     db.add(RolePermission(tenant_id=tenant_id, school_id=school_id, role_id=role.id,
                                           permission_id=perms[c].id))
+        if not existing:
+            # a new school also gets the usual jobs, once; deleting one later is final
+            _add_starter_roles(db, tenant_id, school_id, perms, existing)
         db.commit()
     except IntegrityError:
         # another request created them at the same moment; theirs stand
@@ -457,3 +460,79 @@ def branch_to_read(db: Session, b: Branch) -> dict:
                 is_main=b.is_main, is_active=b.is_active, email=b.email, capacity=b.capacity,
                 sections=len(sections), staff=staff_n, students=students,
                 section_ids=sections)
+
+
+# ---------- the usual school jobs ----------
+
+
+def _add_starter_roles(db: Session, tenant_id: int, school_id: int, perms: dict, existing: set[str]) -> int:
+    from app.core.permissions import STARTER_ROLES
+
+    added = 0
+    for code, (name, base, codes, description) in STARTER_ROLES.items():
+        if code in existing:
+            continue
+        role = Role(tenant_id=tenant_id, school_id=school_id, name=name, code=code, base_role=UserRole(base),
+                    is_system=False, is_active=True, description=description)
+        db.add(role)
+        db.flush()
+        for c in codes:
+            if c in perms:
+                db.add(RolePermission(tenant_id=tenant_id, school_id=school_id, role_id=role.id,
+                                      permission_id=perms[c].id))
+        added += 1
+    return added
+
+
+def seed_starter_roles(db: Session, tenant_id: int, school_id: int) -> int:
+    """Give an existing school the usual jobs it does not have yet (by code).
+    Used once when the starter roles arrived; returns how many were added."""
+    sync_catalogue(db)
+    perms = {p.code: p for p in db.execute(select(Permission)).scalars()}
+    existing = {r.code for r in db.execute(select(Role).where(Role.school_id == school_id)).scalars()}
+    added = _add_starter_roles(db, tenant_id, school_id, perms, existing)
+    db.commit()
+    return added
+
+
+def job_roles(db: Session, user_ids: list[int]) -> dict[int, list[dict]]:
+    """Each person's custom roles (their jobs), by user id."""
+    if not user_ids:
+        return {}
+    out: dict[int, list[dict]] = {}
+    for uid, rid, name in db.execute(
+        select(UserRoleAssignment.user_id, Role.id, Role.name)
+        .join(Role, Role.id == UserRoleAssignment.role_id)
+        .where(UserRoleAssignment.user_id.in_(user_ids), Role.is_system.is_(False))
+        .order_by(Role.name)
+    ).all():
+        out.setdefault(uid, []).append({"id": rid, "name": name})
+    return out
+
+
+def may_give_roles(db: Session, actor: User) -> bool:
+    """Giving someone a job role gives them its permissions, so only the
+    school admin or someone allowed to manage roles may do it."""
+    return actor.role == UserRole.school_admin or has_permission(db, actor, "roles.manage")
+
+
+def set_job_role(db: Session, actor: User, target_user_id: int, role_id: Optional[int]) -> None:
+    """Make this the person's one job role: their other custom roles are
+    taken away and this one given (None takes all of them away). Caller commits."""
+    if role_id is not None:
+        role = get_role(db, role_id, actor.school_id)
+        if role.is_system:
+            raise _400("Choose a job role, not a built-in login role")
+        if not role.is_active:
+            raise _400("That role is switched off")
+    current = list(db.execute(
+        select(UserRoleAssignment).join(Role, Role.id == UserRoleAssignment.role_id)
+        .where(UserRoleAssignment.user_id == target_user_id, Role.is_system.is_(False))
+    ).scalars())
+    for a in current:
+        if a.role_id != role_id:
+            db.delete(a)
+    if role_id is not None and all(a.role_id != role_id for a in current):
+        db.add(UserRoleAssignment(tenant_id=actor.tenant_id, school_id=actor.school_id, user_id=target_user_id,
+                                  role_id=role_id, assigned_by_user_id=actor.id,
+                                  assigned_at=datetime.now(timezone.utc)))

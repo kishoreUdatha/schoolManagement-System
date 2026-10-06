@@ -32,6 +32,8 @@ class StaffCreate(BaseModel):
     max_periods_per_week: Optional[int] = Field(None, ge=0, le=80)
     other_duty_periods: Optional[int] = Field(None, ge=0, le=80)
     other_duties: Optional[str] = Field(None, max_length=300)
+    # their job (a custom role such as Librarian): gives its permissions
+    job_role_id: Optional[int] = None
 
 
 class StaffUpdate(BaseModel):
@@ -52,6 +54,8 @@ class StaffUpdate(BaseModel):
     max_periods_per_week: Optional[int] = Field(None, ge=0, le=80)
     other_duty_periods: Optional[int] = Field(None, ge=0, le=80)
     other_duties: Optional[str] = Field(None, max_length=300)
+    # set to change their job role; null takes it away
+    job_role_id: Optional[int] = None
 
 
 class StaffRead(BaseModel):
@@ -85,6 +89,8 @@ class StaffRead(BaseModel):
     role: str
     is_active: bool
     last_login_at: Optional[datetime] = None
+    # their jobs: custom roles such as Librarian, [{id, name}]
+    job_roles: list[dict] = []
 
 
 class StaffCreateResponse(BaseModel):
