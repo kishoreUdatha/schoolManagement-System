@@ -623,12 +623,12 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .ie-filters .btn{height:42px;padding:0 12px}
 .ie-filters .btn .ico{width:16px;height:16px}
 .ie-filters .btn.pulse{box-shadow:0 0 0 3px #bfd4f7}
-.ie-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:20px}
-.ie-card{display:flex;align-items:center;gap:18px;padding:20px 24px;border-radius:12px;border:1px solid;border-left-width:5px}
-.ie-card p{font-size:13px;font-weight:650;margin-bottom:4px}
-.ie-card strong{font-size:25px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
-.ie-card-ico{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
-.ie-card-ico .ico{width:28px;height:28px}
+.ie-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.ie-card{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:10px;border:1px solid;border-left-width:4px}
+.ie-card p{font-size:12px;font-weight:650;margin-bottom:1px}
+.ie-card strong{font-size:19px;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.ie-card-ico{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+.ie-card-ico .ico{width:19px;height:19px}
 .ie-card.income{background:#ecf9f1;border-color:#bfe6cf;border-left-color:#1e9e5a;color:#0f3d24}
 .ie-card.income .ie-card-ico{background:#d6f2e2;color:#16864a}
 .ie-card.expense{background:#fdeeee;border-color:#f3cccc;border-left-color:#c62f2f;color:#4a1414}
