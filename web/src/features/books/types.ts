@@ -28,7 +28,28 @@ export type Posting = {
   lines: PostingLine[];
 };
 
-export type DayBook = { from_date: string; to_date: string; items: Posting[]; total: number; page: number; page_size: number; total_debit: string; total_credit: string };
+export type DayBookRow = Posting & {
+  voucher_type: "Receipt" | "Payment" | "Contra" | "Journal";
+  particulars: string;
+  account_head: string;
+  more_heads: number;
+  branch: string | null;
+  debit: string;
+  credit: string;
+};
+
+export type DayBook = {
+  from_date: string;
+  to_date: string;
+  items: DayBookRow[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_debit: string;
+  total_credit: string;
+  net: string;
+  accounts: { id: number; code: string; name: string; kind: Kind }[];
+};
 
 export type LedgerLine = {
   date: string;

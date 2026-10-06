@@ -113,3 +113,16 @@ export const PEOPLE = (
     <path d="M16.5 14.6c2.6.2 4.4 1.9 5 5.4" />
   </Svg>
 );
+
+export const CALENDAR = (
+  <Svg>
+    <rect x="3" y="5" width="18" height="16" rx="3" />
+    <path d="M3 10h18M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2" />
+  </Svg>
+);
+export const DOC = (
+  <Svg>
+    <path d="M6 3h8l4 4v14H6z" />
+    <path d="M14 3v4h4M9 12h6M9 16h6" />
+  </Svg>
+);

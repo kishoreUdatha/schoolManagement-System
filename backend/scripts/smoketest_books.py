@@ -295,6 +295,14 @@ def run(db: Session) -> None:
     day = books.day_book(db, user, FY_FROM, FY_TO, source="fee_receipt")
     check("fee receipts", day["total"], 2)
     day = books.day_book(db, user, FY_FROM, FY_TO)
+    kinds = {v["source"]: v["voucher_type"] for v in books.day_book(db, user, FY_FROM, FY_TO, page_size=500)["items"]}
+    check("voucher types", (kinds["fee_receipt"], kinds["refund"], kinds["expense"], kinds["vendor_bill"], kinds["payroll"]),
+          ("Receipt", "Payment", "Payment", "Journal", "Payment"))
+    rec = books.day_book(db, user, FY_FROM, FY_TO, voucher_type="Receipt")
+    check("receipts only, money in on the credit side", all(v["voucher_type"] == "Receipt" and v["credit"] > 0 for v in rec["items"]), True)
+    xlsx, _ = books_export.day_book_xlsx(db, user, FY_FROM, FY_TO)
+    pdf, _ = books_export.day_book_pdf(db, user, FY_FROM, FY_TO)
+    check("day book exports", (xlsx[:2], pdf[:4]), (b"PK", b"%PDF"))
     check("every entry balances",
           all(sum(l["debit"] for l in e["lines"]) == sum(l["credit"] for l in e["lines"]) for e in day["items"]), True)
 

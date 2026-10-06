@@ -670,32 +670,93 @@ def _window(frm: Optional[date], to: Optional[date]) -> tuple[date, date]:
 # ---------- reports ----------
 
 
+VOUCHER_TYPES = ("Receipt", "Payment", "Contra", "Journal")
+
+
+def _voucher_row(e: dict, accts: dict[int, LedgerAccount], cash_ids: set[int], names: dict) -> dict:
+    """A posting as one day-book row, the way an accountant reads it.
+
+    Money in is a Receipt and money out a Payment: the row names the account
+    on the other side of the cash or bank and shows the amount where that
+    account received it (credit for a receipt, debit for a payment). Cash
+    moved between cash and bank is a Contra. Anything that moves no money is
+    a Journal, shown at its full amount on both sides, headed by the income
+    or expense account it touches when there is one."""
+    lines = e["lines"]
+    cash = [ln for ln in lines if ln["account_id"] in cash_ids]
+    other = [ln for ln in lines if ln["account_id"] not in cash_ids]
+    if cash and not other:
+        vtype = "Contra"
+        amt = sum((ln["debit"] for ln in cash), ZERO)
+        head_lines, dr, cr = cash, amt, amt
+    elif cash:
+        net_in = sum((ln["debit"] - ln["credit"] for ln in cash), ZERO)
+        vtype = "Receipt" if net_in > 0 else "Payment"
+        head_lines = other
+        dr, cr = (ZERO, net_in) if net_in > 0 else (-net_in, ZERO)
+    else:
+        vtype = "Journal"
+        total = sum((ln["debit"] for ln in lines), ZERO)
+        head_lines, dr, cr = lines, total, total
+    pick = next((ln for ln in head_lines if accts[ln["account_id"]].kind in ("income", "expense")), head_lines[0])
+    heads = list(dict.fromkeys(accts[ln["account_id"]].name for ln in head_lines))
+    head = accts[pick["account_id"]].name
+    branches = {ln["branch_id"] for ln in lines}
+    branch = names["branch"].get(next(iter(branches))) if len(branches) == 1 and None not in branches else (
+        "Several" if len(branches) > 1 else None)
+    return {
+        "date": e["date"], "source": e["source"], "source_label": SOURCE_LABEL[e["source"]],
+        "source_id": e["source_id"], "voucher": e["voucher"], "voucher_type": vtype,
+        "particulars": e["narration"], "account_head": head, "more_heads": len(heads) - 1,
+        "account_ids": sorted({ln["account_id"] for ln in lines}),
+        "branch": branch, "debit": dr, "credit": cr,
+    }
+
+
 def day_book(
     db: Session, user: User, frm: Optional[date], to: Optional[date], *,
     source: Optional[str] = None, page: int = 1, page_size: int = 100, scope: Scope = None,
+    voucher_type: Optional[str] = None, account_id: Optional[int] = None,
 ) -> dict:
+    """Every posting in the window, oldest first: as vouchers (one row each,
+    see _voucher_row) and with both sides (`lines`), filtered by kind of
+    entry, voucher type, an account it touches, branch and department."""
     frm, to = _window(frm, to)
     if (to - frm).days > 400:
         raise _400("Pick a range of at most about a year.")
-    accts = _accounts(db, user.school_id)
     rows = entries(db, user, frm, to, scope)
+    accts = _accounts(db, user.school_id)
+    cash_ids = {a.id for a in accts.values() if a.system_key in ("cash", "bank")}
+    names = _dim_names(db, user.school_id)
     if source:
         rows = [e for e in rows if e["source"] == source]
-    total_dr = sum((ln["debit"] for e in rows for ln in e["lines"]), ZERO)
+    if account_id:
+        rows = [e for e in rows if any(ln["account_id"] == account_id for ln in e["lines"])]
+    vouchers = [(e, _voucher_row(e, accts, cash_ids, names)) for e in rows]
+    if voucher_type:
+        vouchers = [(e, v) for e, v in vouchers if v["voucher_type"] == voucher_type]
+    total_dr = sum((v["debit"] for _, v in vouchers), ZERO)
+    total_cr = sum((v["credit"] for _, v in vouchers), ZERO)
     start = (page - 1) * page_size
     items = []
-    for e in rows[start:start + page_size]:
+    for e, v in vouchers[start:start + page_size]:
         items.append({
-            **e,
-            "source_label": SOURCE_LABEL[e["source"]],
+            **e, **v,
+            "narration": e["narration"],
             "lines": [
                 {**ln, "account_code": accts[ln["account_id"]].code, "account_name": accts[ln["account_id"]].name}
                 for ln in e["lines"]
             ],
         })
     return {
-        "from_date": frm, "to_date": to, "items": items, "total": len(rows),
-        "page": page, "page_size": page_size, "total_debit": total_dr, "total_credit": total_dr,
+        "from_date": frm, "to_date": to, "items": items, "total": len(vouchers),
+        "page": page, "page_size": page_size,
+        "total_debit": total_dr, "total_credit": total_cr,
+        "net": total_cr - total_dr,
+        "accounts": [
+            {"id": a.id, "code": a.code, "name": a.name, "kind": a.kind}
+            for a in sorted(accts.values(), key=lambda a: (KINDS.index(a.kind), a.code))
+        ],
     }
 
 

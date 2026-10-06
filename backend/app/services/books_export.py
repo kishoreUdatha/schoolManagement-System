@@ -511,3 +511,73 @@ def ledger_pdf(db: Session, user: User, account_id: int, frm, to, scope=None) ->
     ]
     doc.build(story)
     return buf.getvalue(), f"ledger_{rep['account']['code']}_{rep['from_date']}_{rep['to_date']}.pdf"
+
+
+# ---------- day book ----------
+
+DAYBOOK_COLUMNS = ["#", "Date", "Voucher no.", "Voucher type", "Particulars", "Account head", "Branch / campus", "Debit (₹)", "Credit (₹)"]
+
+
+def _daybook(db: Session, user: User, frm, to, voucher_type=None, account_id=None, scope=None):
+    rep = books_service.day_book(db, user, frm, to, page=1, page_size=100000, scope=scope,
+                                 voucher_type=voucher_type, account_id=account_id)
+    school = db.get(School, user.school_id)
+    span = f"{rep['from_date']:%d %b %Y}" if rep["from_date"] == rep["to_date"] else f"{rep['from_date']:%d %b %Y} to {rep['to_date']:%d %b %Y}"
+    title = f"Day book, {span}"
+    note = scope_note(db, user, scope)
+    if note:
+        title += f" · {note}"
+    lines = []
+    for i, v in enumerate(rep["items"], 1):
+        head = v["account_head"]
+        lines.append(("row", [i, f"{v['date']:%d-%m-%Y}", v["voucher"] or "", v["voucher_type"], v["particulars"],
+                              head, v["branch"] or "", v["debit"], v["credit"]]))
+    lines.append(("grand", ["", "", "", "", "Total", "", "", rep["total_debit"], rep["total_credit"]]))
+    return rep, school.name if school else "", title, lines
+
+
+def day_book_xlsx(db: Session, user: User, frm, to, voucher_type=None, account_id=None, scope=None) -> tuple[bytes, str]:
+    rep, school, title, lines = _daybook(db, user, frm, to, voucher_type, account_id, scope)
+    body = _xlsx("Day book", [school, title], DAYBOOK_COLUMNS, lines, [5, 12, 16, 12, 40, 26, 18, 16, 16], num_from=7)
+    return body, f"day-book_{rep['from_date']}_{rep['to_date']}.xlsx"
+
+
+def day_book_pdf(db: Session, user: User, frm, to, voucher_type=None, account_id=None, scope=None) -> tuple[bytes, str]:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    rep, school, title, lines = _daybook(db, user, frm, to, voucher_type, account_id, scope)
+    styles = getSampleStyleSheet()
+    small = styles["BodyText"].clone("small", fontSize=8, leading=10)
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=1.2 * cm, bottomMargin=1.2 * cm,
+                            leftMargin=1 * cm, rightMargin=1 * cm, title=title)
+    data = [[c.replace("₹", "Rs") for c in DAYBOOK_COLUMNS]]
+    for _, cells in lines:
+        data.append([
+            Paragraph(escape(str(c)), small) if j == 4 else (str(c) if j < 7 else inr(c))
+            for j, c in enumerate(cells)
+        ])
+    last = len(data) - 1
+    table = Table(data, colWidths=[0.8 * cm, 2 * cm, 2.6 * cm, 2 * cm, 7.4 * cm, 4 * cm, 3 * cm, 2.6 * cm, 2.6 * cm], repeatRows=1)
+    table.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FE")),
+        ("FONTSIZE", (0, 0), (-1, -1), 8), ("ALIGN", (7, 0), (-1, -1), "RIGHT"), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.HexColor("#DCE5F2")),
+        ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("FONTNAME", (0, last), (-1, last), "Helvetica-Bold"), ("BACKGROUND", (0, last), (-1, last), colors.HexColor("#DCE7FB")),
+    ]))
+    story = [
+        Paragraph(f"<b>{escape(school)}</b>", styles["Title"]),
+        Paragraph(escape(title), styles["Normal"]),
+        Spacer(1, 6),
+        Paragraph(f"{rep['total']} vouchers &nbsp;·&nbsp; Debit {inr(rep['total_debit'], '0.00')} &nbsp;·&nbsp; "
+                  f"Credit {inr(rep['total_credit'], '0.00')}", styles["Normal"]),
+        Spacer(1, 10),
+        table,
+    ]
+    doc.build(story)
+    return buf.getvalue(), f"day-book_{rep['from_date']}_{rep['to_date']}.pdf"

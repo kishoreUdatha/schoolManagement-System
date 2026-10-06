@@ -76,13 +76,38 @@ def ledger_pdf(account_id: int, user: Actor, db: Db, sc: Scope, frm: From = None
     )
 
 
+VoucherType = Annotated[Optional[str], Query(pattern="^(" + "|".join(svc.VOUCHER_TYPES) + ")$")]
+
+
 @router.get("/day-book", summary="Every posting in a window, automatic and manual")
 def day_book(
     user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None,
     source: Optional[str] = Query(None, pattern="^(" + "|".join(svc.SOURCE_LABEL) + ")$"),
+    voucher_type: VoucherType = None, account_id: Optional[int] = None,
     page: int = Query(1, ge=1), page_size: int = Query(100, ge=1, le=500),
 ):
-    return svc.day_book(db, user, frm, to, source=source, page=page, page_size=page_size, scope=sc)
+    return svc.day_book(db, user, frm, to, source=source, page=page, page_size=page_size, scope=sc,
+                        voucher_type=voucher_type, account_id=account_id)
+
+
+@router.get("/day-book.xlsx", summary="Day book as an Excel sheet")
+def day_book_xlsx(user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None,
+                  voucher_type: VoucherType = None, account_id: Optional[int] = None):
+    body, name = books_export.day_book_xlsx(db, user, frm, to, voucher_type, account_id, sc)
+    return Response(
+        body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
+
+
+@router.get("/day-book.pdf", summary="Day book as a PDF")
+def day_book_pdf(user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None,
+                 voucher_type: VoucherType = None, account_id: Optional[int] = None):
+    body, name = books_export.day_book_pdf(db, user, frm, to, voucher_type, account_id, sc)
+    return Response(
+        body, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
 
 
 @router.get("/trial-balance")
