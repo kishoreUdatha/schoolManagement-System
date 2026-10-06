@@ -432,8 +432,15 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
             {s.layout.includes("dashboard") ? null : (
               <div className="page-head">
                 <div>
-                  <h1>{titled?.title ?? group?.label ?? MENU_LABEL[s.n] ?? s.name}</h1>
-                  {note ? <p className="page-note">{note}</p> : null}
+                  {group?.titles?.[s.n] && !titled ? (
+                    <h1 className="titled-tab">
+                      <Icon name="chart" className="page-ico" />
+                      {group.titles[s.n]}
+                    </h1>
+                  ) : (
+                    <h1>{titled?.title ?? group?.label ?? MENU_LABEL[s.n] ?? s.name}</h1>
+                  )}
+                  {note && !(group?.titles?.[s.n] && !titled) ? <p className="page-note">{note}</p> : null}
                 </div>
                 <div className="actions" id={PAGE_ACTIONS_SLOT} />
               </div>

@@ -726,3 +726,9 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .lg-table th,.lg-table td{padding:7px 9px!important;font-size:12.5px}
 .lg-table thead th{font-size:12px}
 .lg-table td.wrap{min-width:160px}
+
+/* Report groups name the open tab in the page head, with an icon. */
+h1.titled-tab{display:flex;align-items:center;gap:12px}
+h1.titled-tab .page-ico{width:30px;height:30px;color:var(--blue)}
+/* Books statements: the filters sit in their own white card, as in the mocks. */
+.ie-filters{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;box-shadow:0 1px 2px rgba(22,44,80,.04)}

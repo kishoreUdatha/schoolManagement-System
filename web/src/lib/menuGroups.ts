@@ -6,7 +6,9 @@
 // heads"; "Exam duty", not "invigilation". A label is one to three words; a
 // note (SCREEN_NOTE, below) is one plain line saying what the screen does.
 
-export type TabGroup = { label: string; tabs: [number, string][] };
+/** `titles`: the page head names the open tab ("Ledger") instead of the group,
+    with a chart icon, for groups whose tabs are reports in their own right. */
+export type TabGroup = { label: string; tabs: [number, string][]; titles?: Record<number, string> };
 
 export const TAB_GROUPS: TabGroup[] = [
   // Admissions
@@ -38,7 +40,11 @@ export const TAB_GROUPS: TabGroup[] = [
   { label: "Fee setup", tabs: [[155, "Fee structure"], [1040, "Fee types"], [157, "Per-student fees"], [1041, "Generate fees"], [163, "Discounts & scholarships"], [164, "Late fee rules"], [1042, "Waive & adjust"], [1043, "Online payment setup"]] },
   { label: "Fee collection", tabs: [[158, "Collect fees"], [160, "Receipts"], [159, "Online payments"], [1044, "Match payments"], [1045, "Cheques"], [161, "Student ledger"], [162, "Outstanding dues"], [165, "Refunds"]] },
   { label: "Accounts", tabs: [[166, "Income"], [167, "Expenses"], [1046, "Expense categories"], [168, "Vendors"], [169, "Purchases"], [1047, "Purchase orders"], [170, "Cash & bank"]] },
-  { label: "Books of account", tabs: [[1056, "Income & expenditure"], [1057, "Balance sheet"], [1055, "Trial balance"], [1054, "Ledger"], [1053, "Day book"], [1052, "Journal vouchers"], [1049, "Chart of accounts"]] },
+  {
+    label: "Books of account",
+    tabs: [[1056, "Income & expenditure"], [1057, "Balance sheet"], [1055, "Trial balance"], [1054, "Ledger"], [1053, "Day book"], [1052, "Journal vouchers"], [1049, "Chart of accounts"]],
+    titles: { 1056: "Income & Expenditure", 1057: "Balance Sheet", 1055: "Trial Balance", 1054: "Ledger", 1053: "Day Book", 1052: "Journal Vouchers", 1049: "Chart of Accounts" },
+  },
   // Transport
   { label: "Vehicles", tabs: [[186, "Vehicles"], [192, "Drivers & conductors"], [197, "Maintenance & fuel"]] },
   { label: "Routes", tabs: [[189, "Routes"], [191, "Stops"], [193, "Student routes"]] },
