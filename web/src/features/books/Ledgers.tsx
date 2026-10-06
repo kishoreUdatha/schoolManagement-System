@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Fragment, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
@@ -10,7 +10,7 @@ import { date, money } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { isoToday, monthStart } from "@/features/fees/common";
-import { AccountSelect, amt, BOOKS, drCr, fyStart, Period, ReportActions, sourceHref } from "./common";
+import { AccountSelect, amt, BOOKS, drCr, fyStart, Period, ReportActions, sourceHref, useOpenOnYear } from "./common";
 import type { Account, DayBook as Book, Ledger } from "./types";
 
 function Voucher({ source, id, voucher }: { source: string; id: number | null; voucher: string | null }) {
@@ -26,6 +26,11 @@ export function GeneralLedger() {
   const [from, setFrom] = useState(params.get("from") ?? fyStart());
   const [to, setTo] = useState(params.get("to") ?? isoToday());
   const [account, setAccount] = useState<number | "">(Number(params.get("account")) || "");
+  // dates passed in from a statement win over the academic year
+  const fromLink = params.get("from") !== null;
+  useOpenOnYear(useCallback((f: string, t: string) => {
+    if (!fromLink) (setFrom(f), setTo(t));
+  }, [fromLink]));
   const accounts = useApi<Account[]>(`${BOOKS}/accounts`);
   const ledger = useApi<Ledger>(account ? `${BOOKS}/accounts/${account}/ledger` : null, { from, to });
   const l = ledger.data;

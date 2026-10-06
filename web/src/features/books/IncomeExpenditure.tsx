@@ -1,13 +1,13 @@
 "use client";
 
-import { Fragment, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useState, type ReactNode } from "react";
 import { ErrorNote } from "@/components/ui/states";
 import { errorText } from "@/lib/api";
 import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { downloadAuthed, isoToday } from "@/features/fees/common";
-import { BOOKS, fyStart, LedgerLink } from "./common";
+import { BOOKS, fyStart, LedgerLink, useOpenOnYear, useYearPeriods } from "./common";
 import type { IERow, IncomeExpenditure as IE } from "./types";
 
 /** 2140000 -> "21,40,000.00"; negatives in brackets; zero as `zero`. */
@@ -16,22 +16,6 @@ function n2(v: string | number | null | undefined, zero = "-"): string {
   if (!n) return zero;
   const s = Math.abs(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return n < 0 ? `(${s})` : s;
-}
-
-const shiftYear = (iso: string, years: number) => `${Number(iso.slice(0, 4)) + years}${iso.slice(4)}`;
-
-function presets(): [string, string, string][] {
-  const today = isoToday();
-  const fy = fyStart(today);
-  const q = Math.floor(((Number(today.slice(5, 7)) + 8) % 12) / 3); // 0 = Apr–Jun
-  const qStart = new Date(Number(fy.slice(0, 4)), 3 + q * 3, 1);
-  const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  return [
-    ["This year", fy, today],
-    ["This quarter", iso(qStart), today],
-    ["This month", today.slice(0, 8) + "01", today],
-    ["Last year", shiftYear(fy, -1), `${fy.slice(0, 4)}-03-31`],
-  ];
 }
 
 type Filters = { from: string; to: string; category: string; account: string };
@@ -96,12 +80,19 @@ const PDF = (
 export function IncomeExpenditure() {
   const [draft, setDraft] = useState<Filters>(initial);
   const [applied, setApplied] = useState<Filters>(initial);
+  const { periods, current } = useYearPeriods();
+  // open on the current academic year, the one the top bar shows
+  const openOn = useCallback((from: string, to: string) => {
+    setDraft((f) => ({ ...f, from, to }));
+    setApplied((f) => ({ ...f, from, to }));
+  }, []);
+  useOpenOnYear(openOn);
+  const fresh = (): Filters => ({ ...initial(), ...(current ? { from: current[0], to: current[1] } : {}) });
   const [busy, setBusy] = useState("");
   const params = { from: applied.from, to: applied.to, category: applied.category || undefined, account_id: applied.account || undefined };
   const r = useApi<IE>(`${BOOKS}/income-expenditure`, params);
   const d = r.data;
   const surplus = Number(d?.surplus ?? 0);
-  const periods = presets();
   const period = periods.find(([, f, t]) => f === draft.from && t === draft.to)?.[0] ?? "";
   const dirty = JSON.stringify(draft) !== JSON.stringify(applied);
 
@@ -167,7 +158,7 @@ export function IncomeExpenditure() {
         }}
       >
         <label>
-          Period
+          Academic year
           <select
             value={period}
             onChange={(e) => {
@@ -178,7 +169,7 @@ export function IncomeExpenditure() {
             {!period ? <option value="">Custom</option> : null}
             {periods.map(([l]) => (
               <option key={l} value={l}>
-                {l}
+                {l.replace(/^Academic year /, "")}
               </option>
             ))}
           </select>
@@ -226,8 +217,8 @@ export function IncomeExpenditure() {
           type="button"
           className="btn"
           onClick={() => {
-            setDraft(initial());
-            setApplied(initial());
+            setDraft(fresh());
+            setApplied(fresh());
           }}
         >
           {RESET}

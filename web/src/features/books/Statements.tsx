@@ -1,13 +1,13 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { date, money } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { isoToday } from "@/features/fees/common";
-import { amt, BOOKS, fyStart, KIND_LABEL, KINDS, LedgerLink, Period, ReportActions } from "./common";
+import { amt, BOOKS, fyStart, KIND_LABEL, KINDS, LedgerLink, Period, ReportActions, useOpenOnYear } from "./common";
 import type { BalanceSheet as Sheet, StatementRow, TrialBalance as TB } from "./types";
 
 type Section = { title: string; rows: StatementRow[]; total: string; totalLabel: string };
@@ -144,6 +144,7 @@ export function BalanceSheet() {
 export function TrialBalance() {
   const [from, setFrom] = useState(fyStart());
   const [to, setTo] = useState(isoToday());
+  useOpenOnYear(useCallback((f: string, t: string) => (setFrom(f), setTo(t)), []));
   const r = useApi<TB>(`${BOOKS}/trial-balance`, { from, to });
   const d = r.data;
   const t = d?.totals;

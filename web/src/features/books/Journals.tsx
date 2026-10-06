@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import { DataTable } from "@/components/ui/DataTable";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
@@ -13,7 +13,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { Dialog, Field, isoToday } from "@/features/fees/common";
-import { AccountSelect, amt, BOOKS, fyStart, KIND_LABEL, KINDS, Period } from "./common";
+import { AccountSelect, amt, BOOKS, fyStart, KIND_LABEL, KINDS, Period, useOpenOnYear } from "./common";
 import type { Account, Journal } from "./types";
 
 type Line = { account_id: number | ""; debit: string; credit: string; note: string };
@@ -27,6 +27,7 @@ export function JournalVouchers() {
   const [from, setFrom] = useState(fyStart());
   const [to, setTo] = useState(isoToday());
   const [adding, setAdding] = useState(false);
+  useOpenOnYear(useCallback((f: string, t: string) => (setFrom(f), setTo(t)), []));
   const openId = Number(params.get("id")) || null;
   const list = useApi<Journal[]>(`${BOOKS}/journals`, { from, to });
   const accounts = useApi<Account[]>(`${BOOKS}/accounts`);

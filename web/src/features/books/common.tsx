@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
+import { useApi } from "@/lib/useApi";
 import { isoToday } from "@/features/fees/common";
 import type { Account, Kind } from "./types";
 
@@ -27,30 +28,57 @@ export function fyStart(iso: string = isoToday()): string {
   return `${m >= 4 ? y : y - 1}-04-01`;
 }
 
-const shift = (iso: string, years: number) => `${Number(iso.slice(0, 4)) + years}${iso.slice(4)}`;
+type Year = { id: number; name: string; start_date: string; end_date: string; is_current: boolean };
 
-/** Presets an accountant reaches for, then the dates themselves. */
-export function Period({ from, to, onChange }: { from: string; to: string; onChange: (from: string, to: string) => void }) {
+/**
+ * The school's academic years as periods (start to end, or to today while the
+ * year runs), newest first, then this month. `current` is the year marked
+ * current, which is what the top bar shows.
+ */
+export function useYearPeriods(): { periods: [string, string, string][]; current: [string, string] | null } {
+  const years = useApi<Year[]>("/api/v1/school/academic-years");
   const today = isoToday();
-  const fy = fyStart(today);
-  const presets: [string, string, string][] = [
-    ["This year", fy, today],
-    ["Last year", shift(fy, -1), `${fy.slice(0, 4)}-03-31`],
-    ["This month", today.slice(0, 8) + "01", today],
-  ];
-  const current = presets.find(([, f, t]) => f === from && t === to)?.[0] ?? "";
+  const list = [...(years.data ?? [])].sort((a, b) => b.start_date.localeCompare(a.start_date));
+  const span = (y: Year): [string, string] => [y.start_date, y.end_date < today ? y.end_date : today];
+  const periods: [string, string, string][] = list
+    .filter((y) => y.start_date <= today)
+    .map((y) => [`Academic year ${y.name}`, ...span(y)]);
+  periods.push(["This month", today.slice(0, 8) + "01", today]);
+  const cur = list.find((y) => y.is_current);
+  return { periods, current: cur ? span(cur) : null };
+}
+
+/**
+ * Calls `apply(from, to)` once, when the current academic year is known, so a
+ * screen opens on it. Until then it shows 1 April to today.
+ */
+export function useOpenOnYear(apply: (from: string, to: string) => void) {
+  const { current } = useYearPeriods();
+  const done = useRef(false);
+  useEffect(() => {
+    if (current && !done.current) {
+      done.current = true;
+      apply(current[0], current[1]);
+    }
+  }, [current, apply]);
+}
+
+/** Academic years and this month, then the dates themselves. */
+export function Period({ from, to, onChange }: { from: string; to: string; onChange: (from: string, to: string) => void }) {
+  const { periods } = useYearPeriods();
+  const current = periods.find(([, f, t]) => f === from && t === to)?.[0] ?? "";
   return (
     <>
       <select
         aria-label="Period"
         value={current}
         onChange={(e) => {
-          const p = presets.find(([l]) => l === e.target.value);
+          const p = periods.find(([l]) => l === e.target.value);
           if (p) onChange(p[1], p[2]);
         }}
       >
         {!current ? <option value="">Custom dates</option> : null}
-        {presets.map(([l]) => (
+        {periods.map(([l]) => (
           <option key={l} value={l}>
             {l}
           </option>
