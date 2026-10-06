@@ -6,7 +6,7 @@ import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { date, dateTime, label, money, pct, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
-import { count, DateRow, Empty, Hero, lastMonths, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel } from "./parts";
+import { count, DateRow, Empty, lastMonths, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel } from "./parts";
 import type { AnalyticsOverview, Approval, OfficeDashboard } from "./types";
 import { SetupProgressStrip } from "@/features/setup/SetupGuide";
 
@@ -108,15 +108,8 @@ export function SchoolAdminDashboard() {
     { label: "Fees collected", value: o ? money(o.collected_this_month) : "…", note: thisMonth() },
   ];
 
-  const hero = !d
-    ? "Here’s what is happening across your school today."
-    : d.fees.overdue_count > 0
-      ? `${plural(d.fees.overdue_count, "fee record")} overdue — ${money(d.fees.overdue_outstanding)} in all. ${plural(d.admissions.this_month_count, "admission")} this month.`
-      : `Nothing is overdue. ${plural(d.admissions.this_month_count, "admission")} this month.`;
-
   return (
     <>
-      <Hero text={hero} cta={{ href: "/reports-analytics/executive-analytics-dashboard", label: "View school overview" }} />
       <SetupProgressStrip />
       <ErrorNote>{dash.error ?? overview.error}</ErrorNote>
       <StatStrip items={stats} />
@@ -179,15 +172,8 @@ export function PrincipalDashboard() {
     },
   ];
 
-  const hero = !open
-    ? "Here’s what is happening across your school today."
-    : open.length
-      ? `${plural(open.length, "request")} are waiting for your approval.`
-      : "Nothing is waiting for your approval.";
-
   return (
     <>
-      <Hero text={hero} cta={{ href: "/reports-analytics/executive-analytics-dashboard", label: "View school overview" }} />
       <ErrorNote>{dash.error ?? approvals.error ?? overview.error}</ErrorNote>
       <StatStrip items={stats} />
       <QuickActions

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { FileCards } from "@/components/ui/Attachments";
-import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel, Person } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
@@ -66,8 +65,8 @@ export function EventDetails() {
 
   return (
     <>
-      <section className="hero">
-        <div className="hero-content">
+      <section className="panel event-head">
+        <div>
           <div className="eyebrow">{`${WEEKDAY[d.getDay()]}, ${d.getDate()} ${MONTH[d.getMonth()]} ${d.getFullYear()}`}</div>
           <h2 style={ev.is_cancelled ? { textDecoration: "line-through" } : undefined}>{ev.title}</h2>
           <p>{`${label(ev.kind)} · ${ev.audience_label || "—"} · ${eventStatus(ev)}`}</p>
@@ -86,7 +85,6 @@ export function EventDetails() {
             </span>
           </div>
         </div>
-        <HeroArt />
       </section>
       <ErrorNote>{error ?? reg.error}</ErrorNote>
       {r && r.consented_absent > 0 ? (

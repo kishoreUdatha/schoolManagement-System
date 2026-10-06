@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
-import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { Avatar, Badge, Panel } from "@/components/ui/primitives";
@@ -19,7 +18,6 @@ import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, formNum, form
 import { PURPOSES, VISIT_STATUS, type FrontDeskDashboard, type GatePass, type Host, type SecurityIncident, type StaffGateEntry, type Visit } from "./types";
 
 import { ask } from "@/lib/dialog";
-import { useGreeting } from "@/features/dashboards/parts";
 const FD = "/api/v1/school/front-desk";
 const clock = (iso: string | null) => (iso ? dateTime(iso).split(", ")[1] : "—");
 /** An expected visit whose host has not answered yet. */
@@ -41,9 +39,6 @@ export function VisitorDashboard() {
   const passes = useApi<GatePass[]>(`${FD}/gate-passes`, { on: today() });
   const d = dash.data;
   const all = visits.data ?? [];
-  const now = new Date();
-  // name and date only once hydrated: the server renders before it knows the viewer or their clock
-  const g = useGreeting();
   const stats = [
     { label: "Visitors today", value: d ? String(d.visitors_today) : "…", note: d ? `${d.expected_today} expected` : "Checked in today" },
     { label: "Inside campus", value: d ? String(d.inside_now) : "…", note: "Checked in, not yet out" },
@@ -57,18 +52,6 @@ export function VisitorDashboard() {
 
   return (
     <>
-      <section className="hero">
-        <div className="hero-content">
-          <div className="eyebrow">{g.eyebrow}</div>
-          <h2>{g.title}</h2>
-          <p>Here’s who is on campus and who is expected today.</p>
-          <Link href={routeOf(232)} className="btn white">
-            <Icon name="arrow" className="sm" />
-            Open the gate log
-          </Link>
-        </div>
-        <HeroArt />
-      </section>
       <ErrorNote>{dash.error ?? visits.error}</ErrorNote>
       <StatStrip items={stats} />
       <div className="dashboard-actions">

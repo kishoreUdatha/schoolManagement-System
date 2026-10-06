@@ -9,7 +9,7 @@ import { ErrorNote } from "@/components/ui/states";
 import { dateTime, label } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { Empty, Hero, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel } from "./parts";
+import { Empty, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel } from "./parts";
 import type { InboxItem, StaffDashboardData } from "./types";
 
 /*
@@ -44,17 +44,8 @@ function StaffRoleDashboard({ panel: key, permission, job, cta, actions }: Confi
     ? panel.stats.slice(0, 4).map((s) => ({ label: s.label, value: typeof s.value === "number" ? s.value.toLocaleString("en-IN") : String(s.value), note: panel.title }))
     : [{ label: job, value: d ? "—" : "…", note: d ? `Needs the ${permission} permission` : "Loading" }];
 
-  const hero = !d
-    ? `Here is what needs doing in ${job.toLowerCase()} today.`
-    : !panel
-      ? `This account does not look after ${job.toLowerCase()} yet. The school office grants it with the ${permission} permission.`
-      : panel.todo
-        ? `Today: ${panel.todo}.`
-        : `Nothing in ${job.toLowerCase()} needs your attention today.`;
-
   return (
     <>
-      <Hero text={hero} cta={cta} />
       <ErrorNote>{dash.error}</ErrorNote>
       <StatStrip items={stats} />
       <QuickActions items={actions} />

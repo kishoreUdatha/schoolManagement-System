@@ -9,7 +9,7 @@ import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { dateTime, label, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
-import { count, DateRow, Empty, Hero, nowStatus, QuickActions, TimelineRow, TimeRow, todayIso } from "./parts";
+import { count, DateRow, Empty, nowStatus, QuickActions, TimelineRow, TimeRow, todayIso } from "./parts";
 import type { SectionAttendance, TeacherDashboardData, TeacherHomework, TeacherNotice } from "./types";
 
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -97,12 +97,6 @@ export function TeacherDashboard() {
     { label: "Unread notices", value: count(d?.unread_notices), note: "In your inbox" },
   ];
 
-  const hero = !d
-    ? "Here is your day."
-    : `${teaching.length ? `Your first class begins at ${teaching[0].start_time}.` : "Nothing is timetabled for you today."}${
-        pending?.length ? ` You have ${pending.length} attendance register${pending.length === 1 ? "" : "s"} to complete.` : ""
-      }`;
-
   const upcoming = (homework.data ?? [])
     .filter((h) => !h.is_past_due && !h.is_closed)
     .sort((a, b) => a.due_date.localeCompare(b.due_date))
@@ -111,7 +105,6 @@ export function TeacherDashboard() {
 
   return (
     <>
-      <Hero text={hero} cta={{ href: "/attendance/daily-class-attendance", label: "Mark attendance" }} />
       <ErrorNote>{dash.error ?? regError ?? notices.error}</ErrorNote>
       <StatStrip items={stats} />
       <QuickActions

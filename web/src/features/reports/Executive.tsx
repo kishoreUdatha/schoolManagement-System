@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Chart } from "@/components/ui/Chart";
-import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
@@ -14,7 +13,6 @@ import { useSession } from "@/lib/useSession";
 import { TodaySchedulePanel } from "../dashboards/parts";
 import type { ActivityItem } from "../dashboards/types";
 import { monthLabel, num } from "./kit";
-import { useGreeting } from "@/features/dashboards/parts";
 
 type Overview = {
   academic_average: number | null;
@@ -50,24 +48,11 @@ export function ExecutiveDashboard() {
   const activity = useApi<ActivityItem[]>("/api/v1/school/insights/activity", { limit: 3 });
   const d = res.data;
   // name and date only once hydrated: the server renders before it knows the viewer or their clock
-  const g = useGreeting();
   const thisMonth = d?.money_by_month.at(-1);
   const att = d?.attendance_by_month ?? [];
 
   return (
     <>
-      <section className="hero">
-        <div className="hero-content">
-          <div className="eyebrow">{g.eyebrow}</div>
-          <h2>{g.title}</h2>
-          <p>Here’s how your school is doing this month.</p>
-          <Link href={routeOf(266)} className="btn white">
-            <Icon name="arrow" className="sm" />
-            View school overview
-          </Link>
-        </div>
-        <HeroArt />
-      </section>
       <ErrorNote>{res.error}</ErrorNote>
       <StatStrip
         items={[

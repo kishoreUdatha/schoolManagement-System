@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Chart } from "@/components/ui/Chart";
-import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
@@ -11,12 +10,9 @@ import type { Paginated } from "@/lib/api";
 import { date, dateTime, label } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { useHydrated, useSession } from "@/lib/useSession";
-import { appClass, APPS, daysFromToday, ENQ, todayIso, useYears } from "./shared";
+import { appClass, APPS, daysFromToday, ENQ, todayIso } from "./shared";
 import type { AdmissionStats, Application, Enquiry, Funnel } from "./types";
 
-const DAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
 const SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /**
@@ -25,17 +21,11 @@ const SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "O
  * GET /applications (latest applications and what is waiting on the office).
  */
 export function AdmissionDashboard() {
-  const me = useSession()?.user;
-  const hydrated = useHydrated();
-  const { current } = useYears();
   const stats = useApi<AdmissionStats>("/api/v1/school/admissions/stats");
   const funnel = useApi<Funnel>(`${APPS}/funnel`);
   const open = useApi<Paginated<Enquiry>>(ENQ, { open_only: true, page_size: 200 });
   const apps = useApi<Application[]>(APPS);
 
-  const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const n = (v: number | undefined) => (v === undefined ? "…" : v.toLocaleString("en-IN"));
   const s = stats.data;
   const f = funnel.data;
@@ -72,18 +62,6 @@ export function AdmissionDashboard() {
 
   return (
     <>
-      <section className="hero">
-        <div className="hero-content">
-          <div className="eyebrow">{hydrated ? `${DAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}` : "ADMISSIONS"}</div>
-          <h2>{hydrated ? `${greeting}${me ? `, ${me.full_name.split(" ")[0]}` : ""}.` : "Welcome."}</h2>
-          <p>{`Here’s where admissions stand${current ? ` for ${current.name}` : ""}.`}</p>
-          <Link href={routeOf(44)} className="btn white">
-            <Icon name="arrow" className="sm" />
-            View all enquiries
-          </Link>
-        </div>
-        <HeroArt />
-      </section>
       <ErrorNote>{error}</ErrorNote>
       <StatStrip items={figures} />
       <div className="dashboard-actions">

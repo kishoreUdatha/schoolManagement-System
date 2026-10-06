@@ -14,7 +14,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
-import { Empty, Hero, QuickActions, TimelineRow } from "@/features/dashboards/parts";
+import { Empty, QuickActions, TimelineRow } from "@/features/dashboards/parts";
 import { Field, formNum, formText, n, today, useNewFlag } from "./kit";
 import type { FeeHead, Route, TransportDashboard as Dash, Trip } from "./types";
 
@@ -46,15 +46,9 @@ export function TransportDashboard() {
   const withSeats = (routes.data ?? []).filter((r) => r.is_active && r.vehicle_capacity);
   const shown = withSeats.slice(0, 6);
   const attention = (d?.overloaded_routes.length ?? 0) + (d?.expiring_documents.length ?? 0);
-  const hero = !d
-    ? "Here is how transport stands today."
-    : attention
-      ? `${plural(attention, "thing")} need attention: ${[d.overloaded_routes.length ? `${plural(d.overloaded_routes.length, "overloaded route")}` : "", d.expiring_documents.length ? `${plural(d.expiring_documents.length, "document")} to renew` : ""].filter(Boolean).join(" and ")}.`
-      : `${plural(d.trips_today, "trip sheet")} today and nothing overdue for renewal.`;
 
   return (
     <>
-      <Hero text={hero} cta={{ href: routeOf(194), label: "Open trip sheets" }} />
       <ErrorNote>{dash.error}</ErrorNote>
       <StatStrip items={stats} />
       <QuickActions

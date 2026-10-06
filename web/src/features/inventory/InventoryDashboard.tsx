@@ -1,24 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { date, money, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
-import { useSession } from "@/lib/useSession";
 import { BarList, INV, MOVE_LABEL, daysUntil, qty, today, type Asset, type Assignment, type Dashboard, type LabBooking, type Move, type Valuation } from "./common";
 
-const DAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
 const SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-
-function greeting(): string {
-  const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-}
 
 /**
  * SCR-234, live: GET /inventory/dashboard for the headline figures and low
@@ -27,7 +18,6 @@ function greeting(): string {
  * /ops/assets/service-due for servicing and /lab-bookings for what is coming up.
  */
 export function InventoryDashboard() {
-  const me = useSession()?.user;
   const now = new Date();
   const soon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7);
   const soonIso = `${soon.getFullYear()}-${String(soon.getMonth() + 1).padStart(2, "0")}-${String(soon.getDate()).padStart(2, "0")}`;
@@ -69,18 +59,6 @@ export function InventoryDashboard() {
 
   return (
     <>
-      <section className="hero">
-        <div className="hero-content">
-          <div className="eyebrow" suppressHydrationWarning>{`${DAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`}</div>
-          <h2 suppressHydrationWarning>{`${greeting()}${me ? `, ${me.full_name.split(/\s+/)[0]}` : ""}.`}</h2>
-          <p>Here’s what is happening across the store, assets and labs today.</p>
-          <Link href="/inventory-labs/stock-asset-reports" className="btn white">
-            <Icon name="arrow" className="sm" />
-            View stock & asset reports
-          </Link>
-        </div>
-        <HeroArt />
-      </section>
       <ErrorNote>{error}</ErrorNote>
       <StatStrip items={stats} />
       <div className="dashboard-actions">

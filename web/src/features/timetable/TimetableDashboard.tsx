@@ -4,18 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
-import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { useSession } from "@/lib/useSession";
 import { DAY_NAME, DAY_SHORT, hhmm, schoolWeekday, todayIso } from "./shared";
 import type { CoverDay, Dashboard, DayView } from "./types";
 
-const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
 
 /**
  * SCR-120, live: GET /school/timetable-gen/dashboard (completeness and
@@ -24,7 +21,6 @@ const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", 
  */
 export function TimetableDashboard() {
   const router = useRouter();
-  const user = useSession()?.user;
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => setNow(new Date()), []);
   const dash = useApi<Dashboard>("/api/v1/school/timetable-gen/dashboard");
@@ -61,25 +57,10 @@ export function TimetableDashboard() {
     return "Upcoming";
   };
 
-  const first = user?.full_name.split(/\s+/)[0];
-  const hour = now?.getHours() ?? 9;
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const c = cover.data;
 
   return (
     <>
-      <section className="hero">
-        <div className="hero-content">
-          <div className="eyebrow">{now ? `${DAY_NAME[now.getDay() === 0 ? 7 : now.getDay()].toUpperCase()}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}` : " "}</div>
-          <h2>{`${greeting}${first ? `, ${first}` : ""}.`}</h2>
-          <p>Here’s how far every section’s week has got, and anything that cannot stand.</p>
-          <Link href={routeOf(121)} className="btn white">
-            <Icon name="arrow" className="sm" />
-            Open timetable setup
-          </Link>
-        </div>
-        <HeroArt />
-      </section>
       <ErrorNote>{dash.error ?? day.error}</ErrorNote>
       <StatStrip items={stats} />
       <div className="dashboard-actions">

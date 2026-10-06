@@ -952,3 +952,12 @@ tr.jv-open td{background:#f5f8ff}
 /* The menu's scrolling list fades out at its top and bottom edges, so an
    item half under the school's name reads as "more above", not as clipped. */
 .nav-scroll{-webkit-mask-image:linear-gradient(transparent,#000 16px,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(transparent,#000 16px,#000 calc(100% - 16px),transparent)}
+
+/* Event details: the event's own header, plain (the blue banners are gone). */
+.event-head{padding:16px 20px;margin-bottom:16px}
+.event-head .eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.6px;color:#55688a;margin-bottom:4px}
+.event-head h2{font-size:20px;margin-bottom:2px}
+.event-head p{color:#55688a;font-size:13px}
+.event-head .metric-bubble{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;position:static;background:none;padding:0;box-shadow:none}
+.event-head .metric-bubble span{background:#eef3fe;color:#1e3a8a;border-radius:8px;padding:5px 10px;font-size:12.5px}
+.event-head .metric-bubble b{color:#1e3a8a;font-size:14px}

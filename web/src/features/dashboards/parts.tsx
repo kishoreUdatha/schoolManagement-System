@@ -2,21 +2,17 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { useApi } from "@/lib/useApi";
-import { useHydrated, useSession } from "@/lib/useSession";
 import type { TodaySchedule } from "./types";
 
 /*
- * The pieces every role dashboard shares, in the mocks' markup: the hero,
- * the quick-action row, and the three kinds of row the panels are built of
+ * The pieces every role dashboard shares, in the mocks' markup: the
+ * quick-action row, and the three kinds of row the panels are built of
  * (a timed row, a dated row, a timeline entry).
  */
 
-const DAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
 const SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** Today as the school's calendar has it, in the viewer's time zone: "2026-09-21". */
@@ -27,39 +23,6 @@ export function todayIso(d = new Date()): string {
 /** ISO weekday, 1 = Monday … 7 = Sunday, as the timetable stores it. */
 export function isoWeekday(d = new Date()): number {
   return d.getDay() === 0 ? 7 : d.getDay();
-}
-
-/** The hero's greeting: the signed-in person's first name and the date. */
-export function useGreeting() {
-  const s = useSession();
-  // The server renders before we know the viewer's clock; say the date once hydrated.
-  const hydrated = useHydrated();
-  const now = new Date();
-  const h = now.getHours();
-  const part = h < 12 ? "morning" : h < 17 ? "afternoon" : "evening";
-  const first = s?.user.full_name?.trim().split(/\s+/)[0];
-  return {
-    eyebrow: hydrated ? `${DAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}` : " ",
-    title: !hydrated ? "Welcome." : first ? `Good ${part}, ${first}.` : `Good ${part}.`,
-  };
-}
-
-export function Hero({ tone = "", text, cta }: { tone?: string; text: ReactNode; cta: { href: string; label: string } }) {
-  const g = useGreeting();
-  return (
-    <section className={`hero ${tone}`}>
-      <div className="hero-content">
-        <div className="eyebrow">{g.eyebrow}</div>
-        <h2>{g.title}</h2>
-        <p>{text}</p>
-        <Link href={cta.href} className="btn white">
-          <Icon name="arrow" className="sm" />
-          {cta.label}
-        </Link>
-      </div>
-      <HeroArt />
-    </section>
-  );
 }
 
 export function QuickActions({ items }: { items: [href: string, icon: IconName, label: string][] }) {

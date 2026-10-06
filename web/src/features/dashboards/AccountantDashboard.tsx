@@ -6,7 +6,7 @@ import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { dateTime, label, money, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
-import { DateRow, Empty, Hero, lastMonths, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel, todayIso } from "./parts";
+import { DateRow, Empty, lastMonths, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel, todayIso } from "./parts";
 import type { AccountantDashboardData, CalendarItem, Refund } from "./types";
 
 function inDays(n: number) {
@@ -46,13 +46,8 @@ export function AccountantDashboard() {
   const amounts = months.map((m) => byMonth.get(m) ?? 0);
   const peak = Math.max(...amounts);
 
-  const hero = !d
-    ? "Money in, money owed, and what needs a decision today."
-    : `${money(d.collected_today)} collected today across ${plural(d.receipts_today, "receipt")}. ${Number(d.overdue) > 0 ? `${money(d.overdue)} is overdue.` : "Nothing is overdue."}`;
-
   return (
     <>
-      <Hero text={hero} cta={{ href: "/fees-finance/fee-collection", label: "Collect fee" }} />
       <ErrorNote>{dash.error ?? refunds.error}</ErrorNote>
       <StatStrip items={stats} />
       <QuickActions

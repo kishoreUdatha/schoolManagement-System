@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { Chart } from "@/components/ui/Chart";
-import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
@@ -12,7 +11,6 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { clock, ExamSelects, useExamChoice } from "./common";
 import type { Datesheet, ExamDashboard as Dashboard } from "./types";
-import { useGreeting } from "@/features/dashboards/parts";
 
 
 /** SCR-138, live: GET /school/exams, /school/exam-ops/{id}/dashboard and /datesheet. */
@@ -22,7 +20,6 @@ export function ExamDashboard() {
   const sheet = useApi<Datesheet>(c.examId ? `/api/v1/school/exam-ops/${c.examId}/datesheet` : null);
   const d = dash.data;
   // name and date only once hydrated: the server renders before it knows the viewer or their clock
-  const g = useGreeting();
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
 
@@ -45,18 +42,6 @@ export function ExamDashboard() {
 
   return (
     <>
-      <section className="hero">
-        <div className="hero-content">
-          <div className="eyebrow">{g.eyebrow}</div>
-          <h2>{g.title}</h2>
-          <p>{d ? `${d.exam_name}: ${d.ready_to_publish ? "ready to publish." : `${d.blockers.length} thing${d.blockers.length === 1 ? "" : "s"} outstanding before results can go out.`}` : "Here’s where your examinations stand."}</p>
-          <Link href={`${routeOf(141)}${c.examId ? `?id=${c.examId}` : ""}`} className="btn white">
-            <Icon name="arrow" className="sm" />
-            View exam schedule
-          </Link>
-        </div>
-        <HeroArt />
-      </section>
       <div className="filterbar">
         <ExamSelects c={c} />
       </div>

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { DataTable, type Row } from "@/components/ui/DataTable";
-import { HeroArt } from "@/components/ui/HeroArt";
 import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
@@ -21,7 +20,6 @@ import type { StaffOption } from "./types";
 import type { Alert, Appointment, Dose, Due, FirstAid, HealthDashboard, HealthRecord, ProfileRow, Visit, VisitOutcome } from "./types";
 
 import { ask } from "@/lib/dialog";
-import { useGreeting } from "@/features/dashboards/parts";
 export const HEALTH = "/api/v1/school/health";
 export const WELL = "/api/v1/school/wellbeing";
 
@@ -58,9 +56,6 @@ export function HealthDashboardView() {
   }, []);
 
   const d = dash.data;
-  const now = new Date();
-  // name and date only once hydrated: the server renders before it knows the viewer or their clock
-  const g = useGreeting();
   const stats = [
     { label: "Visits today", value: d ? String(d.visits_today) : "…", note: d ? `${d.sent_home_today} sent home · ${d.referred_today} referred` : "Clinic visits" },
     { label: "Follow-ups", value: d ? String(d.follow_ups_due) : "…", note: "Due from earlier visits" },
@@ -71,18 +66,6 @@ export function HealthDashboardView() {
 
   return (
     <>
-      <section className="hero">
-        <div className="hero-content">
-          <div className="eyebrow">{g.eyebrow}</div>
-          <h2>{g.title}</h2>
-          <p>Here’s what the clinic and counselling desks have today.</p>
-          <Link href={routeOf(217)} className="btn white">
-            <Icon name="arrow" className="sm" />
-            Find a health record
-          </Link>
-        </div>
-        <HeroArt />
-      </section>
       <ErrorNote>{dash.error}</ErrorNote>
       <StatStrip items={stats} />
       <div className="dashboard-actions">

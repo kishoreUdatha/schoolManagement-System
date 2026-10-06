@@ -8,7 +8,7 @@ import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { date, label, pct } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
-import { DateRow, Empty, Hero, nowStatus, QuickActions, TimeRow, todayIso } from "./parts";
+import { DateRow, Empty, nowStatus, QuickActions, TimeRow, todayIso } from "./parts";
 import type { CalendarItem, StudentDashboardData, StudentExamResult } from "./types";
 
 const BAR_COLOURS = ["#2563eb", "#4e9f8d", "#8b75c6", "#e0915a", "#2563eb", "#4e9f8d"];
@@ -46,15 +46,9 @@ export function StudentDashboard() {
   ];
 
   const teaching = d?.timetable.filter((p) => !p.is_break) ?? [];
-  const hero = !d
-    ? "Your learning journey continues."
-    : `${teaching.length ? `${teaching.length} class${teaching.length === 1 ? "" : "es"} today` : "No classes today"}${
-        d.homework_due ? ` and ${d.homework_due} piece${d.homework_due === 1 ? "" : "s"} of homework to hand in.` : "."
-      }`;
 
   return (
     <>
-      <Hero tone="student-hero" text={hero} cta={{ href: "/homework/student-homework-view", label: "Continue learning" }} />
       <ErrorNote>{dash.error ?? result.error}</ErrorNote>
       <StatStrip items={stats} />
       <QuickActions

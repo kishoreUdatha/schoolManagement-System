@@ -7,7 +7,7 @@ import { ErrorNote } from "@/components/ui/states";
 import { dateTime, initials, label, money, pct } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { count, DateRow, Empty, Hero, isoWeekday, nowStatus, QuickActions, TimelineRow, TimeRow, todayIso } from "./parts";
+import { count, DateRow, Empty, isoWeekday, nowStatus, QuickActions, TimelineRow, TimeRow, todayIso } from "./parts";
 import type { CalendarItem, Child, InboxItem, SectionTimetable } from "./types";
 
 const TONES = ["mint", "lilac", "", "peach"];
@@ -48,7 +48,6 @@ export function ParentDashboard() {
 
   return (
     <>
-      <Hero tone="parent-hero" text="Stay connected with your children’s learning, school updates and activities." cta={{ href: routeOf(57) + (first ? `?id=${first.id}` : ""), label: "View children" }} />
       <ErrorNote>{children.error ?? inbox.error}</ErrorNote>
       <StatStrip items={stats} />
       {/* The mock repeats the school admin's shortcuts here (add student, collect fee), which a parent cannot use; these are the parent menu's own. */}
