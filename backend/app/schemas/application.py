@@ -32,6 +32,8 @@ class ApplicationIn(BaseModel):
     email: Optional[str] = Field(None, max_length=255)
     address: Optional[str] = Field(None, max_length=2000)
     notes: Optional[str] = Field(None, max_length=5000)
+    # the rest of the admission form, by field key (services/admission_form.py)
+    details: dict = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _check(self):
@@ -166,6 +168,9 @@ class ApplicationRead(BaseModel):
     email: Optional[str]
     address: Optional[str]
     notes: Optional[str]
+    details: dict = {}
+    # labels of the required fields still empty, for the application's class
+    missing: list[str] = []
     status: ApplicationStatus
     submitted_at: Optional[datetime]
     decided_by_name: Optional[str]

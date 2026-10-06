@@ -13,6 +13,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { AcademicBody } from "./StudentAcademic";
+import { AdmissionBody } from "./StudentAdmissionDetails";
 import { AttendanceBody } from "./StudentAttendance";
 import { DocumentsBody } from "./StudentDocuments";
 import { CollectFeeLink, LedgerBody } from "./StudentLedger";
@@ -23,6 +24,7 @@ import type { Guardian, StudentProfile as Profile } from "./types";
 /** The profile tabs: key, label and the screen that shows the same content on its own. */
 export const STUDENT_TABS = [
   ["overview", "Overview", 57],
+  ["admission", "Admission details", 57],
   ["academics", "Academics", 59],
   ["attendance", "Attendance", 60],
   ["results", "Results", 61],
@@ -119,7 +121,9 @@ export function StudentProfile() {
   return (
     <>
       <StudentBanner s={s} tab={tab} />
-      {tab === "academics" ? (
+      {tab === "admission" ? (
+        <AdmissionBody s={s} />
+      ) : tab === "academics" ? (
         <AcademicBody s={s} />
       ) : tab === "attendance" ? (
         <AttendanceBody s={s} />

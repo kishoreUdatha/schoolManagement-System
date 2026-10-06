@@ -26,6 +26,7 @@ from app.api.v1.school import (
     academic_years as school_academic_years,
     academics_ops as school_academics_ops,
     accounts as school_accounts,
+    admission_form as school_admission_form,
     books as school_books,
     admissions as school_admissions,
     analytics as school_analytics,
@@ -1046,6 +1047,12 @@ app.include_router(
     public_careers.router,
     prefix="/api/v1/public/careers",
     tags=["public / careers"],
+)
+
+app.include_router(
+    school_admission_form.router,
+    prefix="/api/v1/school/admission-form",
+    tags=["school / admission form"],
 )
 
 app.include_router(

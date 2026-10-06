@@ -1,7 +1,7 @@
 """Public admission enquiry form — no login. The school shares a link like
 /apply/<tenant_code>/<school_code> on its website or social pages; an
 organization with a single school can share the short /apply/<code> instead."""
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.admission import PublicEnquiryCreate, PublicSchoolInfo
 from app.schemas.application import ApplicationIn, PublicApplicationAck, PublicApplicationIn
-from app.services import admission_service, application_service
+from app.services import admission_form, admission_service, application_service
 
 
 router = APIRouter()
@@ -19,6 +19,18 @@ router = APIRouter()
 class PublicEnquiryAck(BaseModel):
     ok: bool = True
     message: str
+
+
+@router.get("/{tenant_code}/{school_code}/form", summary="The admission form a parent fills in, for a class")
+def public_form(tenant_code: str, school_code: str, db: Annotated[Session, Depends(get_db)], class_id: Optional[int] = None):
+    school = admission_service.resolve_public_school(db, tenant_code, school_code)
+    return admission_form.form(db, school.id, class_id)
+
+
+@router.get("/{code}/form", summary="The admission form through the short link")
+def public_form_short(code: str, db: Annotated[Session, Depends(get_db)], class_id: Optional[int] = None):
+    school = admission_service.resolve_public_school(db, code)
+    return admission_form.form(db, school.id, class_id)
 
 
 @router.get("/{tenant_code}/{school_code}", response_model=PublicSchoolInfo)

@@ -31,6 +31,7 @@ type Def = [n: number, name: string, mod: keyof typeof M, role: string, layout: 
 const DEFS: Def[] = [
   [1001, "Online Admission Link", "admissions", "School Admin", "settings", "/admissions/online-admission-link"],
   [1002, "Admission Campaigns", "admissions", "School Admin", "table", "/admissions/admission-campaigns"],
+  [1003, "Admission Form Fields", "admissions", "School Admin", "settings", "/admissions/admission-form-fields"],
   [1010, "Bulk Student Import", "students", "School Admin", "import", "/students/bulk-student-import"],
   [1011, "Student Logins", "students", "School Admin", "table", "/students/student-logins"],
   [1012, "Enrolment History", "students", "School Admin", "table", "/students/enrolment-history"],

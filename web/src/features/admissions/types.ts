@@ -122,6 +122,10 @@ export type Application = {
   email: string | null;
   address: string | null;
   notes: string | null;
+  /** the rest of the admission form, by field key */
+  details?: Record<string, string | boolean>;
+  /** required fields still empty, for the application's class */
+  missing?: string[];
   status: ApplicationStatus;
   submitted_at: string | null;
   decided_by_name: string | null;

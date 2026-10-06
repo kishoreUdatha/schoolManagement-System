@@ -9,6 +9,7 @@ import { api, errorText } from "@/lib/api";
 import { useApi } from "@/lib/useApi";
 import type { PublicSchoolInfo } from "./links";
 import { PublicFrame, PublicNote } from "./PublicFrame";
+import { AdmissionFields, missing, SectionLinks, split, type AdmissionFormDef, type Values } from "@/features/admissions/AdmissionFields";
 
 type Ack = { ok?: boolean; message: string; application_no?: string };
 
@@ -130,6 +131,17 @@ export function AdmissionApply({ tenant, school }: { tenant: string; school?: st
       </PublicNote>,
     );
 
+  if (full)
+    return frame(
+      <>
+        <div className="auth-top">
+          Only have a question? <Link href={path}>Send an enquiry</Link>
+        </div>
+        <FullApplication base={base} schoolName={name ?? "the school"} onDone={setDone} />
+        <div className="auth-help">{`Need help? Contact ${name}${info.data.phone ? ` on ${info.data.phone}` : ""}.`}</div>
+      </>,
+    );
+
   return frame(
     <>
       <div className="auth-top">
@@ -208,5 +220,89 @@ export function AdmissionApply({ tenant, school }: { tenant: string; school?: st
       </form>
       <div className="auth-help">{`Need help? Contact ${name}${info.data.phone ? ` on ${info.data.phone}` : ""}.`}</div>
     </>,
+  );
+}
+
+/**
+ * The full online application: the school's admission form (GET …/form, the
+ * default for every class, since a visitor types the class), then POST
+ * …/applications with the core fields and the rest as details. Required
+ * fields are checked here and again by the server.
+ */
+function FullApplication({ base, schoolName, onDone }: { base: string; schoolName: string; onDone: (a: Ack) => void }) {
+  const def = useApi<AdmissionFormDef>(`${base}/form`);
+  const [values, setValues] = useState<Values>({});
+  const [klass, setKlass] = useState("");
+  const [website, setWebsite] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [wrong, setWrong] = useState<string[]>([]);
+
+  if (!def.data) return <div className="auth-form muted">{def.loading ? "Loading the form…" : def.error}</div>;
+  const form = def.data;
+
+  async function submit(ev: FormEvent) {
+    ev.preventDefault();
+    const need = missing(form, values);
+    if (!klass.trim()) need.unshift("Applying for class");
+    if (need.length) {
+      setWrong(need);
+      setError(`Still to fill in: ${need.slice(0, 8).join(", ")}${need.length > 8 ? ` and ${need.length - 8} more` : ""}.`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const { core, details } = split(form, values);
+    setSaving(true);
+    setError(null);
+    try {
+      const ack = await api.post<Ack>(`${base}/applications`, {
+        ...core,
+        sibling_in_school: Boolean(core.sibling_in_school),
+        transport_required: Boolean(core.transport_required),
+        applying_for_class: klass.trim(),
+        details,
+        website: website || null,
+      });
+      onDone(ack);
+      window.scrollTo({ top: 0 });
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="auth-form af-public" onSubmit={submit} noValidate>
+      <h1>Admission application</h1>
+      <p>{`${schoolName} · fields marked * are required`}</p>
+      <ErrorNote>{error}</ErrorNote>
+      {/* the same trap as the enquiry form: people never see it, bots fill it */}
+      <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" value={website} onChange={(e) => setWebsite(e.target.value)}
+        style={{ position: "absolute", left: "-10000px", width: 1, height: 1, opacity: 0 }} />
+      <SectionLinks def={form} values={values} />
+      <AdmissionFields
+        def={form}
+        values={values}
+        onChange={(k, v) => {
+          setValues({ ...values, [k]: v });
+          if (wrong.length) setWrong([]);
+        }}
+        errors={wrong}
+        before={
+          <label className={`field ${wrong.includes("Applying for class") ? "af-wrong" : ""}`}>
+            <span>
+              Applying for class<span className="req">*</span>
+            </span>
+            <input value={klass} onChange={(e) => setKlass(e.target.value)} maxLength={60} placeholder="e.g. Grade 3" />
+          </label>
+        }
+      />
+      <button type="submit" className="btn primary" disabled={saving}>
+        <Icon name="check" className="sm" />
+        {saving ? "Sending…" : "Submit application"}
+      </button>
+      <div className="auth-note">Your details go only to the school&apos;s admissions office.</div>
+    </form>
   );
 }

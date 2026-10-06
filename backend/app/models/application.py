@@ -17,7 +17,9 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.enums import (
@@ -82,6 +84,8 @@ class AdmissionApplication(Base, PrimaryKeyMixin, TimestampMixin, _School):
     email: Mapped[Optional[str]] = mapped_column(String(255))
     address: Mapped[Optional[str]] = mapped_column(Text)
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    # the rest of the admission form (services/admission_form.py), by field key
+    details: Mapped[dict] = mapped_column(JSONB, default=dict, server_default=text("'{}'::jsonb"), nullable=False)
 
     status: Mapped[ApplicationStatus] = mapped_column(
         SAEnum(ApplicationStatus, name="application_status"), default=ApplicationStatus.draft, nullable=False

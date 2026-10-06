@@ -16,6 +16,7 @@ from app.core.enums import AdmissionStage, ApplicationStatus, AssessmentStatus, 
 from app.core.scoping import school_today
 from app.models.academic import AcademicYear, SchoolClass
 from app.models.admission import AdmissionEnquiry
+from app.models.admission_form import StudentProfile
 from app.models.application import (
     AdmissionApplication,
     AdmissionAssessment,
@@ -24,6 +25,7 @@ from app.models.application import (
 )
 from app.models.student import Student
 from app.models.user import User
+from app.services import admission_form
 from app.schemas.application import (
     AdmitIn,
     ApplicationIn,
@@ -116,6 +118,21 @@ def _check_refs(db: Session, school_id: int, data: ApplicationIn) -> None:
             raise _400("Unknown class")
 
 
+def _split(data: ApplicationIn) -> tuple[dict, dict]:
+    """The application's own columns, and the rest of the form, checked.
+    With no single address typed, the communication address fills it."""
+    values = data.model_dump(exclude={"details"})
+    details = admission_form.clean_details(data.details)
+    if not (values.get("address") or "").strip():
+        values["address"] = admission_form.composed_address(details)
+    return values, details
+
+
+def _core(a: AdmissionApplication) -> dict:
+    """The form's core fields as the application holds them."""
+    return {k: getattr(a, k, None) for k in admission_form.CORE}
+
+
 def create(db: Session, tenant_id: int, school_id: int, data: ApplicationIn, user_id: Optional[int],
            submitted: bool = False, enquiry_id: Optional[int] = None) -> AdmissionApplication:
     _check_refs(db, school_id, data)
@@ -123,12 +140,15 @@ def create(db: Session, tenant_id: int, school_id: int, data: ApplicationIn, use
         e = db.get(AdmissionEnquiry, enquiry_id)
         if not e or e.school_id != school_id:
             raise _400("Unknown enquiry")
+    values, details = _split(data)
+    if submitted:
+        admission_form.require_complete(db, school_id, data.class_id, values, details)
     a = AdmissionApplication(
         tenant_id=tenant_id, school_id=school_id, application_no=next_number(db, school_id),
         created_by_user_id=user_id, enquiry_id=enquiry_id,
         status=ApplicationStatus.submitted if submitted else ApplicationStatus.draft,
         submitted_at=_now() if submitted else None,
-        **data.model_dump(),
+        details=details, **values,
     )
     db.add(a)
     db.flush()
@@ -151,8 +171,13 @@ def update(db: Session, user: User, application_id: int, data: ApplicationIn) ->
     if a.status in (ApplicationStatus.admitted, ApplicationStatus.withdrawn):
         raise _400("This application can no longer be edited")
     _check_refs(db, user.school_id, data)
-    for k, v in data.model_dump().items():
+    values, details = _split(data)
+    if a.status != ApplicationStatus.draft:
+        # past the draft stage the form has to stay complete
+        admission_form.require_complete(db, user.school_id, data.class_id, values, details)
+    for k, v in values.items():
         setattr(a, k, v)
+    a.details = details
     db.commit()
     db.refresh(a)
     return a
@@ -162,9 +187,7 @@ def submit(db: Session, user: Optional[User], application_id: int, school_id: in
     a = get(db, application_id, school_id)
     if a.status != ApplicationStatus.draft:
         raise _400("Only a draft can be submitted")
-    missing = [f for f, v in (("student's name", a.student_name), ("guardian", a.guardian_name), ("phone", a.phone)) if not v]
-    if missing:
-        raise _400("Fill in the " + ", ".join(missing))
+    admission_form.require_complete(db, school_id, a.class_id, _core(a), a.details or {})
     _move(db, a, ApplicationStatus.submitted, "Submitted", user.id if user else None)
     a.submitted_at = _now()
     db.commit()
@@ -229,10 +252,15 @@ def admit(db: Session, user: User, application_id: int, data: AdmitIn) -> dict:
         raise _400("Record the admission fee first")
     if data.admission_date and data.admission_date > date.today() + timedelta(days=366):
         raise _400("The admission date is more than a year away")
+    details = a.details or {}
     student = student_service.create_student(db, a.tenant_id, a.school_id, StudentCreate(
         full_name=a.student_name, dob=a.dob, gender=a.gender, admission_no=data.admission_no,
         academic_year_id=data.academic_year_id, section_id=data.section_id,
+        blood_group=details.get("blood_group"), address=a.address,
     ))
+    snapshot = {k: v for k, v in _core(a).items() if k not in ("student_name", "dob", "gender") and v not in (None, "")}
+    db.add(StudentProfile(tenant_id=a.tenant_id, school_id=a.school_id, student_id=student.id,
+                          details={**details, **snapshot}))
     result = dict(application_id=a.id, student_id=student.id, admission_no=student.admission_no,
                   parent_user_id=None, parent_temporary_password=None, parent_login_note=None)
     if data.create_parent_login:
@@ -369,6 +397,8 @@ def to_read(db: Session, items: list[AdmissionApplication], with_detail: bool = 
             address=a.address, notes=a.notes, status=a.status, submitted_at=a.submitted_at,
             decided_by_name=users.get(a.decided_by_user_id), decided_at=a.decided_at, decision_note=a.decision_note,
             application_fee=a.application_fee, fee_paid_on=a.fee_paid_on, fee_receipt_no=a.fee_receipt_no,
+            details=a.details or {},
+            missing=admission_form.missing_required(db, a.school_id, a.class_id, _core(a), a.details or {}) if with_detail else [],
             student_id=a.student_id, documents_total=doc_counts.get(a.id, 0), documents_verified=verified_counts.get(a.id, 0),
             documents=docs.get(a.id, []), assessments=tests.get(a.id, []), history=history.get(a.id, []),
         ))

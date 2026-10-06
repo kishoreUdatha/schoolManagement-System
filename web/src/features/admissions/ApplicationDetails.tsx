@@ -12,6 +12,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { AdmissionApproval } from "./AdmissionApproval";
+import { AdmissionSummary, type AdmissionFormDef } from "./AdmissionFields";
 import { DocumentList } from "./ApplicationForm";
 import { DocumentVerification } from "./DocumentVerification";
 import { EntranceAssessment } from "./EntranceAssessment";
@@ -187,6 +188,7 @@ function ApplicationBody({ a }: { a: Application }) {
             ["Emergency contact", `${a.guardian_name} · ${a.phone}`],
           ])}
         </Panel>
+        <AdmissionFormPanel a={a} />
         <DocumentsPanel a={a} />
       </div>
       <aside className="stack">
@@ -243,6 +245,33 @@ function ApplicationBody({ a }: { a: Application }) {
  * add one, GET …/documents/{doc}/file to open, DELETE …/documents/{doc}.
  * Verification itself happens on SCR-051.
  */
+/** Everything else the admission form asked, section by section, and what is still missing. */
+function AdmissionFormPanel({ a }: { a: Application }) {
+  const def = useApi<AdmissionFormDef>("/api/v1/school/admission-form", { class_id: a.class_id ?? undefined });
+  const values = {
+    student_name: a.student_name, dob: a.dob, gender: a.gender, previous_school: a.previous_school, category: a.category,
+    father_name: a.father_name, mother_name: a.mother_name, guardian_name: a.guardian_name, phone: a.phone, email: a.email,
+    sibling_in_school: a.sibling_in_school, transport_required: a.transport_required, notes: a.notes, ...(a.details ?? {}),
+  };
+  const gaps = a.missing ?? [];
+  return (
+    <Panel
+      title="Admission form"
+      sub={gaps.length ? `${gaps.length} required field${gaps.length === 1 ? "" : "s"} still empty` : "Every required field is filled in"}
+      action={
+        a.status !== "admitted" && a.status !== "withdrawn" ? (
+          <Link href={`${routeOf(49)}?id=${a.id}`} className="btn text">
+            Complete the form
+          </Link>
+        ) : undefined
+      }
+    >
+      {gaps.length ? <p className="af-missing">{`Still to fill in: ${gaps.join(", ")}.`}</p> : null}
+      {def.data ? <AdmissionSummary def={def.data} values={values} /> : <p className="muted small">{def.loading ? "Loading…" : def.error}</p>}
+    </Panel>
+  );
+}
+
 function DocumentsPanel({ a }: { a: Application }) {
   const [category, setCategory] = useState("birth_certificate");
   const [file, setFile] = useState<File | null>(null);

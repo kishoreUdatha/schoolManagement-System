@@ -16,7 +16,7 @@ export type TabGroup = { label: string; tabs: [number, string][]; titles?: Recor
 export const TAB_GROUPS: TabGroup[] = [
   // Admissions
   { label: "Enquiries", tabs: [[44, "Enquiries"], [47, "Follow-ups"], [1002, "Campaigns"], [1001, "Admission link"]] },
-  { label: "Applications", tabs: [[48, "Applications"], [51, "Documents"], [52, "Entrance test"], [53, "Approval"], [54, "Confirmation"]] },
+  { label: "Applications", tabs: [[48, "Applications"], [51, "Documents"], [52, "Entrance test"], [53, "Approval"], [54, "Confirmation"], [1003, "Form fields"]] },
   // Students and their families
   { label: "Students", tabs: [[55, "Directory"], [1010, "Bulk import"], [1011, "Logins"], [1012, "Enrolment history"], [69, "Promotion"], [70, "Exit & alumni"]] },
   { label: "Parents", tabs: [[71, "Directory"], [75, "Contact preferences"], [77, "Meetings & calls"], [78, "Payments"]] },
@@ -209,6 +209,7 @@ export const SCREEN_NOTE: Record<number, string> = {
   1041: "Raise a month's recurring charges for a class or the whole school.",
   1042: "Waive or change one child's charge, with a reason.",
   1043: "Keys and settings for taking payments online.",
+  1003: "Which admission form fields are required and which are not asked, for every class or one class.",
   1049: "The school's accounts. Fees, receipts, expenses, bills and payroll post to them by themselves.",
   1052: "Entries the system cannot make itself: opening balances, cash banked, depreciation, corrections.",
   1053: "Every entry in date order, with both sides.",

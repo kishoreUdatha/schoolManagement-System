@@ -12,6 +12,7 @@ import { useApi } from "@/lib/useApi";
 import type { SchoolClass } from "@/features/students/types";
 import { APPS, ENQ, openDocument, size, uploadDocument, useYears } from "./shared";
 import { DOC_KINDS, type Application, type EnquiryDetail } from "./types";
+import { AdmissionFields, missing, SectionLinks, split, type AdmissionFormDef, type Values } from "./AdmissionFields";
 
 import { ask } from "@/lib/dialog";
 /** The page-head button: "Save changes" when editing (?id=), else "Submit application". */
@@ -26,13 +27,13 @@ export function ApplicationFormAction() {
 }
 
 /**
- * SCR-049, live: POST /admissions/applications (?submitted=true to submit,
- * ?enquiry_id= when started from an enquiry), then the optional document as
- * multipart POST /applications/{id}/documents. With ?id= it edits instead:
- * GET /applications/{id}, PUT /applications/{id} (the whole record, so fields
- * this form does not show are sent back unchanged), POST /{id}/submit for a
- * draft, and the documents: upload, GET …/documents/{doc}/file, DELETE
- * …/documents/{doc}.
+ * SCR-049, live: the full admission form. GET /school/admission-form?class_id=
+ * gives its sections and which fields this class requires or does not ask;
+ * POST /admissions/applications (?submitted=true to submit, ?enquiry_id= when
+ * started from an enquiry), then the optional document as multipart POST
+ * /applications/{id}/documents. With ?id= it edits: GET and PUT
+ * /applications/{id}, POST /{id}/submit for a draft, and the documents.
+ * A draft may be incomplete; submitting needs every required field.
  */
 export function ApplicationForm() {
   const router = useRouter();
@@ -43,60 +44,89 @@ export function ApplicationForm() {
   const existing = useApi<Application>(editId ? `${APPS}/${editId}` : null);
   const years = useYears();
   const [yearId, setYearId] = useState<number | null>(null);
+  const [classId, setClassId] = useState<number | "">("");
+  const [values, setValues] = useState<Values | null>(null);
+  const [docKind, setDocKind] = useState("birth_certificate");
+  const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [wrong, setWrong] = useState<string[]>([]);
 
   const a = existing.data;
+  const e = enquiry.data;
   useEffect(() => {
     if (yearId !== null) return;
     if (editId) {
       if (a) setYearId(a.academic_year_id ?? years.current?.id ?? null);
     } else if (years.current) setYearId(years.current.id);
   }, [years.current, yearId, editId, a]);
+  // the form starts from the application, or the enquiry it came from
+  useEffect(() => {
+    if (values) return;
+    if (editId && !a) return;
+    if (enquiryId && !editId && !e) return;
+    if (a) {
+      setClassId(a.class_id ?? "");
+      setValues({
+        student_name: a.student_name, dob: a.dob, gender: a.gender, previous_school: a.previous_school, category: a.category,
+        father_name: a.father_name, mother_name: a.mother_name, guardian_name: a.guardian_name, phone: a.phone, email: a.email,
+        sibling_in_school: a.sibling_in_school, transport_required: a.transport_required, notes: a.notes, ...(a.details ?? {}),
+      });
+    } else {
+      setValues(e ? { student_name: e.student_name, dob: e.dob, gender: e.gender, previous_school: e.previous_school, guardian_name: e.parent_name, phone: e.parent_phone, email: e.parent_email } : {});
+    }
+  }, [a, e, editId, enquiryId, values]);
   const classes = useApi<SchoolClass[]>(yearId ? "/api/v1/school/classes" : null, { academic_year_id: yearId });
+  const def = useApi<AdmissionFormDef>("/api/v1/school/admission-form", { class_id: classId || undefined });
 
-  if (enquiryId && !editId && enquiry.loading && !enquiry.data) return <Loading what="Loading the enquiry…" />;
+  if (enquiryId && !editId && enquiry.loading && !e) return <Loading what="Loading the enquiry…" />;
   if (editId && existing.loading && !a) return <Loading what="Loading the application…" />;
   if (editId && !a) return <ErrorNote>{existing.error ?? "Application not found."}</ErrorNote>;
-  const e = enquiry.data;
+  if (!values || !def.data) return def.error ? <ErrorNote>{def.error}</ErrorNote> : <Loading what="Loading the admission form…" />;
+  const form = def.data;
   const locked = a ? a.status === "admitted" || a.status === "withdrawn" : false;
   // What the free-text class was, so choosing no class keeps it.
   const givenClass = a ? a.applying_for_class : (e?.applying_for_class ?? null);
+  const set = (k: string, v: string | boolean) => {
+    setValues({ ...values, [k]: v });
+    if (wrong.length) setWrong([]);
+  };
 
-  async function save(form: HTMLFormElement, submitted: boolean) {
-    if (!form.reportValidity()) return;
-    const f = new FormData(form);
-    const text = (k: string) => String(f.get(k) ?? "").trim() || null;
-    const classId = text("class_id") ? Number(text("class_id")) : null;
-    const file = f.get("document") as File | null;
+  async function save(submitted: boolean) {
+    if (!values) return;
+    if (!classId && !givenClass) {
+      setError("Choose the class the child is applying for.");
+      return;
+    }
+    // Past the draft stage every required field is needed; a draft only needs
+    // the few fields an application cannot exist without.
+    const strict = submitted || Boolean(a && a.status !== "draft");
+    const essentials: AdmissionFormDef = { ...form, sections: form.sections.map((s) => ({ ...s, fields: s.fields.filter((f) => f.locked) })) };
+    const need = missing(strict ? form : essentials, values);
+    if (need.length) {
+      setWrong(need);
+      setError(`Still to fill in: ${need.slice(0, 8).join(", ")}${need.length > 8 ? ` and ${need.length - 8} more` : ""}.`);
+      return;
+    }
+    const { core, details } = split(form, values);
+    const hasCommAddress = Object.keys(details).some((k) => k.startsWith("comm_"));
     const body = {
+      ...core,
       academic_year_id: yearId,
-      class_id: classId,
+      class_id: classId || null,
       applying_for_class: classId ? null : givenClass,
-      student_name: text("student_name"),
-      dob: text("dob"),
-      gender: text("gender"),
-      previous_school: text("previous_school"),
-      guardian_name: text("guardian_name"),
-      phone: text("phone"),
-      email: text("email"),
-      address: text("address"),
-      transport_required: f.get("transport_required") === "yes",
+      sibling_in_school: Boolean(core.sibling_in_school),
+      transport_required: Boolean(core.transport_required),
+      // with a communication address the server composes the one-line address
+      address: hasCommAddress ? null : (a?.address ?? e?.address ?? null),
+      details,
     };
     setSaving(true);
     setError(null);
     try {
       if (a) {
-        await api.put(`${APPS}/${a.id}`, {
-          // Not on this form: keep what the record already has.
-          sibling_in_school: a.sibling_in_school,
-          category: a.category,
-          father_name: a.father_name,
-          mother_name: a.mother_name,
-          notes: a.notes,
-          ...body,
-        });
-        if (file && file.size) await uploadDocument(a.id, file, text("category") ?? "other");
+        await api.put(`${APPS}/${a.id}`, body);
+        if (file && file.size) await uploadDocument(a.id, file, docKind);
         if (submitted && a.status === "draft") await api.post(`${APPS}/${a.id}/submit`);
         notify(submitted && a.status === "draft" ? `Application ${a.application_no} saved and submitted.` : `Application ${a.application_no} saved.`);
         router.push(`${routeOf(50)}?id=${a.id}`);
@@ -105,7 +135,7 @@ export function ApplicationForm() {
       const created = await api.post<{ id: number; application_no: string }>(APPS, body, { submitted, enquiry_id: e?.id });
       if (file && file.size) {
         try {
-          await uploadDocument(created.id, file, text("category") ?? "other");
+          await uploadDocument(created.id, file, docKind);
         } catch (err) {
           notify(`Application ${created.application_no} saved, but the document was not uploaded: ${errorText(err)}`);
           router.push(`${routeOf(50)}?id=${created.id}`);
@@ -121,14 +151,32 @@ export function ApplicationForm() {
     }
   }
 
-  const field = (text: string, control: JSX.Element, required = false) => (
-    <label className="field">
-      <span>
-        {text}
-        {required ? <span className="req">*</span> : null}
-      </span>
-      {control}
-    </label>
+  const head = (
+    <>
+      <label className="field">
+        <span>
+          Applying for<span className="req">*</span>
+        </span>
+        <select value={classId} onChange={(x) => setClassId(x.target.value ? Number(x.target.value) : "")}>
+          <option value="">{classes.loading ? "Loading classes…" : givenClass ? `As given: ${givenClass}` : "Select class"}</option>
+          {classes.data?.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="field">
+        <span>Academic year</span>
+        <select value={yearId ?? ""} onChange={(x) => setYearId(Number(x.target.value))}>
+          {years.data?.map((y) => (
+            <option key={y.id} value={y.id}>
+              {y.name}
+            </option>
+          ))}
+        </select>
+      </label>
+    </>
   );
 
   return (
@@ -138,7 +186,7 @@ export function ApplicationForm() {
         className="panel"
         onSubmit={(ev: FormEvent<HTMLFormElement>) => {
           ev.preventDefault();
-          if (!locked) save(ev.currentTarget, true);
+          if (!locked) save(true);
         }}
       >
         <div className="panel-pad">
@@ -149,80 +197,30 @@ export function ApplicationForm() {
               {locked ? `Application ${a.application_no} is ${label(a.status).toLowerCase()} and can no longer be edited.` : `Editing application ${a.application_no} · ${label(a.status)}`}
             </p>
           ) : null}
+          <SectionLinks def={form} values={values} />
           <fieldset disabled={locked} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+            <AdmissionFields def={form} values={values} onChange={set} before={head} errors={wrong} />
             <div className="form-sections">
               <section>
                 <div className="form-section-title">
-                  <span className="number">01</span>
-                  <h3>Application information</h3>
+                  <span className="number">{String(form.sections.length + 1).padStart(2, "0")}</span>
+                  <h3>Documents</h3>
                 </div>
                 <div className="form-grid">
-                  {field("Student name", <input type="text" name="student_name" placeholder="Enter student name" required minLength={2} defaultValue={a?.student_name ?? e?.student_name} />, true)}
-                  {/* Required for a new application; one sent from the public form may lack them, so an edit need not add them. */}
-                  {field("Date of birth", <input type="date" name="dob" required={!a} defaultValue={a?.dob ?? e?.dob ?? ""} />, !a)}
-                  {field(
-                    "Gender",
-                    <select name="gender" required={!a} defaultValue={a?.gender ?? e?.gender ?? ""}>
-                      <option value="">Select gender</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                    </select>,
-                    !a,
-                  )}
-                  {field(
-                    "Applying for",
-                    <select name="class_id" required={!givenClass} defaultValue={a?.class_id ?? ""} key={classes.data ? `c${yearId}` : "loading"}>
-                      <option value="">{classes.loading ? "Loading classes…" : givenClass ? `As given: ${givenClass}` : "Select class"}</option>
-                      {classes.data?.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>,
-                    true,
-                  )}
-                  {field(
-                    "Academic year",
-                    <select value={yearId ?? ""} onChange={(x) => setYearId(Number(x.target.value))}>
-                      {years.data?.map((y) => (
-                        <option key={y.id} value={y.id}>
-                          {y.name}
-                        </option>
-                      ))}
-                    </select>,
-                  )}
-                  {field("Previous school", <input type="text" name="previous_school" placeholder="Enter previous school" defaultValue={a?.previous_school ?? e?.previous_school ?? ""} />)}
-                </div>
-              </section>
-              <section>
-                <div className="form-section-title">
-                  <span className="number">02</span>
-                  <h3>Contact & additional information</h3>
-                </div>
-                <div className="form-grid">
-                  {field("Parent name", <input type="text" name="guardian_name" placeholder="Enter parent name" required minLength={2} defaultValue={a?.guardian_name ?? e?.parent_name} />, true)}
-                  {field("Mobile number", <input type="tel" name="phone" placeholder="Enter mobile number" required minLength={6} defaultValue={a?.phone ?? e?.parent_phone} />, true)}
-                  {field("Email address", <input type="email" name="email" placeholder="Enter email address" defaultValue={a?.email ?? e?.parent_email ?? ""} />)}
-                  {field("Address", <input type="text" name="address" placeholder="Enter address" defaultValue={a?.address ?? e?.address ?? ""} />)}
-                  {field(
-                    "Transport required",
-                    <select name="transport_required" defaultValue={a?.transport_required ? "yes" : "no"}>
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
-                    </select>,
-                  )}
-                  {field(
-                    "Document type",
-                    <select name="category" defaultValue="birth_certificate">
+                  <label className="field">
+                    <span>Document type</span>
+                    <select value={docKind} onChange={(x) => setDocKind(x.target.value)}>
                       {DOC_KINDS.map((k) => (
                         <option key={k} value={k}>
                           {label(k)}
                         </option>
                       ))}
-                    </select>,
-                  )}
-                  {field(a ? "Add a document" : "Documents", <input type="file" name="document" aria-label="Documents" />)}
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>{a ? "Add a document" : "Document"}</span>
+                    <input type="file" aria-label="Document" onChange={(x) => setFile(x.target.files?.[0] ?? null)} />
+                  </label>
                 </div>
                 {a ? <DocumentList a={a} onChange={existing.reload} /> : null}
               </section>
@@ -230,13 +228,13 @@ export function ApplicationForm() {
           </fieldset>
         </div>
         <div className="form-footer">
-          <span>Fields marked * are required</span>
+          <span>Fields marked * are needed to submit; a draft can be saved incomplete</span>
           <div className="actions">
             <button type="button" className="btn" onClick={() => router.back()}>
               Cancel
             </button>
             {!a || a.status === "draft" ? (
-              <button type="button" className="btn" disabled={saving || locked} onClick={(ev) => save(ev.currentTarget.form as HTMLFormElement, false)}>
+              <button type="button" className="btn" disabled={saving || locked} onClick={() => save(false)}>
                 {a ? "Save draft" : "Save as draft"}
               </button>
             ) : null}
