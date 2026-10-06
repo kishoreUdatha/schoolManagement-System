@@ -21,7 +21,7 @@ export const TAB_GROUPS: TabGroup[] = [
   { label: "Students", tabs: [[55, "Directory"], [1010, "Bulk import"], [1011, "Logins"], [1012, "Enrolment history"], [69, "Promotion"], [70, "Exit & alumni"]] },
   { label: "Parents", tabs: [[71, "Directory"], [75, "Contact preferences"], [77, "Meetings & calls"], [78, "Payments"]] },
   // Staff
-  { label: "Staff", tabs: [[80, "Directory"], [1085, "Departments"], [84, "Class teachers"], [85, "Subjects & classes"], [86, "Workload"], [87, "Qualifications"], [90, "Class observations"], [91, "Exit"]] },
+  { label: "Staff", tabs: [[80, "Directory"], [1085, "Departments"], [84, "Class teachers"], [85, "Subjects & classes"], [86, "Workload"], [87, "Qualification check"], [90, "Class observations"], [91, "Exit"]] },
   { label: "Hiring", tabs: [[172, "Hiring requests"], [173, "Job openings"], [174, "Candidates"], [1060, "Candidate pool"], [176, "Interviews"], [177, "Offers"], [178, "Joining checklist"]] },
   { label: "Staff attendance & leave", tabs: [[179, "Attendance"], [88, "Attendance summary"], [180, "Leave policies"], [181, "Leave requests"], [182, "Leave approval"], [1061, "Balances"], [89, "Leave summary"]] },
   { label: "Payroll", tabs: [[183, "Setup"], [184, "Run payroll"], [185, "Payslips"], [1062, "Salary history"]] },

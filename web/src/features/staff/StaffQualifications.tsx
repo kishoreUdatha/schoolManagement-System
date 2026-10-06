@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
@@ -10,10 +10,8 @@ import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
-import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { StaffBanner, useStaffProfile } from "./StaffProfile";
-import { StaffPicker } from "./StaffPicker";
+import { StaffBanner, staffTabHref, useStaffProfile } from "./StaffProfile";
 import type { QualificationsPage, StaffDocument } from "./types";
 import { openFile, uploadForm } from "./util";
 
@@ -40,22 +38,9 @@ export function StaffQualifications({ embedded = false }: { embedded?: boolean }
   const [error, setError] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
 
-  const picker = embedded ? null : <StaffPicker />;
-  if (!id) return <QualificationsOverview />;
-  if (loading && !p)
-    return (
-      <>
-        {picker}
-        <Loading what="Loading qualifications…" />
-      </>
-    );
-  if (!p)
-    return (
-      <>
-        {picker}
-        <ErrorNote>{pError ?? "Staff member not found."}</ErrorNote>
-      </>
-    );
+  if (!id) return null;
+  if (loading && !p) return <Loading what="Loading qualifications…" />;
+  if (!p) return <ErrorNote>{pError ?? "Staff member not found."}</ErrorNote>;
 
   const data = page.data;
   const q = typed.trim().toLowerCase();
@@ -132,9 +117,7 @@ export function StaffQualifications({ embedded = false }: { embedded?: boolean }
 
   return (
     <>
-      {picker}
-      {/* the person only: this screen already sits in the Staff tab row, so no second row of profile tabs */}
-      {embedded ? null : <StaffBanner p={p} />}
+      {embedded ? null : <StaffBanner p={p} tab="documents" />}
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />
@@ -292,17 +275,6 @@ export function StaffQualifications({ embedded = false }: { embedded?: boolean }
   );
 }
 
-/** The page-head button: only once a member of staff is chosen. */
-export function SaveQualificationAction() {
-  if (!useSearchParams().get("id")) return null;
-  return (
-    <button type="submit" form="qualification-form" className="btn primary">
-      <Icon name="check" className="sm" />
-      Save qualification
-    </button>
-  );
-}
-
 type OverviewRow = {
   staff_id: number;
   employee_no: string;
@@ -316,7 +288,23 @@ type OverviewRow = {
   documents: number;
 };
 
-/** Before anyone is chosen: everyone, with what is on file and what still needs checking (GET /staff-ops/qualifications). */
+/**
+ * SCR-087, the Staff tab "Qualification check": everyone, with what is on
+ * file and what still needs verifying (GET /staff-ops/qualifications), to
+ * find gaps before an affiliation or inspection. Adding, verifying and
+ * uploading happen on the person's profile, Documents tab, which Open leads
+ * to. An old link with ?id= goes straight there.
+ */
+export function QualificationCheck() {
+  const id = useSearchParams().get("id");
+  const router = useRouter();
+  useEffect(() => {
+    if (id) router.replace(staffTabHref(id, "documents"));
+  }, [id, router]);
+  if (id) return <Loading what="Opening their documents…" />;
+  return <QualificationsOverview />;
+}
+
 function QualificationsOverview() {
   const r = useApi<OverviewRow[]>("/api/v1/school/staff-ops/qualifications");
   const [typed, setTyped] = useState("");
@@ -336,7 +324,6 @@ function QualificationsOverview() {
   ];
   return (
     <>
-      <StaffPicker />
       <StatStrip items={stats} />
       <div className="filterbar">
         <input type="search" placeholder="Search name, employee no, designation…" aria-label="Search staff" value={typed} onChange={(e) => setTyped(e.target.value)} />
@@ -347,7 +334,7 @@ function QualificationsOverview() {
           <option value="none">Nothing on file</option>
         </select>
       </div>
-      <Panel title="Qualifications by member of staff" sub="Choose someone to add, verify or upload their qualifications and documents." flush>
+      <Panel title="Qualifications by member of staff" sub="Open someone to add, verify or upload their qualifications and documents on their profile." flush>
         <ErrorNote>{r.error}</ErrorNote>
         {r.loading && !r.data ? (
           <p className="muted panel-pad">Loading…</p>
@@ -378,7 +365,7 @@ function QualificationsOverview() {
                     <td className="num">{x.unverified ? <Badge tone="warn">{String(x.unverified)}</Badge> : 0}</td>
                     <td className="num">{x.documents}</td>
                     <td className="num">
-                      <Link className="btn text" href={`${routeOf(87)}?id=${x.staff_id}`} replace scroll={false}>
+                      <Link className="btn text" href={staffTabHref(x.staff_id, "documents")}>
                         Open
                       </Link>
                     </td>
