@@ -7,13 +7,14 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
-import { date, dateTime, money, pct } from "@/lib/format";
+import { date, dateTime, money, pct, plural } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { TodaySchedulePanel } from "../dashboards/parts";
 import type { ActivityItem } from "../dashboards/types";
 import { monthLabel, num } from "./kit";
+import { useGreeting } from "@/features/dashboards/parts";
 
 type Overview = {
   academic_average: number | null;
@@ -38,11 +39,6 @@ function activityIcon(entity: string): IconName {
   return "file";
 }
 
-function greeting() {
-  const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-}
-
 /**
  * SCR-264, live: GET /api/v1/school/analytics/overview (?months=6), GET /api/v1/school/holidays (?upcoming),
  * GET /api/v1/school/insights/schedule/today and GET /api/v1/school/insights/activity.
@@ -53,9 +49,8 @@ export function ExecutiveDashboard() {
   const holidays = useApi<Holiday[]>("/api/v1/school/holidays", { upcoming: true, limit: 3 });
   const activity = useApi<ActivityItem[]>("/api/v1/school/insights/activity", { limit: 3 });
   const d = res.data;
-  const first = sess?.user.full_name.split(/\s+/)[0];
-  const now = new Date();
-  const eyebrow = now.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).toUpperCase();
+  // name and date only once hydrated: the server renders before it knows the viewer or their clock
+  const g = useGreeting();
   const thisMonth = d?.money_by_month.at(-1);
   const att = d?.attendance_by_month ?? [];
 
@@ -63,8 +58,8 @@ export function ExecutiveDashboard() {
     <>
       <section className="hero">
         <div className="hero-content">
-          <div className="eyebrow">{eyebrow}</div>
-          <h2>{first ? `${greeting()}, ${first}.` : `${greeting()}.`}</h2>
+          <div className="eyebrow">{g.eyebrow}</div>
+          <h2>{g.title}</h2>
           <p>Here’s how your school is doing this month.</p>
           <Link href={routeOf(266)} className="btn white">
             <Icon name="arrow" className="sm" />
@@ -81,7 +76,7 @@ export function ExecutiveDashboard() {
           {
             label: "Academic average",
             value: !d ? "—" : d.academic_average === null ? "—" : pct(d.academic_average),
-            note: !d ? "Published exams" : d.academic_average === null ? "No published marks this year" : `${d.academic_average_exams} published exam(s) this year`,
+            note: !d ? "Published exams" : d.academic_average === null ? "No published marks this year" : `${plural(d.academic_average_exams, "published exam")} this year`,
           },
           { label: "Collected this month", value: money(d?.collected_this_month), note: thisMonth ? `${money(thisMonth.raised)} raised · ${money(d?.outstanding)} outstanding` : "Fees received" },
         ]}
@@ -118,7 +113,7 @@ export function ExecutiveDashboard() {
               </div>
             }
           >
-            {att.length ? <Chart kind="line" labels={att.map((m) => monthLabel(m.month).slice(0, 3))} values={att.map((m) => m.percent)} /> : <p className="muted">{res.loading ? "Loading…" : "No attendance yet."}</p>}
+            {att.length ? <Chart kind="line" labels={att.map((m) => monthLabel(m.month).slice(0, 3))} values={att.map((m) => (m.present + m.absent + m.late + m.half_day > 0 ? m.percent : null))} label="Attendance % by month" /> : <p className="muted">{res.loading ? "Loading…" : "No attendance yet."}</p>}
           </Panel>
         </div>
         <aside>

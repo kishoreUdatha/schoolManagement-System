@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser, SchoolStructureReader, StaffDirectoryReader, StudentManager
+from app.core.deps import SchoolAdminUser, SchoolStructureReader, StaffDirectoryReader, StaffManager, StudentManager, StudentRecords
 from app.core.scoping import get_school_student
 from app.database import get_db
 from app.schemas.foundation import (
@@ -37,7 +37,7 @@ def enrollments(student_id: int, current_user: StudentManager, db: Db):
 
 
 @router.patch("/enrollments/{enrollment_id}", response_model=EnrollmentRead, summary="Correct a past year's outcome")
-def set_outcome(enrollment_id: int, payload: OutcomeIn, current_user: SchoolAdminUser, db: Db):
+def set_outcome(enrollment_id: int, payload: OutcomeIn, current_user: StudentRecords, db: Db):
     e = svc.set_outcome(db, enrollment_id, current_user.school_id, payload.outcome)
     s = get_school_student(db, e.student_id, current_user.school_id)
     return EnrollmentRead.model_validate(next(x for x in svc.history(db, s) if x["id"] == e.id))
@@ -128,15 +128,15 @@ def departments(current_user: StaffDirectoryReader, db: Db):
 
 
 @router.post("/departments", response_model=DepartmentRead, status_code=status.HTTP_201_CREATED)
-def add_department(payload: DepartmentIn, current_user: SchoolAdminUser, db: Db):
+def add_department(payload: DepartmentIn, current_user: StaffManager, db: Db):
     return DepartmentRead.model_validate(svc.department_to_read(db, svc.save_department(db, current_user, payload)))
 
 
 @router.post("/departments/common", summary="Add the usual school departments the school does not have yet")
-def add_common_departments(current_user: SchoolAdminUser, db: Db):
+def add_common_departments(current_user: StaffManager, db: Db):
     return {"added": svc.add_common_departments(db, current_user)}
 
 
 @router.put("/departments/{dept_id}", response_model=DepartmentRead)
-def update_department(dept_id: int, payload: DepartmentIn, current_user: SchoolAdminUser, db: Db):
+def update_department(dept_id: int, payload: DepartmentIn, current_user: StaffManager, db: Db):
     return DepartmentRead.model_validate(svc.department_to_read(db, svc.save_department(db, current_user, payload, dept_id)))

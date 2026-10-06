@@ -7,7 +7,7 @@ import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { ApiError, api, errorText } from "@/lib/api";
-import { date as fmtDate } from "@/lib/format";
+import { date as fmtDate, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { ASSIGN_EVENT } from "./events";
@@ -88,7 +88,7 @@ export function CoverBoard() {
     setError(null);
     try {
       const r = await api.post<{ assigned: number }>("/api/v1/school/cover/auto-assign", { date, absent: extra });
-      notify(`${r.assigned} slot(s) filled.`);
+      notify(`${plural(r.assigned, "slot")} filled.`);
       day.reload();
       stats.reload();
     } catch (e) {

@@ -8,7 +8,7 @@ import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, money } from "@/lib/format";
+import { date, dateTime, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -73,7 +73,7 @@ export function OutstandingDues() {
       const r = await api.post<{ sent?: number; skipped_already_sent?: number }>("/api/v1/school/fees/reminders/run");
       notify(
         r?.sent
-          ? `${r.sent} reminder(s) sent. They appear in each family's notices.`
+          ? `${plural(r.sent, "reminder")} sent. They appear in each family's notices.`
           : r?.skipped_already_sent
             ? `No new reminders: ${r.skipped_already_sent} family(ies) were already reminded today.`
             : "Nobody is due a reminder right now.",

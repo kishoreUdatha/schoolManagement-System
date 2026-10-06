@@ -9,7 +9,7 @@ import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { money } from "@/lib/format";
+import { money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -65,7 +65,7 @@ export function RouteList() {
         </select>
       </div>
       <ErrorNote>{routes.error}</ErrorNote>
-      <Panel title="All routes" sub={routes.data ? `${all.length} route(s) · ${all.reduce((s, r) => s + r.stops.length, 0)} stops · ${all.reduce((s, r) => s + r.student_count, 0)} student(s)` : "Loading…"} flush>
+      <Panel title="All routes" sub={routes.data ? `${plural(all.length, "route")} · ${all.reduce((s, r) => s + r.stops.length, 0)} stops · ${plural(all.reduce((s, r) => s + r.student_count, 0), "student")}` : "Loading…"} flush>
         <DataTable
           columns={["Route", "Vehicle", "Stops", "Distance", "Students", "Fee / month", "Status"]}
           rows={rows}
@@ -375,7 +375,7 @@ export function StopList() {
   const onRoute = (routes.data ?? []).filter((r) => !routeId || String(r.id) === routeId).flatMap((r) => r.stops);
   const n = (v: number) => (routes.loading && !routes.data ? (routes.loading ? "…" : "—") : String(v));
   const stats = [
-    { label: "Stops", value: n(onRoute.length), note: routeId ? "On this route" : `On ${(routes.data ?? []).length} route(s)` },
+    { label: "Stops", value: n(onRoute.length), note: routeId ? "On this route" : `On ${plural((routes.data ?? []).length, "route")}` },
     { label: "Students", value: n(onRoute.reduce((s, x) => s + x.student_count, 0)), note: "Boarding at these stops" },
     { label: "Unused stops", value: n(onRoute.filter((x) => !x.student_count).length), note: "No student boards here" },
     { label: "No pickup time", value: n(onRoute.filter((x) => !x.pickup_time).length), note: "Set it on the route" },

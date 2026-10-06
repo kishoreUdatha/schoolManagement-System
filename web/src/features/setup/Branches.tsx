@@ -9,7 +9,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { dateTime, initials, label } from "@/lib/format";
+import { dateTime, initials, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -277,7 +277,7 @@ export function BranchDetails() {
     setError(null);
     try {
       await api.put(`${BRANCHES}/${branch.id}/${editing}`, { ids: [...picked] });
-      notify(`${picked.size} ${editing === "sections" ? "section(s)" : "staff member(s)"} now at ${branch.name}.`);
+      notify(`${plural(picked.size, editing === "sections" ? "section" : "staff member")} now at ${branch.name}.`);
       setEditing(null);
       await list.reload();
     } catch (err) {
@@ -456,7 +456,7 @@ export function BranchDetails() {
           <Panel title="Delete branch">
             <p className="muted" style={{ marginBottom: 12 }}>
               {branch.sections || branch.staff
-                ? `Move its ${count(branch.sections)} section(s) and ${count(branch.staff)} staff member(s) to another branch first; a branch with people placed at it cannot be deleted.`
+                ? `Move its ${plural(count(branch.sections), "section")} and ${plural(count(branch.staff), "staff member")} to another branch first; a branch with people placed at it cannot be deleted.`
                 : "Nothing is placed at this branch, so it can be deleted."}
             </p>
             <button type="button" className="btn" disabled={deleting || Boolean(branch.sections || branch.staff)} onClick={remove}>

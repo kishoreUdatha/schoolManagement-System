@@ -17,3 +17,5 @@
 .pm .phone input[type=radio]{width:19px;height:19px;min-height:0;flex:none;margin:0;padding:0;border:0;box-shadow:none;display:inline-block;accent-color:var(--blue)}
 .pm .check.answer{align-items:center;margin:8px 0;padding:11px 12px;border:1px solid #dce5f3;border-radius:11px;font-size:13px;cursor:pointer}
 .pm .check.answer:has(input:checked){border-color:var(--blue);background:#edf3ff}
+.pm .student-photo.initials{color:#1d4ed8}
+.pm .mini-avatar{color:#1d4ed8}

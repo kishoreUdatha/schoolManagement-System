@@ -43,5 +43,5 @@ export type SubjectCard = {
 export type MyClasses = { class_teacher_of: ClassTeacherCard[]; subject_teacher_of: SubjectCard[] };
 export const MY_CLASSES = "/api/v1/teacher/my-classes";
 
-/** "1 student", "6 students". */
-export const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+/** "1 student", "6 students" (lib/format). */
+export { plural } from "@/lib/format";

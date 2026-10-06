@@ -9,7 +9,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date } from "@/lib/format";
+import { date, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, confirmed, formText, today, useNewFlag } from "@/features/transport/kit";
@@ -164,7 +164,7 @@ export function Holidays() {
       <div className="two-col">
         <Panel
           title={`${MONTHS[ym.m]} ${ym.y}`}
-          sub={`${inMonth.length} holiday(s) this month${year.loading ? " · Loading…" : ""}`}
+          sub={`${plural(inMonth.length, "holiday")} this month${year.loading ? " · Loading…" : ""}`}
           action={
             <button type="button" className="btn" onClick={() => setYm({ y: now.getFullYear(), m: now.getMonth() })}>
               Today
@@ -206,7 +206,7 @@ export function Holidays() {
                   </div>
                   <div className="event-content">
                     <h4>{h.name}</h4>
-                    <p>{`${TYPE_LABEL[h.type]} · ${h.days} day(s)`}</p>
+                    <p>{`${TYPE_LABEL[h.type]} · ${plural(h.days, "day")}`}</p>
                   </div>
                 </div>
               ))

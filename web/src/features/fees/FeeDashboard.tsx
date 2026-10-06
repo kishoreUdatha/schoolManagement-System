@@ -76,7 +76,7 @@ export function FeeDashboard() {
               </div>
             }
           >
-            <Chart kind="line" labels={months.map((m) => monthLabel(m).slice(0, 3))} values={scaled(trend)} />
+            <Chart kind="line" labels={months.map((m) => monthLabel(m).slice(0, 3))} values={scaled(trend)} scale="relative" />
           </Panel>
         </div>
         <aside>

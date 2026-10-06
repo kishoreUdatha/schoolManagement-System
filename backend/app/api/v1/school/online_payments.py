@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrAccountant, SchoolAdminUser
+from app.core.deps import FeeCounter, SchoolAdminOrAccountant, SchoolAdminUser
 from app.core.enums import OnlinePaymentStatus
 from app.database import get_db
 from app.schemas.online_payment import GatewayCheck, GatewayRead, GatewayUpdate, OrderRead, Reconciliation
@@ -59,7 +59,7 @@ def delete_gateway(current_user: SchoolAdminUser, db: Db):
 
 @router.get("/online", response_model=list[OrderRead], summary="Online fee payments")
 def list_online(
-    current_user: SchoolAdminOrAccountant,
+    current_user: FeeCounter,
     db: Db,
     student_id: Optional[int] = Query(None),
     status_filter: Optional[OnlinePaymentStatus] = Query(None, alias="status"),
@@ -71,7 +71,7 @@ def list_online(
 
 
 @router.get("/online/{order_id}/receipt.pdf")
-def receipt(order_id: int, current_user: SchoolAdminOrAccountant, db: Db):
+def receipt(order_id: int, current_user: FeeCounter, db: Db):
     pdf, filename = svc.receipt_pdf(db, svc.get_order(db, order_id, current_user.school_id))
     return Response(
         content=pdf,

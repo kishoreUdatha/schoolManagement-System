@@ -1,0 +1,45 @@
+{
+ "own": {
+  "school_id": 1,
+  "school_name": "Sunrise Public School",
+  "student": 1,
+  "parent": 8,
+  "staff": 4,
+  "enquiry": 2,
+  "event": 2,
+  "branch": 2,
+  "class_subject": 1,
+  "homework": 1,
+  "tenant": 1
+ },
+ "other": {
+  "school_id": 2,
+  "school_name": "Dev Demo School",
+  "student": 4,
+  "parent": 18,
+  "staff": 6,
+  "enquiry": 3,
+  "event": 3,
+  "branch": 3,
+  "class_subject": 7,
+  "homework": null,
+  "tenant": 2
+ },
+ "leak_names": [
+  "Ananya Reddy",
+  "Dev Demo School",
+  "Dev School Admin",
+  "Diya Patel",
+  "Ishaan Verma",
+  "Kabir Rao",
+  "Lakshmi Iyer",
+  "Meera Nair",
+  "Priya Menon",
+  "Rahul Sharma",
+  "Rohan Gupta",
+  "Suresh Pillai"
+ ],
+ "ignored_placeholder_names": [
+  "Aarav Sharma"
+ ]
+}

@@ -7,7 +7,7 @@ import { StatStrip, type Stat } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { dateTime, label } from "@/lib/format";
+import { dateTime, label, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { count, DateRow, Empty, Hero, nowStatus, QuickActions, TimelineRow, TimeRow, todayIso } from "./parts";
 import type { SectionAttendance, TeacherDashboardData, TeacherHomework, TeacherNotice } from "./types";
@@ -134,7 +134,7 @@ export function TeacherDashboard() {
             }
           >
             {plotted.length ? (
-              <Chart kind="line" labels={plotted.map((w) => w.label)} values={plotted.map((w) => Math.round(w.pct ?? 0))} />
+              <Chart kind="line" labels={plotted.map((w) => w.label)} values={plotted.map((w) => (w.pct === null || w.pct === undefined ? null : Math.round(w.pct)))} />
             ) : (
               <Empty>{!d || (home && !week) ? "Loading attendance…" : home ? "No attendance marked in the last six school days." : "You are not class teacher of a section."}</Empty>
             )}
@@ -167,7 +167,7 @@ export function TeacherDashboard() {
                   key={n.id}
                   icon="message"
                   title={n.title}
-                  sub={`${n.audience_section_label ?? n.audience_class_name ?? n.audience_student_label ?? label(n.audience)} · ${n.recipient_count} recipient(s)`}
+                  sub={`${n.audience_section_label ?? n.audience_class_name ?? n.audience_student_label ?? label(n.audience)} · ${plural(n.recipient_count, "recipient")}`}
                   time={dateTime(n.sent_at ?? n.scheduled_at)}
                 />
               ))

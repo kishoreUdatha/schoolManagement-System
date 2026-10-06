@@ -14,6 +14,7 @@ import { DAY_SHORT, useSectionPick, useYearClasses } from "./shared";
 import type { GenResult, Requirements } from "./types";
 
 import { ask } from "@/lib/dialog";
+import { plural } from "@/lib/format";
 /**
  * SCR-124, live: GET /school/timetable-gen/sections/{id}/requirements,
  * PUT /timetable-gen/class-subjects/{id}/periods for each subject's weekly
@@ -84,7 +85,7 @@ export function GenerateTimetable() {
       setResult(out);
       notify(
         (out.complete ? `Timetable generated: ${out.placed} lessons placed.` : `${out.placed} lessons placed; some could not fit.`) +
-          (out.room_name ? ` Room: ${out.room_name}${out.without_room ? ` (${out.without_room} lesson(s) without it, it was taken)` : ""}.` : ""),
+          (out.room_name ? ` Room: ${out.room_name}${out.without_room ? ` (${plural(out.without_room, "lesson")} without it, it was taken)` : ""}.` : ""),
       );
       req.reload();
     } catch (err) {
@@ -94,7 +95,7 @@ export function GenerateTimetable() {
     }
   }
 
-  const status = !r ? "…" : r.fits ? (r.unset.length ? `Fits · ${r.unset.length} subject(s) without a count` : "Fits the week") : `Over by ${r.over_by} period(s)`;
+  const status = !r ? "…" : r.fits ? (r.unset.length ? `Fits · ${plural(r.unset.length, "subject")} without a count` : "Fits the week") : `Over by ${plural(r.over_by, "period")}`;
 
   return (
     <>

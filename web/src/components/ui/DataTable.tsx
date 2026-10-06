@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { plural } from "@/lib/format";
 import { Badge, Person } from "./primitives";
 import { EmptyGuide } from "./states";
 
@@ -122,7 +123,7 @@ export function DataTable({
   return (
     <>
       <div className="table-wrap">
-        <table className="data-table" data-filterable="">
+        <table className="data-table stackable" data-filterable="">
           <thead>
             <tr>
               {picking ? (
@@ -159,12 +160,17 @@ export function DataTable({
                   </td>
                 ) : null}
                 {columns.map((c, j) => (
-                  <td key={c} className={WRAP_COLUMNS.includes(c) ? "wrap" : ""} data-col={c.toLowerCase()}>
+                  <td
+                    key={c}
+                    className={[WRAP_COLUMNS.includes(c) ? "wrap" : "", j === 0 ? "lead" : ""].filter(Boolean).join(" ") || undefined}
+                    data-col={c.toLowerCase()}
+                    data-label={c}
+                  >
                     <Display column={c} cell={row[j] ?? ""} index={i} />
                   </td>
                 ))}
                 {rowAction ? (
-                  <td className="right">
+                  <td className="right row-actions">
                     {actions ? (
                       <div className="row" style={{ justifyContent: "flex-end", gap: 6 }}>
                         {actions(i)}
@@ -196,7 +202,7 @@ export function DataTable({
       </div>
       {footer ? (
       <div className="table-footer">
-        <span data-table-count="">{`Showing ${rows.length} of ${count} records`}</span>
+        <span data-table-count="">{`Showing ${rows.length} of ${plural(count, "record")}`}</span>
         <div className="pages">
           {onPage && pages > 1 ? (
             <>

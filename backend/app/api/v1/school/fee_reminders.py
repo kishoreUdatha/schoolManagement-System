@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrAccountant
+from app.core.deps import FeeCounter, SchoolAdminOrAccountant
 from app.database import get_db
 from app.models.fee import StudentFee
 from app.models.student import Student
@@ -34,7 +34,7 @@ def run_now(
     summary="Recent reminder history (most recent first)",
 )
 def history(
-    current_user: SchoolAdminOrAccountant,
+    current_user: FeeCounter,
     db: Annotated[Session, Depends(get_db)],
     limit: int = Query(100, ge=1, le=500),
 ):

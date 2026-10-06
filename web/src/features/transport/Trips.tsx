@@ -9,7 +9,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Avatar, Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, label } from "@/lib/format";
+import { date, dateTime, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -55,7 +55,7 @@ function TripPicker({ screen }: { screen: number }) {
     setError(null);
     try {
       const r = await api.post<{ created: number }>(`${TRIPS}/generate`, undefined, { on: day });
-      notify(r.created ? `Created ${r.created} trip sheet(s).` : "Trip sheets already exist for this day.");
+      notify(r.created ? `Created ${plural(r.created, "trip sheet")}.` : "Trip sheets already exist for this day.");
       trips.reload();
     } catch (e) {
       setError(errorText(e));
@@ -257,7 +257,7 @@ export function TripSheet() {
           </div>
           {!t.students.length ? <div className="table-empty">No students ride this trip.</div> : null}
           <div className="table-footer">
-            <span>{`${t.students.length} student(s) on this sheet`}</span>
+            <span>{`${plural(t.students.length, "student")} on this sheet`}</span>
             <Link href={`${routeOf(196)}?id=${t.id}`} className="btn">
               Mark boarding
             </Link>
@@ -349,7 +349,7 @@ export function BoardingAttendance() {
     setError(null);
     try {
       await api.post(`${TRIPS}/${t!.id}/boarding`, { marks: changed.map((s) => ({ student_id: s.student_id, status: marks[s.student_id] })) });
-      notify(`Saved ${changed.length} mark(s).`);
+      notify(`Saved ${plural(changed.length, "mark")}.`);
       trip.reload();
     } catch (err) {
       setError(errorText(err));
@@ -410,7 +410,7 @@ export function BoardingAttendance() {
           </div>
           {!t.students.length ? <div className="table-empty">No students ride this trip.</div> : null}
           <div className="table-footer">
-            <span>{changed.length ? `${changed.length} unsaved change(s)` : "All marks saved"}</span>
+            <span>{changed.length ? `${plural(changed.length, "unsaved change")}` : "All marks saved"}</span>
             <div className="row">
               {editable ? (
                 <button
@@ -591,7 +591,7 @@ function TrackMap({ points, last, stale }: { points: LocationPoint[]; last: { la
         <rect x={bx - 14} y={by - 11} width="28" height="22" rx="5" fill={stale ? "#8a9bb3" : "#2563eb"} />
         <rect x={bx - 8} y={by - 7} width="16" height="8" rx="2" fill="white" />
       </svg>
-      <span className="map-key">{`${points.length} reading(s) today · north up, to scale, no street map${stale ? " · last reading is stale" : ""}`}</span>
+      <span className="map-key">{`${plural(points.length, "reading")} today · north up, to scale, no street map${stale ? " · last reading is stale" : ""}`}</span>
     </div>
   );
 }

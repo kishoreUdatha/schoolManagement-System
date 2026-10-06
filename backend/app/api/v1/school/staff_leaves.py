@@ -4,14 +4,18 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import HrManager
-from app.core.enums import StaffLeaveStatus
+from app.core.deps import HrManager, allow
+from app.core.enums import StaffLeaveStatus, UserRole
 from app.database import get_db
+from app.models.user import User
 from app.schemas.staff_leave import StaffLeaveCreate, StaffLeaveDecide, StaffLeaveFileFor, StaffLeaveRead
 from app.services import staff_leave_service
 
 
 router = APIRouter()
+# the list is also read by staff records (the directory marks who is on leave)
+StaffLeaveReader = Annotated[User, Depends(allow(
+    UserRole.school_admin, UserRole.principal, permission="hr.manage", any_of=("staff.manage",)))]
 
 
 @router.get(
@@ -20,7 +24,7 @@ router = APIRouter()
     summary="All staff leaves (pending first by default)",
 )
 def list_(
-    current_user: HrManager,
+    current_user: StaffLeaveReader,
     db: Annotated[Session, Depends(get_db)],
     status_filter: Optional[StaffLeaveStatus] = Query(None, alias="status"),
 ):

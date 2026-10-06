@@ -9,7 +9,7 @@ import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { api, errorText } from "@/lib/api";
-import { date, initials, label, money } from "@/lib/format";
+import { date, initials, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -63,7 +63,7 @@ export function VehicleList() {
   const n = (v: number) => (vehicles.loading && !vehicles.data ? (vehicles.loading ? "…" : "—") : String(v));
   const stats = [
     { label: "In service", value: n(running.length), note: `${all.length - running.length} inactive` },
-    { label: "Seats", value: n(running.reduce((s, v) => s + v.capacity, 0)), note: `${running.reduce((s, v) => s + v.assigned_students, 0)} student(s) assigned` },
+    { label: "Seats", value: n(running.reduce((s, v) => s + v.capacity, 0)), note: `${plural(running.reduce((s, v) => s + v.assigned_students, 0), "student")} assigned` },
     { label: "Renewals due", value: n(running.filter((v) => v.expiring_documents.length).length), note: "Insurance, fitness, permit or PUC" },
     { label: "No driver", value: n(running.filter((v) => !v.driver_id).length), note: "Vehicles without a driver" },
   ];
@@ -91,7 +91,7 @@ export function VehicleList() {
       <ErrorNote>{vehicles.error ?? routes.error}</ErrorNote>
       <Panel
         title="Fleet"
-        sub={vehicles.data ? `${all.length} vehicle(s) · ${all.reduce((s, v) => s + v.capacity, 0)} seats · ${all.reduce((s, v) => s + v.assigned_students, 0)} student(s) assigned` : "Loading…"}
+        sub={vehicles.data ? `${plural(all.length, "vehicle")} · ${all.reduce((s, v) => s + v.capacity, 0)} seats · ${plural(all.reduce((s, v) => s + v.assigned_students, 0), "student")} assigned` : "Loading…"}
         flush
       >
         <DataTable
@@ -297,7 +297,7 @@ export function VehicleDetails() {
   const loadingLogs = logs.loading && !logs.data;
   const stats = [
     { label: "Students", value: String(v.assigned_students), note: `Of ${v.capacity} seats` },
-    { label: "Fuel this month", value: loadingLogs ? "…" : money(sum(fuel)), note: `${fuel.reduce((s, l) => s + Number(l.litres ?? 0), 0)} L in ${fuel.length} fill(s)` },
+    { label: "Fuel this month", value: loadingLogs ? "…" : money(sum(fuel)), note: `${fuel.reduce((s, l) => s + Number(l.litres ?? 0), 0)} L in ${plural(fuel.length, "fill")}` },
     { label: "Last service", value: loadingLogs ? "…" : lastService ? date(lastService) : "—", note: `${services.length} service entr(ies)` },
     { label: "Renewals due", value: String(v.expiring_documents.length), note: v.expiring_documents.length ? v.expiring_documents.map(label).join(", ") : "All documents in date" },
   ];
@@ -502,7 +502,7 @@ export function MaintenanceFuel() {
   const monthFuel = month.filter((l) => l.kind === "fuel");
   const n = (v: string) => (logs ? v : "…");
   const stats = [
-    { label: "Fuel this month", value: n(money(sum(monthFuel))), note: `${monthFuel.reduce((s, l) => s + Number(l.litres ?? 0), 0)} L in ${monthFuel.length} fill(s)` },
+    { label: "Fuel this month", value: n(money(sum(monthFuel))), note: `${monthFuel.reduce((s, l) => s + Number(l.litres ?? 0), 0)} L in ${plural(monthFuel.length, "fill")}` },
     { label: "Upkeep this month", value: n(money(sum(month.filter((l) => l.kind !== "fuel")))), note: "Service, repair, tyres, other" },
     { label: "Services", value: n(String(month.filter((l) => l.kind === "service" || l.kind === "repair").length)), note: "Service or repair entries this month" },
     { label: "Vehicles", value: vehicles.loading && !list ? "…" : String((list ?? []).filter((v) => v.is_active && (!vehicleId || String(v.id) === vehicleId)).length), note: vehicleId ? "The one chosen" : "In service" },

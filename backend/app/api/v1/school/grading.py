@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.deps import CurrentUser, SchoolAdminUser
+from app.core.deps import GradingSetup, allow_job
 from app.core.enums import UserRole
 from app.database import get_db
 from app.models.academic import Section
@@ -26,15 +26,13 @@ from app.services import grading_service as svc
 from app.services import result_service
 
 
-def _academic_staff(current_user: CurrentUser) -> User:
-    if current_user.role not in (UserRole.school_admin, UserRole.principal, UserRole.teacher) or current_user.school_id is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teaching staff access required")
-    return current_user
-
-
 router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
-Academic = Annotated[User, Depends(_academic_staff)]
+# Teaching staff, plus office staff given the Examinations or Grading job.
+Academic = Annotated[User, Depends(allow_job(
+    UserRole.school_admin, UserRole.principal, UserRole.teacher,
+    permission="exams.manage", also=("grading.manage", "exams.approve_results"),
+))]
 
 
 # ---------- grade scales ----------
@@ -46,13 +44,13 @@ def list_scales(current_user: Academic, db: Db):
 
 
 @router.post("/grade-scales", response_model=GradeScaleRead, status_code=status.HTTP_201_CREATED)
-def create_scale(payload: GradeScaleIn, current_user: SchoolAdminUser, db: Db):
+def create_scale(payload: GradeScaleIn, current_user: GradingSetup, db: Db):
     return svc.scale_to_read(db, svc.create_scale(db, current_user, payload))
 
 
 @router.post("/grade-scales/seed-cbse", response_model=GradeScaleRead, status_code=status.HTTP_201_CREATED,
              summary="Create a ready-made CBSE 8-point scale")
-def seed(current_user: SchoolAdminUser, db: Db):
+def seed(current_user: GradingSetup, db: Db):
     return svc.scale_to_read(db, svc.seed_cbse(db, current_user))
 
 
@@ -62,17 +60,17 @@ def get_scale(scale_id: int, current_user: Academic, db: Db):
 
 
 @router.put("/grade-scales/{scale_id}", response_model=GradeScaleRead)
-def update_scale(scale_id: int, payload: GradeScaleIn, current_user: SchoolAdminUser, db: Db):
+def update_scale(scale_id: int, payload: GradeScaleIn, current_user: GradingSetup, db: Db):
     return svc.scale_to_read(db, svc.update_scale(db, current_user, scale_id, payload))
 
 
 @router.post("/grade-scales/{scale_id}/default", response_model=GradeScaleRead)
-def make_default(scale_id: int, current_user: SchoolAdminUser, db: Db):
+def make_default(scale_id: int, current_user: GradingSetup, db: Db):
     return svc.scale_to_read(db, svc.set_default(db, current_user, scale_id))
 
 
 @router.delete("/grade-scales/{scale_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_scale(scale_id: int, current_user: SchoolAdminUser, db: Db):
+def delete_scale(scale_id: int, current_user: GradingSetup, db: Db):
     svc.delete_scale(db, current_user, scale_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -86,17 +84,17 @@ def list_types(current_user: Academic, db: Db):
 
 
 @router.post("/exam-types", response_model=ExamTypeRead, status_code=status.HTTP_201_CREATED)
-def create_type(payload: ExamTypeIn, current_user: SchoolAdminUser, db: Db):
+def create_type(payload: ExamTypeIn, current_user: GradingSetup, db: Db):
     return svc.type_to_read(db, svc.create_exam_type(db, current_user, payload))
 
 
 @router.put("/exam-types/{type_id}", response_model=ExamTypeRead)
-def update_type(type_id: int, payload: ExamTypeIn, current_user: SchoolAdminUser, db: Db):
+def update_type(type_id: int, payload: ExamTypeIn, current_user: GradingSetup, db: Db):
     return svc.type_to_read(db, svc.update_exam_type(db, current_user, type_id, payload))
 
 
 @router.delete("/exam-types/{type_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_type(type_id: int, current_user: SchoolAdminUser, db: Db):
+def delete_type(type_id: int, current_user: GradingSetup, db: Db):
     svc.delete_exam_type(db, current_user, type_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -110,7 +108,7 @@ def get_settings(current_user: Academic, db: Db):
 
 
 @router.put("/report-card-settings", response_model=ReportCardSettingRead)
-def put_settings(payload: ReportCardSettingIn, current_user: SchoolAdminUser, db: Db):
+def put_settings(payload: ReportCardSettingIn, current_user: GradingSetup, db: Db):
     return svc.update_settings(db, current_user, payload)
 
 

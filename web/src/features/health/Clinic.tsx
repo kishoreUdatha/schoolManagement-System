@@ -10,9 +10,10 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, initials, label } from "@/lib/format";
+import { date, dateTime, initials, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
+import { usePermissions } from "@/lib/jobs";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, addDays, formText, time12, today, useDebounced, type PickedStudent } from "@/features/transport/kit";
@@ -20,6 +21,7 @@ import type { StaffOption } from "./types";
 import type { Alert, Appointment, Dose, Due, FirstAid, HealthDashboard, HealthRecord, ProfileRow, Visit, VisitOutcome } from "./types";
 
 import { ask } from "@/lib/dialog";
+import { useGreeting } from "@/features/dashboards/parts";
 export const HEALTH = "/api/v1/school/health";
 export const WELL = "/api/v1/school/wellbeing";
 
@@ -31,15 +33,16 @@ export const OUTCOMES: Record<VisitOutcome, string> = {
   referred_hospital: "Referred to hospital",
 };
 
-const WEEKDAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
 
 /** SCR-216, live: /health/dashboard, /health/visits (?on= each of the last six days), /wellbeing/counselling/appointments (today), /health/immunizations-due. */
 export function HealthDashboardView() {
-  const session = useSession();
   const dash = useApi<HealthDashboard>(`${HEALTH}/dashboard`);
   const todayVisits = useApi<Visit[]>(`${HEALTH}/visits`, { on: today() });
-  const appts = useApi<Appointment[]>(`${WELL}/counselling/appointments`, { from: today(), to: today() });
+  // counselling is its own confidence: the clinic's job does not open it
+  const role = useSession()?.user.role;
+  const perms = usePermissions();
+  const counsels = role === "school_admin" || role === "principal" || Boolean(perms?.has("counselling.access"));
+  const appts = useApi<Appointment[]>(counsels ? `${WELL}/counselling/appointments` : null, { from: today(), to: today() });
   const due = useApi<Due[]>(`${HEALTH}/immunizations-due`, { within_days: 30 });
   const [week, setWeek] = useState<{ day: string; n: number }[] | null>(null);
 
@@ -56,8 +59,8 @@ export function HealthDashboardView() {
 
   const d = dash.data;
   const now = new Date();
-  const first = session?.user.full_name.split(/\s+/)[0];
-  const hour = now.getHours();
+  // name and date only once hydrated: the server renders before it knows the viewer or their clock
+  const g = useGreeting();
   const stats = [
     { label: "Visits today", value: d ? String(d.visits_today) : "…", note: d ? `${d.sent_home_today} sent home · ${d.referred_today} referred` : "Clinic visits" },
     { label: "Follow-ups", value: d ? String(d.follow_ups_due) : "…", note: "Due from earlier visits" },
@@ -70,8 +73,8 @@ export function HealthDashboardView() {
     <>
       <section className="hero">
         <div className="hero-content">
-          <div className="eyebrow">{`${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`}</div>
-          <h2>{`${hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"}${first ? `, ${first}` : ""}.`}</h2>
+          <div className="eyebrow">{g.eyebrow}</div>
+          <h2>{g.title}</h2>
           <p>Here’s what the clinic and counselling desks have today.</p>
           <Link href={routeOf(217)} className="btn white">
             <Icon name="arrow" className="sm" />
@@ -137,7 +140,7 @@ export function HealthDashboardView() {
           </Panel>
         </div>
         <aside>
-          <Panel title="Today’s schedule" action={<Link href={routeOf(221)} className="btn text">View all</Link>}>
+          <Panel title="Today’s schedule" action={counsels ? <Link href={routeOf(221)} className="btn text">View all</Link> : undefined}>
             {(appts.data ?? []).map((a) => (
               <div className="event-row" key={a.id}>
                 <div className="event-time">
@@ -152,6 +155,7 @@ export function HealthDashboardView() {
               </div>
             ))}
             {appts.data && !appts.data.length ? <p className="muted">No counselling appointments today.</p> : null}
+            {!counsels ? <p className="muted">Counselling appointments are kept by the counselling team.</p> : null}
             {appts.error ? <p className="muted">{appts.error}</p> : null}
           </Panel>
         </aside>
@@ -1012,7 +1016,7 @@ export function ImmunizationAllergy() {
     setError(null);
     try {
       const r = await api.post<{ recorded: unknown[]; skipped: unknown[]; already_had_it: unknown[] }>(`${WELL}/immunisation/bulk`, { section_id: Number(f.get("section_id")), vaccine: formText(f, "vaccine"), given_on: formText(f, "given_on"), dose: formText(f, "dose"), next_due_on: formText(f, "next_due_on"), skip_student_ids: [] });
-      setDrive(`Recorded for ${r.recorded.length} student(s); ${r.already_had_it.length} already had it; ${r.skipped.length} skipped.`);
+      setDrive(`Recorded for ${plural(r.recorded.length, "student")}; ${r.already_had_it.length} already had it; ${r.skipped.length} skipped.`);
       notify("Drive recorded.");
     } catch (err) {
       setError(errorText(err));

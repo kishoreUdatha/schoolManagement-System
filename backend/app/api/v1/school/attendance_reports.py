@@ -11,11 +11,14 @@ import io
 from datetime import date
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal
+from app.core.deps import AttendanceOffice, CurrentUser
+from app.core.enums import UserRole
+from app.models.academic import Section
+from app.models.student import Student
 from app.database import get_db
 from app.schemas.attendance_report import (
     ClassSummaryRow,
@@ -49,7 +52,7 @@ def _csv_response(filename: str, header: list[str], rows: list[list]) -> PlainTe
     summary="Students marked absent on a given date",
 )
 def daily_absent(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: AttendanceOffice,
     db: Annotated[Session, Depends(get_db)],
     on_date: date = Query(..., alias="date"),
     class_id: Optional[int] = Query(None),
@@ -71,7 +74,7 @@ def daily_absent(
     summary="CSV export of /daily-absent",
 )
 def daily_absent_csv(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: AttendanceOffice,
     db: Annotated[Session, Depends(get_db)],
     on_date: date = Query(..., alias="date"),
     class_id: Optional[int] = Query(None),
@@ -110,7 +113,7 @@ def daily_absent_csv(
     summary="Per-class/section attendance breakdown over a date range",
 )
 def class_summary(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: AttendanceOffice,
     db: Annotated[Session, Depends(get_db)],
     from_date: date = Query(..., alias="from"),
     to_date: date = Query(..., alias="to"),
@@ -128,7 +131,7 @@ def class_summary(
     summary="CSV export of /class-summary",
 )
 def class_summary_csv(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: AttendanceOffice,
     db: Annotated[Session, Depends(get_db)],
     from_date: date = Query(..., alias="from"),
     to_date: date = Query(..., alias="to"),
@@ -177,14 +180,32 @@ def class_summary_csv(
 )
 def student_history(
     student_id: int,
-    current_user: SchoolAdminOrPrincipal,
+    current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
     frm: Optional[date] = Query(None, alias="from"),
     to: Optional[date] = Query(None),
 ):
+    if current_user.role not in (UserRole.school_admin, UserRole.principal):
+        # a class teacher, for a child in their own section
+        child = db.get(Student, student_id)
+        if not child or child.school_id != current_user.school_id:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "School admin, principal or the section's class teacher access required")
+        _may_read_section(db, current_user, child.section_id)
     return attendance_report_service.student_history(
         db, current_user.school_id, student_id, frm=frm, to=to
     )
+
+
+def _may_read_section(db: Session, user, section_id: int) -> None:
+    """A section's month register: the office and the principal for any
+    section, a teacher only for the section they are class teacher of."""
+    if user.role in (UserRole.school_admin, UserRole.principal):
+        return
+    if user.role == UserRole.teacher:
+        sec = db.get(Section, section_id)
+        if sec and sec.school_id == user.school_id and sec.class_teacher_user_id == user.id:
+            return
+    raise HTTPException(status.HTTP_403_FORBIDDEN, "School admin, principal or the section's class teacher access required")
 
 
 @router.get(
@@ -193,12 +214,13 @@ def student_history(
     summary="Per-student monthly attendance counts and % for one section",
 )
 def student_monthly(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
     section_id: int = Query(...),
     year: int = Query(..., ge=2020, le=2100),
     month: int = Query(..., ge=1, le=12),
 ):
+    _may_read_section(db, current_user, section_id)
     report = attendance_report_service.student_monthly(
         db, current_user.school_id, section_id, year, month
     )
@@ -211,12 +233,13 @@ def student_monthly(
     summary="CSV export of /student-monthly",
 )
 def student_monthly_csv(
-    current_user: SchoolAdminOrPrincipal,
+    current_user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
     section_id: int = Query(...),
     year: int = Query(..., ge=2020, le=2100),
     month: int = Query(..., ge=1, le=12),
 ):
+    _may_read_section(db, current_user, section_id)
     report = attendance_report_service.student_monthly(
         db, current_user.school_id, section_id, year, month
     )

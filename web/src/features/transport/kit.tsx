@@ -11,6 +11,7 @@ import { Icon } from "@/components/ui/Icon";
 import { api, type Paginated } from "@/lib/api";
 
 import { ask } from "@/lib/dialog";
+import { plural } from "@/lib/format";
 /** Today as YYYY-MM-DD in the viewer's time zone (not UTC). */
 export function today(): string {
   const d = new Date();
@@ -45,7 +46,7 @@ export function ago(mins: number): string {
   if (mins < 60) return `${mins} min ago`;
   const h = Math.round(mins / 60);
   if (h < 24) return `${h} h ago`;
-  return `${Math.round(h / 24)} day(s) ago`;
+  return `${plural(Math.round(h / 24), "day")} ago`;
 }
 
 /** A value that settles a moment after the last change (search boxes). */

@@ -103,7 +103,8 @@ export const JOBS: Job[] = [
       // marks entry and bulk import are the teacher's own screens, on the teacher API
       [138, "Exam dashboard"], [139, "Exam types"], [140, "Exam setup"], [141, "Exam schedule"],
       [142, "Hall allocation"], [143, "Invigilation"], [144, "Admit cards"],
-      [146, "Practical marks"], [148, "Marks verification"],
+      // verifying marks is signing them off: its own permission
+      [146, "Practical marks"], [148, "Marks verification", "exams.approve_results"],
       [149, "Grading setup", "grading.manage"], [150, "Publish results"], [152, "Report cards"], [272, "Result analysis", "reports.view"],
     ],
   },
@@ -154,7 +155,8 @@ export const JOBS: Job[] = [
     permission: "notices.send",
     title: "Communication",
     items: [
-      [252, "Announcements"], [253, "Messaging inbox"], [254, "Notification campaigns"], [255, "Communication history"],
+      // (the messaging inbox is between parents and teachers: not a job)
+      [252, "Announcements"], [254, "Notification campaigns"], [255, "Communication history"],
       [296, "Notification centre"], [246, "Events calendar", "events.manage"],
       [249, "Field trips & consent", "events.manage"], [250, "PTM setup", "events.manage"],
     ],

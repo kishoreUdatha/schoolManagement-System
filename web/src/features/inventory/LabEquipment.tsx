@@ -9,6 +9,7 @@ import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { useApi } from "@/lib/useApi";
 import { INV, Tip, qty, type Item, type Lab } from "./common";
+import { plural } from "@/lib/format";
 
 /**
  * SCR-243, partly live. A lab's equipment is one free-text note on the lab
@@ -98,7 +99,7 @@ export function LabEquipment() {
           }}
         />
       </Panel>
-      <Panel title="Equipment recorded on each lab" sub={`${labs.data?.length ?? 0} lab(s)`}>
+      <Panel title="Equipment recorded on each lab" sub={`${plural(labs.data?.length ?? 0, "lab")}`}>
         {withNotes.length ? (
           withNotes.map((l) => (
             <div className="timeline-item" key={l.id}>

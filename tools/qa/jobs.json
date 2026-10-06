@@ -1,0 +1,62 @@
+{
+ "hr": {
+  "email": "hr@sunqa.test",
+  "password": "Office@2026",
+  "name": "Priya Nair",
+  "job": "HR Manager",
+  "permissions": [
+   "hr.manage",
+   "payroll.manage",
+   "staff.manage"
+  ]
+ },
+ "transport": {
+  "email": "transport@sunqa.test",
+  "password": "Office@2026",
+  "name": "Arun Kumar",
+  "job": "Transport Manager",
+  "permissions": [
+   "transport.manage"
+  ]
+ },
+ "nurse": {
+  "email": "nurse@sunqa.test",
+  "password": "Office@2026",
+  "name": "Mary Thomas",
+  "job": "School Nurse",
+  "permissions": [
+   "health.manage",
+   "counselling.access"
+  ]
+ },
+ "admissions": {
+  "email": "admissions@sunqa.test",
+  "password": "Office@2026",
+  "name": "Ravi Menon",
+  "job": "Admission Officer",
+  "permissions": [
+   "admissions.manage",
+   "admissions.decide"
+  ]
+ },
+ "exams": {
+  "email": "exams@sunqa.test",
+  "password": "Office@2026",
+  "name": "Sunita Rao",
+  "job": "Exam Coordinator",
+  "permissions": [
+   "exams.manage",
+   "grading.manage",
+   "exams.approve_results"
+  ]
+ },
+ "discipline": {
+  "email": "discipline@sunqa.test",
+  "password": "Office@2026",
+  "name": "Vikas Gupta",
+  "job": "Discipline In-charge",
+  "permissions": [
+   "discipline.manage"
+  ]
+ }
+}

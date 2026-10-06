@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/primitives";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date } from "@/lib/format";
+import { date, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -153,7 +153,7 @@ function OfficeSetup() {
 
   // The API refuses both while parents hold bookings, and says so.
   async function removeTeacher(t: PtmDetail["teachers"][number]) {
-    if (!(await ask(`Take ${t.teacher_name} out of “${s!.title}”? Their ${t.slots.length} slot(s) are deleted.`))) return;
+    if (!(await ask(`Take ${t.teacher_name} out of “${s!.title}”? Their ${plural(t.slots.length, "slot")} are deleted.`))) return;
     setSaving(true);
     setError(null);
     try {
@@ -202,7 +202,7 @@ function OfficeSetup() {
       if (teachers.length) {
         try {
           await api.post(`/api/v1/school/ptm/${saved.id}/teachers`, { user_ids: teachers.map(Number) });
-          done.push(`${teachers.length} teacher(s) added with their slots.`);
+          done.push(`${plural(teachers.length, "teacher")} added with their slots.`);
         } catch (err) {
           done.push(`Teachers were not added: ${errorText(err)}`);
         }
@@ -301,7 +301,7 @@ function OfficeSetup() {
                 </>
               ) : null}
               <p className="muted small" style={{ marginTop: 12 }}>
-                {`${slotCount(times.start, times.end, times.minutes)} slot(s) per teacher.${locked ? " Date, times and slot length are locked once teachers are added." : ""}${s ? ` Teachers in this meeting: ${s.teachers.map((t) => t.teacher_name).join(", ") || "none yet"}.` : ""}`}
+                {`${plural(slotCount(times.start, times.end, times.minutes), "slot")} per teacher.${locked ? " Date, times and slot length are locked once teachers are added." : ""}${s ? ` Teachers in this meeting: ${s.teachers.map((t) => t.teacher_name).join(", ") || "none yet"}.` : ""}`}
               </p>
             </section>
           </div>
@@ -440,7 +440,7 @@ function TeacherSetup() {
                 {field("Venue", <input name="venue" maxLength={200} placeholder="Your classroom" />)}
                 {field("Notes for parents", <textarea name="notes" maxLength={5000} placeholder="Anything parents should know" />, false, true)}
               </div>
-              <p className="muted small" style={{ marginTop: 12 }}>{`${slotCount(times.start, times.end, times.minutes)} slot(s) will be made for you across that window.`}</p>
+              <p className="muted small" style={{ marginTop: 12 }}>{`${plural(slotCount(times.start, times.end, times.minutes), "slot")} will be made for you across that window.`}</p>
             </section>
           </div>
         </div>

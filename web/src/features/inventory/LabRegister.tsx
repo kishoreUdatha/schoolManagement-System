@@ -13,6 +13,7 @@ import { useApi } from "@/lib/useApi";
 import { Field, Modal, ModalActions, Tip, orNull, useNewFlag, type Lab, type StaffRow } from "./common";
 
 import { ask } from "@/lib/dialog";
+import { plural } from "@/lib/format";
 type Room = { id: number; name: string; code: string };
 type Subject = { id: number; name: string };
 
@@ -68,7 +69,7 @@ export function LabRegister() {
         </select>
       </div>
       <ErrorNote>{list.error}</ErrorNote>
-      {all.length && (noRoom || noHead) ? <Tip warn>{`${noRoom} lab(s) without a room and ${noHead} without someone in charge.`}</Tip> : null}
+      {all.length && (noRoom || noHead) ? <Tip warn>{`${plural(noRoom, "lab")} without a room and ${noHead} without someone in charge.`}</Tip> : null}
       <Panel
         
         action={

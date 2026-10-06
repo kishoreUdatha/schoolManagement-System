@@ -151,7 +151,17 @@ function useNavCollapsed(): [boolean, () => void] {
       }
       return !v;
     });
-  return [collapsed, toggle];
+  // Folding is a desktop thing: on a phone the menu slides in over the page,
+  // always at full size.
+  const [phone, setPhone] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 950px)");
+    const on = () => setPhone(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return [collapsed && !phone, toggle];
 }
 
 function Sidebar({ s, viewer, school, collapsed, onToggle }: { s: Screen | undefined; viewer: Viewer; school: Branding | null; collapsed?: boolean; onToggle?: () => void }) {
@@ -325,7 +335,7 @@ function YearSelect({ admin }: { admin: boolean }) {
   );
 }
 
-function Topbar({ who, role, school }: { who: string; role: string; school: Branding | null }) {
+function Topbar({ who, role, school, pages }: { who: string; role: string; school: Branding | null; pages: Set<number> | null }) {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -334,7 +344,14 @@ function Topbar({ who, role, school }: { who: string; role: string; school: Bran
         </button>
         <div className="topsearch">
           <Icon name="search" className="sm" />
-          <input aria-label="Find screen" placeholder="Search students, classes, pages…" id="global-search" autoComplete="off" />
+          <input
+            aria-label="Go to a page"
+            placeholder="Go to a page…"
+            id="global-search"
+            autoComplete="off"
+            // the pages in this person's own menu: the search offers only doors that open
+            data-screens={pages ? [...pages].join(",") : undefined}
+          />
           <kbd>⌘ K</kbd>
           <div className="search-results" id="global-results" />
         </div>
@@ -423,7 +440,7 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
         <Sidebar s={s} viewer={viewer} school={school ?? null} collapsed={collapsed} onToggle={toggleNav} />
         <button className="offcanvas-backdrop" aria-label="Close navigation" data-toggle-nav="" />
         <div className="workspace">
-          <Topbar who={viewer.who} role={viewer.role} school={school} />
+          <Topbar who={viewer.who} role={viewer.role} school={school} pages={mine} />
           <main className="main">
             {/* No breadcrumb: the menu shows where you are. Dashboards open
                 straight on their greeting; other screens keep a compact title
@@ -446,7 +463,15 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
               </div>
             )}
             {group && tabs.length > 1 ? (
-              <nav className="module-tabs page-tabs" aria-label={group.label}>
+              <nav
+                className="module-tabs page-tabs"
+                aria-label={group.label}
+                ref={(el) => {
+                  // on a narrow screen the row scrolls: bring this page's tab into view
+                  const a = el?.querySelector<HTMLElement>("a.active");
+                  if (el && a && el.scrollWidth > el.clientWidth) el.scrollLeft = a.offsetLeft - (el.clientWidth - a.offsetWidth) / 2;
+                }}
+              >
                 {tabs.map(([n, t]) => (
                   <Link key={n} href={routeOf(n)} className={n === s.n ? "active" : ""} aria-current={n === s.n ? "page" : undefined}>
                     {t}

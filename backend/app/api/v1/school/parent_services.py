@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import (
     FrontDeskUser,
     LibraryManager,
+    ParentsManager,
     SchoolAdminOrPrincipal,
     SchoolAdminUser,
     TransportManager,
@@ -79,7 +80,7 @@ def put_settings(payload: ServiceSettingsIn, current_user: SchoolAdminUser, db: 
 @router.get("/requests", response_model=list[ParentRequestRead],
             summary="Parents' requests to link a child or change their contact details")
 def office_requests(
-    current_user: SchoolAdminUser,
+    current_user: ParentsManager,
     db: Db,
     kind: Optional[Literal["link_child", "contact_change"]] = None,
     status_filter: Optional[Literal["pending", "approved", "rejected", "cancelled"]] = Query(None, alias="status"),
@@ -90,7 +91,7 @@ def office_requests(
 
 @router.post("/requests/{request_id}/decide", response_model=ParentRequestRead,
              summary="Approve (links the child / changes the contact details) or reject")
-def decide_office(request_id: int, payload: RequestDecision, current_user: SchoolAdminUser, db: Db):
+def decide_office(request_id: int, payload: RequestDecision, current_user: ParentsManager, db: Db):
     return _req(db, svc.decide_request(db, current_user, request_id, OFFICE_KINDS, payload))
 
 

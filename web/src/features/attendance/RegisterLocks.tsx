@@ -8,7 +8,7 @@ import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { dateTime } from "@/lib/format";
+import { dateTime, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { addDays, longDay, usePageAction, useSchoolDay } from "./shared";
@@ -69,7 +69,7 @@ export function RegisterLocks() {
     try {
       const r = await api.post<LockDayResult>("/api/v1/school/attendance/registers/lock-day", {}, { date: day });
       setConfirmDay(false);
-      notify(r.locked ? `${r.locked} register(s) locked; ${r.sections - r.locked} were already locked.` : "Every marked register was already locked.");
+      notify(r.locked ? `${plural(r.locked, "register")} locked; ${r.sections - r.locked} were already locked.` : "Every marked register was already locked.");
       list.reload();
     } catch (e) {
       setError(errorText(e));

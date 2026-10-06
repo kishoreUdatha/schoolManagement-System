@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Row } from "@/components/ui/DataTable";
-import { date, label, money, pct } from "@/lib/format";
+import { date, label, money, pct, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { DateInput, monthLabel, num, ReportView, share } from "./kit";
 
@@ -142,7 +142,7 @@ export function TransportReport() {
       stats={[
         { label: "Routes", value: num(routes.length), note: `${num(d?.over_capacity.length)} over capacity` },
         { label: "Seats", value: num(d?.total_capacity), note: "Across route vehicles" },
-        { label: "Riders", value: num(d?.total_riders), note: d ? `${num(boardedToday)} boarded today on ${runningToday} route(s)` : "Students assigned" },
+        { label: "Riders", value: num(d?.total_riders), note: d ? `${num(boardedToday)} boarded today on ${plural(runningToday, "route")}` : "Students assigned" },
         { label: "Utilization", value: d ? pct(d.utilisation) : "—", note: "Riders ÷ seats" },
       ]}
       chart={{ kind: "bars", title: "Utilization by route", sub: "Riders against seats", percent: true, bars: routes.map((r) => ({ label: r.route_name, value: r.utilisation, text: pct(r.utilisation, 0) })), empty: "No routes set up yet." }}

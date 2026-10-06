@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
-import { date, label } from "@/lib/format";
+import { date, label, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { Note } from "@/features/self/kit";
 import { Student360 } from "./Student360";
@@ -95,7 +95,7 @@ function Roster() {
         </select>
       </div>
       <ErrorNote>{classes.error ?? roster.error}</ErrorNote>
-      <Panel title={section ? section.label : "Students"} sub={`${section ? section.roles.join(", ") : "Your class"}${roster.loading ? " · Loading…" : ` · ${all.length} active student(s)`}`} flush>
+      <Panel title={section ? section.label : "Students"} sub={`${section ? section.roles.join(", ") : "Your class"}${roster.loading ? " · Loading…" : ` · ${plural(all.length, "active student")}`}`} flush>
         <DataTable
           columns={["Student", "Roll no", "Gender", "Date of birth"]}
           rows={rows}

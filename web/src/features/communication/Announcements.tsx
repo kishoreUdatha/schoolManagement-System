@@ -7,9 +7,10 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge } from "@/components/ui/primitives";
 import { EmptyGuide, ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { dateTime, label } from "@/lib/format";
+import { dateTime, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
+import { usePermissions } from "@/lib/jobs";
 import { useApi } from "@/lib/useApi";
 import { CHANNEL_LABEL, type Delivery, NOTICE_AUDIENCE, type Notice, type NoticeAudience, deliveryLine, noticeAudience, useRole } from "./shared";
 
@@ -54,7 +55,9 @@ type Item = {
  */
 export function Announcements() {
   const role = useRole();
-  const office = role === "school_admin";
+  const perms = usePermissions();
+  // the office, or office staff given the Communication job
+  const office = role === "school_admin" || (role === "staff" && Boolean(perms?.has("notices.send")));
   const path = office ? "/api/v1/school/notices" : role === "teacher" ? "/api/v1/teacher/notices" : null;
   const notices = useApi<Notice[]>(path);
   const campaigns = useApi<{ rows: CampaignRow[] }>(role === "principal" ? "/api/v1/school/event-ops/campaigns" : null);
@@ -63,8 +66,8 @@ export function Announcements() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  if (role === null) return <Loading />;
-  if (!["school_admin", "teacher", "principal"].includes(role)) return <ErrorNote>Announcements are written by the school office and teachers.</ErrorNote>;
+  if (role === null || (role === "staff" && perms === null)) return <Loading />;
+  if (!office && !["teacher", "principal"].includes(role)) return <ErrorNote>Announcements are written by the school office and teachers.</ErrorNote>;
 
   const items: Item[] = notices.data
     ? notices.data.map((n) => ({
@@ -105,7 +108,7 @@ export function Announcements() {
   const sentMonth = items.filter((i) => i.sentAt && i.sentAt.slice(0, 7) === month);
   const failedTo = items.reduce((s, i) => s + i.delivery.reduce((t, d) => t + d.failed, 0), 0);
   const stats = [
-    { label: "Sent this month", value: num(sentMonth.length), note: `${sentMonth.reduce((s, i) => s + i.recipients, 0)} recipient(s)` },
+    { label: "Sent this month", value: num(sentMonth.length), note: `${plural(sentMonth.reduce((s, i) => s + i.recipients, 0), "recipient")}` },
     { label: "Scheduled", value: num(items.filter((i) => i.status === "scheduled").length), note: "Waiting to go out" },
     { label: "Drafts", value: num(items.filter((i) => i.status === "draft").length), note: "Written, not sent" },
     { label: "Failed", value: num(failedTo), note: "Messages that did not reach someone" },
@@ -115,7 +118,7 @@ export function Announcements() {
     if (!(await ask(`Send "${n.title}" to ${n.audience}?`))) return;
     try {
       const r = await api.post<Notice>(`/api/v1/school/notices/${n.id}/send`);
-      notify(`Handed to ${r.recipient_count} recipient(s). ${deliveryLine(r.delivery)}.`);
+      notify(`Handed to ${plural(r.recipient_count, "recipient")}. ${deliveryLine(r.delivery)}.`);
       notices.reload();
     } catch (e) {
       setError(errorText(e));
@@ -175,7 +178,7 @@ export function Announcements() {
               {n.body ? <p>{n.body.length > 220 ? `${n.body.slice(0, 220)}…` : n.body}</p> : null}
               <time>{`${n.when} · ${n.audience} · ${n.channels.map((c) => CHANNEL_LABEL[c] ?? c).join(", ") || "no channel"}`}</time>
               {n.status === "sent" || n.delivery.length ? (
-                <time style={{ display: "block" }}>{`${n.recipients} recipient(s) · ${deliveryLine(n.delivery)}`}</time>
+                <time style={{ display: "block" }}>{`${plural(n.recipients, "recipient")} · ${deliveryLine(n.delivery)}`}</time>
               ) : null}
               {office && n.status !== "sent" ? (
                 <div className="row" style={{ gap: 8, marginTop: 8 }}>

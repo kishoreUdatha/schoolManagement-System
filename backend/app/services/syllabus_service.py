@@ -11,7 +11,7 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, object_session
 
 from app.core import notify
 from app.core.enums import LessonPlanStatus, UserRole
@@ -23,6 +23,31 @@ from app.models.user import User
 from app.schemas.syllabus import ChapterIn, CoverageIn, DeliverIn, LessonPlanIn, ReviewIn, TopicUpdate
 
 REVIEWERS = (UserRole.school_admin, UserRole.principal)
+
+
+def _job(user: User, code: str) -> bool:
+    """Whether a member of staff or a teacher was given this job (see
+    rbac_service.holds_job), looked up once per request."""
+    memo = user.__dict__.setdefault("_jobs_held", {})
+    if code not in memo:
+        from app.services import rbac_service
+
+        db = object_session(user)
+        memo[code] = db is not None and rbac_service.holds_job(db, user, code)
+    return memo[code]
+
+
+def coordinates(user: User) -> bool:
+    """The Academics job (syllabus.manage): edits any subject's syllabus."""
+    return _job(user, "syllabus.manage")
+
+
+def reviews_plans(user: User) -> bool:
+    return user.role in REVIEWERS or _job(user, "lessonplans.review")
+
+
+def sees_all(user: User) -> bool:
+    return user.role in REVIEWERS or coordinates(user) or reviews_plans(user)
 
 
 def _404(what: str) -> HTTPException:
@@ -48,7 +73,7 @@ def get_cs(db: Session, cs_id: int, school_id: int) -> ClassSubject:
 
 
 def can_edit(user: User, cs: ClassSubject) -> bool:
-    return user.role == UserRole.school_admin or cs.teacher_user_id == user.id
+    return user.role == UserRole.school_admin or cs.teacher_user_id == user.id or coordinates(user)
 
 
 def _is_class_teacher(db: Session, user_id: int, class_id: int) -> bool:
@@ -58,7 +83,7 @@ def _is_class_teacher(db: Session, user_id: int, class_id: int) -> bool:
 
 
 def check_view(db: Session, user: User, cs: ClassSubject) -> None:
-    if user.role in REVIEWERS or can_edit(user, cs):
+    if sees_all(user) or can_edit(user, cs):
         return
     if user.role == UserRole.teacher and _is_class_teacher(db, user.id, cs.class_id):
         return
@@ -328,7 +353,7 @@ def list_class_subjects(db: Session, user: User, academic_year_id: Optional[int]
         ).scalar_one_or_none()
     if academic_year_id:
         stmt = stmt.where(SchoolClass.academic_year_id == academic_year_id)
-    if user.role not in REVIEWERS:
+    if not sees_all(user):
         taught_classes = select(Section.class_id).where(Section.class_teacher_user_id == user.id)
         stmt = stmt.where(or_(ClassSubject.teacher_user_id == user.id, ClassSubject.class_id.in_(taught_classes)))
     rows = db.execute(stmt.order_by(SchoolClass.display_order, SchoolClass.name, Subject.name)).all()
@@ -398,7 +423,7 @@ def _plan(db: Session, plan_id: int, user: User) -> LessonPlan:
     p = db.get(LessonPlan, plan_id)
     if not p or p.school_id != user.school_id:
         raise _404("Lesson plan")
-    if user.role not in REVIEWERS and p.teacher_user_id != user.id:
+    if not sees_all(user) and p.teacher_user_id != user.id:
         raise _404("Lesson plan")
     return p
 
@@ -485,7 +510,7 @@ def submit_plan(db: Session, user: User, plan_id: int) -> LessonPlan:
 
 def review_plan(db: Session, user: User, plan_id: int, data: ReviewIn) -> LessonPlan:
     p = _plan(db, plan_id, user)
-    if user.role not in REVIEWERS:
+    if not reviews_plans(user):
         raise _403("Only the principal or school admin can review plans")
     if p.status != LessonPlanStatus.submitted:
         raise _400("Only submitted plans can be reviewed")
@@ -520,7 +545,7 @@ def deliver_plan(db: Session, user: User, plan_id: int, data: DeliverIn) -> Less
 def list_plans(db: Session, user: User, *, status_: Optional[LessonPlanStatus], teacher_user_id: Optional[int],
                class_subject_id: Optional[int], start, end, limit: int = 200) -> list[LessonPlan]:
     stmt = select(LessonPlan).where(LessonPlan.school_id == user.school_id)
-    if user.role not in REVIEWERS:
+    if not sees_all(user):
         stmt = stmt.where(LessonPlan.teacher_user_id == user.id)
     elif teacher_user_id:
         stmt = stmt.where(LessonPlan.teacher_user_id == teacher_user_id)

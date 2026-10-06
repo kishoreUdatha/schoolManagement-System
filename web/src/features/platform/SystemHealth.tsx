@@ -6,7 +6,7 @@ import { DataTable, type Row } from "@/components/ui/DataTable";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { StatStrip } from "@/components/ui/StatStrip";
-import { dateTime, label } from "@/lib/format";
+import { dateTime, label, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import type { Health, HealthHistory } from "./types";
 
@@ -42,7 +42,7 @@ export function SystemHealth() {
     {
       label: "Availability",
       value: db?.availability != null ? `${db.availability}%` : "—",
-      note: hist ? (db ? `Database · last ${days} day(s) · ${db.samples} probes` : "No probes kept yet") : "From the kept probes",
+      note: hist ? (db ? `Database · last ${plural(days, "day")} · ${db.samples} probes` : "No probes kept yet") : "From the kept probes",
     },
     {
       label: "Database response",
@@ -82,7 +82,7 @@ export function SystemHealth() {
       >
         <ErrorNote>{history.error}</ErrorNote>
         {peak > 0 ? (
-          <Chart kind="line" labels={blocks.map((b) => hour(b.from))} values={blocks.map((b) => (b.avg_latency_ms ? Math.round((b.avg_latency_ms / peak) * 100) : 0))} label="Database response time, last 24 hours" />
+          <Chart kind="line" scale="relative" labels={blocks.map((b) => hour(b.from))} values={blocks.map((b) => (b.avg_latency_ms ? Math.round((b.avg_latency_ms / peak) * 100) : 0))} label="Database response time, last 24 hours" />
         ) : (
           <p className="muted">{history.loading ? "Loading…" : "No response times kept yet. A probe is taken every five minutes, so the chart fills in over the day."}</p>
         )}

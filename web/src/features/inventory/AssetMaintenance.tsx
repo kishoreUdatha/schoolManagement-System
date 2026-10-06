@@ -8,7 +8,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, money } from "@/lib/format";
+import { date, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { AssetDetailDialog } from "./AssetDialogs";
@@ -156,7 +156,7 @@ export function AssetMaintenance() {
       </div>
       <ErrorNote>{list.error}</ErrorNote>
       {expiring.length ? (
-        <Tip warn>{`${expiring.length} asset(s) come out of warranty within ${SOON} days. A repair booked after that date is the school's bill rather than the supplier's.`}</Tip>
+        <Tip warn>{`${plural(expiring.length, "asset")} come out of warranty within ${SOON} days. A repair booked after that date is the school's bill rather than the supplier's.`}</Tip>
       ) : null}
       <Panel title="Records" sub={`${inRepair} under repair · ${money(spent)} spent on repairs so far${list.loading ? " · Loading…" : ""}`} flush>
         <DataTable
@@ -176,7 +176,7 @@ export function AssetMaintenance() {
         title="Service schedule"
         sub={
           due.data
-            ? `${due.data.count} asset(s) with a service or warranty date within ${within} days · ${due.data.overdue} overdue · ${due.data.no_interval_set} without an interval`
+            ? `${plural(due.data.count, "asset")} with a service or warranty date within ${within} days · ${due.data.overdue} overdue · ${due.data.no_interval_set} without an interval`
             : due.loading
               ? "Loading…"
               : "Servicing and warranty dates"

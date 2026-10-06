@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminUser
+from app.core.deps import NoticeWriter
 from app.database import get_db
 from app.schemas.notice import NoticeCreate, NoticeRead, NoticeUpdate
 from app.services import notice_service
@@ -20,7 +20,7 @@ router = APIRouter()
 )
 def create(
     payload: NoticeCreate,
-    current_user: SchoolAdminUser,
+    current_user: NoticeWriter,
     db: Annotated[Session, Depends(get_db)],
 ):
     n = notice_service.create(
@@ -35,7 +35,7 @@ def create(
 
 @router.get("", response_model=list[NoticeRead])
 def list_(
-    current_user: SchoolAdminUser,
+    current_user: NoticeWriter,
     db: Annotated[Session, Depends(get_db)],
     status_filter: Optional[str] = Query(None, alias="status"),
     limit: int = Query(50, ge=1, le=200),
@@ -49,7 +49,7 @@ def list_(
 @router.get("/{notice_id}", response_model=NoticeRead)
 def get(
     notice_id: int,
-    current_user: SchoolAdminUser,
+    current_user: NoticeWriter,
     db: Annotated[Session, Depends(get_db)],
 ):
     n = notice_service.get(db, notice_id, current_user.school_id)
@@ -60,7 +60,7 @@ def get(
 def update(
     notice_id: int,
     payload: NoticeUpdate,
-    current_user: SchoolAdminUser,
+    current_user: NoticeWriter,
     db: Annotated[Session, Depends(get_db)],
 ):
     n = notice_service.update(db, notice_id, current_user.school_id, payload)
@@ -70,7 +70,7 @@ def update(
 @router.delete("/{notice_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete(
     notice_id: int,
-    current_user: SchoolAdminUser,
+    current_user: NoticeWriter,
     db: Annotated[Session, Depends(get_db)],
 ):
     notice_service.delete(db, notice_id, current_user.school_id)
@@ -84,7 +84,7 @@ def delete(
 )
 def send(
     notice_id: int,
-    current_user: SchoolAdminUser,
+    current_user: NoticeWriter,
     db: Annotated[Session, Depends(get_db)],
 ):
     n = notice_service.send(db, notice_id, current_user.school_id)

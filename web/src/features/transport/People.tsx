@@ -8,7 +8,7 @@ import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label, money } from "@/lib/format";
+import { date, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -128,7 +128,7 @@ export function CrewList() {
         </select>
       </div>
       <ErrorNote>{crew.error ?? vehicles.error ?? (!dialogOpen ? error : null)}</ErrorNote>
-      <Panel title="Transport crew" sub={crew.data ? `${all.filter((x) => x.role === "driver").length} driver(s) · ${all.filter((x) => x.role !== "driver").length} conductor(s) / attendant(s)` : "Loading…"} flush>
+      <Panel title="Transport crew" sub={crew.data ? `${plural(all.filter((x) => x.role === "driver").length, "driver")} · ${plural(all.filter((x) => x.role !== "driver").length, "conductor or attendant", "conductors and attendants")}` : "Loading…"} flush>
         <DataTable
           columns={["Name", "Role", "License no.", "License expiry", "Phone", "Vehicle"]}
           rows={rows}
@@ -229,7 +229,7 @@ export function RouteAssignment() {
   const seats = live.reduce((s, r) => s + (r.vehicle_capacity ?? 0), 0);
   const n = (v: number) => (routes.loading && !routes.data ? (routes.loading ? "…" : "—") : String(v));
   const stats = [
-    { label: "Students riding", value: n(riders), note: `On ${live.length} active route(s)` },
+    { label: "Students riding", value: n(riders), note: `On ${plural(live.length, "active route")}` },
     { label: "Seats free", value: n(Math.max(seats - riders, 0)), note: `${seats} seats on assigned vehicles` },
     { label: "Full routes", value: n(live.filter((r) => r.vehicle_capacity !== null && r.student_count >= r.vehicle_capacity).length), note: "At or over vehicle capacity" },
     { label: "No vehicle", value: n(live.filter((r) => !r.vehicle_id).length), note: "Active routes without a vehicle" },
@@ -308,7 +308,7 @@ export function RouteAssignment() {
         </select>
       </div>
       <ErrorNote>{list.error ?? routes.error ?? (!dialogOpen ? error : null)}</ErrorNote>
-      <Panel title="Allocation workspace" sub={list.data ? `${items.filter((x) => !x.end_date).length} student(s) riding` : "Loading…"} flush>
+      <Panel title="Allocation workspace" sub={list.data ? `${plural(items.filter((x) => !x.end_date).length, "student")} riding` : "Loading…"} flush>
         <DataTable
           columns={["Student", "Class", "Pickup stop", "Drop stop", "Route", "Fee plan"]}
           rows={rows}

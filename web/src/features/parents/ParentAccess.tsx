@@ -7,6 +7,7 @@ import { api, errorText } from "@/lib/api";
 import { date, initials } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import { AuditItem, childNames, PICK_PARENT, useParent } from "./ParentShell";
 import type { AuditEntry, PasswordReset } from "./types";
 
@@ -18,7 +19,9 @@ import { ask } from "@/lib/dialog";
  */
 export function ParentAccess() {
   const { id, data: p, error, loading, reload } = useParent();
-  const activity = useApi<AuditEntry[]>(id ? "/api/v1/school/audit-log" : null, { entity_type: "User", entity_id: id, limit: 8 });
+  // the audit log is the school admin's: others (the parent records job) go without the activity list
+  const admin = useSession()?.user.role === "school_admin";
+  const activity = useApi<AuditEntry[]>(id && admin ? "/api/v1/school/audit-log" : null, { entity_type: "User", entity_id: id, limit: 8 });
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
   const [temp, setTemp] = useState<string | null>(null);
@@ -100,13 +103,15 @@ export function ParentAccess() {
             </div>
           </dl>
         </Panel>
-        <Panel title="Account activity">
-          {activity.data?.length ? (
-            activity.data.map((e) => <AuditItem key={e.id} e={e} />)
-          ) : (
-            <p className="muted">{activity.loading ? "Loading…" : activity.error ?? "Nothing recorded on this account yet."}</p>
-          )}
-        </Panel>
+        {admin ? (
+          <Panel title="Account activity">
+            {activity.data?.length ? (
+              activity.data.map((e) => <AuditItem key={e.id} e={e} />)
+            ) : (
+              <p className="muted">{activity.loading ? "Loading…" : activity.error ?? "Nothing recorded on this account yet."}</p>
+            )}
+          </Panel>
+        ) : null}
       </div>
       <aside>
         <Panel title="Access controls">

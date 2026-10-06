@@ -1,0 +1,80 @@
+"""Read the RBAC Tests sheet (two cases per screen) and decide how to run each.
+
+Authorized access: the account holding the screen's role opens it (as in the
+smoke run). Unauthorized access: a signed-in user who must not have the
+screen opens it directly, and every API answer is watched — the screen's data
+calls must be refused and no protected data returned:
+  - platform (super admin) screens: a school admin tries them;
+  - the parent's own screens: a teacher tries them;
+  - every other school screen, including teacher and student ones: a parent.
+Public screens (All Users) have nothing to protect: Not Applicable.
+
+    python3 build_rbac.py  ->  rbac_cases.json
+"""
+import json, os, re
+import openpyxl
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(HERE))
+EXT = os.path.join(ROOT, "School_ERP_Functional_Testing_Extended_Coverage.xlsx")
+
+ACCOUNT = {
+    "All Users": "public", "Super Admin": "super_admin",
+    "School Admin": "school_admin", "Academic Coordinator": "school_admin", "IT Admin": "school_admin",
+    # the app's Examinations and Admissions jobs, held by office staff (tools/qa/jobs.py)
+    "Exam Coordinator": "exams", "Admission Officer": "admissions",
+    "HR": "hr", "Transport Manager": "transport", "Discipline In-charge": "discipline", "Nurse / Medical Officer": "nurse",
+    "Librarian": "staff", "Store Manager": "staff", "Security": "staff", "Hostel Warden": "staff",
+    "Teacher": "teacher", "Class Teacher": "teacher", "Accountant": "accountant", "Principal": "principal",
+    "Student": "student", "Parent": "parent_web",
+}
+from record_pages import RECORD  # pages about one record (?id=)
+
+# Screens whose persona in the plan is not the one that uses them in this
+# build: run as the role that does and reported Blocked with the reason, so the
+# plan is corrected rather than the result hidden. (None now: fix_personas.py
+# corrected the plan.) {"SCR-...": ("account", "reason")}
+MISMATCH = {}
+ALL_SCHOOLS = {"SCR-012"}  # the super admin sees every tenant by design
+# Parents have no web workspace: these screens are the parent app's.
+PARENT_APP = {"SCR-037": "/parent/home", "SCR-159": "/parent/fees", "SCR-160": "/parent/payments-receipts"}
+
+routes = {}
+src = open(os.path.join(ROOT, "web/src/lib/screens.ts")).read()
+for m in re.finditer(r'"id": "(SCR-\d+)".*?"module": "([^"]*)".*?"route": "([^"]+)"', src):
+    routes[m.group(1)] = (m.group(3), m.group(2))
+
+wb = openpyxl.load_workbook(EXT, read_only=True)
+cases, pending = [], {}
+for r in wb["RBAC Tests"].iter_rows(min_row=2, values_only=True):
+    if not r[0]:
+        continue
+    tid, module, scr, name, scenario, role = r[:6]
+    path, _ = routes[scr]
+    if scenario.startswith("Authorized"):
+        acct = ACCOUNT[role]
+        if acct == "parent_web" and scr in PARENT_APP:
+            acct, path = "parent", PARENT_APP[scr]
+        run_as, mismatch = MISMATCH.get(scr, (acct, None))
+        pending[scr] = run_as
+        cases.append({"id": tid, "scr": scr, "name": name, "module": module, "scenario": "authorized", "role": role,
+                      "account": run_as, "plan_account": acct, "mismatch": mismatch, "path": path, "record": RECORD.get(scr),
+                      "cross_school": RECORD.get(scr) is not None and scr not in ALL_SCHOOLS})
+    else:
+        owner = pending.get(scr)
+        if owner == "public":
+            attacker = None
+        elif owner == "super_admin" or module.startswith("Super Admin"):
+            attacker = "school_admin"
+        elif owner in ("parent_web", "parent"):
+            attacker = "teacher"
+        else:
+            attacker = "parent_web"
+        cases.append({"id": tid, "scr": scr, "name": name, "module": module, "scenario": "unauthorized", "role": role,
+                      "owner": owner, "account": attacker, "path": PARENT_APP.get(scr, path) if owner == "parent" else path,
+                      "record": RECORD.get(scr)})
+json.dump(cases, open(os.path.join(HERE, "rbac_cases.json"), "w"), indent=1)
+auth = [c for c in cases if c["scenario"] == "authorized"]
+print(len(cases), "cases:", len(auth), "authorized,", len(cases) - len(auth), "unauthorized")
+print("authorized as:", {a: sum(1 for c in auth if c["account"] == a) for a in sorted({c["account"] for c in auth})})
+print("attacked by:", {a: sum(1 for c in cases if c["scenario"] == "unauthorized" and c["account"] == a) for a in sorted({str(c["account"]) for c in cases if c["scenario"] == "unauthorized"}, key=str)})

@@ -7,7 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, initials, label, money } from "@/lib/format";
+import { date, dateTime, initials, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -63,7 +63,7 @@ export function CandidateBanner({ a, active }: { a: Application; active: number 
         </div>
         <div className="profile-badge">
           <strong>{avg !== null ? `${avg.toFixed(1)}/5` : a.rating ? `${a.rating}/5` : "—"}</strong>
-          <small>{avg !== null ? `Panel rating · ${done.length} interview(s)` : "Not yet rated"}</small>
+          <small>{avg !== null ? `Panel rating · ${plural(done.length, "interview")}` : "Not yet rated"}</small>
         </div>
       </div>
       <CandidateTabs id={a.id} active={active} />

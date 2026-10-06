@@ -7,7 +7,7 @@ import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, initials, label } from "@/lib/format";
+import { date, dateTime, initials, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Kv, StudentFrame } from "./StudentFrame";
@@ -71,7 +71,7 @@ function Body({ s }: { s: StudentProfile }) {
     { label: "Clinic visits", value: n(r?.visits.length ?? 0), note: lastVisit ? `Last on ${date(lastVisit)}` : "None recorded" },
     { label: "Follow-ups due", value: n((r?.visits ?? []).filter((x) => x.follow_up_on && x.follow_up_on >= todayIso).length), note: "From clinic visits" },
     { label: "Vaccines due", value: n((r?.immunizations ?? []).filter((x) => x.next_due_on && x.next_due_on <= in30).length), note: "Overdue or within 30 days" },
-    { label: "Last check-up", value: rec.loading && !r ? "…" : lastCheckup ? date(lastCheckup) : "—", note: `${r?.checkups.length ?? 0} check-up(s) on record` },
+    { label: "Last check-up", value: rec.loading && !r ? "…" : lastCheckup ? date(lastCheckup) : "—", note: `${plural(r?.checkups.length ?? 0, "check-up")} on record` },
   ];
 
   const rows: Row[] = (r?.visits ?? []).slice(0, 10).map((x) => [

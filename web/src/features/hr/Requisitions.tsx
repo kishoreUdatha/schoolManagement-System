@@ -6,7 +6,7 @@ import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, initials, label } from "@/lib/format";
+import { date, dateTime, initials, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
@@ -285,7 +285,7 @@ export function Requisitions() {
 
       {deciding ? (
         <Dialog title={`Decide: ${deciding.title}`} onClose={() => setDeciding(null)} onSubmit={decide} submit="Record the decision" busy={busy} error={error}>
-          <p>{`${deciding.headcount} post(s)${deciding.department_name ? ` in ${deciding.department_name}` : ""}${deciding.needed_by ? `, needed by ${date(deciding.needed_by)}` : ""}.`}</p>
+          <p>{`${plural(deciding.headcount, "post")}${deciding.department_name ? ` in ${deciding.department_name}` : ""}${deciding.needed_by ? `, needed by ${date(deciding.needed_by)}` : ""}.`}</p>
           <p>{deciding.reason}</p>
           {deciding.raised_by ? <p>{`Raised by ${deciding.raised_by}. A request cannot be decided by whoever raised it.`}</p> : null}
           <div className="form-grid">

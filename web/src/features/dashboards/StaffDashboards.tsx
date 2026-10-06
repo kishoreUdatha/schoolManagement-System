@@ -72,7 +72,7 @@ function StaffRoleDashboard({ panel: key, permission, job, cta, actions }: Confi
             }
           >
             {trend && peak > 0 ? (
-              <Chart kind="line" labels={trend.months.map((m) => monthLabel(m.month))} values={trend.months.map((m) => Math.round((m.value / peak) * 100))} />
+              <Chart kind="line" labels={trend.months.map((m) => monthLabel(m.month))} values={trend.months.map((m) => Math.round((m.value / peak) * 100))} scale="relative" />
             ) : (
               <Empty>{!d ? "Loading…" : !panel ? `Needs the ${permission} permission.` : `No ${(trend?.label ?? "activity").toLowerCase()} in the last six months.`}</Empty>
             )}

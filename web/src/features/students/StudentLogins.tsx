@@ -8,7 +8,7 @@ import { Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date } from "@/lib/format";
+import { date, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { usePageAction } from "@/features/attendance/shared";
@@ -95,7 +95,7 @@ export function StudentLogins() {
       const r = await api.post<ClassLoginsCreated>(`/api/v1/school/student-logins/class/${dialogClass}`);
       keep([...r.created, ...r.reset]);
       setClassDialog(false);
-      notify(`${r.created.length} login(s) created, ${r.reset.length} password(s) reset.`);
+      notify(`${plural(r.created.length, "login")} created, ${plural(r.reset.length, "password")} reset.`);
       list.reload();
     } catch (e) {
       setError(errorText(e));

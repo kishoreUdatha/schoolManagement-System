@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { api, errorText } from "@/lib/api";
 import { parentRoute } from "@/lib/parentScreens";
-import { routeOf } from "@/lib/screens";
 import { ActionLink } from "../home/parts";
 import { clearPending, finishSignIn, maskEmail, readPending, VERIFY_PATH, type Pending, type Token } from "./auth";
 
@@ -29,7 +28,7 @@ export function VerifyOtp() {
     setError(null);
     try {
       const t = await api.post<Token>(VERIFY_PATH, { challenge: pending.challenge, code });
-      router.push(finishSignIn(t, pending.next, routeOf(7)));
+      router.push(finishSignIn(t, pending.next, "/app/set-password"));
     } catch (err) {
       setError(errorText(err));
       setBusy(false);

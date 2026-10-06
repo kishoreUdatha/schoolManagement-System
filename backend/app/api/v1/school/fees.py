@@ -5,7 +5,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import FeeHeadReader, SchoolAdminOrAccountant
+from app.core.deps import FeeCounter, FeeHeadReader, SchoolAdminOrAccountant
 from app.database import get_db
 from app.schemas.common import PaginatedResponse
 from app.schemas.fee import (
@@ -213,7 +213,7 @@ def generate(
     summary="List fee records with filters",
 )
 def list_student_fees(
-    current_user: SchoolAdminOrAccountant,
+    current_user: FeeCounter,
     db: Annotated[Session, Depends(get_db)],
     student_id: Optional[int] = Query(None),
     class_id: Optional[int] = Query(None),
@@ -250,7 +250,7 @@ def list_student_fees(
 def record_payment(
     fee_id: int,
     payload: RecordPayment,
-    current_user: SchoolAdminOrAccountant,
+    current_user: FeeCounter,
     db: Annotated[Session, Depends(get_db)],
 ):
     data = fee_service.record_payment(

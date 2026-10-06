@@ -1,0 +1,1271 @@
+[
+ {
+  "id": "JOB-admissions.manage-43",
+  "scr": "SCR-043",
+  "name": "Admissions: Admissions dashboard",
+  "job": "admissions.manage",
+  "path": "/admissions/admission-enquiry-dashboard",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-admissions.manage-44",
+  "scr": "SCR-044",
+  "name": "Admissions: Enquiries",
+  "job": "admissions.manage",
+  "path": "/admissions/enquiry-list",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-admissions.manage-47",
+  "scr": "SCR-047",
+  "name": "Admissions: Follow-up calendar",
+  "job": "admissions.manage",
+  "path": "/admissions/follow-up-calendar",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-admissions.manage-48",
+  "scr": "SCR-048",
+  "name": "Admissions: Applications",
+  "job": "admissions.manage",
+  "path": "/admissions/admission-applications",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-admissions.manage-51",
+  "scr": "SCR-051",
+  "name": "Admissions: Document verification",
+  "job": "admissions.manage",
+  "path": "/admissions/document-verification",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-admissions.manage-52",
+  "scr": "SCR-052",
+  "name": "Admissions: Assessments",
+  "job": "admissions.manage",
+  "path": "/admissions/entrance-assessment",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-admissions.manage-53",
+  "scr": "SCR-053",
+  "name": "Admissions: Admission approvals",
+  "job": "admissions.manage",
+  "path": "/admissions/admission-approval",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-admissions.manage-1002",
+  "scr": "SCR-1002",
+  "name": "Admissions: Campaigns",
+  "job": "admissions.manage",
+  "path": "/admissions/admission-campaigns",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-admissions.manage-1001",
+  "scr": "SCR-1001",
+  "name": "Admissions: Online admission link",
+  "job": "admissions.manage",
+  "path": "/admissions/online-admission-link",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-library.manage-198",
+  "scr": "SCR-198",
+  "name": "Library: Book catalogue",
+  "job": "library.manage",
+  "path": "/library/library-catalogue",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-library.manage-201",
+  "scr": "SCR-201",
+  "name": "Library: Library members",
+  "job": "library.manage",
+  "path": "/library/library-members",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-library.manage-202",
+  "scr": "SCR-202",
+  "name": "Library: Issue book",
+  "job": "library.manage",
+  "path": "/library/issue-book",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-library.manage-203",
+  "scr": "SCR-203",
+  "name": "Library: Return book",
+  "job": "library.manage",
+  "path": "/library/return-book",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-library.manage-204",
+  "scr": "SCR-204",
+  "name": "Library: Renew & reserve",
+  "job": "library.manage",
+  "path": "/library/renew-reserve-book",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-library.manage-205",
+  "scr": "SCR-205",
+  "name": "Library: Fines & lost books",
+  "job": "library.manage",
+  "path": "/library/fine-lost-damaged-book",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-library.manage-206",
+  "scr": "SCR-206",
+  "name": "Library: Digital library",
+  "job": "library.manage",
+  "path": "/library/digital-library",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-library.manage-1073",
+  "scr": "SCR-1073",
+  "name": "Library: Library settings",
+  "job": "library.manage",
+  "path": "/library/library-settings",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-library.manage-207",
+  "scr": "SCR-207",
+  "name": "Library: Library reports",
+  "job": "library.manage",
+  "path": "/library/library-reports",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-transport.manage-1072",
+  "scr": "SCR-1072",
+  "name": "Transport: Transport dashboard",
+  "job": "transport.manage",
+  "path": "/transport/transport-dashboard",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-transport.manage-186",
+  "scr": "SCR-186",
+  "name": "Transport: Vehicles",
+  "job": "transport.manage",
+  "path": "/transport/vehicles",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-transport.manage-189",
+  "scr": "SCR-189",
+  "name": "Transport: Routes",
+  "job": "transport.manage",
+  "path": "/transport/routes",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-transport.manage-191",
+  "scr": "SCR-191",
+  "name": "Transport: Stops",
+  "job": "transport.manage",
+  "path": "/transport/stops",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-transport.manage-192",
+  "scr": "SCR-192",
+  "name": "Transport: Drivers & conductors",
+  "job": "transport.manage",
+  "path": "/transport/drivers-conductors",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-transport.manage-193",
+  "scr": "SCR-193",
+  "name": "Transport: Student assignment",
+  "job": "transport.manage",
+  "path": "/transport/student-route-assignment",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-transport.manage-194",
+  "scr": "SCR-194",
+  "name": "Transport: Trip sheets",
+  "job": "transport.manage",
+  "path": "/transport/trip-sheet",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-transport.manage-196",
+  "scr": "SCR-196",
+  "name": "Transport: Boarding attendance",
+  "job": "transport.manage",
+  "path": "/transport/boarding-drop-attendance",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-transport.manage-195",
+  "scr": "SCR-195",
+  "name": "Transport: Live GPS tracking",
+  "job": "transport.manage",
+  "path": "/transport/live-gps-tracking",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-transport.manage-197",
+  "scr": "SCR-197",
+  "name": "Transport: Maintenance & fuel",
+  "job": "transport.manage",
+  "path": "/transport/vehicle-maintenance-fuel",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hostel.manage-208",
+  "scr": "SCR-208",
+  "name": "Hostel: Hostels",
+  "job": "hostel.manage",
+  "path": "/hostel/hostels-buildings",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hostel.manage-209",
+  "scr": "SCR-209",
+  "name": "Hostel: Rooms & beds",
+  "job": "hostel.manage",
+  "path": "/hostel/rooms-beds",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hostel.manage-210",
+  "scr": "SCR-210",
+  "name": "Hostel: Allocation",
+  "job": "hostel.manage",
+  "path": "/hostel/student-hostel-allocation",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hostel.manage-211",
+  "scr": "SCR-211",
+  "name": "Hostel: Wardens",
+  "job": "hostel.manage",
+  "path": "/hostel/warden-management",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hostel.manage-212",
+  "scr": "SCR-212",
+  "name": "Hostel: Hostel attendance",
+  "job": "hostel.manage",
+  "path": "/hostel/hostel-attendance",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hostel.manage-213",
+  "scr": "SCR-213",
+  "name": "Hostel: Leave & outings",
+  "job": "hostel.manage",
+  "path": "/hostel/leave-outing",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hostel.manage-214",
+  "scr": "SCR-214",
+  "name": "Hostel: Mess & meals",
+  "job": "hostel.manage",
+  "path": "/hostel/mess-meal-schedule",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hostel.manage-215",
+  "scr": "SCR-215",
+  "name": "Hostel: Complaints & fees",
+  "job": "hostel.manage",
+  "path": "/hostel/hostel-complaints-fees",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-inventory.manage-234",
+  "scr": "SCR-234",
+  "name": "Store & inventory: Inventory dashboard",
+  "job": "inventory.manage",
+  "path": "/inventory-labs/inventory-dashboard",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-inventory.manage-235",
+  "scr": "SCR-235",
+  "name": "Store & inventory: Item catalogue",
+  "job": "inventory.manage",
+  "path": "/inventory-labs/item-catalogue",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-inventory.manage-236",
+  "scr": "SCR-236",
+  "name": "Store & inventory: Stock in",
+  "job": "inventory.manage",
+  "path": "/inventory-labs/stock-in-purchase-receipt",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-inventory.manage-237",
+  "scr": "SCR-237",
+  "name": "Store & inventory: Stock issue & return",
+  "job": "inventory.manage",
+  "path": "/inventory-labs/stock-issue-return",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-inventory.manage-238",
+  "scr": "SCR-238",
+  "name": "Store & inventory: Suppliers",
+  "job": "inventory.manage",
+  "path": "/inventory-labs/supplier-management",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-inventory.manage-239",
+  "scr": "SCR-239",
+  "name": "Store & inventory: Asset register",
+  "job": "inventory.manage",
+  "path": "/inventory-labs/asset-register",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-inventory.manage-240",
+  "scr": "SCR-240",
+  "name": "Store & inventory: Asset assignment",
+  "job": "inventory.manage",
+  "path": "/inventory-labs/asset-assignment-transfer",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-inventory.manage-241",
+  "scr": "SCR-241",
+  "name": "Store & inventory: Asset maintenance",
+  "job": "inventory.manage",
+  "path": "/inventory-labs/asset-maintenance",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-inventory.manage-1048",
+  "scr": "SCR-1048",
+  "name": "Store & inventory: School store sales",
+  "job": "inventory.manage",
+  "path": "/inventory-labs/school-store-sales",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-inventory.manage-245",
+  "scr": "SCR-245",
+  "name": "Store & inventory: Stock & asset reports",
+  "job": "inventory.manage",
+  "path": "/inventory-labs/stock-asset-reports",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-frontdesk.manage-226",
+  "scr": "SCR-226",
+  "name": "Front desk: Visitor dashboard",
+  "job": "frontdesk.manage",
+  "path": "/campus-security/visitor-dashboard",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-frontdesk.manage-227",
+  "scr": "SCR-227",
+  "name": "Front desk: Visitor check-in",
+  "job": "frontdesk.manage",
+  "path": "/campus-security/visitor-check-in",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-frontdesk.manage-228",
+  "scr": "SCR-228",
+  "name": "Front desk: Visitor approval",
+  "job": "frontdesk.manage",
+  "path": "/campus-security/visitor-approval",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-frontdesk.manage-230",
+  "scr": "SCR-230",
+  "name": "Front desk: Visitor check-out",
+  "job": "frontdesk.manage",
+  "path": "/campus-security/visitor-check-out",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-frontdesk.manage-231",
+  "scr": "SCR-231",
+  "name": "Front desk: Early pickup & gate pass",
+  "job": "frontdesk.manage",
+  "path": "/campus-security/student-early-pickup-gate-pass",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-frontdesk.manage-232",
+  "scr": "SCR-232",
+  "name": "Front desk: Staff & vehicle gate log",
+  "job": "frontdesk.manage",
+  "path": "/campus-security/staff-vehicle-gate-log",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-frontdesk.manage-233",
+  "scr": "SCR-233",
+  "name": "Front desk: Security incidents",
+  "job": "frontdesk.manage",
+  "path": "/campus-security/security-incident-log",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-frontdesk.manage-1070",
+  "scr": "SCR-1070",
+  "name": "Front desk: Visitor directory",
+  "job": "frontdesk.manage",
+  "path": "/campus-security/visitor-directory",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-frontdesk.manage-1026",
+  "scr": "SCR-1026",
+  "name": "Front desk: Parent help desk",
+  "job": "frontdesk.manage",
+  "path": "/communication/parent-help-desk",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-172",
+  "scr": "SCR-172",
+  "name": "Recruitment & HR: Requisitions",
+  "job": "hr.manage",
+  "path": "/human-resources/recruitment-requisitions",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-173",
+  "scr": "SCR-173",
+  "name": "Recruitment & HR: Job openings",
+  "job": "hr.manage",
+  "path": "/human-resources/job-openings",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-174",
+  "scr": "SCR-174",
+  "name": "Recruitment & HR: Candidates",
+  "job": "hr.manage",
+  "path": "/human-resources/candidate-applications",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-1060",
+  "scr": "SCR-1060",
+  "name": "Recruitment & HR: Candidate pool",
+  "job": "hr.manage",
+  "path": "/human-resources/candidate-pool",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-176",
+  "scr": "SCR-176",
+  "name": "Recruitment & HR: Interviews",
+  "job": "hr.manage",
+  "path": "/human-resources/interview-schedule",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-177",
+  "scr": "SCR-177",
+  "name": "Recruitment & HR: Offers",
+  "job": "hr.manage",
+  "path": "/human-resources/offer-appointment",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-178",
+  "scr": "SCR-178",
+  "name": "Recruitment & HR: Onboarding",
+  "job": "hr.manage",
+  "path": "/human-resources/employee-onboarding-checklist",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-180",
+  "scr": "SCR-180",
+  "name": "Recruitment & HR: Leave policies",
+  "job": "hr.manage",
+  "path": "/human-resources/leave-policies",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-1061",
+  "scr": "SCR-1061",
+  "name": "Recruitment & HR: Leave balances",
+  "job": "hr.manage",
+  "path": "/human-resources/leave-balances",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-179",
+  "scr": "SCR-179",
+  "name": "Recruitment & HR: Staff attendance",
+  "job": "hr.manage",
+  "path": "/human-resources/staff-attendance-management",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-181",
+  "scr": "SCR-181",
+  "name": "Recruitment & HR: Staff leave requests",
+  "job": "hr.manage",
+  "path": "/human-resources/staff-leave-requests",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-hr.manage-182",
+  "scr": "SCR-182",
+  "name": "Recruitment & HR: Leave approval",
+  "job": "hr.manage",
+  "path": "/human-resources/leave-approval",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-138",
+  "scr": "SCR-138",
+  "name": "Examinations: Exam dashboard",
+  "job": "exams.manage",
+  "path": "/examinations/exam-dashboard",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-139",
+  "scr": "SCR-139",
+  "name": "Examinations: Exam types",
+  "job": "exams.manage",
+  "path": "/examinations/exam-types",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-140",
+  "scr": "SCR-140",
+  "name": "Examinations: Exam setup",
+  "job": "exams.manage",
+  "path": "/examinations/exam-setup",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-141",
+  "scr": "SCR-141",
+  "name": "Examinations: Exam schedule",
+  "job": "exams.manage",
+  "path": "/examinations/exam-schedule",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-142",
+  "scr": "SCR-142",
+  "name": "Examinations: Hall allocation",
+  "job": "exams.manage",
+  "path": "/examinations/hall-room-allocation",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-143",
+  "scr": "SCR-143",
+  "name": "Examinations: Invigilation",
+  "job": "exams.manage",
+  "path": "/examinations/invigilation-assignment",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-144",
+  "scr": "SCR-144",
+  "name": "Examinations: Admit cards",
+  "job": "exams.manage",
+  "path": "/examinations/admit-card",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-146",
+  "scr": "SCR-146",
+  "name": "Examinations: Practical marks",
+  "job": "exams.manage",
+  "path": "/examinations/practical-internal-marks",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-148",
+  "scr": "SCR-148",
+  "name": "Examinations: Marks verification",
+  "job": "exams.manage",
+  "path": "/examinations/marks-verification",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-149",
+  "scr": "SCR-149",
+  "name": "Examinations: Grading setup",
+  "job": "exams.manage",
+  "path": "/examinations/grade-grading-setup",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-150",
+  "scr": "SCR-150",
+  "name": "Examinations: Publish results",
+  "job": "exams.manage",
+  "path": "/examinations/publish-results",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-exams.manage-152",
+  "scr": "SCR-152",
+  "name": "Examinations: Report cards",
+  "job": "exams.manage",
+  "path": "/examinations/report-card",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-syllabus.manage-98",
+  "scr": "SCR-098",
+  "name": "Academics: Curriculum",
+  "job": "syllabus.manage",
+  "path": "/academics/curriculum",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-syllabus.manage-100",
+  "scr": "SCR-100",
+  "name": "Academics: Units & topics",
+  "job": "syllabus.manage",
+  "path": "/academics/units-chapters-topics",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-syllabus.manage-101",
+  "scr": "SCR-101",
+  "name": "Academics: Learning outcomes",
+  "job": "syllabus.manage",
+  "path": "/academics/learning-outcomes",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-syllabus.manage-102",
+  "scr": "SCR-102",
+  "name": "Academics: Lesson plans",
+  "job": "syllabus.manage",
+  "path": "/academics/lesson-plans",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-syllabus.manage-104",
+  "scr": "SCR-104",
+  "name": "Academics: Lesson plan review",
+  "job": "syllabus.manage",
+  "path": "/academics/lesson-plan-review-approval",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-syllabus.manage-105",
+  "scr": "SCR-105",
+  "name": "Academics: Syllabus progress",
+  "job": "syllabus.manage",
+  "path": "/academics/syllabus-progress",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-syllabus.manage-106",
+  "scr": "SCR-106",
+  "name": "Academics: Teaching resources",
+  "job": "syllabus.manage",
+  "path": "/academics/teaching-resources",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-syllabus.manage-108",
+  "scr": "SCR-108",
+  "name": "Academics: Academic calendar",
+  "job": "syllabus.manage",
+  "path": "/academics/academic-calendar",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-syllabus.manage-109",
+  "scr": "SCR-109",
+  "name": "Academics: Co-curricular activities",
+  "job": "syllabus.manage",
+  "path": "/academics/co-curricular-activities",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-syllabus.manage-107",
+  "scr": "SCR-107",
+  "name": "Academics: Rooms",
+  "job": "syllabus.manage",
+  "path": "/academics/classroom-room-management",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-cover.manage-120",
+  "scr": "SCR-120",
+  "name": "Timetable & cover: Timetable dashboard",
+  "job": "cover.manage",
+  "path": "/timetable/timetable-dashboard",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-cover.manage-123",
+  "scr": "SCR-123",
+  "name": "Timetable & cover: Teacher availability",
+  "job": "cover.manage",
+  "path": "/timetable/teacher-availability",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-cover.manage-125",
+  "scr": "SCR-125",
+  "name": "Timetable & cover: Class timetable",
+  "job": "cover.manage",
+  "path": "/timetable/class-timetable",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-cover.manage-126",
+  "scr": "SCR-126",
+  "name": "Timetable & cover: Teacher timetable",
+  "job": "cover.manage",
+  "path": "/timetable/teacher-timetable",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-cover.manage-127",
+  "scr": "SCR-127",
+  "name": "Timetable & cover: Substitutions",
+  "job": "cover.manage",
+  "path": "/timetable/substitution-replacement",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-health.manage-216",
+  "scr": "SCR-216",
+  "name": "Health & clinic: Health dashboard",
+  "job": "health.manage",
+  "path": "/health-wellbeing/health-dashboard",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-health.manage-217",
+  "scr": "SCR-217",
+  "name": "Health & clinic: Medical profiles",
+  "job": "health.manage",
+  "path": "/health-wellbeing/student-medical-profile",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-health.manage-218",
+  "scr": "SCR-218",
+  "name": "Health & clinic: Clinic visits",
+  "job": "health.manage",
+  "path": "/health-wellbeing/clinic-visit",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-health.manage-219",
+  "scr": "SCR-219",
+  "name": "Health & clinic: Medication & first aid",
+  "job": "health.manage",
+  "path": "/health-wellbeing/medication-first-aid",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-health.manage-220",
+  "scr": "SCR-220",
+  "name": "Health & clinic: Immunisation & allergies",
+  "job": "health.manage",
+  "path": "/health-wellbeing/immunization-allergy",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-health.manage-225",
+  "scr": "SCR-225",
+  "name": "Health & clinic: Emergency contacts",
+  "job": "health.manage",
+  "path": "/health-wellbeing/emergency-contacts-escalation",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-counselling.access-221",
+  "scr": "SCR-221",
+  "name": "Counselling: Counselling appointments",
+  "job": "counselling.access",
+  "path": "/health-wellbeing/counselling-appointments",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-counselling.access-222",
+  "scr": "SCR-222",
+  "name": "Counselling: Case notes",
+  "job": "counselling.access",
+  "path": "/health-wellbeing/counselling-case-notes",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-fees.refund.approve-165",
+  "scr": "SCR-165",
+  "name": "Fees: Refund approvals",
+  "job": "fees.refund.approve",
+  "path": "/fees-finance/refunds",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-discipline.manage-223",
+  "scr": "SCR-223",
+  "name": "Discipline: Behaviour incidents",
+  "job": "discipline.manage",
+  "path": "/health-wellbeing/behaviour-discipline-incidents",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-discipline.manage-224",
+  "scr": "SCR-224",
+  "name": "Discipline: Action & follow-up",
+  "job": "discipline.manage",
+  "path": "/health-wellbeing/incident-action-follow-up",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-notices.send-252",
+  "scr": "SCR-252",
+  "name": "Communication: Announcements",
+  "job": "notices.send",
+  "path": "/communication/announcements",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-notices.send-296",
+  "scr": "SCR-296",
+  "name": "Communication: Notification centre",
+  "job": "notices.send",
+  "path": "/communication/notification-center",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-notices.send-246",
+  "scr": "SCR-246",
+  "name": "Communication: Events calendar",
+  "job": "notices.send",
+  "path": "/communication/events-calendar",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-notices.send-249",
+  "scr": "SCR-249",
+  "name": "Communication: Field trips & consent",
+  "job": "notices.send",
+  "path": "/communication/field-trip-parent-consent",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-students.manage-55",
+  "scr": "SCR-055",
+  "name": "Student records: Student directory",
+  "job": "students.manage",
+  "path": "/students/student-directory",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-students.manage-56",
+  "scr": "SCR-056",
+  "name": "Student records: Add a student",
+  "job": "students.manage",
+  "path": "/students/add-student",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-students.manage-1010",
+  "scr": "SCR-1010",
+  "name": "Student records: Bulk import",
+  "job": "students.manage",
+  "path": "/students/bulk-student-import",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-students.manage-1011",
+  "scr": "SCR-1011",
+  "name": "Student records: Student logins",
+  "job": "students.manage",
+  "path": "/students/student-logins",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-students.manage-1012",
+  "scr": "SCR-1012",
+  "name": "Student records: Enrolment history",
+  "job": "students.manage",
+  "path": "/students/enrolment-history",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-students.manage-69",
+  "scr": "SCR-069",
+  "name": "Student records: Promotion & transfer",
+  "job": "students.manage",
+  "path": "/students/promotion-transfer",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-students.manage-70",
+  "scr": "SCR-070",
+  "name": "Student records: Exit & alumni",
+  "job": "students.manage",
+  "path": "/students/student-exit-alumni-conversion",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-students.manage-71",
+  "scr": "SCR-071",
+  "name": "Student records: Parent directory",
+  "job": "students.manage",
+  "path": "/parents/parent-guardian-directory",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-students.manage-72",
+  "scr": "SCR-072",
+  "name": "Student records: Add a parent",
+  "job": "students.manage",
+  "path": "/parents/add-parent-guardian",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-students.manage-76",
+  "scr": "SCR-076",
+  "name": "Student records: Parent login access",
+  "job": "students.manage",
+  "path": "/parents/parent-login-access",
+  "record": "parent",
+  "cross_school": true
+ },
+ {
+  "id": "JOB-attendance.correct-113",
+  "scr": "SCR-113",
+  "name": "Attendance office: Attendance correction",
+  "job": "attendance.correct",
+  "path": "/attendance/attendance-correction",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-attendance.correct-117",
+  "scr": "SCR-117",
+  "name": "Attendance office: Monthly summary",
+  "job": "attendance.correct",
+  "path": "/attendance/monthly-attendance-summary",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-attendance.correct-118",
+  "scr": "SCR-118",
+  "name": "Attendance office: Chronic absence",
+  "job": "attendance.correct",
+  "path": "/attendance/chronic-absence-alerts",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-attendance.correct-119",
+  "scr": "SCR-119",
+  "name": "Attendance office: Attendance reports",
+  "job": "attendance.correct",
+  "path": "/attendance/attendance-reports",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-attendance.correct-115",
+  "scr": "SCR-115",
+  "name": "Attendance office: Student leave approval",
+  "job": "attendance.correct",
+  "path": "/attendance/student-leave-approval",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-fees.collect-158",
+  "scr": "SCR-158",
+  "name": "Fee counter: Fee collection",
+  "job": "fees.collect",
+  "path": "/fees-finance/fee-collection",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-fees.collect-160",
+  "scr": "SCR-160",
+  "name": "Fee counter: Payment receipt",
+  "job": "fees.collect",
+  "path": "/fees-finance/payment-receipt",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-fees.collect-161",
+  "scr": "SCR-161",
+  "name": "Fee counter: Student ledger",
+  "job": "fees.collect",
+  "path": "/fees-finance/student-ledger",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-fees.collect-162",
+  "scr": "SCR-162",
+  "name": "Fee counter: Outstanding dues",
+  "job": "fees.collect",
+  "path": "/fees-finance/outstanding-dues",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-fees.collect-159",
+  "scr": "SCR-159",
+  "name": "Fee counter: Online payments",
+  "job": "fees.collect",
+  "path": "/fees-finance/online-payment",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-payroll.manage-183",
+  "scr": "SCR-183",
+  "name": "Payroll: Payroll setup",
+  "job": "payroll.manage",
+  "path": "/human-resources/payroll-setup",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-payroll.manage-184",
+  "scr": "SCR-184",
+  "name": "Payroll: Payroll processing",
+  "job": "payroll.manage",
+  "path": "/human-resources/payroll-processing",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-payroll.manage-185",
+  "scr": "SCR-185",
+  "name": "Payroll: Payslips & history",
+  "job": "payroll.manage",
+  "path": "/human-resources/payslip-payroll-history",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-payroll.manage-1062",
+  "scr": "SCR-1062",
+  "name": "Payroll: Salary history & bank files",
+  "job": "payroll.manage",
+  "path": "/human-resources/salary-history-bank-files",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-payroll.manage-277",
+  "scr": "SCR-277",
+  "name": "Payroll: Payroll summary",
+  "job": "payroll.manage",
+  "path": "/reports-analytics/payroll-summary",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-staff.manage-80",
+  "scr": "SCR-080",
+  "name": "Staff records: Staff directory",
+  "job": "staff.manage",
+  "path": "/staff/staff-directory",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-staff.manage-81",
+  "scr": "SCR-081",
+  "name": "Staff records: Add staff",
+  "job": "staff.manage",
+  "path": "/staff/add-staff",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-staff.manage-82",
+  "scr": "SCR-082",
+  "name": "Staff records: Staff profile",
+  "job": "staff.manage",
+  "path": "/staff/staff-profile",
+  "record": "staff",
+  "cross_school": true
+ },
+ {
+  "id": "JOB-staff.manage-1085",
+  "scr": "SCR-1085",
+  "name": "Staff records: Departments",
+  "job": "staff.manage",
+  "path": "/staff/departments",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-reports.view-273",
+  "scr": "SCR-273",
+  "name": "Reports: Fee collection",
+  "job": "reports.view",
+  "path": "/reports-analytics/fee-collection-report",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-reports.view-274",
+  "scr": "SCR-274",
+  "name": "Reports: Outstanding dues",
+  "job": "reports.view",
+  "path": "/reports-analytics/outstanding-dues-report",
+  "record": null,
+  "cross_school": false
+ },
+ {
+  "id": "JOB-reports.view-283",
+  "scr": "SCR-283",
+  "name": "Reports: Report builder",
+  "job": "reports.view",
+  "path": "/reports-analytics/custom-report-builder",
+  "record": null,
+  "cross_school": false
+ }
+]

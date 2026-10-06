@@ -6,7 +6,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Avatar, Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, dateTime, label, money } from "@/lib/format";
+import { date, dateTime, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, formText, today, type PickedStudent } from "@/features/transport/kit";
@@ -103,7 +103,7 @@ export function HostelAttendance() {
         >
           <div className="approval-summary">
             <strong>{`${counts.present} Present   ${lateCount} Late   ${counts.absent} Absent   ${counts.on_leave} Leave`}</strong>
-            <span>{`${list?.length ?? 0} resident(s) · ${saved} already saved for this session`}</span>
+            <span>{`${plural(list?.length ?? 0, "resident")} · ${saved} already saved for this session`}</span>
           </div>
           <div className="table-wrap">
             <table className="data-table">
@@ -474,7 +474,7 @@ export function MessMenu() {
             </table>
           </div>
           <div className="table-footer">
-            <span>{menu.loading ? "Loading…" : `${menu.data?.length ?? 0} meal slot(s) planned`}</span>
+            <span>{menu.loading ? "Loading…" : `${plural(menu.data?.length ?? 0, "meal slot")} planned`}</span>
             <button type="submit" className="btn primary" disabled={saving}>
               <Icon name="check" className="sm" />
               {saving ? "Saving…" : "Save meal plan"}
@@ -554,7 +554,7 @@ export function ComplaintsFees() {
     api
       .post<{ created: number; skipped: number; total_amount: string }>(`${HOSTELS}/fees/generate`, { fee_head_id: Number(f.get("fee_head_id")), period: formText(f, "period"), due_day: Number(f.get("due_day") || 10) })
       .then((r) => {
-        notify(`Raised ${r.created} hostel fee(s) for ${formText(f, "period")} totalling ${money(r.total_amount)}${r.skipped ? ` · ${r.skipped} already billed` : ""}.`);
+        notify(`Raised ${plural(r.created, "hostel fee")} for ${formText(f, "period")} totalling ${money(r.total_amount)}${r.skipped ? ` · ${r.skipped} already billed` : ""}.`);
         close();
       })
       .catch((err) => setError(errorText(err)))

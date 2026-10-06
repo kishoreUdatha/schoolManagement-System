@@ -28,6 +28,8 @@ Db = Annotated[Session, Depends(get_db)]
 # the school admin always can; a principal (or anyone) can be given the permission
 RoleManager = Annotated[User, Depends(allow(UserRole.school_admin, permission="roles.manage"))]
 BranchManager = Annotated[User, Depends(allow(UserRole.school_admin, permission="branches.manage"))]
+# the list is also read by staff records (departments sit in branches)
+BranchReader = Annotated[User, Depends(allow(UserRole.school_admin, permission="branches.manage", any_of=("staff.manage",)))]
 
 
 @router.get("/permissions", response_model=list[PermissionRead], summary="Everything a role can be allowed to do")
@@ -93,7 +95,7 @@ def unassign(assignment_id: int, current_user: RoleManager, db: Db):
 
 
 @router.get("/branches", response_model=list[BranchRead])
-def list_branches(current_user: BranchManager, db: Db):
+def list_branches(current_user: BranchReader, db: Db):
     return [svc.branch_to_read(db, b) for b in svc.list_branches(db, current_user.school_id)]
 
 

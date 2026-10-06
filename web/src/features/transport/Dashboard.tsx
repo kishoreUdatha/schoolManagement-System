@@ -9,7 +9,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { money } from "@/lib/format";
+import { money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -49,8 +49,8 @@ export function TransportDashboard() {
   const hero = !d
     ? "Here is how transport stands today."
     : attention
-      ? `${attention} thing(s) need attention: ${[d.overloaded_routes.length ? `${d.overloaded_routes.length} overloaded route(s)` : "", d.expiring_documents.length ? `${d.expiring_documents.length} document(s) to renew` : ""].filter(Boolean).join(" and ")}.`
-      : `${d.trips_today} trip sheet(s) today and nothing overdue for renewal.`;
+      ? `${plural(attention, "thing")} need attention: ${[d.overloaded_routes.length ? `${plural(d.overloaded_routes.length, "overloaded route")}` : "", d.expiring_documents.length ? `${plural(d.expiring_documents.length, "document")} to renew` : ""].filter(Boolean).join(" and ")}.`
+      : `${plural(d.trips_today, "trip sheet")} today and nothing overdue for renewal.`;
 
   return (
     <>
@@ -91,7 +91,7 @@ export function TransportDashboard() {
       </div>
       <div className="two-col dashboard-grid">
         <div>
-          <Panel title="Today's trips" sub={trips.data ? `${trips.data.length} trip sheet(s)` : "Loading…"}>
+          <Panel title="Today's trips" sub={trips.data ? `${plural(trips.data.length, "trip sheet")}` : "Loading…"}>
             {trips.data?.length ? (
               trips.data.map((t) => (
                 <div className="event-row" key={t.id}>
@@ -149,7 +149,7 @@ export function TransportFeesDialog() {
         period,
         due_day: formNum(f, "due_day") ?? 10,
       });
-      notify(`Raised ${r.created} transport fee(s) for ${r.period} totalling ${money(r.total_amount)}${r.skipped ? ` · ${r.skipped} skipped (already billed or no fee)` : ""}.`);
+      notify(`Raised ${plural(r.created, "transport fee")} for ${r.period} totalling ${money(r.total_amount)}${r.skipped ? ` · ${r.skipped} skipped (already billed or no fee)` : ""}.`);
       close();
     } catch (err) {
       setError(errorText(err));

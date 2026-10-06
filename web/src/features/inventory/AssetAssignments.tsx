@@ -8,7 +8,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label } from "@/lib/format";
+import { date, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { AssetDetailDialog } from "./AssetDialogs";
@@ -179,10 +179,10 @@ function BulkAssign({ assets, onClose, onDone }: { assets: Asset[]; onClose: () 
       if (r.failed.length) {
         const tag = (id: number) => assets.find((a) => a.id === id)?.asset_tag ?? `#${id}`;
         setError(`${r.done.length} assigned; not assigned: ${r.failed.map((x) => `${tag(x.asset_id)} (${x.error})`).join("; ")}`);
-        if (r.done.length) notify(`${r.done.length} asset(s) assigned.`);
+        if (r.done.length) notify(`${plural(r.done.length, "asset")} assigned.`);
         return;
       }
-      notify(`${r.done.length} asset(s) assigned.`);
+      notify(`${plural(r.done.length, "asset")} assigned.`);
       onDone();
     } catch (err) {
       setError(errorText(err));
@@ -228,7 +228,7 @@ function BulkAssign({ assets, onClose, onDone }: { assets: Asset[]; onClose: () 
           ))}
           {!shown.length ? <p className="muted small">{assets.length ? "No assets match." : "Nothing is in the store to assign."}</p> : null}
         </div>
-        <ModalActions saving={saving} label={`Assign ${picked.size || ""} asset(s)`} onCancel={onClose} />
+        <ModalActions saving={saving} label={`Assign ${plural(picked.size || "", "asset")}`} onCancel={onClose} />
       </form>
     </Modal>
   );

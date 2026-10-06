@@ -10,37 +10,32 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { date, pct } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { useSession } from "@/lib/useSession";
 import { clock, ExamSelects, useExamChoice } from "./common";
 import type { Datesheet, ExamDashboard as Dashboard } from "./types";
+import { useGreeting } from "@/features/dashboards/parts";
 
-const DAYS = ["SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"];
-const MONTHS = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-
-function greeting(now: Date) {
-  const h = now.getHours();
-  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-}
 
 /** SCR-138, live: GET /school/exams, /school/exam-ops/{id}/dashboard and /datesheet. */
 export function ExamDashboard() {
-  const sess = useSession();
   const c = useExamChoice();
   const dash = useApi<Dashboard>(c.examId ? `/api/v1/school/exam-ops/${c.examId}/dashboard` : null);
   const sheet = useApi<Datesheet>(c.examId ? `/api/v1/school/exam-ops/${c.examId}/datesheet` : null);
   const d = dash.data;
+  // name and date only once hydrated: the server renders before it knows the viewer or their clock
+  const g = useGreeting();
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
-  const first = sess?.user.full_name.split(/\s+/)[0];
 
   const upcoming = c.exams.filter((e) => e.end_date >= today).sort((a, b) => a.start_date.localeCompare(b.start_date));
   const awaiting = d ? d.rows.filter((r) => r.marks_complete && !r.verified).length : undefined;
-  const n = (v: number | undefined) => (v === undefined ? "…" : v.toLocaleString("en-IN"));
+  // "…" only while something is on its way; with no exam chosen there is nothing to count
+  const waiting = c.examsLoading || (Boolean(c.examId) && dash.loading);
+  const n = (v: number | undefined) => (v === undefined ? (waiting ? "…" : "—") : v.toLocaleString("en-IN"));
 
   const stats = [
     { label: "Upcoming exams", value: n(c.examsLoading ? undefined : upcoming.length), note: "In the selected academic year" },
     { label: "Students registered", value: n(d?.candidates), note: d ? `Across ${d.papers} paper${d.papers === 1 ? "" : "s"}` : "Candidates for this exam" },
-    { label: "Marks entered", value: d ? pct(d.marks_percent, 0) : "…", note: d ? `${d.marks_entered.toLocaleString("en-IN")} of ${d.candidates.toLocaleString("en-IN")} entries` : "For this exam" },
+    { label: "Marks entered", value: d ? pct(d.marks_percent, 0) : waiting ? "…" : "—", note: d ? `${d.marks_entered.toLocaleString("en-IN")} of ${d.candidates.toLocaleString("en-IN")} entries` : "For this exam" },
     { label: "Awaiting verification", value: n(awaiting), note: "Fully marked, not signed off" },
   ];
 
@@ -52,8 +47,8 @@ export function ExamDashboard() {
     <>
       <section className="hero">
         <div className="hero-content">
-          <div className="eyebrow">{`${DAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`}</div>
-          <h2>{`${greeting(now)}${first ? `, ${first}` : ""}.`}</h2>
+          <div className="eyebrow">{g.eyebrow}</div>
+          <h2>{g.title}</h2>
           <p>{d ? `${d.exam_name}: ${d.ready_to_publish ? "ready to publish." : `${d.blockers.length} thing${d.blockers.length === 1 ? "" : "s"} outstanding before results can go out.`}` : "Here’s where your examinations stand."}</p>
           <Link href={`${routeOf(141)}${c.examId ? `?id=${c.examId}` : ""}`} className="btn white">
             <Icon name="arrow" className="sm" />

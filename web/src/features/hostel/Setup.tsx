@@ -8,7 +8,7 @@ import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, label, money } from "@/lib/format";
+import { date, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -133,7 +133,7 @@ export function HostelList() {
         </select>
       </div>
       <ErrorNote>{hostels.error ?? (!open ? error : null)}</ErrorNote>
-      <Panel title="Hostels" sub={hostels.data ? `${all.length} hostel(s) · ${all.reduce((s, x) => s + x.occupied, 0)} of ${all.reduce((s, x) => s + x.beds, 0)} beds taken` : "Loading…"} flush>
+      <Panel title="Hostels" sub={hostels.data ? `${plural(all.length, "hostel")} · ${all.reduce((s, x) => s + x.occupied, 0)} of ${all.reduce((s, x) => s + x.beds, 0)} beds taken` : "Loading…"} flush>
         <DataTable
           columns={["Hostel", "Building", "Type", "Rooms", "Beds", "Warden", "Status"]}
           rows={rows}
@@ -226,7 +226,7 @@ export function RoomsBeds() {
     { label: "Rooms", value: n(live.length), note: hostel ? `In ${hostel.name} · ${(rooms.data ?? []).length - live.length} inactive` : "No hostel chosen" },
     { label: "Beds", value: n(allBeds.length), note: `${pct(usedBeds, allBeds.length)} occupied` },
     { label: "Occupied", value: n(usedBeds), note: "Beds with a student" },
-    { label: "Free beds", value: n(allBeds.length - usedBeds), note: `${live.filter((r) => r.beds.every((b) => b.student_id)).length} room(s) full` },
+    { label: "Free beds", value: n(allBeds.length - usedBeds), note: `${plural(live.filter((r) => r.beds.every((b) => b.student_id)).length, "room")} full` },
   ];
   const close = () => {
     setError(null);
@@ -564,7 +564,7 @@ export function WardenRota() {
       {uncovered.length ? (
         <div className="tip warn">
           <Icon name="bell" className="sm" />
-          <span>{`${uncovered.length} hostel-night(s) have nobody on the rota in these two weeks: ${uncovered.slice(0, 6).map((u) => `${u.hostel_name} ${date(u.date)}`).join(", ")}${uncovered.length > 6 ? "…" : ""}`}</span>
+          <span>{`${plural(uncovered.length, "hostel-night")} have nobody on the rota in these two weeks: ${uncovered.slice(0, 6).map((u) => `${u.hostel_name} ${date(u.date)}`).join(", ")}${uncovered.length > 6 ? "…" : ""}`}</span>
         </div>
       ) : null}
       <Panel title="Warden rota" sub={`${date(from)} – ${date(to)} · resident wardens: ${(hostels.data ?? []).map((h) => `${h.name}: ${h.warden_name ? `${h.warden_name}${h.warden_phone ? ` (${h.warden_phone})` : ""}` : "none"}`).join(" · ") || "—"}`} flush>

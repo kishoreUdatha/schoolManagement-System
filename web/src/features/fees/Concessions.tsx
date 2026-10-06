@@ -7,7 +7,7 @@ import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { date, initials, label, money } from "@/lib/format";
+import { date, initials, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
@@ -65,7 +65,7 @@ export function Concessions() {
     setError(null);
     try {
       const r = await api.post<Concession>(`/api/v1/school/accounts/concessions/${c.id}/${approve ? "approve" : "reject"}`, {});
-      notify(approve ? `Concession approved${r.applied_to_pending ? `; ${r.applied_to_pending} unpaid fee(s) reduced` : ""}.` : "Request rejected.");
+      notify(approve ? `Concession approved${r.applied_to_pending ? `; ${plural(r.applied_to_pending, "unpaid fee")} reduced` : ""}.` : "Request rejected.");
       list.reload();
     } catch (e) {
       setError(errorText(e));
@@ -219,7 +219,7 @@ function NewConcession({ heads, onSaved }: { heads: FeeHead[]; onSaved: () => vo
         apply_to_pending: f.apply_to_pending,
         for_approval: f.for_approval,
       });
-      notify(r.approval_status === "pending" ? "Concession requested; it applies once approved." : `Concession saved${r.applied_to_pending ? `; ${r.applied_to_pending} unpaid fee(s) reduced` : ""}.`);
+      notify(r.approval_status === "pending" ? "Concession requested; it applies once approved." : `Concession saved${r.applied_to_pending ? `; ${plural(r.applied_to_pending, "unpaid fee")} reduced` : ""}.`);
       setStudent(null);
       setF({ ...f, value: "", notes: "" });
       onSaved();

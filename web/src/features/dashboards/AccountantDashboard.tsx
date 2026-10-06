@@ -4,7 +4,7 @@ import { Chart } from "@/components/ui/Chart";
 import { StatStrip, type Stat } from "@/components/ui/StatStrip";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
-import { dateTime, label, money } from "@/lib/format";
+import { dateTime, label, money, plural } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { DateRow, Empty, Hero, lastMonths, monthLabel, QuickActions, TimelineRow, TodaySchedulePanel, todayIso } from "./parts";
 import type { AccountantDashboardData, CalendarItem, Refund } from "./types";
@@ -29,13 +29,13 @@ export function AccountantDashboard() {
   const events = (calendar.data ?? []).filter((c) => !c.is_cancelled && !c.is_draft).slice(0, 3);
   // The day's money jobs, after whatever is timed on the calendar.
   const todo = [
-    ...(waiting?.length ? [{ title: "Refund review", sub: `${waiting.length} request(s) awaiting approval` }] : []),
-    ...(d && Number(d.overdue) > 0 ? [{ title: "Overdue fees", sub: `${money(d.overdue)} past its due date · ${d.families_owing} student(s) owing` }] : []),
+    ...(waiting?.length ? [{ title: "Refund review", sub: `${plural(waiting.length, "request")} awaiting approval` }] : []),
+    ...(d && Number(d.overdue) > 0 ? [{ title: "Overdue fees", sub: `${money(d.overdue)} past its due date · ${plural(d.families_owing, "student")} owing` }] : []),
   ];
 
   const stats: Stat[] = [
-    { label: "Collected today", value: d ? money(d.collected_today) : "…", note: d ? `${d.receipts_today} receipt(s)` : "Today" },
-    { label: "Outstanding dues", value: d ? money(d.outstanding) : "…", note: d ? `${d.families_owing} student(s) owing` : "All unpaid fees" },
+    { label: "Collected today", value: d ? money(d.collected_today) : "…", note: d ? `${plural(d.receipts_today, "receipt")}` : "Today" },
+    { label: "Outstanding dues", value: d ? money(d.outstanding) : "…", note: d ? `${plural(d.families_owing, "student")} owing` : "All unpaid fees" },
     { label: "Collected this month", value: d ? money(d.collected_this_month) : "…", note: "Since the 1st" },
     { label: "Pending refunds", value: waiting ? (all && all.length >= 500 ? `${waiting.length}+` : String(waiting.length)) : "…", note: "Awaiting approval" },
   ];
@@ -48,7 +48,7 @@ export function AccountantDashboard() {
 
   const hero = !d
     ? "Money in, money owed, and what needs a decision today."
-    : `${money(d.collected_today)} collected today across ${d.receipts_today} receipt(s). ${Number(d.overdue) > 0 ? `${money(d.overdue)} is overdue.` : "Nothing is overdue."}`;
+    : `${money(d.collected_today)} collected today across ${plural(d.receipts_today, "receipt")}. ${Number(d.overdue) > 0 ? `${money(d.overdue)} is overdue.` : "Nothing is overdue."}`;
 
   return (
     <>
@@ -75,7 +75,7 @@ export function AccountantDashboard() {
             }
           >
             {peak > 0 ? (
-              <Chart kind="line" labels={months.map(monthLabel)} values={amounts.map((a) => Math.round((a / peak) * 100))} />
+              <Chart kind="line" labels={months.map(monthLabel)} values={amounts.map((a) => Math.round((a / peak) * 100))} scale="relative" />
             ) : (
               <Empty>{dash.loading ? "Loading…" : "No fees collected in the last six months."}</Empty>
             )}

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Row } from "@/components/ui/DataTable";
-import { date, label, pct } from "@/lib/format";
+import { date, label, pct, plural } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { DateInput, monthStart, num, ReportView, share, today, useYear, type Bar } from "./kit";
@@ -155,7 +155,7 @@ export function ChronicAbsence() {
       stats={[
         { label: "Students below threshold", value: num(d?.count), note: "School-wide" },
         { label: "Threshold", value: d ? pct(d.below, 0) : "—", note: "Attendance below this" },
-        { label: "Followed up", value: d ? `${contacted} / ${kids.length}` : "—", note: kids.length ? `${kids.filter((k) => k.follow_up_due).length} follow-up(s) due` : "Calls home recorded" },
+        { label: "Followed up", value: d ? `${contacted} / ${kids.length}` : "—", note: kids.length ? `${plural(kids.filter((k) => k.follow_up_due).length, "follow-up")} due` : "Calls home recorded" },
         { label: "Window", value: d ? `${date(d.from_date).slice(0, 6)} – ${date(d.to_date).slice(0, 6)}` : "—", note: d ? `${date(d.from_date)} – ${date(d.to_date)}` : "Attendance period" },
       ]}
       chart={{ kind: "bars", title: "Students below threshold by section", sub: "Count of children under the line", bars: [...bySection].map(([l, n]) => ({ label: l, value: n, text: num(n) })), empty: "No child is below the threshold. Good news." }}

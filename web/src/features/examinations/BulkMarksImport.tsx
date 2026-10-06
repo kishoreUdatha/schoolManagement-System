@@ -6,7 +6,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Panel } from "@/components/ui/primitives";
 import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
-import { dateTime, label } from "@/lib/format";
+import { dateTime, label, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { downloadFile, uploadForm } from "./common";
@@ -60,13 +60,13 @@ export function BulkMarksImport() {
 
   async function commit() {
     if (!job) return;
-    if (job.error_rows && !(await ask(`${job.error_rows} row(s) have problems and will be skipped. Import the other ${job.success_rows}?`))) return;
+    if (job.error_rows && !(await ask(`${plural(job.error_rows, "row")} have problems and will be skipped. Import the other ${job.success_rows}?`))) return;
     setBusy(true);
     setError(null);
     try {
       const done = await api.post<ImportJob>(`${BASE}/imports/${job.id}/commit`, { skip_bad_rows: true });
       setJob(done);
-      notify(`${done.success_rows} row(s) written.`);
+      notify(`${plural(done.success_rows, "row")} written.`);
       history.reload();
     } catch (err) {
       setError(errorText(err));
@@ -115,7 +115,7 @@ export function BulkMarksImport() {
             {job ? (
               <div className="import-status" style={{ display: "block" }}>
                 {committed
-                  ? `${job.success_rows} row(s) written to the marks sheet.`
+                  ? `${plural(job.success_rows, "row")} written to the marks sheet.`
                   : `${job.total_rows} rows checked: ${job.success_rows} ready, ${job.error_rows} with problems. ${job.message ?? ""}`}
               </div>
             ) : null}
@@ -138,7 +138,7 @@ export function BulkMarksImport() {
         </div>
         <Panel
           title="Problems found"
-          sub={job ? `${job.error_rows} row(s) will be skipped` : "Validate a file to see what the check finds"}
+          sub={job ? `${plural(job.error_rows, "row")} will be skipped` : "Validate a file to see what the check finds"}
           action={
             job?.error_rows ? (
               <button type="button" className="btn" onClick={() => get(`${BASE}/imports/${job.id}/errors.csv`, `import-${job.id}-errors.csv`)}>
