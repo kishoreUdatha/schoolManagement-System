@@ -40,9 +40,12 @@ export const TAB_GROUPS: TabGroup[] = [
   { label: "Results", tabs: [[150, "Publish"], [151, "Student result"], [152, "Report card"], [1051, "Printing"], [153, "Promotion decision"]] },
   { label: "Online tests", tabs: [[1023, "Tests"], [1022, "Question bank"], [1024, "Results"]] },
   // Fees and finance
-  { label: "Fee setup", tabs: [[155, "Fee structure"], [1040, "Fee types"], [157, "Per-student fees"], [1041, "Generate fees"], [163, "Discounts & scholarships"], [164, "Late fee rules"], [1042, "Waive & adjust"], [1043, "Online payment setup"]] },
-  { label: "Fee collection", tabs: [[158, "Collect fees"], [160, "Receipts"], [159, "Online payments"], [1044, "Match payments"], [1045, "Cheques"], [161, "Student ledger"], [162, "Outstanding dues"], [165, "Refunds"]] },
-  { label: "Accounts", tabs: [[166, "Income"], [167, "Expenses"], [1046, "Expense categories"], [168, "Vendors"], [169, "Purchases"], [1047, "Purchase orders"], [170, "Cash & bank"]] },
+  // in the order a school sets fees up: what it charges, how much per class, the rules, then raising them
+  { label: "Fee setup", tabs: [[1040, "Fee types"], [155, "Fee structure"], [163, "Discounts & scholarships"], [164, "Late fee rules"], [157, "Per-student fees"], [1041, "Generate fees"], [1042, "Waive & adjust"], [1043, "Online payment setup"]] },
+  // the counter first, then who still owes, then the other ways money arrives, then money going back
+  { label: "Fee collection", tabs: [[158, "Collect fees"], [160, "Receipts"], [162, "Outstanding dues"], [161, "Student ledger"], [159, "Online payments"], [1044, "Match payments"], [1045, "Cheques"], [165, "Refunds"]] },
+  // a purchase runs vendor, order, then the bill and its payment
+  { label: "Accounts", tabs: [[166, "Income"], [167, "Expenses"], [1046, "Expense categories"], [168, "Vendors"], [1047, "Purchase orders"], [169, "Purchases"], [170, "Cash & bank"]] },
   {
     label: "Books of account",
     tabs: [[1056, "Income & expenditure"], [1057, "Balance sheet"], [1055, "Trial balance"], [1054, "Ledger"], [1053, "Day book"], [1052, "Journal vouchers"], [1049, "Chart of accounts"]],
