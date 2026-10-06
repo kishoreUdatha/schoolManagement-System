@@ -985,3 +985,25 @@ tr.jv-open td{background:#f5f8ff}
 
 /* Choosing the member of staff on a per-person screen (features/staff/StaffPicker). */
 .staff-picker{max-width:520px;margin:0 0 14px}
+
+/* Compact screens: less space above the data. Page head, module tabs, count
+   cards, filters, panel headings and table rows, on every screen. */
+.main{padding-top:16px}
+.page-head{margin-bottom:8px}
+.page-head h1{font-size:22px}
+.module-tabs{margin-bottom:12px}
+.module-tabs a,.module-tabs button{padding-bottom:9px}
+.stat-strip.stat-strip{padding:9px 4px;margin-bottom:12px}
+.stat-strip.stat-strip .stat-value{font-size:18px;margin:1px 0}
+.filterbar{margin-bottom:12px}
+.filterbar .searchbox,.filterbar select,.filterbar .select-plain{height:36px}
+.filterbar>.btn{min-height:36px;padding-top:6px;padding-bottom:6px}
+.panel-head{padding:12px 18px}
+.panel-head h2{font-size:16px}
+.panel-head p{margin-top:2px}
+.data-table th{padding-top:9px;padding-bottom:9px}
+.data-table td,.data-table td{padding-top:8px;padding-bottom:8px}
+.data-table .avatar{width:30px;height:30px}
+/* a panel's title and its short note on one line ("All staff · 10 shown") */
+.panel-head>div:first-child:has(>h2){display:flex;align-items:baseline;flex-wrap:wrap;column-gap:10px;row-gap:2px}
+.panel-head>div:first-child:has(>h2)>p{margin-top:0}
