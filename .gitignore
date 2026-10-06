@@ -80,3 +80,6 @@ httpswww.myclassboard reference.txt
 
 # Local database snapshots
 db_backups/
+
+# Local demo logins with their passwords (backend/scripts/create_demo_logins.py)
+*.local.md

@@ -43,14 +43,26 @@ docker exec sms-backend python -m scripts.seed_dev_school
 docker exec sms-backend python -m scripts.seed_dev_data
 ```
 
-| Login | Password | Who |
+Those seeded logins (`school@sms.local`, `iyer@dev.local`, …) exist only in a
+database filled by the two scripts above. The current dev database holds a
+real school instead (Thiya Montessori, school 83), whose people sign in with
+their own email and password; the school admin can reset any staff password
+from the staff record.
+
+For the roles that school has no one in yet, the accountant, a non-teaching
+staff member and a student, create demo logins. The passwords go only to a
+git-ignored file:
+
+```bash
+docker exec sms-backend python -m scripts.create_demo_logins 83 > dev-logins.local.md
+```
+
+| Role | Signs in at | With |
 |---|---|---|
-| `school@sms.local` | `SchoolPass123!` | school admin |
-| `iyer@dev.local` | `TeacherPass123!` | teacher, class teacher of Grade 1 A |
-| `sharma@dev.local` | `ParentPass123!` | parent of Aarav Sharma |
-| `principal@dev.local` | `PrincipalPass123!` | principal |
-| `accountant@dev.local` | `AccountantPass123!` | accountant |
-| `admin@sms.local` | `ChangeMe123!` | super admin |
+| super admin | `/welcome/sign-in` | email |
+| school admin, principal, teacher, accountant, staff | `/welcome/sign-in` | email |
+| parent | `/parent/parent-sign-in` | email |
+| student | `/student/sign-in` | school code + admission number |
 
 `seed_dev_data` is safe to run again: it looks every record up by name, so
 ids stay put and re-running it after the smoke tests puts back anything they
