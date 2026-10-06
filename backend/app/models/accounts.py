@@ -39,7 +39,8 @@ class FeeCollection(Base, PrimaryKeyMixin, TimestampMixin, _School):
 
     __tablename__ = "fee_collections"
     __table_args__ = (
-        UniqueConstraint("school_id", "receipt_no", name="uq_fee_collection_receipt"),
+        # several lines paid together share a receipt number (ledger_service.next_receipt)
+        Index("ix_fee_collections_receipt", "school_id", "receipt_no"),
         Index("ix_fee_collections_school_date", "school_id", "collected_on"),
         Index("ix_fee_collections_fee", "student_fee_id"),
     )

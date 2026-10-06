@@ -127,7 +127,8 @@ export function PaymentReceipt() {
       issued: date(c.collected_on),
       parent: null,
       method: modeLabel(c.mode),
-      rows: [[c.fee_head_name, periodLabel(c.period), money(c.amount)]],
+      // one line per fee the payment covered
+      rows: c.lines?.length ? c.lines.map((l) => [l.fee_head_name, periodLabel(l.period), money(l.amount)]) : [[c.fee_head_name, periodLabel(c.period), money(c.amount)]],
       total: c.amount,
       received: true,
       status: "PAID",
@@ -212,11 +213,14 @@ export function PaymentReceipt() {
 /**
  * Every counter receipt in a date range (GET /school/accounts/collections),
  * searchable by student or receipt number. Opening one shows it for printing.
+ * Day close shows one day's takings by method and by cashier, to tally the
+ * drawer against before the cash goes to the bank.
  */
 function ReceiptList() {
   const router = useRouter();
   const [from, setFrom] = useState(monthStart());
   const [to, setTo] = useState(isoToday());
+  const [closing, setClosing] = useState(false);
   const [mode, setMode] = useState("");
   const [q, setQ] = useState("");
   const list = useApi<Collection[]>("/api/v1/school/accounts/collections", { from, to, mode: mode || undefined });
@@ -240,9 +244,35 @@ function ReceiptList() {
             </option>
           ))}
         </select>
-        <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} />
+        {closing ? (
+          <label className="day-pick">
+            Day
+            <input type="date" value={from} max={isoToday()} onChange={(e) => { setFrom(e.target.value); setTo(e.target.value); }} />
+          </label>
+        ) : (
+          <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} />
+        )}
+        <button
+          type="button"
+          className={`btn ${closing ? "primary" : ""}`}
+          onClick={() => {
+            if (!closing) {
+              setFrom(isoToday());
+              setTo(isoToday());
+              setMode("");
+            } else {
+              setFrom(monthStart());
+              setTo(isoToday());
+            }
+            setClosing(!closing);
+          }}
+        >
+          <Icon name="check" className="sm" />
+          {closing ? "Back to all receipts" : "Day close"}
+        </button>
       </div>
       <ErrorNote>{list.error}</ErrorNote>
+      {closing && list.data ? <DayClose day={from} receipts={rows} /> : null}
       <Panel
         title="Receipts"
         sub={list.data ? `${rows.length} receipt${rows.length === 1 ? "" : "s"} · ${money(total)} received · ${date(from)} – ${date(to)}` : "Fee payments taken at the counter"}
@@ -260,7 +290,9 @@ function ReceiptList() {
             c.receipt_no,
             date(c.collected_on),
             { name: c.student_name, sub: c.section_label ?? undefined },
-            `${c.fee_head_name}${c.period === "ONETIME" ? "" : ` · ${periodLabel(c.period)}`}`,
+            c.lines && c.lines.length > 1
+              ? `${c.lines.length} fees: ${c.lines.map((l) => l.fee_head_name).join(", ")}`
+              : `${c.fee_head_name}${c.period === "ONETIME" ? "" : ` · ${periodLabel(c.period)}`}`,
             modeLabel(c.mode),
             money(c.amount),
             c.collected_by_name ?? "—",
@@ -270,5 +302,109 @@ function ReceiptList() {
         />
       </Panel>
     </>
+  );
+}
+
+/**
+ * One day's counter takings: the total by method (what should be in the
+ * drawer, and what went to the bank or UPI) and by cashier, with a sheet to
+ * print and sign. Built from the day's receipts.
+ */
+function DayClose({ day, receipts }: { day: string; receipts: Collection[] }) {
+  const byMode = new Map<string, { n: number; amount: number }>();
+  const byCashier = new Map<string, Map<string, number>>();
+  for (const c of receipts) {
+    const m = byMode.get(c.mode) ?? { n: 0, amount: 0 };
+    m.n += 1;
+    m.amount += Number(c.amount);
+    byMode.set(c.mode, m);
+    const who = c.collected_by_name ?? "Not recorded";
+    const row = byCashier.get(who) ?? new Map<string, number>();
+    row.set(c.mode, (row.get(c.mode) ?? 0) + Number(c.amount));
+    byCashier.set(who, row);
+  }
+  const modes = MODES.map(([k]) => k).filter((k) => byMode.has(k)).concat([...byMode.keys()].filter((k) => !MODES.some(([m]) => m === k)));
+  const total = receipts.reduce((t, c) => t + Number(c.amount), 0);
+  const cash = byMode.get("cash")?.amount ?? 0;
+  return (
+    <section className="panel day-close">
+      <div className="panel-head">
+        <div>
+          <h2>{`Day close · ${date(day)}`}</h2>
+          <p>{`${receipts.length} receipt${receipts.length === 1 ? "" : "s"} · ${money(total)} in all · cash in the drawer should be ${money(cash)}`}</p>
+        </div>
+        <button type="button" className="btn" onClick={() => window.print()}>
+          <Icon name="file" className="sm" />
+          Print day close
+        </button>
+      </div>
+      {receipts.length ? (
+        <>
+          <div className="day-close-modes">
+            {modes.map((k) => (
+              <div key={k}>
+                <span>{modeLabel(k)}</span>
+                <strong>{money(byMode.get(k)!.amount)}</strong>
+                <small>{`${byMode.get(k)!.n} receipt${byMode.get(k)!.n === 1 ? "" : "s"}`}</small>
+              </div>
+            ))}
+            <div className="all">
+              <span>Total</span>
+              <strong>{money(total)}</strong>
+              <small>{`${receipts.length} receipts`}</small>
+            </div>
+          </div>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Collected by</th>
+                  {modes.map((k) => (
+                    <th key={k} className="num">
+                      {modeLabel(k)}
+                    </th>
+                  ))}
+                  <th className="num">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...byCashier.entries()].map(([who, row]) => (
+                  <tr key={who}>
+                    <td>{who}</td>
+                    {modes.map((k) => (
+                      <td key={k} className="num">
+                        {row.get(k) ? money(row.get(k)!) : "—"}
+                      </td>
+                    ))}
+                    <td className="num">
+                      <strong>{money([...row.values()].reduce((a, b) => a + b, 0))}</strong>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="day-close-sign">
+            <span>Counted by</span>
+            <span>Checked by</span>
+            <span>Deposited to bank on</span>
+          </div>
+        </>
+      ) : (
+        <p className="muted small panel-pad">Nothing was collected at the counter on this day.</p>
+      )}
+    </section>
+  );
+}
+
+/** The page-head Print button: only when a receipt is open (not on the list). */
+export function PrintReceiptAction() {
+  const params = useSearchParams();
+  if (!params.get("receipt") && !(params.get("child") && params.get("order"))) return null;
+  return (
+    <button type="button" className="btn primary" data-print="">
+      <Icon name="download" className="sm" />
+      Print receipt
+    </button>
   );
 }

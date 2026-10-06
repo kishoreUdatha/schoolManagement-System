@@ -724,6 +724,51 @@ def record_payment(
     return get_student_fee(db, sf.id, school_id)
 
 
+def record_payments(db: Session, school_id: int, data, recorded_by_user_id: int) -> dict:
+    """Several of one student's fees paid at once: every line checked, then
+    all recorded under one receipt number, or none of them."""
+    ids = [ln.fee_id for ln in data.lines]
+    if len(set(ids)) != len(ids):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A fee appears twice in this payment")
+    fees: list[tuple[StudentFee, Decimal]] = []
+    for ln in sorted(data.lines, key=lambda x: x.fee_id):  # a fixed order, so two counters cannot deadlock
+        sf = db.get(StudentFee, ln.fee_id)
+        if not sf or sf.school_id != school_id or sf.student_id != data.student_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fee record not found for this student")
+        db.refresh(sf, with_for_update=True)
+        if sf.status == FeeStatus.waived:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="One of these fees has been waived")
+        if sf.amount_paid + ln.amount > sf.amount_due:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"A payment exceeds what is outstanding on one fee (₹{sf.amount_due - sf.amount_paid})",
+            )
+        fees.append((sf, ln.amount))
+    on = data.paid_at.date() if data.paid_at else date.today()
+    receipt_no = ledger_service.next_receipt(db, school_id, on)
+    mode = ledger_service.mode_from_text(data.payment_mode)
+    first = None
+    for sf, amount in fees:
+        sf.amount_paid = sf.amount_paid + amount
+        sf.payment_mode = data.payment_mode
+        if data.payment_ref:
+            sf.payment_ref = data.payment_ref
+        if data.notes:
+            sf.notes = (f"{sf.notes} · {data.notes}" if sf.notes and data.notes not in sf.notes else data.notes)[:300]
+        sf.recorded_by_user_id = recorded_by_user_id
+        if sf.amount_paid >= sf.amount_due:
+            sf.status = FeeStatus.paid
+            sf.paid_at = data.paid_at or datetime.now(timezone.utc)
+        row = ledger_service.record_collection(
+            db, sf, amount, mode, reference=data.payment_ref, on=on, actor_id=recorded_by_user_id,
+            notes=data.notes, receipt_no=receipt_no,
+        )
+        first = first or row
+    db.commit()
+    return {"receipt_no": receipt_no, "collection_id": first.id, "lines": len(fees),
+            "total": sum((a for _, a in fees), Decimal("0"))}
+
+
 def waive(
     db: Session, fee_id: int, school_id: int, recorded_by_user_id: int
 ) -> dict:

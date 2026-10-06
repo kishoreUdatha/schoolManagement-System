@@ -111,6 +111,8 @@ export type Collection = {
   mode: MoneyMode;
   reference: string | null;
   collected_by_name: string | null;
+  /** every fee the receipt covers, when one payment paid several */
+  lines?: { collection_id: number; fee_head_name: string; period: string; amount: string }[];
 };
 
 export type LedgerEntry = {

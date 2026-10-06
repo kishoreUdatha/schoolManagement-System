@@ -105,6 +105,21 @@ class RecordPayment(BaseModel):
     notes: Optional[str] = Field(None, max_length=300)
 
 
+class PaymentLine(BaseModel):
+    fee_id: int
+    amount: Decimal = Field(..., gt=0)
+
+
+class RecordPayments(BaseModel):
+    """One payment at the counter covering several of a student's fees."""
+    student_id: int
+    lines: list[PaymentLine] = Field(..., min_length=1, max_length=50)
+    payment_mode: Optional[str] = Field(None, max_length=40)
+    payment_ref: Optional[str] = Field(None, max_length=120)
+    paid_at: Optional[datetime] = None
+    notes: Optional[str] = Field(None, max_length=300)
+
+
 class GenerateMonthlyRequest(BaseModel):
     academic_year_id: int
     period: str = Field(

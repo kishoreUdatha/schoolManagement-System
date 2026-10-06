@@ -181,6 +181,8 @@ class CollectionRead(BaseModel):
     mode: MoneyMode
     reference: Optional[str] = None
     collected_by_name: Optional[str] = None
+    # every fee this receipt covers: [{collection_id, fee_head_name, period, amount}]
+    lines: list[dict] = []
 
 
 class CashBook(BaseModel):

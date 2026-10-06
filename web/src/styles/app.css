@@ -1010,12 +1010,24 @@ tr.jv-open td{background:#f5f8ff}
 /* the row count at the end of a filter bar, in place of a table heading */
 .filter-count{font-size:12.5px;color:var(--muted);white-space:nowrap;margin-left:auto}
 
-/* Collect fees: who owes, before a student is chosen (features/fees/FeeCollection WhoOwes). */
-.who-owes-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-.who-owes-filters input,.who-owes-filters select{height:34px;border:1px solid #dce5f2;border-radius:8px;padding:0 10px;font-size:13px;background:#fff}
-.who-owes-filters input{flex:1;min-width:160px}
-.who-owes-filters span{margin-left:auto}
-.who-owes-table td{padding-top:6px!important;padding-bottom:6px!important}
-.who-owes-table td:first-child{padding-left:0!important}
-.who-owes-table td:last-child{padding-right:0!important}
-.who-owes-table tr:first-child td{border-top:1px solid #edf1f7}
+/* Collect fees: the fees being paid (features/fees/FeeCollection). */
+.collect-lines tr.off td{color:#8a97ab}
+.collect-lines .collect-amount{width:120px;height:34px;border:1px solid #d9e4f2;border-radius:7px;padding:0 8px;text-align:right;font:inherit}
+.collect-lines .collect-amount:disabled{background:#f5f8fd}
+.collect-lines tfoot td{border-top:1px solid var(--line);font-weight:650;color:var(--ink)}
+.collect-done{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:0}
+.collect-done span{flex:1}
+
+/* Receipts: day close (features/fees/PaymentReceipt DayClose). */
+.day-pick{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:#485872}
+.day-pick input{height:36px;border:1px solid #dce5f2;border-radius:9px;padding:0 10px;font:inherit}
+.day-close{margin-bottom:12px}
+.day-close-modes{display:flex;flex-wrap:wrap;gap:10px;padding:0 18px 12px}
+.day-close-modes>div{flex:1 1 130px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:grid;gap:1px}
+.day-close-modes span{font-size:12px;color:var(--muted);font-weight:600}
+.day-close-modes strong{font-size:17px}
+.day-close-modes small{font-size:11.5px;color:var(--muted)}
+.day-close-modes .all{background:#eef4ff;border-color:#cfdffb}
+.day-close-sign{display:flex;gap:24px;padding:28px 18px 16px}
+.day-close-sign span{flex:1;border-top:1px solid #9aa9c0;padding-top:6px;font-size:12px;color:var(--muted)}
+@media print{.day-close ~ .panel{display:none!important}}

@@ -14,7 +14,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { Field, isoToday, MODES, modeLabel, StudentPicker } from "./common";
-import type { Collection, Defaulter, DuesAgeing, PickedStudent, StudentFee } from "./types";
+import type { Collection, PickedStudent, StudentFee } from "./types";
 
 /** A year back, so a student's recent receipts are not cut at the 1st of the month. */
 function yearAgo(): string {
@@ -23,29 +23,33 @@ function yearAgo(): string {
   return d.toISOString().slice(0, 10);
 }
 
-/**
- * SCR-158, live. Pick a student, pick one of their unpaid fees
- * (GET /school/fees/student-fees?student_id=&status=outstanding: due and overdue) and record money
- * against it (POST /school/fees/student-fees/{id}/record-payment). The server
- * refuses more than is outstanding. Recent receipts come from
- * GET /school/accounts/collections?student_id=. Opens on ?student=<id>.
- */
 type LedgerHead = { student_id: number; student_name: string; admission_no: string; class_name: string | null; section_name: string | null };
+type Paid = { receipt_no: string; collection_id: number; lines: number; total: string };
 
+/**
+ * SCR-158, live: the counter. Find the student (a parent gives the name or
+ * admission number; Outstanding dues is where the office looks for who owes),
+ * tick the fees being paid (all of them to start with, each amount editable
+ * down to a part payment) and record them on one receipt:
+ * POST /school/fees/student-fees/pay. Unpaid fees from
+ * GET /school/fees/student-fees?student_id=&status=outstanding; recent receipts
+ * from GET /school/accounts/collections?student_id=. Opens on ?student=<id>.
+ */
 export function FeeCollection() {
   const params = useSearchParams();
   const preset = params.get("student");
   const [student, setStudent] = useState<PickedStudent | null>(null);
-  const [feeId, setFeeId] = useState<number | null>(null);
-  const [amount, setAmount] = useState("");
+  // fee id -> the amount being paid on it; a fee not in here is not ticked
+  const [paying, setPaying] = useState<Record<number, string>>({});
   const [mode, setMode] = useState("cash");
   const [paidOn, setPaidOn] = useState(isoToday());
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paid, setPaid] = useState<Paid | null>(null);
 
-  // ?student= from a ledger or dues screen: look the student up by id. The
+  // ?student= from Outstanding dues or a ledger: look the student up by id. The
   // finance ledger names the student and, unlike the student record, is open
   // to the accountant as well as the school admin.
   const [presetDone, setPresetDone] = useState(false);
@@ -63,49 +67,49 @@ export function FeeCollection() {
   const raised = useApi<{ total: number }>("/api/v1/school/fees/student-fees", { page_size: 1 });
 
   const pending = (fees.data?.items ?? []).filter((f) => Number(f.amount_outstanding) > 0).sort((a, b) => a.due_date.localeCompare(b.due_date));
-  const fee = pending.find((f) => f.id === feeId) ?? null;
+  const pendingKey = pending.map((f) => `${f.id}:${f.amount_outstanding}`).join(",");
 
-  // Default to the oldest unpaid fee, and its full outstanding amount.
+  // A parent usually clears everything due: tick every unpaid fee, in full.
   useEffect(() => {
-    if (!pending.length) {
-      setFeeId(null);
-      return;
-    }
-    if (!pending.some((f) => f.id === feeId)) setFeeId(pending[0].id);
-  }, [pending, feeId]);
-  useEffect(() => {
-    if (fee) setAmount(String(Number(fee.amount_outstanding)));
-  }, [fee]);
+    setPaying(Object.fromEntries(pending.map((f) => [f.id, String(Number(f.amount_outstanding))])));
+  }, [pendingKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalOwed = pending.reduce((s, f) => s + Number(f.amount_outstanding), 0);
-  const recent = (receipts.data ?? []).slice(0, 3);
+  const ticked = pending.filter((f) => f.id in paying);
+  const total = ticked.reduce((s, f) => s + (Number(paying[f.id]) || 0), 0);
+  const recent = (receipts.data ?? []).slice(0, 4);
+
+  function choose(s: PickedStudent | null) {
+    setPresetDone(true);
+    setStudent(s);
+    setError(null);
+    setPaid(null);
+  }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!fee) {
-      setError("Choose a student with an unpaid fee.");
+    if (!student || !ticked.length) {
+      setError(student ? "Tick at least one fee." : "Choose a student first.");
       return;
     }
-    const n = Number(amount);
-    if (!(n > 0)) {
-      setError("Enter an amount above zero.");
-      return;
-    }
-    if (n > Number(fee.amount_outstanding)) {
-      setError(`That is more than the ${money(fee.amount_outstanding)} outstanding on this fee.`);
-      return;
+    for (const f of ticked) {
+      const n = Number(paying[f.id]);
+      if (!(n > 0)) return setError(`Enter an amount above zero for ${f.fee_head_name}.`);
+      if (n > Number(f.amount_outstanding)) return setError(`${f.fee_head_name}: that is more than the ${money(f.amount_outstanding)} outstanding.`);
     }
     setSaving(true);
     setError(null);
     try {
-      await api.post<StudentFee>(`/api/v1/school/fees/student-fees/${fee.id}/record-payment`, {
-        amount_paid: amount,
+      const r = await api.post<Paid>("/api/v1/school/fees/student-fees/pay", {
+        student_id: student.id,
+        lines: ticked.map((f) => ({ fee_id: f.id, amount: paying[f.id] })),
         payment_mode: mode,
         payment_ref: reference.trim() || null,
         paid_at: paidOn && paidOn !== isoToday() ? `${paidOn}T12:00:00` : null,
         notes: notes.trim() || null,
       });
-      notify(`${money(n)} recorded against ${fee.fee_head_name} ${fee.period}.`);
+      setPaid(r);
+      notify(`Receipt ${r.receipt_no}: ${money(r.total)} for ${r.lines} ${r.lines === 1 ? "fee" : "fees"}.`);
       setReference("");
       setNotes("");
       fees.reload();
@@ -122,208 +126,196 @@ export function FeeCollection() {
       <Prereq missing={raised.data?.total === 0} screen={1041} cta="Generate fees">
         No fees have been raised yet, so there is nothing to collect.
       </Prereq>
-    {/* the receipts column only once there is a student to show receipts for */}
-    <div className={student ? "two-col" : "stack"}>
-      <div className="stack">
-        <Panel title={student ? "Student account" : "Who owes"} sub={student ? undefined : "Most overdue first. Pick one, or type a name below."}>
-          {student ? (
-            <>
-              <div className="person">
-                <span className="avatar mint">{initials(student.full_name)}</span>
-                <div>
-                  {student.full_name}
-                  <small>{[student.section_label, student.admission_no ? `Admission no. ${student.admission_no}` : null].filter(Boolean).join(" · ")}</small>
-                </div>
+      {/* the receipts column only once there is a student to show receipts for */}
+      <div className={student ? "two-col" : "stack"}>
+        <form id="fee-collection-form" className="stack" onSubmit={submit}>
+          {!student ? (
+            <Panel title="Find the student">
+              <div className="form-grid">
+                <StudentPicker value={student} onChange={choose} />
               </div>
-              <div className="gap" />
-              <div className="payment-lines">
-                {fee ? (
+              <p className="muted small" style={{ marginTop: 10 }}>
+                {presetStudent.loading ? "Loading the student…" : "Type the name or admission number the parent gives you. "}
+                {presetStudent.loading ? null : (
                   <>
-                    <div>
-                      <span>{`${fee.fee_head_name} · ${fee.period}`}</span>
-                      <strong>{money(fee.amount_due)}</strong>
-                    </div>
-                    <div>
-                      <span>Already paid</span>
-                      <strong>{money(fee.amount_paid)}</strong>
-                    </div>
-                    <div className="sum">
-                      <span>Outstanding on this fee</span>
-                      <strong>{money(fee.amount_outstanding)}</strong>
-                    </div>
+                    Looking for who owes? <Link href={routeOf(162)}>Outstanding dues</Link> lists everyone, most overdue first.
                   </>
-                ) : null}
-                <div>
-                  <span>{`All unpaid fees (${pending.length})`}</span>
-                  <strong>{fees.loading && !fees.data ? "…" : money(totalOwed)}</strong>
-                </div>
-              </div>
-              <div className="gap" />
-              <div className="row" style={{ gap: 16 }}>
-                <Link className="btn text" href={`${routeOf(161)}?id=${student.id}`}>
-                  Open ledger
-                </Link>
-                <button type="button" className="btn text" onClick={() => { setStudent(null); setFeeId(null); setAmount(""); }}>
-                  Back to who owes
-                </button>
-              </div>
-            </>
+                )}
+              </p>
+            </Panel>
           ) : (
-            presetStudent.loading ? (
-              <p className="muted small">Loading the student…</p>
-            ) : (
-              <WhoOwes
-                onPick={(d) => {
-                  setPresetDone(true);
-                  setStudent({ id: d.student_id, full_name: d.student_name, admission_no: d.admission_no, section_label: d.section_label });
-                  setFeeId(null);
-                  setError(null);
-                }}
-              />
-            )
+            <>
+              {paid ? (
+                <div className="tip collect-done" role="status">
+                  <Icon name="check" className="sm" />
+                  <span>{`Receipt ${paid.receipt_no} recorded: ${money(paid.total)} for ${paid.lines} ${paid.lines === 1 ? "fee" : "fees"}.`}</span>
+                  <Link className="btn" href={`${routeOf(160)}?receipt=${paid.collection_id}`}>
+                    <Icon name="file" className="sm" />
+                    Print receipt
+                  </Link>
+                  <button type="button" className="btn" onClick={() => choose(null)}>
+                    Next student
+                  </button>
+                </div>
+              ) : null}
+              <section className="panel">
+                <div className="panel-head">
+                  <div className="person">
+                    <span className="avatar mint">{initials(student.full_name)}</span>
+                    <div>
+                      {student.full_name}
+                      <small>{[student.section_label, student.admission_no ? `Admission no. ${student.admission_no}` : null].filter(Boolean).join(" · ")}</small>
+                    </div>
+                  </div>
+                  <div className="row" style={{ gap: 14 }}>
+                    <Link className="btn text" href={`${routeOf(161)}?id=${student.id}`}>
+                      Ledger
+                    </Link>
+                    <button type="button" className="btn text" onClick={() => choose(null)}>
+                      Change student
+                    </button>
+                  </div>
+                </div>
+                <ErrorNote>{presetStudent.error ?? fees.error}</ErrorNote>
+                {fees.loading && !fees.data ? (
+                  <p className="muted small panel-pad">Loading their fees…</p>
+                ) : pending.length ? (
+                  <div className="table-wrap">
+                    <table className="data-table collect-lines">
+                      <thead>
+                        <tr>
+                          <th className="checkcell">
+                            <input
+                              type="checkbox"
+                              aria-label="Pay every fee"
+                              checked={ticked.length === pending.length}
+                              onChange={(e) => setPaying(e.target.checked ? Object.fromEntries(pending.map((f) => [f.id, String(Number(f.amount_outstanding))])) : {})}
+                            />
+                          </th>
+                          <th>Fee</th>
+                          <th>Due</th>
+                          <th className="num">Outstanding</th>
+                          <th className="num">Paying now</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pending.map((f) => {
+                          const on = f.id in paying;
+                          return (
+                            <tr key={f.id} className={on ? "" : "off"}>
+                              <td className="checkcell">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Pay ${f.fee_head_name} ${f.period}`}
+                                  checked={on}
+                                  onChange={(e) => {
+                                    const next = { ...paying };
+                                    if (e.target.checked) next[f.id] = String(Number(f.amount_outstanding));
+                                    else delete next[f.id];
+                                    setPaying(next);
+                                  }}
+                                />
+                              </td>
+                              <td>
+                                {f.fee_head_name}
+                                <small className="muted" style={{ display: "block", fontWeight: 500 }}>{f.period}</small>
+                              </td>
+                              <td>
+                                {date(f.due_date)}
+                                {f.is_overdue ? <span className="badge warn" style={{ marginLeft: 6 }}>Overdue</span> : null}
+                              </td>
+                              <td className="num">{money(f.amount_outstanding)}</td>
+                              <td className="num">
+                                <input
+                                  className="collect-amount"
+                                  type="number"
+                                  min={0.01}
+                                  step="0.01"
+                                  max={Number(f.amount_outstanding)}
+                                  aria-label={`Amount for ${f.fee_head_name}`}
+                                  disabled={!on}
+                                  value={on ? paying[f.id] : ""}
+                                  onChange={(e) => setPaying({ ...paying, [f.id]: e.target.value })}
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td />
+                          <td colSpan={2}>{`${ticked.length} of ${pending.length} fees ticked`}</td>
+                          <td className="num muted">{money(totalOwed)}</td>
+                          <td className="num">
+                            <strong>{money(total)}</strong>
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="muted small panel-pad">{paid ? "Everything is paid up." : "Nothing unpaid for this student."}</p>
+                )}
+              </section>
+              <section className="panel">
+                <div className="panel-head">
+                  <h2>Payment</h2>
+                </div>
+                <div className="panel-body">
+                  <ErrorNote>{error}</ErrorNote>
+                  <div className="form-grid">
+                    <Field label="Payment method" required>
+                      <select value={mode} onChange={(e) => setMode(e.target.value)} required>
+                        {MODES.filter(([k]) => k !== "online").map(([k, v]) => (
+                          <option key={k} value={k}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Payment date">
+                      <input type="date" value={paidOn} max={isoToday()} onChange={(e) => setPaidOn(e.target.value)} />
+                    </Field>
+                    <Field label="Reference">
+                      <input value={reference} maxLength={120} onChange={(e) => setReference(e.target.value)} placeholder="UPI / cheque / transfer reference" />
+                    </Field>
+                    {/* Not wired: "Concession" at the counter — concessions are set per student on SCR-163 and reduce the fee itself. */}
+                    <Field label="Remarks">
+                      <input value={notes} maxLength={300} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" />
+                    </Field>
+                  </div>
+                </div>
+                <div className="form-footer">
+                  <span>{ticked.length ? `One receipt for ${ticked.length} ${ticked.length === 1 ? "fee" : "fees"}` : "Tick the fees being paid"}</span>
+                  <button type="submit" className="btn primary" disabled={saving || !ticked.length || !(total > 0)}>
+                    <Icon name="check" className="sm" />
+                    {saving ? "Recording…" : `Record ${money(total)}`}
+                  </button>
+                </div>
+              </section>
+            </>
           )}
-        </Panel>
-        <form id="fee-collection-form" className="panel" onSubmit={submit}>
-          <div className="panel-head">
-            <h2>Payment details</h2>
-          </div>
-          <div className="panel-body">
-            <ErrorNote>{error ?? presetStudent.error ?? fees.error}</ErrorNote>
-            <div className="form-grid">
-              <StudentPicker
-                value={student}
-                onChange={(s) => {
-                  setPresetDone(true);
-                  setStudent(s);
-                  setFeeId(null);
-                  setError(null);
-                }}
-              />
-              <Field label="Fee head" required>
-                <select value={feeId ?? ""} onChange={(e) => setFeeId(Number(e.target.value))} required disabled={!pending.length}>
-                  {!pending.length ? <option value="">{student ? (fees.loading ? "Loading…" : "Nothing unpaid") : "Choose a student first"}</option> : null}
-                  {pending.map((f) => (
-                    <option key={f.id} value={f.id}>
-                      {`${f.fee_head_name} · ${f.period} · ${money(f.amount_outstanding)} due ${date(f.due_date)}${f.is_overdue ? " (overdue)" : ""}`}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Amount (₹)" required>
-                <input type="number" min={0.01} step="0.01" max={fee ? Number(fee.amount_outstanding) : undefined} value={amount} onChange={(e) => setAmount(e.target.value)} required placeholder="Enter amount" />
-              </Field>
-              <Field label="Payment method" required>
-                <select value={mode} onChange={(e) => setMode(e.target.value)} required>
-                  {MODES.filter(([k]) => k !== "online").map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Payment date">
-                <input type="date" value={paidOn} max={isoToday()} onChange={(e) => setPaidOn(e.target.value)} />
-              </Field>
-              <Field label="Reference">
-                <input value={reference} maxLength={120} onChange={(e) => setReference(e.target.value)} placeholder="UPI / cheque / transfer reference" />
-              </Field>
-              {/* Not wired: "Concession" at the counter — concessions are set per student on SCR-163 and reduce the fee itself. */}
-              <Field label="Remarks" full>
-                <textarea value={notes} maxLength={300} onChange={(e) => setNotes(e.target.value)} placeholder="Enter remarks" />
-              </Field>
-            </div>
-          </div>
-          <div className="form-footer">
-            <span>Amounts in INR</span>
-            <button type="submit" className="btn primary" disabled={saving || !fee}>
-              <Icon name="check" className="sm" />
-              {saving ? "Recording…" : "Record payment"}
-            </button>
-          </div>
         </form>
+        {student ? (
+          <aside className="stack">
+            <Panel title="Recent receipts" sub={student.full_name}>
+              {recent.map((c) => (
+                <div className="event-row" key={c.id}>
+                  <div className="event-content">
+                    <h4>
+                      <Link href={`${routeOf(160)}?receipt=${c.id}`}>{c.receipt_no}</Link>
+                    </h4>
+                    <p>{`${date(c.collected_on)} · ${modeLabel(c.mode)}${c.lines && c.lines.length > 1 ? ` · ${c.lines.length} fees` : ""}`}</p>
+                  </div>
+                  <strong className="small">{money(c.amount)}</strong>
+                </div>
+              ))}
+              {!recent.length ? <p className="muted small">{receipts.loading ? "Loading…" : "No receipts in the last year."}</p> : null}
+            </Panel>
+          </aside>
+        ) : null}
       </div>
-      {student ? (
-      <aside className="stack">
-        <Panel title="Recent receipts" sub={student.full_name}>
-          {recent.map((c) => (
-            <div className="event-row" key={c.id}>
-              <div className="event-content">
-                <h4>
-                  <Link href={`${routeOf(160)}?receipt=${c.id}`}>{c.receipt_no}</Link>
-                </h4>
-                <p>{`${date(c.collected_on)} · ${modeLabel(c.mode)}`}</p>
-              </div>
-              <strong className="small">{money(c.amount)}</strong>
-            </div>
-          ))}
-          {!recent.length ? <p className="muted small">{receipts.loading ? "Loading…" : "No receipts in the last year."}</p> : null}
-        </Panel>
-      </aside>
-      ) : null}
-    </div>
     </>
-  );
-}
-
-/**
- * Before a student is chosen: everyone with fees due, most overdue first
- * (GET /analytics/dues-ageing, as on Outstanding dues), with search and a
- * class filter. Collect picks the student for the form below.
- */
-function WhoOwes({ onPick }: { onPick: (d: Defaulter) => void }) {
-  const dues = useApi<DuesAgeing>("/api/v1/school/analytics/dues-ageing");
-  const [q, setQ] = useState("");
-  const [cls, setCls] = useState("");
-  const [all, setAll] = useState(false);
-  const list = dues.data?.defaulters ?? [];
-  const classes = Array.from(new Set(list.map((x) => x.section_label).filter((x): x is string => Boolean(x)))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  const term = q.trim().toLowerCase();
-  const shown = list
-    .filter((x) => (!term || `${x.student_name} ${x.admission_no}`.toLowerCase().includes(term)) && (!cls || x.section_label === cls))
-    .sort((a, b) => b.oldest_days - a.oldest_days || Number(b.owed) - Number(a.owed));
-  const SHORT = 6;
-  if (dues.loading && !dues.data) return <p className="muted small">Loading who owes…</p>;
-  if (dues.error) return <ErrorNote>{dues.error}</ErrorNote>;
-  if (!list.length) return <p className="muted small">Nobody owes the school anything right now.</p>;
-  return (
-    <div className="who-owes">
-      <div className="who-owes-filters">
-        <input type="search" placeholder="Search name or admission no." aria-label="Search who owes" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select aria-label="Class" value={cls} onChange={(e) => setCls(e.target.value)}>
-          <option value="">All classes</option>
-          {classes.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <span className="muted small">{`${shown.length} of ${list.length} · ${money(dues.data!.total)} in all`}</span>
-      </div>
-      <table className="data-table who-owes-table">
-        <tbody>
-          {(all ? shown : shown.slice(0, SHORT)).map((d) => (
-            <tr key={d.student_id}>
-              <td>
-                {d.student_name}
-                <small className="muted" style={{ display: "block", fontWeight: 500 }}>{[d.section_label, d.admission_no].filter(Boolean).join(" · ")}</small>
-              </td>
-              <td className="num">{money(d.owed)}</td>
-              <td>{d.oldest_days > 0 ? <span className="badge warn">{`${d.oldest_days} days overdue`}</span> : <span className="badge neutral">Not yet due</span>}</td>
-              <td className="num">
-                <button type="button" className="btn" onClick={() => onPick(d)}>
-                  Collect
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {shown.length > SHORT ? (
-        <button type="button" className="btn text" onClick={() => setAll(!all)}>
-          {all ? "Show fewer" : `Show all ${shown.length}`}
-        </button>
-      ) : null}
-      {!shown.length ? <p className="muted small">No one matches.</p> : null}
-    </div>
   );
 }

@@ -6,17 +6,20 @@
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
-import { Icon } from "@/components/ui/Icon";
-import { PaymentReceipt } from "@/features/fees/PaymentReceipt";
+import { PaymentReceipt, PrintReceiptAction } from "@/features/fees/PaymentReceipt";
 
 export const metadata = { title: "SCR-160 · Payment Receipt · BrightCampus" };
 
 export default function Page() {
   return (
-    <AppShell screen="SCR-160" actions={<button type="button" className="btn primary" data-print="">
-        <Icon name="download" className="sm" />
-        Print receipt
-      </button>}>
+    <AppShell
+      screen="SCR-160"
+      actions={
+        <Suspense>
+          <PrintReceiptAction />
+        </Suspense>
+      }
+    >
       <Suspense>
         <PaymentReceipt />
       </Suspense>

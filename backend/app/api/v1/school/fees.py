@@ -19,6 +19,7 @@ from app.schemas.fee import (
     GenerateMonthlyRequest,
     GenerateResult,
     RecordPayment,
+    RecordPayments,
     StudentFeeRead,
 )
 from app.services import fee_service
@@ -240,6 +241,18 @@ def list_student_fees(
         page=page,
         page_size=page_size,
     )
+
+
+@router.post(
+    "/student-fees/pay",
+    summary="One payment covering several of a student's fees, on one receipt",
+)
+def record_payments(
+    payload: RecordPayments,
+    current_user: FeeCounter,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return fee_service.record_payments(db, current_user.school_id, payload, current_user.id)
 
 
 @router.post(

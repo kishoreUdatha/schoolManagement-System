@@ -4,7 +4,7 @@ from datetime import date
 from decimal import ROUND_HALF_UP, Decimal
 from typing import Optional
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -36,10 +36,15 @@ def mode_from_text(text: Optional[str]) -> MoneyMode:
     return _MODE_ALIASES.get((text or "").strip().lower().replace(" ", "_"), MoneyMode.other)
 
 
-def _next_receipt(db: Session, school_id: int, on: date) -> str:
+def next_receipt(db: Session, school_id: int, on: date) -> str:
+    """The school's next receipt number for the month. Two counters must not
+    get the same one, so the school's numbering is locked until the caller's
+    transaction ends; several lines of one payment then share the number."""
+    db.execute(text("select pg_advisory_xact_lock(:k)"), {"k": 7_000_000_000 + school_id})
     prefix = f"FR{on:%y%m}-"
     n = db.execute(
-        select(func.count(FeeCollection.id)).where(FeeCollection.school_id == school_id, FeeCollection.receipt_no.like(f"{prefix}%"))
+        select(func.count(func.distinct(FeeCollection.receipt_no)))
+        .where(FeeCollection.school_id == school_id, FeeCollection.receipt_no.like(f"{prefix}%"))
     ).scalar_one()
     return f"{prefix}{n + 1:05d}"
 
@@ -54,33 +59,30 @@ def record_collection(
     on: Optional[date] = None,
     actor_id: Optional[int] = None,
     notes: Optional[str] = None,
+    receipt_no: Optional[str] = None,
 ) -> Optional[FeeCollection]:
-    """Add a receipt row in the caller's transaction (caller commits)."""
+    """Add a receipt line in the caller's transaction (caller commits). Give
+    `receipt_no` to add the line to a receipt already started in this
+    payment; otherwise the line is a receipt of its own."""
     if amount <= 0:
         return None
     on = on or date.today()
-    for _ in range(3):
-        row = FeeCollection(
-            tenant_id=sf.tenant_id,
-            school_id=sf.school_id,
-            student_fee_id=sf.id,
-            student_id=sf.student_id,
-            amount=amount,
-            mode=mode,
-            reference=reference,
-            collected_on=on,
-            receipt_no=_next_receipt(db, sf.school_id, on),
-            collected_by_user_id=actor_id,
-            notes=notes,
-        )
-        try:
-            with db.begin_nested():
-                db.add(row)
-                db.flush()
-            return row
-        except IntegrityError:
-            continue  # two desks issued the same number; take the next one
-    raise RuntimeError("Couldn't allocate a receipt number")
+    row = FeeCollection(
+        tenant_id=sf.tenant_id,
+        school_id=sf.school_id,
+        student_fee_id=sf.id,
+        student_id=sf.student_id,
+        amount=amount,
+        mode=mode,
+        reference=reference,
+        collected_on=on,
+        receipt_no=receipt_no or next_receipt(db, sf.school_id, on),
+        collected_by_user_id=actor_id,
+        notes=notes,
+    )
+    db.add(row)
+    db.flush()
+    return row
 
 
 def concession_for(db: Session, student_id: int, fee_head_id: int, amount: Decimal, on: date) -> tuple[Decimal, Optional[str]]:
