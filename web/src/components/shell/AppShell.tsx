@@ -188,7 +188,9 @@ function Sidebar({ s, viewer, school, collapsed, onToggle }: { s: Screen | undef
   // their menu are not repeated.
   const perms = usePermissions();
   const sess = useSession();
-  const own = new Set((roleNav ?? []).flatMap(screensIn));
+  // a role's own screens: its menu, the tabs those pages carry, and pages that sit under them (a student's ledger)
+  const own = new Set([...(roleNav ?? []).flatMap(screensIn), ...(ROLE_TABS[viewer.role] ?? [])]);
+  for (const [n, head] of Object.entries(PARENT)) if (own.has(head)) own.add(Number(n));
   const jobs = roleNav ? heldJobs(perms).map((j) => ({ ...j, items: jobMenu(j, own, sess?.user.role) })).filter((j) => j.items.length) : [];
   const here = s ? (PARENT[s.n] ?? s.n) : -1;
   const scroller = useRef<HTMLDivElement>(null);

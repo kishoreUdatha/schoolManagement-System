@@ -6,17 +6,14 @@
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
-import { Icon } from "@/components/ui/Icon";
 import { FeeCollection } from "@/features/fees/FeeCollection";
 
 export const metadata = { title: "SCR-158 · Fee Collection · BrightCampus" };
 
 export default function Page() {
   return (
-    <AppShell screen="SCR-158" actions={<button type="submit" form="fee-collection-form" className="btn primary">
-        <Icon name="check" className="sm" />
-        Record payment
-      </button>}>
+    // no page-head button: "Record ₹…" sits under the fees, once a student is chosen
+    <AppShell screen="SCR-158">
       <Suspense>
         <FeeCollection />
       </Suspense>
