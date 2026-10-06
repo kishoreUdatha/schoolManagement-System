@@ -694,3 +694,35 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .tb-table th,.tb-table td{padding:7px 9px!important;font-size:12.5px}
 .tb-table thead th{font-size:12px}
 .tb-table td.num{min-width:84px}
+
+/* Account ledger (features/books/Ledger). */
+.lg-filters{grid-template-columns:minmax(240px,360px) 170px 170px 96px}
+.lg-filters .req{color:#c62f2f}
+.lg-pick{position:relative;display:block}
+.lg-pick select{padding-right:52px}
+.lg-clear{position:absolute;right:30px;top:50%;transform:translateY(-50%);border:0;background:none;color:#5a6d8c;font-size:18px;line-height:1;padding:2px 4px;cursor:pointer}
+.lg-clear:hover{color:#c62f2f}
+.lg-info{display:grid;grid-template-columns:44px repeat(3,minmax(0,1fr)) auto;gap:24px;align-items:center;padding:10px 20px;margin-bottom:14px;background:#eef3fe;border:1px solid #cddcf8;border-radius:10px;color:#0f2557}
+.lg-info p{font-size:12px;font-weight:650;color:#3d5175;margin-bottom:1px}
+.lg-info strong{font-size:17px;letter-spacing:-.2px}
+.lg-info-ico{width:40px;height:40px;border-radius:50%;background:#dce7fd;color:#2563eb;display:grid;place-items:center}
+.lg-info-ico .ico{width:21px;height:21px}
+.lg-info-open{text-align:right}
+.ie-card small{display:block;font-size:11.5px;margin-top:1px;opacity:.85}
+.ie-card.amber{background:#fdf6e7;border-color:#f3dfb2;border-left-color:#d98b06;color:#4a3104}
+.ie-card.amber .ie-card-ico{background:#fbe9c4;color:#c27a00}
+.lg-table td{white-space:nowrap}
+.lg-table td.wrap{white-space:normal}
+.lg-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:12px 18px}
+.lg-pager{display:flex;gap:6px}
+.lg-pager .btn{min-width:36px;height:36px;padding:0 10px}
+.lg-exports .btn.xls{background:#1d7a46;border-color:#1d7a46;color:#fff}
+.lg-exports .btn.pdf{background:#d93025;border-color:#d93025;color:#fff}
+.lg-exports .btn.xls rect,.lg-exports .btn.pdf path{stroke:#fff}
+.lg-exports .btn.xls .ico rect{fill:#fff}
+.lg-exports .btn.xls .ico path{stroke:#1d7a46}
+@media(max-width:1150px){.lg-filters{grid-template-columns:1fr 1fr}.lg-info{grid-template-columns:44px 1fr 1fr}.lg-info-open{text-align:left}}
+@media print{.lg-pager,.lg-exports{display:none!important}}
+.lg-table th,.lg-table td{padding:7px 9px!important;font-size:12.5px}
+.lg-table thead th{font-size:12px}
+.lg-table td.wrap{min-width:160px}

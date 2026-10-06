@@ -37,13 +37,28 @@ export type LedgerLine = {
   source_id: number | null;
   voucher: string | null;
   narration: string;
+  particulars: string;
+  student: string | null;
   against: string[];
   debit: string;
   credit: string;
   balance: string;
 };
 
-export type Ledger = { account: Account; from_date: string; to_date: string; opening: string; total_debit: string; total_credit: string; closing: string; lines: LedgerLine[] };
+export type Ledger = {
+  account: Account;
+  from_date: string;
+  to_date: string;
+  opening: string;
+  total_debit: string;
+  total_credit: string;
+  debit_count: number;
+  credit_count: number;
+  closing: string;
+  closing_side: "Dr" | "Cr" | null;
+  students: number;
+  lines: LedgerLine[];
+};
 
 export type TrialRow = {
   account_id: number;

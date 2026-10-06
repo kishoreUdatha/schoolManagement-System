@@ -248,6 +248,13 @@ def run(db: Session) -> None:
     check("entries", len(led["lines"]), 5)
     led = books.account_ledger(db, user, acct["bank"], date(2031, 5, 5), date(2031, 5, 31))
     check("opening carried in", led["opening"], D("52000"))
+    recv = books.account_ledger(db, user, acct["fees_receivable"], date(2031, 5, 1), date(2031, 5, 31))
+    check("ledger counts: debits, credits, students", (recv["debit_count"], recv["credit_count"], recv["students"]), (2, 2, 2))
+    check("receipt line names the student", next(l["student"] for l in recv["lines"] if l["source"] == "fee_receipt"), a.full_name)
+    check("closing side", recv["closing_side"], "Dr")
+    xlsx, _ = books_export.ledger_xlsx(db, user, acct["bank"], FY_FROM, FY_TO)
+    pdf, _ = books_export.ledger_pdf(db, user, acct["bank"], FY_FROM, FY_TO)
+    check("ledger exports", (xlsx[:2], pdf[:4]), (b"PK", b"%PDF"))
 
     print("day book")
     day = books.day_book(db, user, FY_FROM, FY_TO, source="fee_receipt")

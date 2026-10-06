@@ -83,3 +83,33 @@ export const PERCENT = (
     <circle cx="17" cy="17" r="2.5" />
   </Svg>
 );
+
+export const WALLET = (
+  <Svg>
+    <rect x="3" y="6" width="18" height="14" rx="3" />
+    <path d="M16 13h2M3 9l12-5 2 2" />
+  </Svg>
+);
+export const ARROW_DOWN = (
+  <Svg>
+    <path d="M12 4v16M6 14l6 6 6-6" />
+  </Svg>
+);
+export const ARROW_UP = (
+  <Svg>
+    <path d="M12 20V4M6 10l6-6 6 6" />
+  </Svg>
+);
+export const SWAP = (
+  <Svg>
+    <path d="M4 8h14l-4-4M20 16H6l4 4" />
+  </Svg>
+);
+export const PEOPLE = (
+  <Svg>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5" />
+    <circle cx="17" cy="9" r="2.6" />
+    <path d="M16.5 14.6c2.6.2 4.4 1.9 5 5.4" />
+  </Svg>
+);

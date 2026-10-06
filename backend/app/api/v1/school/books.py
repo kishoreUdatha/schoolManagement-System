@@ -44,6 +44,24 @@ def ledger(account_id: int, user: Actor, db: Db, frm: From = None, to: Optional[
     return svc.account_ledger(db, user, account_id, frm, to)
 
 
+@router.get("/accounts/{account_id}/ledger.xlsx", summary="One account's ledger as an Excel sheet")
+def ledger_xlsx(account_id: int, user: Actor, db: Db, frm: From = None, to: Optional[date] = None):
+    body, name = books_export.ledger_xlsx(db, user, account_id, frm, to)
+    return Response(
+        body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
+
+
+@router.get("/accounts/{account_id}/ledger.pdf", summary="One account's ledger as a PDF")
+def ledger_pdf(account_id: int, user: Actor, db: Db, frm: From = None, to: Optional[date] = None):
+    body, name = books_export.ledger_pdf(db, user, account_id, frm, to)
+    return Response(
+        body, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
+
+
 @router.get("/day-book", summary="Every posting in a window, automatic and manual")
 def day_book(
     user: Actor, db: Db, frm: From = None, to: Optional[date] = None,

@@ -423,3 +423,69 @@ def trial_balance_pdf(db: Session, user: User, frm, to, account_id=None) -> tupl
     ]
     doc.build(story)
     return buf.getvalue(), f"trial-balance_{rep['to_date']}.pdf"
+
+
+# ---------- account ledger ----------
+
+LEDGER_COLUMNS = ["#", "Date", "Voucher no.", "Student", "Particulars", "Reference", "Debit (₹)", "Credit (₹)", "Balance (₹)"]
+
+
+def _ledger(db: Session, user: User, account_id: int, frm, to) -> tuple[dict, str, str, list]:
+    rep = books_service.account_ledger(db, user, account_id, frm, to)
+    school = db.get(School, user.school_id)
+    a = rep["account"]
+    title = f"Ledger: {a['code']} {a['name']} ({a['category']}), {rep['from_date']:%d %b %Y} to {rep['to_date']:%d %b %Y}"
+    lines = [("row", [1, f"{rep['from_date']:%d-%m-%Y}", "OPENING", "", "Opening balance", "", "", "", rep["opening"]])]
+    for i, ln in enumerate(rep["lines"], 2):
+        lines.append(("row", [i, f"{ln['date']:%d-%m-%Y}", ln["voucher"] or "", ln["student"] or "",
+                              ln["particulars"], ln["source_label"], ln["debit"], ln["credit"], ln["balance"]]))
+    lines.append(("grand", ["", "", "", "", "Total", "", rep["total_debit"], rep["total_credit"], rep["closing"]]))
+    return rep, school.name if school else "", title, lines
+
+
+def ledger_xlsx(db: Session, user: User, account_id: int, frm, to) -> tuple[bytes, str]:
+    rep, school, title, lines = _ledger(db, user, account_id, frm, to)
+    body = _xlsx("Ledger", [school, title], LEDGER_COLUMNS, lines, [5, 12, 16, 24, 34, 16, 16, 16, 18], num_from=6)
+    return body, f"ledger_{rep['account']['code']}_{rep['from_date']}_{rep['to_date']}.xlsx"
+
+
+def ledger_pdf(db: Session, user: User, account_id: int, frm, to) -> tuple[bytes, str]:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    rep, school, title, lines = _ledger(db, user, account_id, frm, to)
+    styles = getSampleStyleSheet()
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=1.2 * cm, bottomMargin=1.2 * cm,
+                            leftMargin=1 * cm, rightMargin=1 * cm, title=title)
+    data = [[c.replace("₹", "Rs") for c in LEDGER_COLUMNS]]
+    for _, cells in lines:
+        data.append([str(c) if j < 6 else inr(c, "0.00" if j == 8 else "-") for j, c in enumerate(cells)])
+    last = len(data) - 1
+    table = Table(data, colWidths=[0.8 * cm, 2.1 * cm, 2.8 * cm, 3.6 * cm, 6.2 * cm, 2.8 * cm, 2.8 * cm, 2.8 * cm, 3 * cm], repeatRows=1)
+    table.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FE")),
+        ("FONTSIZE", (0, 0), (-1, -1), 8.2), ("ALIGN", (6, 0), (-1, -1), "RIGHT"),
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.HexColor("#DCE5F2")),
+        ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("FONTNAME", (0, last), (-1, last), "Helvetica-Bold"), ("BACKGROUND", (0, last), (-1, last), colors.HexColor("#DCE7FB")),
+    ]))
+    side = f" {rep['closing_side']}" if rep["closing_side"] else ""
+    story = [
+        Paragraph(f"<b>{escape(school)}</b>", styles["Title"]),
+        Paragraph(escape(title), styles["Normal"]),
+        Spacer(1, 6),
+        Paragraph(
+            f"Opening {inr(rep['opening'], '0.00')} &nbsp;·&nbsp; Debits {inr(rep['total_debit'], '0.00')} ({rep['debit_count']}) "
+            f"&nbsp;·&nbsp; Credits {inr(rep['total_credit'], '0.00')} ({rep['credit_count']}) "
+            f"&nbsp;·&nbsp; Closing {inr(rep['closing'], '0.00')}{side}",
+            styles["Normal"],
+        ),
+        Spacer(1, 10),
+        table,
+    ]
+    doc.build(story)
+    return buf.getvalue(), f"ledger_{rep['account']['code']}_{rep['from_date']}_{rep['to_date']}.pdf"

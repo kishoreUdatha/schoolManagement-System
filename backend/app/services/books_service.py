@@ -337,10 +337,16 @@ def _span(col, frm: Optional[date], to: Optional[date]) -> list:
     return conds
 
 
-def _entry(d, source, source_id, voucher, narration, lines) -> dict:
+def _entry(d, source, source_id, voucher, narration, lines, *,
+           students: Optional[list] = None, student_name: Optional[str] = None,
+           detail: Optional[str] = None) -> dict:
+    """One posting. `students` are the children it concerns (a receipt has
+    one; a fees-raised line has everyone it was raised for); `detail` is the
+    narration without the child's name, for ledgers that show the name apart."""
     return {
         "date": d, "source": source, "source_id": source_id, "voucher": voucher,
         "narration": narration, "lines": lines,
+        "students": students or [], "student_name": student_name, "detail": detail or narration,
     }
 
 
@@ -360,9 +366,9 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         (StudentFee.status == FeeStatus.waived, StudentFee.amount_paid),
         else_=StudentFee.amount_due,
     )
-    for due, hid, head, period, n, amt in db.execute(
+    for due, hid, head, period, n, amt, kids in db.execute(
         select(StudentFee.due_date, StudentFee.fee_head_id, FeeHead.name, StudentFee.period,
-               func.count(), func.sum(charge))
+               func.count(), func.sum(charge), func.array_agg(func.distinct(StudentFee.student_id)))
         .join(FeeHead, FeeHead.id == StudentFee.fee_head_id)
         .where(StudentFee.school_id == sid, *_span(StudentFee.due_date, frm, to))
         .group_by(StudentFee.due_date, StudentFee.fee_head_id, FeeHead.name, StudentFee.period)
@@ -374,11 +380,12 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
             due, "fees_raised", None, None,
             f"{head} ({label}) due for {n} student{'s' if n != 1 else ''}",
             [_line("fees_receivable", debit=amt), _line(f"fee_head:{hid}", credit=amt)],
+            students=list(kids or []), detail=f"{head} ({label}) raised",
         ))
 
-    for cid, on, amt, mode, rno, name, head, period in db.execute(
+    for cid, on, amt, mode, rno, name, head, period, kid in db.execute(
         select(FeeCollection.id, FeeCollection.collected_on, FeeCollection.amount, FeeCollection.mode,
-               FeeCollection.receipt_no, Student.full_name, FeeHead.name, StudentFee.period)
+               FeeCollection.receipt_no, Student.full_name, FeeHead.name, StudentFee.period, FeeCollection.student_id)
         .join(StudentFee, StudentFee.id == FeeCollection.student_fee_id)
         .join(FeeHead, FeeHead.id == StudentFee.fee_head_id)
         .join(Student, Student.id == FeeCollection.student_id)
@@ -388,11 +395,12 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         out.append(_entry(
             on, "fee_receipt", cid, rno, f"{name}: {head}{label}",
             [_line(_money_key(mode), debit=amt), _line("fees_receivable", credit=amt)],
+            students=[kid], student_name=name, detail=f"{head}{label}",
         ))
 
-    for rid, on, amt, mode, ref, reason, name in db.execute(
+    for rid, on, amt, mode, ref, reason, name, kid in db.execute(
         select(Refund.id, Refund.processed_on, Refund.amount, Refund.mode, Refund.reference,
-               Refund.reason, Student.full_name)
+               Refund.reason, Student.full_name, Refund.student_id)
         .join(Student, Student.id == Refund.student_id)
         .where(Refund.school_id == sid, Refund.status == RefundStatus.processed,
                Refund.processed_on.is_not(None), *_span(Refund.processed_on, frm, to))
@@ -400,6 +408,7 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         out.append(_entry(
             on, "refund", rid, ref, f"Refund to {name}: {reason}"[:300],
             [_line("fees_receivable", debit=amt), _line(_money_key(mode), credit=amt)],
+            students=[kid], student_name=name, detail=f"Refund: {reason}"[:300],
         ))
 
     labels = dict(INCOME_SOURCES)
@@ -415,9 +424,9 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
             [_line(_money_key(mode), debit=amt), _line(key, credit=amt)],
         ))
 
-    for sale_id, on, amt, pay, bno, buyer, name in db.execute(
+    for sale_id, on, amt, pay, bno, buyer, name, kid in db.execute(
         select(StoreSale.id, StoreSale.sold_on, StoreSale.total, StoreSale.payment, StoreSale.bill_no,
-               StoreSale.buyer_name, Student.full_name)
+               StoreSale.buyer_name, Student.full_name, StoreSale.student_id)
         .join(Student, Student.id == StoreSale.student_id, isouter=True)
         .where(StoreSale.school_id == sid, StoreSale.is_void.is_(False),
                StoreSale.payment != StorePayment.add_to_fees,  # those come in as fees
@@ -426,6 +435,7 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         out.append(_entry(
             on, "store_sale", sale_id, bno, f"Store sale to {name or buyer or 'a walk-in buyer'}",
             [_line(_money_key(pay), debit=amt), _line("store_sales", credit=amt)],
+            students=[kid] if kid else [], student_name=name, detail="Store sale",
         ))
 
     for eid, on, amt, mode, cat_id, desc, ref, payee, supplier in db.execute(
@@ -576,6 +586,9 @@ def day_book(
 def account_ledger(
     db: Session, user: User, account_id: int, frm: Optional[date], to: Optional[date]
 ) -> dict:
+    """One account's entries in the window with a running balance, the
+    opening carried in, how many debits and credits there were, and how many
+    different children the entries concern."""
     frm, to = _window(frm, to)
     accts = _accounts(db, user.school_id)
     acct = accts.get(account_id)
@@ -590,6 +603,8 @@ def account_ledger(
     balance = ZERO
     lines = []
     total_dr = total_cr = ZERO
+    n_dr = n_cr = 0
+    kids: set[int] = set()
     for e in entries(db, user, None, to):
         mine = [ln for ln in e["lines"] if ln["account_id"] == account_id]
         if not mine:
@@ -604,22 +619,33 @@ def account_ledger(
         balance += sign * (dr - cr)
         total_dr += dr
         total_cr += cr
+        n_dr += 1 if dr else 0
+        n_cr += 1 if cr else 0
+        kids.update(k for k in e["students"] if k)
         others = []
         for ln in e["lines"]:
             if ln["account_id"] != account_id:
                 name = accts[ln["account_id"]].name
                 if name not in others:
                     others.append(name)
+        n_kids = len(e["students"])
         lines.append({
             "date": e["date"], "source": e["source"], "source_label": SOURCE_LABEL[e["source"]],
             "source_id": e["source_id"], "voucher": e["voucher"], "narration": e["narration"],
+            "particulars": e["detail"],
+            "student": e["student_name"] or (f"{n_kids} students" if n_kids > 1 else None),
             "against": others, "debit": dr, "credit": cr, "balance": balance,
         })
+    closing = opening + sign * (total_dr - total_cr)
     return {
         "account": account_dict(acct),
         "from_date": frm, "to_date": to,
         "opening": opening, "total_debit": total_dr, "total_credit": total_cr,
-        "closing": opening + sign * (total_dr - total_cr),
+        "debit_count": n_dr, "credit_count": n_cr,
+        "closing": closing,
+        # which side the closing sits on, as a ledger prints it
+        "closing_side": ("Dr" if (closing > 0) == (sign > 0) else "Cr") if closing else None,
+        "students": len(kids),
         "lines": lines,
     }
 
