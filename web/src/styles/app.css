@@ -982,3 +982,6 @@ tr.jv-open td{background:#f5f8ff}
 .af-all{font-size:11.5px;padding:0;min-height:0}
 .af-own{margin-left:6px;font-size:10.5px;font-weight:700;color:#5b3fb8;background:#f0ebff;border-radius:4px;padding:1px 6px;vertical-align:1px}
 .toggle-row p.pref-mixed{color:#9a5b00;font-weight:600}
+
+/* Choosing the member of staff on a per-person screen (features/staff/StaffPicker). */
+.staff-picker{max-width:520px;margin:0 0 14px}

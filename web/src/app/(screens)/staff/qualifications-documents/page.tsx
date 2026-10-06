@@ -5,8 +5,7 @@
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
-import { Icon } from "@/components/ui/Icon";
-import { StaffQualifications } from "@/features/staff/StaffQualifications";
+import { SaveQualificationAction, StaffQualifications } from "@/features/staff/StaffQualifications";
 
 export const metadata = { title: "SCR-087 · Qualifications & Documents · BrightCampus" };
 
@@ -15,10 +14,9 @@ export default function Page() {
     <AppShell
       screen="SCR-087"
       actions={
-        <button type="submit" form="qualification-form" className="btn primary">
-          <Icon name="check" className="sm" />
-          Save qualification
-        </button>
+        <Suspense>
+          <SaveQualificationAction />
+        </Suspense>
       }
     >
       <Suspense>

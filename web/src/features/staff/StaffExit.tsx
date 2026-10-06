@@ -4,12 +4,12 @@ import { useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { StatStrip } from "@/components/ui/StatStrip";
 import { Badge, Panel } from "@/components/ui/primitives";
-import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
+import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, dateTime, initials, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
-import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { StaffPicker } from "./StaffPicker";
 import { useStaffProfile } from "./StaffProfile";
 import { ROLE_LABEL, type Clearance, type ClearanceItem } from "./types";
 
@@ -35,7 +35,13 @@ export function StaffExit() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!id) return <PickFirst what="member of staff" href={routeOf(80)} cta="Open the staff directory" />;
+  if (!id)
+    return (
+      <>
+        <StaffPicker label="Who is leaving?" />
+        <p className="muted">Choose the member of staff to start or follow their exit checklist.</p>
+      </>
+    );
   if ((loading && !p) || (exit.loading && exit.data === null && !exit.error)) return <Loading what="Loading the exit checklist…" />;
   if (!p) return <ErrorNote>{pError ?? "Staff member not found."}</ErrorNote>;
 

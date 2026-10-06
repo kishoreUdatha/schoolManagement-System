@@ -1,16 +1,19 @@
 "use client";
 
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Badge, Panel } from "@/components/ui/primitives";
 import { StatStrip } from "@/components/ui/StatStrip";
-import { ErrorNote, Loading, PickFirst } from "@/components/ui/states";
+import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { date, label } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { StaffBanner, useStaffProfile } from "./StaffProfile";
+import { StaffPicker } from "./StaffPicker";
 import type { QualificationsPage, StaffDocument } from "./types";
 import { openFile, uploadForm } from "./util";
 
@@ -37,9 +40,22 @@ export function StaffQualifications({ embedded = false }: { embedded?: boolean }
   const [error, setError] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
 
-  if (!id) return <PickFirst what="member of staff" href={routeOf(80)} cta="Open the staff directory" />;
-  if (loading && !p) return <Loading what="Loading qualifications…" />;
-  if (!p) return <ErrorNote>{pError ?? "Staff member not found."}</ErrorNote>;
+  const picker = embedded ? null : <StaffPicker />;
+  if (!id) return <QualificationsOverview />;
+  if (loading && !p)
+    return (
+      <>
+        {picker}
+        <Loading what="Loading qualifications…" />
+      </>
+    );
+  if (!p)
+    return (
+      <>
+        {picker}
+        <ErrorNote>{pError ?? "Staff member not found."}</ErrorNote>
+      </>
+    );
 
   const data = page.data;
   const q = typed.trim().toLowerCase();
@@ -116,6 +132,7 @@ export function StaffQualifications({ embedded = false }: { embedded?: boolean }
 
   return (
     <>
+      {picker}
       {embedded ? null : <StaffBanner p={p} tab="documents" />}
       <div className="filterbar">
         <div className="searchbox">
@@ -270,6 +287,109 @@ export function StaffQualifications({ embedded = false }: { embedded?: boolean }
           </Panel>
         </aside>
       </div>
+    </>
+  );
+}
+
+/** The page-head button: only once a member of staff is chosen. */
+export function SaveQualificationAction() {
+  if (!useSearchParams().get("id")) return null;
+  return (
+    <button type="submit" form="qualification-form" className="btn primary">
+      <Icon name="check" className="sm" />
+      Save qualification
+    </button>
+  );
+}
+
+type OverviewRow = {
+  staff_id: number;
+  employee_no: string;
+  full_name: string;
+  designation: string | null;
+  department_name: string | null;
+  is_active: boolean;
+  qualifications: number;
+  verified: number;
+  unverified: number;
+  documents: number;
+};
+
+/** Before anyone is chosen: everyone, with what is on file and what still needs checking (GET /staff-ops/qualifications). */
+function QualificationsOverview() {
+  const r = useApi<OverviewRow[]>("/api/v1/school/staff-ops/qualifications");
+  const [typed, setTyped] = useState("");
+  const [show, setShow] = useState("");
+  const rows = r.data ?? [];
+  const q = typed.trim().toLowerCase();
+  const list = rows.filter(
+    (x) =>
+      (!q || `${x.full_name} ${x.employee_no} ${x.designation ?? ""} ${x.department_name ?? ""}`.toLowerCase().includes(q)) &&
+      (!show || (show === "pending" ? x.unverified > 0 : show === "none" ? x.qualifications === 0 : x.qualifications > 0 && x.unverified === 0)),
+  );
+  const stats = [
+    { label: "Staff", value: r.data ? String(rows.length) : "…", note: "On the staff list" },
+    { label: "Qualifications", value: r.data ? String(rows.reduce((n, x) => n + x.qualifications, 0)) : "…", note: "Recorded" },
+    { label: "To check", value: r.data ? String(rows.reduce((n, x) => n + x.unverified, 0)) : "…", note: "Not verified yet" },
+    { label: "Nothing on file", value: r.data ? String(rows.filter((x) => x.qualifications === 0).length) : "…", note: "Staff with no qualification" },
+  ];
+  return (
+    <>
+      <StaffPicker />
+      <StatStrip items={stats} />
+      <div className="filterbar">
+        <input type="search" placeholder="Search name, employee no, designation…" aria-label="Search staff" value={typed} onChange={(e) => setTyped(e.target.value)} />
+        <select aria-label="Show" value={show} onChange={(e) => setShow(e.target.value)}>
+          <option value="">Everyone</option>
+          <option value="pending">Something to check</option>
+          <option value="done">All verified</option>
+          <option value="none">Nothing on file</option>
+        </select>
+      </div>
+      <Panel title="Qualifications by member of staff" sub="Choose someone to add, verify or upload their qualifications and documents." flush>
+        <ErrorNote>{r.error}</ErrorNote>
+        {r.loading && !r.data ? (
+          <p className="muted panel-pad">Loading…</p>
+        ) : list.length ? (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Member of staff</th>
+                  <th>Designation</th>
+                  <th className="num">Qualifications</th>
+                  <th className="num">Verified</th>
+                  <th className="num">To check</th>
+                  <th className="num">Documents</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((x) => (
+                  <tr key={x.staff_id}>
+                    <td>
+                      <strong>{x.full_name}</strong>
+                      <small className="muted" style={{ display: "block" }}>{`${x.employee_no}${x.is_active ? "" : " · left"}`}</small>
+                    </td>
+                    <td>{[x.designation, x.department_name].filter(Boolean).join(" · ") || "—"}</td>
+                    <td className="num">{x.qualifications}</td>
+                    <td className="num">{x.verified}</td>
+                    <td className="num">{x.unverified ? <Badge tone="warn">{String(x.unverified)}</Badge> : 0}</td>
+                    <td className="num">{x.documents}</td>
+                    <td className="num">
+                      <Link className="btn text" href={`${routeOf(87)}?id=${x.staff_id}`} replace scroll={false}>
+                        Open
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="muted panel-pad">{rows.length ? "No one matches." : "No staff yet."}</p>
+        )}
+      </Panel>
     </>
   );
 }

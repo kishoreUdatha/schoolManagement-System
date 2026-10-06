@@ -144,6 +144,11 @@ def cancel_clearance(clearance_id: int, user: SchoolAdminUser, db: Db):
     return svc.cancel_clearance(db, user.school_id, clearance_id)
 
 
+@router.get("/qualifications", summary="Everyone's qualifications and documents, counted")
+def qualifications_overview(user: SchoolAdminOrPrincipal, db: Db):
+    return svc.qualifications_overview(db, user.school_id)
+
+
 @router.post("/qualifications/{qualification_id}/verify",
              summary="Mark a qualification as checked against its certificate")
 def verify_qualification(qualification_id: int, payload: VerifyIn,

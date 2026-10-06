@@ -155,6 +155,33 @@ def _qual_to_dict(db: Session, q: StaffQualification) -> dict:
     }
 
 
+def qualifications_overview(db: Session, school_id: int) -> list[dict]:
+    """Every member of staff with how many qualifications and documents they
+    have on file and how many still need checking, for the screen opened
+    before anyone is chosen."""
+    quals: dict[int, tuple[int, int]] = {
+        sid: (n, v) for sid, n, v in db.execute(
+            select(StaffQualification.staff_id, func.count(),
+                   func.count(StaffQualification.verified_at))
+            .where(StaffQualification.school_id == school_id)
+            .group_by(StaffQualification.staff_id)
+        ).all()
+    }
+    docs: dict[int, int] = dict(db.execute(
+        select(Document.owner_id, func.count())
+        .where(Document.school_id == school_id, Document.owner_type == "staff")
+        .group_by(Document.owner_id)
+    ).all())
+    staff = db.execute(select(Staff).where(Staff.school_id == school_id)).scalars().all()
+    out = []
+    for s in staff:
+        n, v = quals.get(s.id, (0, 0))
+        out.append({**_label(db, s), "qualifications": n, "verified": v, "unverified": n - v,
+                    "documents": docs.get(s.id, 0)})
+    out.sort(key=lambda r: (not r["is_active"], r["full_name"].lower()))
+    return out
+
+
 def list_qualifications(db: Session, school_id: int, staff_id: int) -> dict:
     s = _staff(db, school_id, staff_id)
     rows = list(db.execute(
