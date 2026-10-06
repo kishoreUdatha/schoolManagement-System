@@ -94,8 +94,26 @@ def income_expenditure_pdf(
 
 
 @router.get("/balance-sheet")
-def balance_sheet(user: Actor, db: Db, as_of: Optional[date] = None):
-    return svc.balance_sheet(db, user, as_of)
+def balance_sheet(user: Actor, db: Db, as_of: Optional[date] = None, account_id: Optional[int] = None):
+    return svc.balance_sheet(db, user, as_of, account_id)
+
+
+@router.get("/balance-sheet.xlsx", summary="Balance sheet as an Excel sheet")
+def balance_sheet_xlsx(user: Actor, db: Db, as_of: Optional[date] = None, account_id: Optional[int] = None):
+    body, name = books_export.balance_sheet_xlsx(db, user, as_of, account_id)
+    return Response(
+        body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
+
+
+@router.get("/balance-sheet.pdf", summary="Balance sheet as a PDF")
+def balance_sheet_pdf(user: Actor, db: Db, as_of: Optional[date] = None, account_id: Optional[int] = None):
+    body, name = books_export.balance_sheet_pdf(db, user, as_of, account_id)
+    return Response(
+        body, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
 
 
 @router.get("/journals", summary="Journal vouchers typed in by the accountant")

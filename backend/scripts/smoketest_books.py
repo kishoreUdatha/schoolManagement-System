@@ -38,6 +38,7 @@ from app.models.purchasing import VendorBill, VendorPayment
 from app.models.staff import Staff
 from app.models.student import Student
 from app.models.user import User
+from app.services import books_export
 from app.services import books_service as books
 
 FY_FROM, FY_TO = date(2031, 4, 1), date(2032, 3, 31)
@@ -213,7 +214,6 @@ def run(db: Session) -> None:
     check("opening carried from 1 April", (row["opening"], row["credit"], row["closing"]), (D("10000"), D("0"), D("10000")))
     staff = books.profit_and_loss(db, user, FY_FROM, FY_TO, category="Staff costs")
     check("category filter", (staff["total_expenses"], len(staff["income"])), (D("21800"), 0))
-    from app.services import books_export
     xlsx, _ = books_export.income_expenditure_xlsx(db, user, FY_FROM, FY_TO)
     pdf, _ = books_export.income_expenditure_pdf(db, user, FY_FROM, FY_TO)
     check("excel and pdf exports", (xlsx[:2], pdf[:4]), (b"PK", b"%PDF"))
@@ -223,6 +223,16 @@ def run(db: Session) -> None:
     check("balanced", bs["balanced"], True)
     check("assets added", bs["total_assets"] - base_bs["total_assets"], D("42200"))
     check("this year's deficit", bs["surplus_this_year"] - base_bs["surplus_this_year"], D("-14720"))
+    check("asset sections add up", sum(x["total"] for x in bs["asset_sections"]), bs["total_assets"])
+    check("liability and fund sections add up", sum(x["total"] for x in bs["liability_sections"]), bs["total_funds"])
+    titles = [x["title"] for x in bs["liability_sections"]]
+    check("capital / reserves closes the liabilities side", titles[-1], "Capital / reserves")
+    check("current ratio worked out", bs["current_ratio"] is not None, True)
+    only = books.balance_sheet(db, user, FY_TO, acct["bank"])
+    check("account filter", [r["account_id"] for x in only["asset_sections"] for r in x["rows"]], [acct["bank"]])
+    xlsx, _ = books_export.balance_sheet_xlsx(db, user, FY_TO)
+    pdf, _ = books_export.balance_sheet_pdf(db, user, FY_TO)
+    check("balance sheet exports", (xlsx[:2], pdf[:4]), (b"PK", b"%PDF"))
 
     print("account ledger: bank, May 2031")
     led = books.account_ledger(db, user, acct["bank"], date(2031, 5, 1), date(2031, 5, 31))

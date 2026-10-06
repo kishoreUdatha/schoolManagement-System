@@ -652,3 +652,33 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 @media(max-width:1150px){.ie-filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:800px){.ie-cards{grid-template-columns:1fr}.ie-filters{grid-template-columns:1fr 1fr}}
 @media print{.ie-filters,.ie-actions,.ie-note{display:none!important}.ie-card{padding:10px 14px}}
+
+/* Balance sheet (features/books/BalanceSheet): two sides in lettered sections. */
+.bs-filters{grid-template-columns:170px minmax(200px,320px) 96px 1fr}
+.bs-exports{justify-content:flex-end;align-self:end}
+.bs-exports .btn{height:42px}
+.bs-cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+.ie-card.ratio{background:#f4f0fd;border-color:#ddd3f7;border-left-color:#7c4dda;color:#2a1758}
+.ie-card.ratio .ie-card-ico{background:#e7defb;color:#7c4dda}
+.bs-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.bs-side{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.bs-side-head{display:flex;align-items:center;gap:12px;padding:12px 18px}
+.bs-side-head h2{font-size:17px;flex:1}
+.bs-side-head strong{font-size:18px;font-variant-numeric:tabular-nums}
+.bs-side-ico{display:grid;place-items:center}
+.bs-side-ico .ico{width:24px;height:24px}
+.bs-side.assets .bs-side-head{background:#e3edfd;color:#1e3a8a}
+.bs-side.liabs .bs-side-head{background:#fde4e4;color:#9b1c1c}
+.bs-table{font-variant-numeric:tabular-nums}
+.bs-table th.num,.bs-table td.num{text-align:right;white-space:nowrap}
+.bs-table th.center,.bs-table td.center{text-align:center}
+.bs-table td{padding-top:8px;padding-bottom:8px}
+.bs-table td.bs-name{padding-left:24px}
+.bs-side.assets tr.bs-section td{background:#f2f6fe;color:#1e3a8a;font-weight:800}
+.bs-side.liabs tr.bs-section td{background:#fdf2f2;color:#9b1c1c;font-weight:800}
+.bs-table tr.bs-foot td{font-weight:800;font-size:15px;border-top:2px solid var(--line)}
+.bs-side.assets tr.bs-foot td{background:#e3edfd;color:#1e3a8a}
+.bs-side.liabs tr.bs-foot td{background:#fde4e4;color:#9b1c1c}
+@media(max-width:1150px){.bs-filters{grid-template-columns:1fr 1fr}.bs-exports{grid-column:1/-1;justify-content:flex-start}.bs-cards{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.bs-grid{grid-template-columns:1fr}}
+@media print{.bs-exports{display:none!important}.bs-grid{grid-template-columns:1fr 1fr}}

@@ -8,7 +8,7 @@ import { date, money } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { isoToday } from "@/features/fees/common";
 import { amt, BOOKS, fyStart, KIND_LABEL, KINDS, LedgerLink, Period, ReportActions, useOpenOnYear } from "./common";
-import type { BalanceSheet as Sheet, StatementRow, TrialBalance as TB } from "./types";
+import type { StatementRow, TrialBalance as TB } from "./types";
 
 type Section = { title: string; rows: StatementRow[]; total: string; totalLabel: string };
 
@@ -65,78 +65,6 @@ function StatementTable({ caption, sections, from, to, footer }: { caption: stri
         </tbody>
       </table>
     </div>
-  );
-}
-
-/** NEW-1057: balance sheet on a date. */
-export function BalanceSheet() {
-  const [asOf, setAsOf] = useState(isoToday());
-  const r = useApi<Sheet>(`${BOOKS}/balance-sheet`, { as_of: asOf });
-  const d = r.data;
-  const from = d?.year_from ?? fyStart(asOf);
-  const surplusRows: StatementRow[] = d
-    ? [
-        { account_id: -1, code: "", name: "Surplus of earlier years", amount: d.surplus_previous_years },
-        { account_id: -2, code: "", name: "Surplus of this year", amount: d.surplus_this_year },
-      ].filter((x) => Number(x.amount))
-    : [];
-  return (
-    <>
-      <StatStrip
-        compact
-        items={[
-          { label: "Assets", value: d ? money(d.total_assets) : "…", note: "What the school owns and is owed" },
-          { label: "Liabilities", value: d ? money(d.total_liabilities) : "…", note: "What the school owes" },
-          { label: "Funds", value: d ? money(Number(d.total_equity) + Number(d.surplus_previous_years) + Number(d.surplus_this_year)) : "…", note: "Capital and surplus" },
-        ]}
-      />
-      <div className="filterbar">
-        <label className="row small" style={{ gap: 8 }}>
-          As on
-          <input type="date" aria-label="As on" value={asOf} onChange={(e) => e.target.value && setAsOf(e.target.value)} />
-        </label>
-        {d && !d.balanced ? <span className="badge bad">Does not balance</span> : d ? <span className="badge">Balances</span> : null}
-      </div>
-      <ErrorNote>{r.error}</ErrorNote>
-      <div className="two-equal">
-        <Panel title="Liabilities and funds" sub={`As on ${date(asOf)}`} action={<ReportActions filename={`balance-sheet_${asOf}.csv`} />} flush>
-          {d ? (
-            <StatementTable
-              caption={`Balance sheet as on ${asOf}: liabilities and funds`}
-              from={from}
-              to={asOf}
-              sections={[
-                { title: "Capital and funds", rows: d.equity, total: d.total_equity, totalLabel: "Total capital" },
-                {
-                  title: "Income over expenditure",
-                  rows: surplusRows,
-                  total: String(Number(d.surplus_previous_years) + Number(d.surplus_this_year)),
-                  totalLabel: "Total surplus",
-                },
-                { title: "Liabilities", rows: d.liabilities, total: d.total_liabilities, totalLabel: "Total liabilities" },
-              ]}
-              footer={[["Total", money(d.total_funds)]]}
-            />
-          ) : (
-            <p className="panel-body muted small">{r.loading ? "Loading…" : "No figures."}</p>
-          )}
-        </Panel>
-        <Panel title="Assets" sub={`As on ${date(asOf)}`} flush>
-          {d ? (
-            <StatementTable
-              caption={`Balance sheet as on ${asOf}: assets`}
-              from={from}
-              to={asOf}
-              sections={[{ title: "Assets", rows: d.assets, total: d.total_assets, totalLabel: "Total assets" }]}
-              footer={[["Total", money(d.total_assets)]]}
-            />
-          ) : null}
-        </Panel>
-      </div>
-      <p className="muted small" style={{ marginTop: 12 }}>
-        A negative fees receivable means parents have paid ahead of the due dates. Record buildings, equipment, loans and bank opening balances with a journal voucher.
-      </p>
-    </>
   );
 }
 

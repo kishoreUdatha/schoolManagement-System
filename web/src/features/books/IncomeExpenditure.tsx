@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useState } from "react";
 import { ErrorNote } from "@/components/ui/states";
 import { errorText } from "@/lib/api";
 import { date } from "@/lib/format";
@@ -8,68 +8,13 @@ import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { downloadAuthed, isoToday } from "@/features/fees/common";
 import { BOOKS, fyStart, LedgerLink, useOpenOnYear, useYearPeriods } from "./common";
+import { BARS, DOWN, n2, PDF, PRINT, RESET, UP, XLS } from "./parts";
 import type { IERow, IncomeExpenditure as IE } from "./types";
 
-/** 2140000 -> "21,40,000.00"; negatives in brackets; zero as `zero`. */
-function n2(v: string | number | null | undefined, zero = "-"): string {
-  const n = Number(v ?? 0);
-  if (!n) return zero;
-  const s = Math.abs(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return n < 0 ? `(${s})` : s;
-}
 
 type Filters = { from: string; to: string; category: string; account: string };
 const initial = (): Filters => ({ from: fyStart(), to: isoToday(), category: "", account: "" });
 
-const Svg = ({ children }: { children: ReactNode }) => (
-  <svg viewBox="0 0 24 24" className="ico" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {children}
-  </svg>
-);
-const UP = (
-  <Svg>
-    <path d="m3 17 6-6 4 4 8-8" />
-    <path d="M15 7h6v6" />
-  </Svg>
-);
-const DOWN = (
-  <Svg>
-    <path d="M7 7l10 10" />
-    <path d="M17 9v8H9" />
-  </Svg>
-);
-const BARS = (
-  <svg viewBox="0 0 24 24" className="ico" fill="currentColor" aria-hidden="true">
-    <rect x="4" y="12" width="4" height="8" rx="1" />
-    <rect x="10" y="7" width="4" height="13" rx="1" />
-    <rect x="16" y="3" width="4" height="17" rx="1" />
-  </svg>
-);
-const RESET = (
-  <Svg>
-    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
-    <path d="M3 3v5h5" />
-  </Svg>
-);
-const PRINT = (
-  <Svg>
-    <path d="M6 9V3h12v6" />
-    <rect x="3" y="9" width="18" height="8" rx="2" />
-    <path d="M7 14h10v7H7z" />
-  </Svg>
-);
-const XLS = (
-  <svg viewBox="0 0 24 24" className="ico" aria-hidden="true">
-    <rect x="2" y="3" width="20" height="18" rx="3" fill="#1d7a46" />
-    <path d="m7 8 4 4-4 4m10-8-4 4 4 4" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" />
-  </svg>
-);
-const PDF = (
-  <svg viewBox="0 0 24 24" className="ico" aria-hidden="true">
-    <path d="M5 2h10l5 5v15H5z" fill="none" stroke="#d93025" strokeWidth="1.8" strokeLinejoin="round" />
-    <path d="M8 16c2-1 4-5 4-8 0 3 2 6 5 7-3 0-6 1-9 1z" fill="none" stroke="#d93025" strokeWidth="1.5" strokeLinejoin="round" />
-  </svg>
-);
 
 /**
  * NEW-1056: income and expenditure account. GET /school/books/income-expenditure

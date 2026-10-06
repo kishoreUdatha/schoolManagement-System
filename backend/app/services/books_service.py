@@ -738,7 +738,7 @@ def profit_and_loss(
     }
 
 
-def balance_sheet(db: Session, user: User, as_of: Optional[date]) -> dict:
+def balance_sheet(db: Session, user: User, as_of: Optional[date], account_id: Optional[int] = None) -> dict:
     """What the school owns and owes on a date. The surplus is not an
     account: it is income less expenditure, this year's and before."""
     as_of = as_of or date.today()
@@ -766,6 +766,63 @@ def balance_sheet(db: Session, user: User, as_of: Optional[date]) -> dict:
     equity, tq = side("equity")
     total_surplus = surplus(bal)
     prior_surplus = surplus(prior)
+
+    # The statement as printed: each side in lettered sections (A Current
+    # assets, B Fixed assets ...), each line numbered A1, A2 and given a
+    # schedule number, which is its ledger. Capital and the surplus close
+    # the liabilities side so the two sides agree.
+    cat = {a.id: a.category or default_category(a.system_key, a.kind, a.code) for a in accts.values()}
+    for r in assets + liabilities + equity:
+        r["category"] = cat[r["account_id"]]
+
+    def grouped(rows, plan):
+        taken, out = set(), []
+        for title, cats in plan:
+            mine = [r for r in rows if r["account_id"] not in taken and (cats is None or r["category"] in cats)]
+            taken |= {r["account_id"] for r in mine}
+            if mine:
+                out.append({"title": title, "rows": mine})
+        return out
+
+    left = grouped(assets, [
+        ("Current assets", {"Cash and bank", "Receivables", "Current assets"}),
+        ("Fixed assets", {"Fixed assets"}),
+        ("Other assets", None),
+    ])
+    right = grouped(liabilities, [
+        ("Current liabilities", {"Current liabilities"}),
+        ("Long-term liabilities", {"Loans"}),
+        ("Other liabilities", None),
+    ])
+    capital = list(equity)
+    if prior_surplus:
+        capital.append({"account_id": None, "code": "", "name": "Surplus / (deficit) of earlier years", "amount": prior_surplus, "category": "Surplus"})
+    if total_surplus - prior_surplus:
+        capital.append({"account_id": None, "code": "", "name": "Surplus / (deficit) for the year", "amount": total_surplus - prior_surplus, "category": "Surplus"})
+    if capital:
+        right.append({"title": "Capital / reserves", "rows": capital})
+
+    schedule = 0
+    for sections in (left, right):
+        for i, sec in enumerate(sections):
+            sec["key"] = chr(65 + i)
+            for j, r in enumerate(sec["rows"], 1):
+                r["ref"] = f"{sec['key']}{j}"
+                if r["account_id"] is not None:
+                    schedule += 1
+                    r["schedule"] = schedule
+                else:
+                    r["schedule"] = None
+            sec["total"] = sum((r["amount"] for r in sec["rows"]), ZERO)
+    if account_id:
+        for sections in (left, right):
+            for sec in sections:
+                sec["rows"] = [r for r in sec["rows"] if r["account_id"] == account_id]
+                sec["total"] = sum((r["amount"] for r in sec["rows"]), ZERO)
+            sections[:] = [sec for sec in sections if sec["rows"]]
+
+    current_assets = sum((r["amount"] for r in assets if r["category"] in {"Cash and bank", "Receivables", "Current assets"}), ZERO)
+    current_liabs = sum((r["amount"] for r in liabilities if r["category"] == "Current liabilities"), ZERO)
     return {
         "as_of": as_of, "year_from": year_from,
         "assets": assets, "total_assets": ta,
@@ -775,6 +832,14 @@ def balance_sheet(db: Session, user: User, as_of: Optional[date]) -> dict:
         "surplus_this_year": total_surplus - prior_surplus,
         "total_funds": tl + tq + total_surplus,
         "balanced": ta == tl + tq + total_surplus,
+        "asset_sections": left,
+        "liability_sections": right,
+        "net_assets": ta - tl,
+        "current_ratio": round(float(current_assets / current_liabs), 2) if current_liabs > 0 else None,
+        "accounts": [
+            {"id": a.id, "code": a.code, "name": a.name, "kind": a.kind}
+            for a in sorted(accts.values(), key=lambda a: a.code) if a.kind in ("asset", "liability", "equity")
+        ],
     }
 
 

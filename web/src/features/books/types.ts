@@ -95,7 +95,15 @@ export type BalanceSheet = {
   surplus_this_year: string;
   total_funds: string;
   balanced: boolean;
+  asset_sections: BSSection[];
+  liability_sections: BSSection[];
+  net_assets: string;
+  current_ratio: number | null;
+  accounts: { id: number; code: string; name: string; kind: Kind }[];
 };
+
+export type BSRow = { account_id: number | null; code: string; name: string; amount: string; category: string; ref: string; schedule: number | null };
+export type BSSection = { key: string; title: string; total: string; rows: BSRow[] };
 
 export type Journal = {
   id: number;

@@ -1,11 +1,11 @@
 // NEW-057 · Balance Sheet
 // Module: Fees & Finance · Role: Accountant · Release: Extension
 // New screen (no mock): books of account (double entry)
-// Wired: GET /api/v1/school/books/balance-sheet?as_of=. Hand-maintained.
+// Wired: GET /api/v1/school/books/balance-sheet?as_of=&account_id= (+ .xlsx, .pdf). Hand-maintained.
 
 import { AppShell } from "@/components/shell/AppShell";
 import { ClientOnly } from "@/features/fees/common";
-import { BalanceSheet } from "@/features/books/Statements";
+import { BalanceSheet } from "@/features/books/BalanceSheet";
 
 export const metadata = { title: "NEW-057 · Balance Sheet · BrightCampus" };
 

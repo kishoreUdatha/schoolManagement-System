@@ -96,36 +96,40 @@ def _cell(ref: str, v, style: int) -> str:
     return f'<c r="{ref}" s="{style}" t="inlineStr"><is><t xml:space="preserve">{escape(str(v))}</t></is></c>'
 
 
-def income_expenditure_xlsx(
-    db: Session, user: User, frm: Optional[date], to: Optional[date],
-    category: Optional[str] = None, account_id: Optional[int] = None,
-) -> tuple[bytes, str]:
-    rep, school = _report(db, user, frm, to, category, account_id)
+def _xlsx(sheet_name: str, titles: list[str], header: list[str], lines: list[tuple[str, list]],
+          widths: list[int], num_from: int) -> bytes:
+    """One sheet: title lines, a header row, then statement lines (head,
+    row, total, grand); columns from `num_from` on are amounts."""
     rows = []
     r = 1
+    width = len(header)
 
     def add(cells: list[str]):
         nonlocal r
         rows.append(f'<row r="{r}">{"".join(cells)}</row>')
         r += 1
 
-    add([_cell("A1", school, 1)])
-    add([_cell("A2", _title(rep), 0)])
+    for i, t in enumerate(titles):
+        add([_cell(f"A{r}", t, 1 if i == 0 else 0)])
     add([])
-    add([_cell(f"{_col(i)}{r}", c, 3 if i >= 4 else 2) for i, c in enumerate(COLUMNS)])
-    for kind, cells in _lines(rep):
+    head_row = r
+    add([_cell(f"{_col(i)}{r}", c, 3 if i >= num_from else 2) for i, c in enumerate(header)])
+    for kind, cells in lines:
+        if kind == "blank":
+            add([])
+            continue
         if kind == "head":
-            add([_cell(f"A{r}", cells[0], 5)] + [_cell(f"{_col(i)}{r}", "", 5) for i in range(1, 8)])
+            add([_cell(f"{_col(i)}{r}", c, 6 if i >= num_from else 5) for i, c in enumerate(cells)]
+                + [_cell(f"{_col(i)}{r}", "", 5) for i in range(len(cells), width)])
             continue
         text, num = {"row": (0, 4), "total": (5, 6), "grand": (7, 8)}[kind]
-        add([_cell(f"{_col(i)}{r}", c, num if i >= 4 else text) for i, c in enumerate(cells)])
+        add([_cell(f"{_col(i)}{r}", c, num if i >= num_from else text) for i, c in enumerate(cells)])
 
-    widths = [5, 10, 34, 22, 20, 18, 18, 20]
     cols = "".join(f'<col min="{i + 1}" max="{i + 1}" width="{w}" customWidth="1"/>' for i, w in enumerate(widths))
     sheet = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-        '<sheetViews><sheetView workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+        f'<sheetViews><sheetView workbookViewId="0"><pane ySplit="{head_row}" topLeftCell="A{head_row + 1}" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
         f"<cols>{cols}</cols><sheetData>{''.join(rows)}</sheetData></worksheet>"
     )
     parts = {
@@ -149,7 +153,7 @@ def income_expenditure_xlsx(
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
             'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-            '<sheets><sheet name="Income and expenditure" sheetId="1" r:id="rId1"/></sheets></workbook>'
+            f'<sheets><sheet name="{escape(sheet_name[:31])}" sheetId="1" r:id="rId1"/></sheets></workbook>'
         ),
         "xl/_rels/workbook.xml.rels": (
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -165,7 +169,17 @@ def income_expenditure_xlsx(
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
         for name, body in parts.items():
             z.writestr(name, body)
-    return buf.getvalue(), f"income-expenditure_{rep['from_date']}_{rep['to_date']}.xlsx"
+    return buf.getvalue()
+
+
+def income_expenditure_xlsx(
+    db: Session, user: User, frm: Optional[date], to: Optional[date],
+    category: Optional[str] = None, account_id: Optional[int] = None,
+) -> tuple[bytes, str]:
+    rep, school = _report(db, user, frm, to, category, account_id)
+    body = _xlsx("Income and expenditure", [school, _title(rep)], COLUMNS, _lines(rep),
+                 [5, 10, 34, 22, 20, 18, 18, 20], num_from=4)
+    return body, f"income-expenditure_{rep['from_date']}_{rep['to_date']}.xlsx"
 
 
 # ---------- pdf ----------
@@ -245,3 +259,93 @@ def income_expenditure_pdf(
     ]
     doc.build(story)
     return buf.getvalue(), f"income-expenditure_{rep['from_date']}_{rep['to_date']}.pdf"
+
+
+# ---------- balance sheet ----------
+
+
+def _bs_lines(rep: dict) -> list[tuple[str, list]]:
+    out: list[tuple[str, list]] = []
+    for side, sections, total in (
+        ("ASSETS", rep["asset_sections"], rep["total_assets"]),
+        ("LIABILITIES AND FUNDS", rep["liability_sections"], rep["total_funds"]),
+    ):
+        out.append(("grand", [side, "", "", ""]))
+        for sec in sections:
+            out.append(("head", [sec["key"], sec["title"].upper(), "", sec["total"]]))
+            for r in sec["rows"]:
+                out.append(("row", [r["ref"], r["name"], r["schedule"] or "", r["amount"]]))
+        out.append(("total", ["", f"Total {side.lower()}", "", total]))
+        out.append(("blank", []))
+    return out
+
+
+def balance_sheet_xlsx(db: Session, user: User, as_of: Optional[date], account_id: Optional[int] = None) -> tuple[bytes, str]:
+    rep = books_service.balance_sheet(db, user, as_of, account_id)
+    school = db.get(School, user.school_id)
+    body = _xlsx("Balance sheet", [school.name if school else "", f"Balance sheet as on {rep['as_of']:%d %b %Y}"],
+                 ["Code", "Particulars", "Schedule", "Amount (₹)"], _bs_lines(rep), [8, 44, 10, 20], num_from=3)
+    return body, f"balance-sheet_{rep['as_of']}.xlsx"
+
+
+def balance_sheet_pdf(db: Session, user: User, as_of: Optional[date], account_id: Optional[int] = None) -> tuple[bytes, str]:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    rep = books_service.balance_sheet(db, user, as_of, account_id)
+    school = db.get(School, user.school_id)
+    name = school.name if school else ""
+    styles = getSampleStyleSheet()
+    buf = io.BytesIO()
+    title = f"Balance sheet as on {rep['as_of']:%d %b %Y}"
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=1.2 * cm, bottomMargin=1.2 * cm,
+                            leftMargin=1.2 * cm, rightMargin=1.2 * cm, title=title)
+
+    def side(label, sections, total, tint, ink):
+        data = [[label, "", "", inr(total, "0.00")], ["Code", "Particulars", "Sch.", "Amount (Rs)"]]
+        st = [
+            ("SPAN", (0, 0), (2, 0)), ("FONTNAME", (0, 0), (-1, 1), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 11), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(tint)),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor(ink)),
+            ("FONTSIZE", (0, 1), (-1, -1), 8.5), ("ALIGN", (2, 1), (-1, -1), "RIGHT"), ("ALIGN", (3, 0), (3, 0), "RIGHT"),
+            ("LINEBELOW", (0, 1), (-1, -1), 0.25, colors.HexColor("#DCE5F2")),
+            ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ]
+        for sec in sections:
+            i = len(data)
+            data.append([sec["key"], sec["title"].upper(), "", inr(sec["total"], "0.00")])
+            st += [("FONTNAME", (0, i), (-1, i), "Helvetica-Bold"), ("TEXTCOLOR", (0, i), (-1, i), colors.HexColor(ink)),
+                   ("BACKGROUND", (0, i), (-1, i), colors.HexColor("#F5F8FD"))]
+            for r in sec["rows"]:
+                data.append([r["ref"], r["name"], str(r["schedule"] or ""), inr(r["amount"], "0.00")])
+        i = len(data)
+        data.append([f"TOTAL {label.upper()}", "", "", inr(total, "0.00")])
+        st += [("SPAN", (0, i), (2, i)), ("FONTNAME", (0, i), (-1, i), "Helvetica-Bold"),
+               ("BACKGROUND", (0, i), (-1, i), colors.HexColor(tint)), ("TEXTCOLOR", (0, i), (-1, i), colors.HexColor(ink))]
+        t = Table(data, colWidths=[1.2 * cm, 7.6 * cm, 1.3 * cm, 3.2 * cm], repeatRows=2)
+        t.setStyle(TableStyle(st))
+        return t
+
+    pair = Table([[
+        side("Assets", rep["asset_sections"], rep["total_assets"], "#E3EDFD", "#1E3A8A"),
+        side("Liabilities and funds", rep["liability_sections"], rep["total_funds"], "#FDE4E4", "#9B1C1C"),
+    ]], colWidths=[13.6 * cm, 13.6 * cm])
+    pair.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0)]))
+    ratio = rep["current_ratio"]
+    story = [
+        Paragraph(f"<b>{escape(name)}</b>", styles["Title"]),
+        Paragraph(escape(title), styles["Normal"]),
+        Spacer(1, 6),
+        Paragraph(
+            f"Total assets {inr(rep['total_assets'], '0.00')} &nbsp;·&nbsp; Total liabilities {inr(rep['total_liabilities'], '0.00')} "
+            f"&nbsp;·&nbsp; Net assets {inr(rep['net_assets'], '0.00')} &nbsp;·&nbsp; Current ratio {ratio if ratio is not None else '-'}",
+            styles["Normal"],
+        ),
+        Spacer(1, 10),
+        pair,
+    ]
+    doc.build(story)
+    return buf.getvalue(), f"balance-sheet_{rep['as_of']}.pdf"
