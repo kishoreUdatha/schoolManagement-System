@@ -199,11 +199,7 @@ export function StudentDirectory() {
           <span>{error}</span>
         </div>
       ) : null}
-      <Panel
-        title="All students"
-        sub={`${year ? `Academic year ${year.name}` : "Current academic year"}${list.loading ? " · Loading…" : ""}`}
-        flush
-      >
+      <Panel flush>
         {picked.length ? (
           <div className="bulk-bar">
             <strong>{`${picked.length} selected`}</strong>

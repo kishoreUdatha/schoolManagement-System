@@ -76,6 +76,7 @@ export function StaffDirectory() {
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
         </select>
+        <span className="filter-count">{list.loading ? "Loading…" : `${items.length} shown`}</span>
         <button
           type="button"
           className="btn"
@@ -87,7 +88,7 @@ export function StaffDirectory() {
         </button>
       </div>
       <ErrorNote>{list.error ?? all.error}</ErrorNote>
-      <Panel title="All staff" sub={`${list.loading ? "Loading…" : `${items.length} shown`}`} flush>
+      <Panel flush>
         <DataTable
           columns={COLUMNS}
           rows={rows}
