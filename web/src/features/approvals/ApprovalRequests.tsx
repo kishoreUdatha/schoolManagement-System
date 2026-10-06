@@ -272,7 +272,7 @@ function Queue({ principal }: { principal: boolean }) {
           {!principal ? (
             <div className="aside-panel">
               <h3>Who decides</h3>
-              <p>Requests filed here go to the principal, who approves or rejects each one with a remark. Approving a result-publishing request publishes the exam at once.</p>
+              <p>The principal, or the school admin, approves or rejects each request with a remark. Fee waivers above the limit and payroll the accountant finalises arrive here by themselves. Approving a result-publishing request publishes the exam at once; approving a waiver writes the fee off.</p>
             </div>
           ) : null}
         </aside>
