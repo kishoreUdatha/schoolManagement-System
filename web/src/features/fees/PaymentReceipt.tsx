@@ -13,6 +13,7 @@ import { useApi } from "@/lib/useApi";
 import { useSession } from "@/lib/useSession";
 import { DownloadButton, isoToday, MODES, modeLabel, monthLabel, monthStart } from "./common";
 import { DateRange } from "./IncomeList";
+import { CounterReceipt } from "./CounterReceipt";
 import type { Collection, OnlineOrder } from "./types";
 
 const ONES = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
@@ -95,6 +96,9 @@ export function PaymentReceipt() {
       <ReceiptList />
     );
   }
+
+  // a counter receipt, for staff: the full receipt with the student's account after it
+  if (receiptId && sess && !isParent) return <CounterReceipt id={receiptId} />;
 
   const orders = isParent ? parentOrders : schoolOrders;
   const loading = orders.loading || counter.loading || !sess;
@@ -397,10 +401,11 @@ function DayClose({ day, receipts }: { day: string; receipts: Collection[] }) {
   );
 }
 
-/** The page-head Print button: only when a receipt is open (not on the list). */
+/** The page-head Print button: for an online-payment receipt (a counter receipt has its own buttons). */
 export function PrintReceiptAction() {
   const params = useSearchParams();
-  if (!params.get("receipt") && !(params.get("child") && params.get("order"))) return null;
+  // a counter receipt has its own Download / Print / Share row
+  if (!(params.get("child") && params.get("order"))) return null;
   return (
     <button type="button" className="btn primary" data-print="">
       <Icon name="download" className="sm" />

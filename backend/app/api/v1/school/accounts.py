@@ -1,7 +1,8 @@
 from datetime import date
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.deps import SchoolAdminOrAccountant
@@ -27,6 +28,7 @@ from app.schemas.accounts import (
     VoidIn,
 )
 from app.services import accounts_service as svc
+from app.services import receipt_service
 
 
 router = APIRouter()
@@ -172,6 +174,26 @@ def collections(
 @router.get("/collections/{collection_id}", response_model=CollectionRead, summary="One receipt by id")
 def collection(collection_id: int, current_user: Actor, db: Db):
     return CollectionRead.model_validate(svc.collection(db, current_user.school_id, collection_id))
+
+
+@router.get("/collections/{collection_id}/receipt", summary="A receipt whole: school, student, payer, fees, account after it")
+def receipt(collection_id: int, current_user: Actor, db: Db):
+    return receipt_service.detail(db, current_user.school_id, collection_id)
+
+
+@router.get("/collections/{collection_id}/receipt.pdf", summary="The receipt as a PDF")
+def receipt_pdf(collection_id: int, current_user: Actor, db: Db):
+    data, filename = receipt_service.pdf(db, current_user.school_id, collection_id)
+    return Response(content=data, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{filename}"'})
+
+
+class SendIn(BaseModel):
+    to: str = Field(..., pattern="^(parent|student)$")
+
+
+@router.post("/collections/{collection_id}/send", summary="Send the receipt to the parents or the student, as a notice")
+def send_receipt(collection_id: int, payload: SendIn, current_user: Actor, db: Db):
+    return receipt_service.send(db, current_user, collection_id, payload.to)
 
 
 @router.get("/cash-book", response_model=CashBook, summary="Money in and out for a period")
