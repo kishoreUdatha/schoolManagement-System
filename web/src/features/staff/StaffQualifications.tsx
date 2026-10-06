@@ -133,7 +133,8 @@ export function StaffQualifications({ embedded = false }: { embedded?: boolean }
   return (
     <>
       {picker}
-      {embedded ? null : <StaffBanner p={p} tab="documents" />}
+      {/* the person only: this screen already sits in the Staff tab row, so no second row of profile tabs */}
+      {embedded ? null : <StaffBanner p={p} />}
       <div className="filterbar">
         <div className="searchbox">
           <Icon name="search" className="sm" />
