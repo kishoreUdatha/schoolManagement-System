@@ -46,11 +46,11 @@ export const TAB_GROUPS: TabGroup[] = [
   // A student's ledger is not a tab: it opens from the student (Collect fees, Outstanding dues, a receipt).
   { label: "Fee collection", tabs: [[158, "Collect fees"], [160, "Receipts"], [162, "Outstanding dues"], [159, "Online payments"], [1044, "Match payments"], [1045, "Cheques"], [165, "Refunds"]] },
   // a purchase runs vendor, order, then the bill and its payment
-  { label: "Accounts", tabs: [[166, "Income"], [167, "Expenses"], [1046, "Expense categories"], [168, "Vendors"], [1047, "Purchase orders"], [169, "Purchases"], [170, "Cash & bank"]] },
+  { label: "Accounts", tabs: [[166, "Income"], [167, "Expenses"], [1098, "Petty cash"], [1046, "Expense categories"], [168, "Vendors"], [1047, "Purchase orders"], [169, "Purchases"], [170, "Cash & bank"]] },
   {
     label: "Books of account",
-    tabs: [[1056, "Income & expenditure"], [1057, "Balance sheet"], [1055, "Trial balance"], [1054, "Ledger"], [1053, "Day book"], [1052, "Journal vouchers"], [1049, "Chart of accounts"]],
-    titles: { 1056: "Income & Expenditure", 1057: "Balance Sheet", 1055: "Trial Balance", 1054: "Ledger", 1053: "Day Book", 1052: "Journal Vouchers", 1049: "Chart of Accounts" },
+    tabs: [[1056, "Income & expenditure"], [1057, "Balance sheet"], [1055, "Trial balance"], [1054, "Ledger"], [1053, "Day book"], [1052, "Journal vouchers"], [1049, "Chart of accounts"], [1099, "Budget"]],
+    titles: { 1056: "Income & Expenditure", 1057: "Balance Sheet", 1055: "Trial Balance", 1054: "Ledger", 1053: "Day Book", 1052: "Journal Vouchers", 1049: "Chart of Accounts", 1099: "Budget vs Actual" },
     icons: { 1053: "calendar", 1052: "file", 1049: "book" },
   },
   // Transport
@@ -215,6 +215,8 @@ export const SCREEN_NOTE: Record<number, string> = {
   1043: "Keys and settings for taking payments online.",
   1003: "Which admission form fields are required and which are not asked, for every class or one class.",
   1049: "The school's accounts. Fees, receipts, expenses, bills and payroll post to them by themselves.",
+  1098: "The float for small bills: pay from it against a voucher, and top it back up.",
+  1099: "The year's budget for each account, against what has come in and gone out.",
   1052: "Entries the system cannot make itself: opening balances, cash banked, depreciation, corrections.",
   1053: "Every entry in date order, with both sides.",
   1054: "Every entry in one account, with the balance after each.",

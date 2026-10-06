@@ -29,7 +29,7 @@ from app.schemas.accounts import (
     VoidIn,
 )
 from app.services import accounts_service as svc
-from app.services import receipt_service
+from app.services import petty_cash_service, receipt_service
 
 
 router = APIRouter()
@@ -220,6 +220,57 @@ def list_deposits(current_user: Actor, db: Db, frm: Optional[date] = Query(None,
 @router.post("/deposits", status_code=status.HTTP_201_CREATED, summary="Record cash paid into the bank (a contra voucher)")
 def record_deposit(payload: DepositIn, current_user: Actor, db: Db):
     return svc.record_deposit(db, current_user, payload.deposited_on, payload.amount, payload.slip_no, payload.notes)
+
+
+class PettySpendIn(BaseModel):
+    entry_date: date
+    amount: Decimal = Field(..., gt=0)
+    category_id: int
+    description: str = Field(..., min_length=2, max_length=300)
+    paid_to: Optional[str] = Field(None, max_length=120)
+    bill_no: Optional[str] = Field(None, max_length=60)
+
+
+class PettyTopupIn(BaseModel):
+    entry_date: date
+    amount: Decimal = Field(..., gt=0)
+    mode: str = "cash"
+    description: Optional[str] = Field(None, max_length=300)
+
+
+class PettyVoidIn(BaseModel):
+    reason: str = Field(..., min_length=2, max_length=200)
+
+
+class PettyFloatIn(BaseModel):
+    amount: Decimal = Field(..., ge=0)
+
+
+@router.get("/petty-cash", summary="The petty cash float: balance, spends and top-ups")
+def petty_cash(current_user: Actor, db: Db, frm: Optional[date] = Query(None, alias="from"), to: Optional[date] = Query(None)):
+    f, t = _range(frm, to)
+    return petty_cash_service.summary(db, current_user.school_id, f, t)
+
+
+@router.post("/petty-cash/spend", status_code=status.HTTP_201_CREATED, summary="Pay a small bill from petty cash")
+def petty_spend(payload: PettySpendIn, current_user: Actor, db: Db):
+    return petty_cash_service.spend(db, current_user, payload.entry_date, payload.amount, payload.category_id,
+                                    payload.description, payload.paid_to, payload.bill_no)
+
+
+@router.post("/petty-cash/topup", status_code=status.HTTP_201_CREATED, summary="Put money into petty cash")
+def petty_topup(payload: PettyTopupIn, current_user: Actor, db: Db):
+    return petty_cash_service.topup(db, current_user, payload.entry_date, payload.amount, payload.mode, payload.description)
+
+
+@router.post("/petty-cash/{entry_id}/void", summary="Cancel a petty cash entry made in error")
+def petty_void(entry_id: int, payload: PettyVoidIn, current_user: Actor, db: Db):
+    return petty_cash_service.void(db, current_user, entry_id, payload.reason)
+
+
+@router.put("/petty-cash/float", summary="Set the petty cash float")
+def petty_float(payload: PettyFloatIn, current_user: Actor, db: Db):
+    return petty_cash_service.set_float(db, current_user, payload.amount)
 
 
 @router.get("/cash-book", response_model=CashBook, summary="Money in and out for a period")

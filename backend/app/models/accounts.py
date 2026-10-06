@@ -211,3 +211,28 @@ class CashDeposit(Base, PrimaryKeyMixin, TimestampMixin, _School):
     notes: Mapped[Optional[str]] = mapped_column(String(300))
     journal_entry_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("journal_entries.id", ondelete="SET NULL"))
     deposited_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
+
+
+class PettyCashEntry(Base, PrimaryKeyMixin, TimestampMixin, _School):
+    """A petty cash top-up (money into the float) or spend (a small bill paid
+    from it). See services/petty_cash_service.py."""
+
+    __audited__ = True
+    __tablename__ = "petty_cash_entries"
+    __table_args__ = (
+        Index("ix_petty_cash_school_date", "school_id", "entry_date"),
+        Index("uq_petty_cash_entry_no", "school_id", "entry_no", unique=True),
+    )
+
+    entry_no: Mapped[str] = mapped_column(String(20), nullable=False)
+    entry_date: Mapped[date] = mapped_column(Date, nullable=False)
+    kind: Mapped[str] = mapped_column(String(10), nullable=False)  # topup | spend
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    mode: Mapped[Optional[str]] = mapped_column(String(20))
+    category_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("expense_categories.id", ondelete="RESTRICT"))
+    paid_to: Mapped[Optional[str]] = mapped_column(String(120))
+    description: Mapped[str] = mapped_column(String(300), nullable=False)
+    bill_no: Mapped[Optional[str]] = mapped_column(String(60))
+    is_void: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    void_reason: Mapped[Optional[str]] = mapped_column(String(200))
+    created_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))

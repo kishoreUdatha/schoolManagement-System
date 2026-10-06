@@ -63,6 +63,7 @@ DEBIT_NORMAL = {"asset", "expense"}
 DEFAULT_ACCOUNTS = [
     ("cash", "1100", "Cash in hand", "asset", "Cash receipts and payments."),
     ("bank", "1200", "Bank account", "asset", "Cheque, transfer, UPI, card and gateway money."),
+    ("petty_cash", "1150", "Petty cash", "asset", "The float kept for small expenses, topped up from cash or bank."),
     ("fees_receivable", "1300", "Fees receivable", "asset",
      "Fees fallen due and not yet paid. A credit balance is fees paid in advance."),
     (None, "1400", "Advances and deposits paid", "asset", None),
@@ -94,7 +95,7 @@ KIND_CATEGORY = {
     "income": "Other income", "expense": "Operating expenses",
 }
 KEY_CATEGORY = {
-    "cash": "Cash and bank", "bank": "Cash and bank", "fees_receivable": "Receivables",
+    "cash": "Cash and bank", "bank": "Cash and bank", "petty_cash": "Cash and bank", "fees_receivable": "Receivables",
     "payables": "Current liabilities", "payroll_deductions": "Current liabilities",
     "capital": "Capital fund", "store_sales": "Sales", "salaries": "Staff costs",
     "employer_contrib": "Staff costs", "purchases": "Purchases",
@@ -123,6 +124,7 @@ SOURCE_LABEL = {
     "other_income": "Other income",
     "store_sale": "Store sale",
     "expense": "Expense",
+    "petty_cash": "Petty cash",
     "vendor_bill": "Supplier bill",
     "vendor_payment": "Supplier payment",
     "payroll": "Payroll",
@@ -516,6 +518,20 @@ def entries(
             branch=br, department=dep,
         ))
 
+    # petty cash: a top-up moves money into the float, a spend pays a small bill from it
+    from app.models.accounts import PettyCashEntry
+
+    for p in db.execute(select(PettyCashEntry).where(
+        PettyCashEntry.school_id == sid, PettyCashEntry.is_void.is_(False), *_span(PettyCashEntry.entry_date, frm, to)
+    ).order_by(PettyCashEntry.id)).scalars():
+        if p.kind == "topup":
+            out.append(_entry(p.entry_date, "petty_cash", p.id, p.entry_no, f"Petty cash top-up · {p.description}"[:300],
+                              [_line("petty_cash", debit=p.amount), _line(_money_key(p.mode), credit=p.amount)]))
+        else:
+            out.append(_entry(p.entry_date, "petty_cash", p.id, p.bill_no or p.entry_no,
+                              f"{p.description}{f' ({p.paid_to})' if p.paid_to else ''} · petty cash"[:300],
+                              [_line(f"expense_cat:{p.category_id}", debit=p.amount), _line("petty_cash", credit=p.amount)]))
+
     for bid, on, amt, tax, bno, supplier, br, dep in db.execute(
         select(VendorBill.id, VendorBill.billed_on, VendorBill.amount, VendorBill.tax_amount,
                VendorBill.bill_no, Supplier.name, VendorBill.branch_id, VendorBill.department_id)
@@ -769,7 +785,7 @@ def day_book(
         raise _400("Pick a range of at most about a year.")
     rows = entries(db, user, frm, to, scope)
     accts = _accounts(db, user.school_id)
-    cash_ids = {a.id for a in accts.values() if a.system_key in ("cash", "bank")}
+    cash_ids = {a.id for a in accts.values() if a.system_key in ("cash", "bank", "petty_cash")}
     names = _dim_names(db, user.school_id)
     if source:
         rows = [e for e in rows if e["source"] == source]
@@ -1118,7 +1134,7 @@ def journal_dict(db: Session, j: JournalEntry, names: Optional[dict] = None) -> 
     ).all())
     who = db.get(User, j.created_by_user_id) if j.created_by_user_id else None
     names = names or _dim_names(db, j.school_id)
-    cash_keys = {"cash", "bank"}
+    cash_keys = {"cash", "bank", "petty_cash"}
     cash = [(ln, a) for ln, a in lines if a.system_key in cash_keys]
     if cash and len(cash) == len(lines):
         vtype = "Contra"

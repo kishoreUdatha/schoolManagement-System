@@ -114,3 +114,16 @@ class JournalLine(Base, PrimaryKeyMixin):
     # where the money belongs, for branch- and department-wise books
     branch_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("branches.id", ondelete="SET NULL"))
     department_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("departments.id", ondelete="SET NULL"))
+
+
+class Budget(Base, PrimaryKeyMixin, TimestampMixin, _School):
+    """A year's budget for one income or expense account (services/budget_service.py)."""
+
+    __audited__ = True
+    __tablename__ = "budgets"
+    __table_args__ = (Index("uq_budget_year_account", "school_id", "year_from", "account_id", unique=True),)
+
+    year_from: Mapped[date] = mapped_column(Date, nullable=False)  # 1 April of the financial year
+    account_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("ledger_accounts.id", ondelete="CASCADE"), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    notes: Mapped[Optional[str]] = mapped_column(String(200))

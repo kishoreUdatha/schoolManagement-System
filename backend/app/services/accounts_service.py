@@ -585,6 +585,17 @@ def cash_book(db: Session, school_id: int, frm: date, to: date) -> dict:
         by_mode[vp.mode.value]["out"] += vp.amount
         daily[vp.paid_on]["out"] += vp.amount
 
+    from app.models.accounts import PettyCashEntry
+
+    petty = ZERO
+    for p in db.execute(select(PettyCashEntry).where(
+        PettyCashEntry.school_id == school_id, PettyCashEntry.kind == "topup", PettyCashEntry.is_void.is_(False),
+        PettyCashEntry.entry_date.between(frm, to),
+    )).scalars():
+        petty += p.amount
+        by_mode[p.mode or MoneyMode.cash.value]["out"] += p.amount
+        daily[p.entry_date]["out"] += p.amount
+
     deposited = ZERO
     for dep in db.execute(select(CashDeposit).where(
         CashDeposit.school_id == school_id, CashDeposit.deposited_on.between(frm, to)
@@ -594,12 +605,13 @@ def cash_book(db: Session, school_id: int, frm: date, to: date) -> dict:
         by_mode[MoneyMode.bank_transfer.value]["in"] += dep.amount
 
     total_in = sum(fees_by_mode.values(), ZERO) + sum(other.values(), ZERO) + sum(store.values(), ZERO)
-    total_out = sum(by_cat.values(), ZERO) + payroll + refunds + vendors
+    total_out = sum(by_cat.values(), ZERO) + payroll + refunds + vendors + petty
     return {
         "from_date": frm,
         "to_date": to,
         "income": {"fees": dict(fees_by_mode), "fees_by_head": dict(fees_by_head), "other": dict(other), "store": dict(store)},
-        "expenses": {"by_category": dict(by_cat), "payroll": payroll, "refunds": refunds, "vendors": vendors},
+        "expenses": {"by_category": dict(by_cat), "payroll": payroll, "refunds": refunds, "vendors": vendors,
+                     "petty_cash": petty},
         "total_in": total_in,
         "total_out": total_out,
         "net": total_in - total_out,

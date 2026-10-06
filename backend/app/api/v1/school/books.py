@@ -1,15 +1,17 @@
 """Double-entry books: chart of accounts, journal vouchers, day book,
 account ledgers, trial balance, income & expenditure and balance sheet."""
 from datetime import date
+from decimal import Decimal
 from typing import Annotated, Optional
 
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import SchoolAdminOrAccountant
 from app.database import get_db
 from app.schemas.books import AccountImport, AccountIn, AccountUpdate, JournalIn, VoidIn
-from app.services import books_export
+from app.services import books_export, budget_service, tally_export
 from app.services import books_service as svc
 
 router = APIRouter()
@@ -263,3 +265,48 @@ def delete_journal(entry_id: int, user: Actor, db: Db):
 @router.post("/journals/{entry_id}/void")
 def void_journal(entry_id: int, payload: VoidIn, user: Actor, db: Db):
     return svc.void_journal(db, user, entry_id, payload.reason)
+
+
+
+# ---------- budgets ----------
+
+
+class BudgetLine(BaseModel):
+    account_id: int
+    amount: Optional[Decimal] = Field(None, ge=0)
+    notes: Optional[str] = Field(None, max_length=200)
+
+
+class BudgetIn(BaseModel):
+    year_from: date
+    lines: list[BudgetLine] = Field(..., max_length=500)
+
+
+class BudgetCopyIn(BaseModel):
+    year_from: date
+    uplift_pct: Decimal = Field(Decimal("0"), ge=-50, le=100)
+
+
+@router.get("/budget", summary="A year's budget against actuals, account by account")
+def budget(user: Actor, db: Db, year_from: Optional[date] = None):
+    return budget_service.report(db, user, year_from)
+
+
+@router.put("/budget", summary="Set the year's budget; an empty amount removes an account's")
+def save_budget(payload: BudgetIn, user: Actor, db: Db):
+    return budget_service.save(db, user, payload.year_from, [ln.model_dump() for ln in payload.lines])
+
+
+@router.post("/budget/copy", summary="Start the year's budget from last year's actuals, plus a percentage")
+def copy_budget(payload: BudgetCopyIn, user: Actor, db: Db):
+    return budget_service.copy_from_actuals(db, user, payload.year_from, payload.uplift_pct)
+
+
+# ---------- Tally ----------
+
+
+@router.get("/tally.xml", summary="Every posting in a window as a Tally import file (masters and vouchers)")
+def tally(user: Actor, db: Db, frm: From = None, to: Optional[date] = None):
+    data, filename, count = tally_export.xml(db, user, frm, to)
+    return Response(content=data, media_type="application/xml",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"', "X-Voucher-Count": str(count)})

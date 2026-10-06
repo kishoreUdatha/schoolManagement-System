@@ -69,7 +69,9 @@ class School(Base, PrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     # --- Identity shown on the profile and the platform's schools list ---
     board: Mapped[Optional[str]] = mapped_column(String(40))
     # a fee waiver above this needs the principal or school admin; null: no limit
-    waiver_approval_above: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=Decimal("1000"))  # CBSE, ICSE, State Board, ...
+    waiver_approval_above: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), default=Decimal("1000"))
+    # the petty cash float the custodian is kept topped up to
+    petty_cash_float: Mapped[Decimal] = mapped_column(Numeric(12, 2), default=Decimal("5000"), server_default="5000", nullable=False)  # CBSE, ICSE, State Board, ...
     school_type: Mapped[Optional[str]] = mapped_column(String(60))
     website: Mapped[Optional[str]] = mapped_column(String(255))
     accent_color: Mapped[Optional[str]] = mapped_column(String(7))  # '#RRGGBB'
