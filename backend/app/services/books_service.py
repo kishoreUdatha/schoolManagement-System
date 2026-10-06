@@ -278,6 +278,43 @@ def create_account(db: Session, user: User, data: dict) -> dict:
     return account_dict(acct)
 
 
+def import_accounts(db: Session, user: User, rows: list[dict]) -> dict:
+    """Add accounts from a sheet: one row each with code, name and kind
+    (asset, liability, equity, income, expense), and optionally category and
+    description. A code already in the chart is skipped, not overwritten;
+    a row that is wrong is reported with its line number and left out."""
+    ensure_chart(db, user)
+    used = {a.code for a in _accounts(db, user.school_id).values()}
+    kinds = {k: k for k in KINDS} | {"assets": "asset", "liabilities": "liability", "capital": "equity",
+                                     "expenses": "expense", "expenditure": "expense"}
+    created, skipped, errors = [], [], []
+    for i, row in enumerate(rows, 2):  # line 1 is the header
+        code = str(row.get("code") or "").strip()
+        name = str(row.get("name") or "").strip()
+        kind = kinds.get(str(row.get("kind") or "").strip().lower())
+        if not code or not name:
+            errors.append({"line": i, "error": "Code and name are needed."})
+            continue
+        if not kind:
+            errors.append({"line": i, "error": f"Kind must be asset, liability, equity, income or expense (got {row.get('kind')!r})."})
+            continue
+        if len(code) > 20 or len(name) > 120:
+            errors.append({"line": i, "error": "Code is at most 20 characters and name at most 120."})
+            continue
+        if code in used:
+            skipped.append({"line": i, "code": code})
+            continue
+        used.add(code)
+        db.add(LedgerAccount(
+            tenant_id=user.tenant_id, school_id=user.school_id, code=code, name=name, kind=kind,
+            category=(str(row.get("category") or "").strip()[:60] or default_category(None, kind, code)),
+            description=(str(row.get("description") or "").strip()[:300] or None), is_active=True,
+        ))
+        created.append(code)
+    db.commit()
+    return {"created": len(created), "skipped": skipped, "errors": errors}
+
+
 def _has_lines(db: Session, account_id: int) -> bool:
     return db.execute(
         select(func.count()).select_from(JournalLine).where(JournalLine.account_id == account_id)

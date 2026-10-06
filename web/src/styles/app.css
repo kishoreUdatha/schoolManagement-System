@@ -806,3 +806,31 @@ tr.jv-open td{background:#f5f8ff}
 .ie-filters>label{flex:1 1 120px;min-width:118px}
 .bs-cards.jv-cards{grid-template-columns:1fr 1fr 1fr 1.35fr}
 .jv-split p{white-space:nowrap}
+
+/* Chart of accounts (features/books/ChartOfAccounts): a three-level tree. */
+.coa-hbtn .ico{width:18px;height:18px}
+.coa-search{flex:2 1 240px!important;max-width:420px!important}
+.coa-search .searchbox{height:34px;border-radius:8px}
+.coa-search .searchbox input{border:0;height:30px;padding:0;background:none;outline:none;width:100%}
+.coa-cards{grid-template-columns:repeat(6,minmax(0,1fr))}
+.ie-card.grey{background:#f3f5f9;border-color:#dfe5ee;border-left-color:#64748b;color:#1f2a3c}
+.ie-card.grey .ie-card-ico{background:#e5e9f0;color:#475569}
+.coa-table tr.coa-l1 td{background:#eef3fe;font-weight:800;color:#1e3a8a}
+.coa-table tr.coa-l2 td{background:#fafcff}
+.coa-twist{border:0;background:none;width:20px;font-size:15px;line-height:1;color:#3d5175;cursor:pointer;margin-right:4px}
+.coa-twist:disabled{opacity:.4;cursor:default}
+.coa-folder{display:inline-grid;place-items:center;margin-right:8px;vertical-align:-3px}
+.coa-folder.blue{color:#2563eb}
+.coa-folder.amber{color:#f08c2e}
+.coa-indent{padding-left:28px!important}
+.coa-indent2{padding-left:46px!important}
+.coa-code{padding-left:44px!important}
+.coa-auto{margin-left:8px;font-size:10.5px;color:#55688a;background:#eef1f6;border-radius:5px;padding:1px 6px}
+.jv-icon{display:inline-grid;place-items:center;vertical-align:middle}
+.jv-menu a{display:block;padding:8px 10px;border-radius:7px;font-size:12.5px;color:var(--ink)}
+.jv-menu a:hover{background:#f1f6ff}
+.coa-import-result ul{margin:6px 0 0 18px}
+@media(max-width:1200px){.coa-cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.coa-twist .ico{width:14px;height:14px;transition:transform .15s}
+.coa-twist .ico.coa-open{transform:rotate(90deg)}
+.coa-cards .ie-card p{white-space:nowrap}

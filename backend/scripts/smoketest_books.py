@@ -221,6 +221,16 @@ def run(db: Session) -> None:
     xlsx, _ = books_export.journals_xlsx(db, user, FY_FROM, FY_TO)
     pdf, _ = books_export.journals_pdf(db, user, FY_FROM, FY_TO)
     check("journal exports", (xlsx[:2], pdf[:4]), (b"PK", b"%PDF"))
+    imp = books.import_accounts(db, user, [
+        {"code": "SMK9001", "name": "Smoke imported asset", "kind": "Assets", "category": "Fixed assets"},
+        {"code": "1100", "name": "Duplicate of cash", "kind": "asset"},
+        {"code": "SMK9002", "name": "No kind", "kind": "stuff"},
+        {"code": "", "name": "No code", "kind": "income"},
+    ])
+    check("import: created, skipped, refused", (imp["created"], len(imp["skipped"]), [e["line"] for e in imp["errors"]]), (1, 1, [4, 5]))
+    xlsx, _ = books_export.accounts_xlsx(db, user)
+    sheet = zipfile.ZipFile(io.BytesIO(xlsx)).read("xl/worksheets/sheet1.xml").decode()
+    check("chart export lists the imported account", "Smoke imported asset" in sheet, True)
     refused("deleting a system account", lambda: books.delete_account(db, user, acct["cash"]))
     refused("switching off a system account",
             lambda: books.update_account(db, user, acct["cash"], {"is_active": False}))

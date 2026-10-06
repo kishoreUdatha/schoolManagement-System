@@ -649,3 +649,27 @@ def journals_pdf(db: Session, user: User, frm, to, status_=None, voucher_type=No
     ]
     doc.build(story)
     return buf.getvalue(), f"journal-vouchers_{rep['from_date']}_{rep['to_date']}.pdf"
+
+
+# ---------- chart of accounts ----------
+
+COA_COLUMNS = ["Account code", "Account name", "Account group", "Account type", "Category", "Status", "Balance today (₹)"]
+_GROUP = {"asset": ("Assets", "Asset"), "liability": ("Liabilities", "Liability"), "equity": ("Capital and funds", "Capital"),
+          "income": ("Income", "Income"), "expense": ("Expenses", "Expense")}
+
+
+def accounts_xlsx(db: Session, user: User) -> tuple[bytes, str]:
+    rows = books_service.list_accounts(db, user)
+    school = db.get(School, user.school_id)
+    lines = []
+    for kind in books_service.KINDS:
+        mine = [r for r in rows if r["kind"] == kind]
+        if not mine:
+            continue
+        lines.append(("head", [_GROUP[kind][0].upper()]))
+        for r in mine:
+            lines.append(("row", [r["code"], r["name"], _GROUP[kind][0], _GROUP[kind][1], r["category"],
+                                  "Active" if r["is_active"] else "Inactive", r["balance"]]))
+    body = _xlsx("Chart of accounts", [school.name if school else "", "Chart of accounts"], COA_COLUMNS, lines,
+                 [12, 34, 18, 12, 24, 10, 18], num_from=6)
+    return body, "chart-of-accounts.xlsx"

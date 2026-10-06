@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import SchoolAdminOrAccountant
 from app.database import get_db
-from app.schemas.books import AccountIn, AccountUpdate, JournalIn, VoidIn
+from app.schemas.books import AccountImport, AccountIn, AccountUpdate, JournalIn, VoidIn
 from app.services import books_export
 from app.services import books_service as svc
 
@@ -35,6 +35,20 @@ def dimensions(user: Actor, db: Db):
 @router.get("/accounts", summary="Chart of accounts, with each account's balance")
 def accounts(user: Actor, db: Db, as_of: Optional[date] = None):
     return svc.list_accounts(db, user, as_of)
+
+
+@router.get("/accounts.xlsx", summary="The chart of accounts as an Excel sheet")
+def accounts_xlsx(user: Actor, db: Db):
+    body, name = books_export.accounts_xlsx(db, user)
+    return Response(
+        body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
+
+
+@router.post("/accounts/import", summary="Add accounts from a sheet; codes already in the chart are skipped")
+def import_accounts(payload: AccountImport, user: Actor, db: Db):
+    return svc.import_accounts(db, user, [row.model_dump() for row in payload.rows])
 
 
 @router.post("/accounts", status_code=status.HTTP_201_CREATED)

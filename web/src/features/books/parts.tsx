@@ -157,3 +157,21 @@ export const DOTS = (
     <circle cx="19" cy="12" r="1.8" />
   </svg>
 );
+
+export const PIE = (
+  <svg viewBox="0 0 24 24" className="ico" fill="currentColor" aria-hidden="true">
+    <path d="M11 3a9 9 0 1 0 9 10h-9z" />
+    <path d="M13 1.5V11h9.5A9.5 9.5 0 0 0 13 1.5z" opacity=".55" />
+  </svg>
+);
+export const SCALE = (
+  <Svg>
+    <path d="M12 3v18M7 21h10M5 7h14M12 5l-7 2M12 5l7 2" />
+    <path d="M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z" />
+  </Svg>
+);
+export const UPLOAD = (
+  <Svg>
+    <path d="M12 16V4M7 9l5-5 5 5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+  </Svg>
+);

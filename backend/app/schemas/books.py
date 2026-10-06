@@ -44,3 +44,15 @@ class JournalIn(BaseModel):
 
 class VoidIn(BaseModel):
     reason: str = Field(..., min_length=3, max_length=300)
+
+
+class AccountImportRow(BaseModel):
+    code: Optional[str] = None
+    name: Optional[str] = None
+    kind: Optional[str] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+
+
+class AccountImport(BaseModel):
+    rows: list[AccountImportRow] = Field(..., min_length=1, max_length=1000)
