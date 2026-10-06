@@ -1,3 +1,5 @@
+import type { IconName } from "@/components/ui/Icon";
+
 // Screens that share one menu entry and switch with a row of tabs on the page.
 // The menu lists only the group's first screen, under the group's name; the
 // others stay out of the menu (ModuleGroup) and appear as tabs (AppShell).
@@ -7,8 +9,9 @@
 // note (SCREEN_NOTE, below) is one plain line saying what the screen does.
 
 /** `titles`: the page head names the open tab ("Ledger") instead of the group,
-    with a chart icon, for groups whose tabs are reports in their own right. */
-export type TabGroup = { label: string; tabs: [number, string][]; titles?: Record<number, string> };
+    with an icon (`icons`, else a chart), for groups whose tabs are reports in
+    their own right. */
+export type TabGroup = { label: string; tabs: [number, string][]; titles?: Record<number, string>; icons?: Record<number, IconName> };
 
 export const TAB_GROUPS: TabGroup[] = [
   // Admissions
@@ -44,6 +47,7 @@ export const TAB_GROUPS: TabGroup[] = [
     label: "Books of account",
     tabs: [[1056, "Income & expenditure"], [1057, "Balance sheet"], [1055, "Trial balance"], [1054, "Ledger"], [1053, "Day book"], [1052, "Journal vouchers"], [1049, "Chart of accounts"]],
     titles: { 1056: "Income & Expenditure", 1057: "Balance Sheet", 1055: "Trial Balance", 1054: "Ledger", 1053: "Day Book", 1052: "Journal Vouchers", 1049: "Chart of Accounts" },
+    icons: { 1053: "calendar", 1052: "file", 1049: "book" },
   },
   // Transport
   { label: "Vehicles", tabs: [[186, "Vehicles"], [192, "Drivers & conductors"], [197, "Maintenance & fuel"]] },

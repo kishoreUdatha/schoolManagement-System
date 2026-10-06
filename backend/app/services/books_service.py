@@ -344,7 +344,7 @@ def _span(col, frm: Optional[date], to: Optional[date]) -> list:
 def _entry(d, source, source_id, voucher, narration, lines, *,
            students: Optional[list] = None, student_name: Optional[str] = None,
            detail: Optional[str] = None, branch: Optional[int] = None,
-           department: Optional[int] = None) -> dict:
+           department: Optional[int] = None, head: Optional[str] = None) -> dict:
     """One posting. `students` are the children it concerns (a receipt has
     one; a fees-raised line has everyone it was raised for); `detail` is the
     narration without the child's name, for ledgers that show the name apart.
@@ -355,6 +355,8 @@ def _entry(d, source, source_id, voucher, narration, lines, *,
         "narration": narration, "lines": lines,
         "students": students or [], "student_name": student_name, "detail": detail or narration,
         "branch_id": branch, "department_id": department,
+        # what the day book calls the account head of a fee receipt: the fee type
+        "head": head,
     }
 
 
@@ -415,7 +417,7 @@ def entries(
         out.append(_entry(
             on, "fee_receipt", cid, rno, f"{name}: {head}{label}",
             [_line(_money_key(mode), debit=amt), _line("fees_receivable", credit=amt)],
-            students=[kid], student_name=name, detail=f"{head}{label}", branch=br,
+            students=[kid], student_name=name, detail=f"{head}{label}", branch=br, head=head,
         ))
 
     for rid, on, amt, mode, ref, reason, name, kid, br in db.execute(
@@ -700,14 +702,17 @@ def _voucher_row(e: dict, accts: dict[int, LedgerAccount], cash_ids: set[int], n
         head_lines, dr, cr = lines, total, total
     pick = next((ln for ln in head_lines if accts[ln["account_id"]].kind in ("income", "expense")), head_lines[0])
     heads = list(dict.fromkeys(accts[ln["account_id"]].name for ln in head_lines))
-    head = accts[pick["account_id"]].name
+    # a fee receipt is headed by its fee type, as the fees office reads it
+    head = e.get("head") or accts[pick["account_id"]].name
     branches = {ln["branch_id"] for ln in lines}
     branch = names["branch"].get(next(iter(branches))) if len(branches) == 1 and None not in branches else (
         "Several" if len(branches) > 1 else None)
     return {
         "date": e["date"], "source": e["source"], "source_label": SOURCE_LABEL[e["source"]],
         "source_id": e["source_id"], "voucher": e["voucher"], "voucher_type": vtype,
-        "particulars": e["narration"], "account_head": head, "more_heads": len(heads) - 1,
+        # "Annual Fee - Ananya Reddy": what it was for, then who
+        "particulars": f"{e['detail']} - {e['student_name']}" if e["student_name"] else e["narration"],
+        "account_head": head, "more_heads": len(heads) - 1,
         "account_ids": sorted({ln["account_id"] for ln in lines}),
         "branch": branch, "debit": dr, "credit": cr,
     }

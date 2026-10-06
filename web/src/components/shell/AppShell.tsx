@@ -434,7 +434,7 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
                 <div>
                   {group?.titles?.[s.n] && !titled ? (
                     <h1 className="titled-tab">
-                      <Icon name="chart" className="page-ico" />
+                      <Icon name={group.icons?.[s.n] ?? "chart"} className="page-ico" />
                       {group.titles[s.n]}
                     </h1>
                   ) : (

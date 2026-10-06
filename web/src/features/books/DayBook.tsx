@@ -189,9 +189,7 @@ export function DayBook() {
                     <td className="muted">{(page - 1) * PAGE + i + 1}</td>
                     <td>{dmy(v.date)}</td>
                     <td>{v.voucher ? href ? <Link href={href}>{v.voucher}</Link> : v.voucher : "-"}</td>
-                    <td>
-                      <span className={`db-type ${v.voucher_type.toLowerCase()}`}>{v.voucher_type}</span>
-                    </td>
+                    <td>{v.voucher_type}</td>
                     <td className="wrap" title={v.lines.map((l) => `${Number(l.debit) ? "Dr" : "Cr"} ${l.account_name} ${n2(Number(l.debit) || l.credit)}`).join("\n")}>
                       {v.particulars}
                     </td>
