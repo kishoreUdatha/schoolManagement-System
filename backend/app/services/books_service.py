@@ -85,6 +85,33 @@ INCOME_SOURCES = [
     ("sponsorship", "Sponsorships"),
     ("other", "Miscellaneous income"),
 ]
+KIND_CATEGORY = {
+    "asset": "Current assets", "liability": "Current liabilities", "equity": "Capital fund",
+    "income": "Other income", "expense": "Operating expenses",
+}
+KEY_CATEGORY = {
+    "cash": "Cash and bank", "bank": "Cash and bank", "fees_receivable": "Receivables",
+    "payables": "Current liabilities", "payroll_deductions": "Current liabilities",
+    "capital": "Capital fund", "store_sales": "Sales", "salaries": "Staff costs",
+    "employer_contrib": "Staff costs", "purchases": "Purchases",
+}
+CODE_CATEGORY = {"1510": "Fixed assets", "1520": "Fixed assets", "1530": "Fixed assets", "1540": "Fixed assets", "2400": "Loans"}
+
+
+def default_category(key: Optional[str], kind: str, code: str) -> str:
+    if key:
+        if key in KEY_CATEGORY:
+            return KEY_CATEGORY[key]
+        prefix = key.split(":")[0]
+        if prefix == "fee_head":
+            return "Fee income"
+        if prefix == "income":
+            return "Other income"
+        if prefix == "expense_cat":
+            return "Operating expenses"
+    return CODE_CATEGORY.get(code) or KIND_CATEGORY[kind]
+
+
 SOURCE_LABEL = {
     "fees_raised": "Fees raised",
     "fee_receipt": "Fee receipt",
@@ -162,6 +189,7 @@ def ensure_chart(db: Session, user: User) -> dict[str, LedgerAccount]:
         acct = LedgerAccount(
             tenant_id=user.tenant_id, school_id=sid, code=code, name=name[:120],
             kind=kind, system_key=key, description=desc, is_active=True,
+            category=default_category(key, kind, code),
         )
         new.append(acct)
         if key:
@@ -181,6 +209,12 @@ def ensure_chart(db: Session, user: User) -> dict[str, LedgerAccount]:
         key = f"expense_cat:{cid}"
         if key not in by_key:
             add(key, _next_code(5301, used), name, "expense", "Expenses recorded under this category.")
+
+    # charts made before accounts had a category
+    for a in accounts:
+        if a.category is None:
+            a.category = default_category(a.system_key, a.kind, a.code)
+            new.append(a)
 
     if new:
         db.add_all(new)
@@ -205,6 +239,7 @@ def account_dict(a: LedgerAccount, balance: Decimal = ZERO, used: bool = False) 
     return {
         "id": a.id, "code": a.code, "name": a.name, "kind": a.kind,
         "system_key": a.system_key, "is_system": a.system_key is not None,
+        "category": a.category or default_category(a.system_key, a.kind, a.code),
         "description": a.description, "is_active": a.is_active,
         "balance": balance, "has_entries": used,
     }
@@ -227,6 +262,7 @@ def create_account(db: Session, user: User, data: dict) -> dict:
         tenant_id=user.tenant_id, school_id=user.school_id,
         code=data["code"].strip(), name=data["name"].strip(), kind=data["kind"],
         description=(data.get("description") or "").strip() or None, is_active=True,
+        category=(data.get("category") or "").strip() or default_category(None, data["kind"], data["code"].strip()),
     )
     db.add(acct)
     try:
@@ -252,6 +288,8 @@ def update_account(db: Session, user: User, account_id: int, data: dict) -> dict
         acct.code = data["code"].strip()
     if data.get("name") is not None:
         acct.name = data["name"].strip()
+    if data.get("category") is not None:
+        acct.category = data["category"].strip() or default_category(acct.system_key, acct.kind, acct.code)
     if "description" in data and data["description"] is not None:
         acct.description = data["description"].strip() or None
     if data.get("kind") is not None and data["kind"] != acct.kind:
@@ -628,29 +666,75 @@ def trial_balance(db: Session, user: User, frm: Optional[date], to: Optional[dat
     }
 
 
-def profit_and_loss(db: Session, user: User, frm: Optional[date], to: Optional[date]) -> dict:
+def profit_and_loss(
+    db: Session, user: User, frm: Optional[date], to: Optional[date], *,
+    category: Optional[str] = None, account_id: Optional[int] = None,
+) -> dict:
     """Income and expenditure for the window. A school run by a trust calls
-    the bottom line surplus or deficit rather than profit."""
+    the bottom line surplus or deficit rather than profit.
+
+    Each account shows its opening (what built up from 1 April to the day
+    before the window), the window's debits and credits, and its closing.
+    The totals and the surplus are for the window itself.
+    """
     frm, to = _window(frm, to)
-    rows = entries(db, user, frm, to)
+    year_from = fy_start(frm)
+    rows_all = entries(db, user, year_from, to)
     accts = _accounts(db, user.school_id)
-    bal, _ = _balances(rows, accts)
+    open_dr, open_cr = defaultdict(lambda: ZERO), defaultdict(lambda: ZERO)
+    dr, cr = defaultdict(lambda: ZERO), defaultdict(lambda: ZERO)
+    for e in rows_all:
+        before = e["date"] < frm
+        for ln in e["lines"]:
+            aid = ln["account_id"]
+            if before:
+                open_dr[aid] += ln["debit"]
+                open_cr[aid] += ln["credit"]
+            else:
+                dr[aid] += ln["debit"]
+                cr[aid] += ln["credit"]
 
     def side(kind):
-        out = [
-            {"account_id": a.id, "code": a.code, "name": a.name, "amount": bal[a.id]}
-            for a in sorted(accts.values(), key=lambda a: a.code)
-            if a.kind == kind and bal.get(a.id)
-        ]
-        return out, sum((r["amount"] for r in out), ZERO)
+        sign = 1 if kind in DEBIT_NORMAL else -1
+        out = []
+        for a in sorted(accts.values(), key=lambda a: a.code):
+            if a.kind != kind:
+                continue
+            cat = a.category or default_category(a.system_key, a.kind, a.code)
+            if category and cat != category:
+                continue
+            if account_id and a.id != account_id:
+                continue
+            opening = sign * (open_dr[a.id] - open_cr[a.id])
+            movement = sign * (dr[a.id] - cr[a.id])
+            if not (opening or dr[a.id] or cr[a.id]):
+                continue
+            out.append({
+                "account_id": a.id, "code": a.code, "name": a.name, "category": cat,
+                "opening": opening, "debit": dr[a.id], "credit": cr[a.id],
+                "amount": movement, "closing": opening + movement,
+            })
+        tot = {k: sum((r[k] for r in out), ZERO) for k in ("opening", "debit", "credit", "amount", "closing")}
+        return out, tot
 
     income, ti = side("income")
     expense, te = side("expense")
+    cats = sorted({
+        a.category or default_category(a.system_key, a.kind, a.code)
+        for a in accts.values() if a.kind in ("income", "expense")
+    })
     return {
-        "from_date": frm, "to_date": to,
-        "income": income, "total_income": ti,
-        "expenses": expense, "total_expenses": te,
-        "surplus": ti - te,
+        "from_date": frm, "to_date": to, "year_from": year_from,
+        "income": income, "total_income": ti["amount"], "income_totals": ti,
+        "expenses": expense, "total_expenses": te["amount"], "expense_totals": te,
+        "surplus": ti["amount"] - te["amount"],
+        "opening_surplus": ti["opening"] - te["opening"],
+        "closing_surplus": ti["closing"] - te["closing"],
+        "categories": cats,
+        "accounts": [
+            {"id": a.id, "code": a.code, "name": a.name, "kind": a.kind}
+            for a in sorted(accts.values(), key=lambda a: a.code) if a.kind in ("income", "expense")
+        ],
     }
 
 

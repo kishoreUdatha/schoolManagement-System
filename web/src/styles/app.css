@@ -615,3 +615,41 @@ button.stat-card{text-align:left;width:100%;font:inherit}
 .receipt-school img{width:56px;height:56px;border-radius:12px;object-fit:contain;border:1px solid var(--line);background:#fff;flex-shrink:0}
 .receipt-school h3{font-size:20px;letter-spacing:-.4px}
 .receipt-school p{margin-top:3px;max-width:420px}
+
+/* Income & expenditure (features/books/IncomeExpenditure). */
+.ie-filters{display:grid;grid-template-columns:minmax(110px,.8fr) minmax(140px,1fr) minmax(140px,1fr) minmax(130px,1.1fr) minmax(150px,1.4fr) 88px 96px;gap:12px;align-items:end;margin-bottom:20px}
+.ie-filters label{display:grid;gap:6px;font-size:12.5px;font-weight:650;color:#2a3b5c}
+.ie-filters select,.ie-filters input{height:42px;border:1px solid #d8e3f3;border-radius:8px;padding:0 12px;background:#fff;font-size:13px;color:var(--ink);min-width:0;width:100%}
+.ie-filters .btn{height:42px;padding:0 12px}
+.ie-filters .btn .ico{width:16px;height:16px}
+.ie-filters .btn.pulse{box-shadow:0 0 0 3px #bfd4f7}
+.ie-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-bottom:20px}
+.ie-card{display:flex;align-items:center;gap:18px;padding:20px 24px;border-radius:12px;border:1px solid;border-left-width:5px}
+.ie-card p{font-size:13px;font-weight:650;margin-bottom:4px}
+.ie-card strong{font-size:25px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.ie-card-ico{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;flex-shrink:0}
+.ie-card-ico .ico{width:28px;height:28px}
+.ie-card.income{background:#ecf9f1;border-color:#bfe6cf;border-left-color:#1e9e5a;color:#0f3d24}
+.ie-card.income .ie-card-ico{background:#d6f2e2;color:#16864a}
+.ie-card.expense{background:#fdeeee;border-color:#f3cccc;border-left-color:#c62f2f;color:#4a1414}
+.ie-card.expense .ie-card-ico{background:#f9dada;color:#c62f2f}
+.ie-card.net{background:#eef3fe;border-color:#cddcf8;border-left-color:#2563eb;color:#0f2557}
+.ie-card.net .ie-card-ico{background:#dce7fd;color:#2563eb}
+.ie-card.net.deficit{border-left-color:#c62f2f}
+.ie-panel .ie-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 20px}
+.ie-panel .ie-head h2{font-size:19px}
+.ie-panel .ie-head h2 span{font-size:15px;font-weight:500;margin-left:8px}
+.ie-actions{display:flex;gap:10px;flex-wrap:wrap}
+.ie-actions .ico{width:20px;height:20px}
+.ie-table{font-variant-numeric:tabular-nums}
+.ie-table thead th{background:#e8f0fe;color:#14284b;font-weight:700}
+.ie-table th.num,.ie-table td.num{text-align:right;white-space:nowrap}
+.ie-table td.center{text-align:center}
+.ie-table td{padding-top:9px;padding-bottom:9px}
+.ie-table tr.ie-section td{background:#f3f7fe;color:#1e3a8a;font-weight:800;letter-spacing:.3px}
+.ie-table tr.ie-total td{background:#eef4fd;font-weight:800;color:#0f2557}
+.ie-table tr.ie-grand td{background:#bfd4f7;font-weight:800;color:#0f2557;font-size:14px}
+.ie-note{padding:12px 20px 16px}
+@media(max-width:1150px){.ie-filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:800px){.ie-cards{grid-template-columns:1fr}.ie-filters{grid-template-columns:1fr 1fr}}
+@media print{.ie-filters,.ie-actions,.ie-note{display:none!important}.ie-card{padding:10px 14px}}

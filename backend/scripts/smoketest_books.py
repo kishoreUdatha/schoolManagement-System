@@ -208,6 +208,15 @@ def run(db: Session) -> None:
     check("income", pl["total_income"], D("13300"))
     check("expenditure", pl["total_expenses"], D("28020"))
     check("deficit", pl["surplus"], D("-14720"))
+    later = books.profit_and_loss(db, user, date(2031, 5, 5), FY_TO)
+    row = next(r for r in later["income"] if r["account_id"] == acct[f"fee_head:{head.id}"])
+    check("opening carried from 1 April", (row["opening"], row["credit"], row["closing"]), (D("10000"), D("0"), D("10000")))
+    staff = books.profit_and_loss(db, user, FY_FROM, FY_TO, category="Staff costs")
+    check("category filter", (staff["total_expenses"], len(staff["income"])), (D("21800"), 0))
+    from app.services import books_export
+    xlsx, _ = books_export.income_expenditure_xlsx(db, user, FY_FROM, FY_TO)
+    pdf, _ = books_export.income_expenditure_pdf(db, user, FY_FROM, FY_TO)
+    check("excel and pdf exports", (xlsx[:2], pdf[:4]), (b"PK", b"%PDF"))
 
     print("balance sheet at 31 Mar 2032")
     bs = books.balance_sheet(db, user, FY_TO)

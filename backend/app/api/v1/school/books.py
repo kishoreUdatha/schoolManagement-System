@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import SchoolAdminOrAccountant
 from app.database import get_db
 from app.schemas.books import AccountIn, AccountUpdate, JournalIn, VoidIn
+from app.services import books_export
 from app.services import books_service as svc
 
 router = APIRouter()
@@ -57,9 +58,39 @@ def trial_balance(user: Actor, db: Db, frm: From = None, to: Optional[date] = No
     return svc.trial_balance(db, user, frm, to)
 
 
+Category = Annotated[Optional[str], Query(max_length=60)]
+
+
 @router.get("/income-expenditure", summary="Income and expenditure (profit and loss) for a window")
-def income_expenditure(user: Actor, db: Db, frm: From = None, to: Optional[date] = None):
-    return svc.profit_and_loss(db, user, frm, to)
+def income_expenditure(
+    user: Actor, db: Db, frm: From = None, to: Optional[date] = None,
+    category: Category = None, account_id: Optional[int] = None,
+):
+    return svc.profit_and_loss(db, user, frm, to, category=category, account_id=account_id)
+
+
+@router.get("/income-expenditure.xlsx", summary="Income and expenditure as an Excel sheet")
+def income_expenditure_xlsx(
+    user: Actor, db: Db, frm: From = None, to: Optional[date] = None,
+    category: Category = None, account_id: Optional[int] = None,
+):
+    body, name = books_export.income_expenditure_xlsx(db, user, frm, to, category, account_id)
+    return Response(
+        body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
+
+
+@router.get("/income-expenditure.pdf", summary="Income and expenditure as a PDF")
+def income_expenditure_pdf(
+    user: Actor, db: Db, frm: From = None, to: Optional[date] = None,
+    category: Category = None, account_id: Optional[int] = None,
+):
+    body, name = books_export.income_expenditure_pdf(db, user, frm, to, category, account_id)
+    return Response(
+        body, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
 
 
 @router.get("/balance-sheet")

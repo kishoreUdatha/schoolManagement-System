@@ -8,7 +8,7 @@ import { date, money } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { isoToday } from "@/features/fees/common";
 import { amt, BOOKS, fyStart, KIND_LABEL, KINDS, LedgerLink, Period, ReportActions } from "./common";
-import type { BalanceSheet as Sheet, IncomeExpenditure as IE, StatementRow, TrialBalance as TB } from "./types";
+import type { BalanceSheet as Sheet, StatementRow, TrialBalance as TB } from "./types";
 
 type Section = { title: string; rows: StatementRow[]; total: string; totalLabel: string };
 
@@ -65,53 +65,6 @@ function StatementTable({ caption, sections, from, to, footer }: { caption: stri
         </tbody>
       </table>
     </div>
-  );
-}
-
-/** NEW-1056: income and expenditure (profit and loss) for a period. */
-export function IncomeExpenditure() {
-  const [from, setFrom] = useState(fyStart());
-  const [to, setTo] = useState(isoToday());
-  const r = useApi<IE>(`${BOOKS}/income-expenditure`, { from, to });
-  const d = r.data;
-  const surplus = Number(d?.surplus ?? 0);
-  const result = surplus >= 0 ? "Surplus" : "Deficit";
-  return (
-    <>
-      <StatStrip
-        compact
-        items={[
-          { label: "Income", value: d ? money(d.total_income) : "…", note: "Fees raised and other income" },
-          { label: "Expenditure", value: d ? money(d.total_expenses) : "…", note: "Expenses, purchases and salaries" },
-          { label: result, value: d ? money(Math.abs(surplus)) : "…", note: `${date(from)} – ${date(to)}` },
-        ]}
-      />
-      <div className="filterbar">
-        <Period from={from} to={to} onChange={(f, t) => (setFrom(f), setTo(t))} />
-      </div>
-      <ErrorNote>{r.error}</ErrorNote>
-      <Panel
-        title="Income and expenditure account"
-        sub={`For ${date(from)} – ${date(to)} · fees count when they fall due · click an account for its ledger`}
-        action={<ReportActions filename={`income-expenditure_${from}_${to}.csv`} />}
-        flush
-      >
-        {d ? (
-          <StatementTable
-            caption={`Income and expenditure ${from} to ${to}`}
-            from={from}
-            to={to}
-            sections={[
-              { title: "Income", rows: d.income, total: d.total_income, totalLabel: "Total income" },
-              { title: "Expenditure", rows: d.expenses, total: d.total_expenses, totalLabel: "Total expenditure" },
-            ]}
-            footer={[[`${result} for the period`, money(Math.abs(surplus))]]}
-          />
-        ) : (
-          <p className="panel-body muted small">{r.loading ? "Loading…" : "No figures."}</p>
-        )}
-      </Panel>
-    </>
   );
 }
 

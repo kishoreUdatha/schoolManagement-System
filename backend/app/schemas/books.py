@@ -11,6 +11,7 @@ class AccountIn(BaseModel):
     code: str = Field(..., min_length=1, max_length=20, pattern=r"^[A-Za-z0-9.\-]+$")
     name: str = Field(..., min_length=2, max_length=120)
     kind: Kind
+    category: Optional[str] = Field(None, max_length=60)
     description: Optional[str] = Field(None, max_length=300)
 
 
@@ -18,6 +19,7 @@ class AccountUpdate(BaseModel):
     code: Optional[str] = Field(None, min_length=1, max_length=20, pattern=r"^[A-Za-z0-9.\-]+$")
     name: Optional[str] = Field(None, min_length=2, max_length=120)
     kind: Optional[Kind] = None
+    category: Optional[str] = Field(None, max_length=60)
     description: Optional[str] = Field(None, max_length=300)
     is_active: Optional[bool] = None
 

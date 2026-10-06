@@ -281,11 +281,12 @@ export function ChartOfAccounts() {
         flush
       >
         <DataTable
-          columns={["Code", "Account", "Kind", "Balance today", "Status"]}
+          columns={["Code", "Account", "Kind", "Category", "Balance today", "Status"]}
           rows={rows.map((a) => [
             a.code,
             { text: a.name, note: a.description ?? undefined },
             KIND_LABEL[a.kind],
+            a.category,
             money(a.balance),
             !a.is_active ? { text: "Off", tone: "warn" } : a.is_system ? "Automatic" : "Manual",
           ])}
@@ -306,6 +307,7 @@ export function ChartOfAccounts() {
         <AccountForm
           account={editing === "new" ? null : editing}
           onClose={() => setEditing(null)}
+          categories={[...new Set(all.map((a) => a.category))].sort()}
           onDelete={editing !== "new" && !editing.is_system && !editing.has_entries ? () => remove(editing) : undefined}
           onSaved={() => {
             setEditing(null);
@@ -317,12 +319,13 @@ export function ChartOfAccounts() {
   );
 }
 
-function AccountForm({ account, onClose, onSaved, onDelete }: { account: Account | null; onClose: () => void; onSaved: () => void; onDelete?: () => void }) {
+function AccountForm({ account, categories, onClose, onSaved, onDelete }: { account: Account | null; categories: string[]; onClose: () => void; onSaved: () => void; onDelete?: () => void }) {
   const [f, setF] = useState({
     code: account?.code ?? "",
     name: account?.name ?? "",
     kind: account?.kind ?? "asset",
     description: account?.description ?? "",
+    category: account?.category ?? "",
     is_active: account?.is_active ?? true,
   });
   const [saving, setSaving] = useState(false);
@@ -332,7 +335,7 @@ function AccountForm({ account, onClose, onSaved, onDelete }: { account: Account
     e.preventDefault();
     setSaving(true);
     setError(null);
-    const body = { code: f.code.trim(), name: f.name.trim(), kind: f.kind, description: f.description.trim() || null };
+    const body = { code: f.code.trim(), name: f.name.trim(), kind: f.kind, category: f.category.trim() || null, description: f.description.trim() || null };
     try {
       if (account) await api.patch(`${BOOKS}/accounts/${account.id}`, { ...body, kind: account.is_system ? undefined : f.kind, is_active: f.is_active });
       else await api.post(`${BOOKS}/accounts`, body);
@@ -364,6 +367,14 @@ function AccountForm({ account, onClose, onSaved, onDelete }: { account: Account
           </Field>
           <Field label="Name" required full>
             <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} minLength={2} maxLength={120} required placeholder="Smart classroom equipment" />
+          </Field>
+          <Field label="Category" full>
+            <input value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })} maxLength={60} list="account-categories" placeholder="Fee income, Staff costs, Fixed assets…" />
+            <datalist id="account-categories">
+              {categories.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </Field>
           <Field label="Description" full>
             <input value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} maxLength={300} />

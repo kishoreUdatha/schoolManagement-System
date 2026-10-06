@@ -9,6 +9,7 @@ export type Account = {
   kind: Kind;
   system_key: string | null;
   is_system: boolean;
+  category: string;
   description: string | null;
   is_active: boolean;
   balance: string;
@@ -61,14 +62,24 @@ export type TrialBalance = { from_date: string; to_date: string; rows: TrialRow[
 
 export type StatementRow = { account_id: number; code: string; name: string; amount: string };
 
+export type IERow = StatementRow & { category: string; opening: string; debit: string; credit: string; closing: string };
+type IETotals = { opening: string; debit: string; credit: string; amount: string; closing: string };
+
 export type IncomeExpenditure = {
   from_date: string;
   to_date: string;
-  income: StatementRow[];
+  year_from: string;
+  income: IERow[];
   total_income: string;
-  expenses: StatementRow[];
+  income_totals: IETotals;
+  expenses: IERow[];
   total_expenses: string;
+  expense_totals: IETotals;
   surplus: string;
+  opening_surplus: string;
+  closing_surplus: string;
+  categories: string[];
+  accounts: { id: number; code: string; name: string; kind: "income" | "expense" }[];
 };
 
 export type BalanceSheet = {

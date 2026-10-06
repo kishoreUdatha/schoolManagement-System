@@ -62,6 +62,8 @@ class LedgerAccount(Base, PrimaryKeyMixin, TimestampMixin, _School):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     kind: Mapped[str] = mapped_column(String(20), nullable=False)
     system_key: Mapped[Optional[str]] = mapped_column(String(60))
+    # The group a statement lists it under: "Fee income", "Staff costs" ...
+    category: Mapped[Optional[str]] = mapped_column(String(60))
     description: Mapped[Optional[str]] = mapped_column(String(300))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
