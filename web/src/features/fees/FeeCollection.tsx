@@ -122,7 +122,8 @@ export function FeeCollection() {
       <Prereq missing={raised.data?.total === 0} screen={1041} cta="Generate fees">
         No fees have been raised yet, so there is nothing to collect.
       </Prereq>
-    <div className="two-col">
+    {/* the receipts column only once there is a student to show receipts for */}
+    <div className={student ? "two-col" : "stack"}>
       <div className="stack">
         <Panel title={student ? "Student account" : "Who owes"} sub={student ? undefined : "Most overdue first. Pick one, or type a name below."}>
           {student ? (
@@ -241,8 +242,9 @@ export function FeeCollection() {
           </div>
         </form>
       </div>
+      {student ? (
       <aside className="stack">
-        <Panel title="Recent receipts">
+        <Panel title="Recent receipts" sub={student.full_name}>
           {recent.map((c) => (
             <div className="event-row" key={c.id}>
               <div className="event-content">
@@ -254,9 +256,10 @@ export function FeeCollection() {
               <strong className="small">{money(c.amount)}</strong>
             </div>
           ))}
-          {!recent.length ? <p className="muted small">{!student ? "Choose a student." : receipts.loading ? "Loading…" : "No receipts in the last year."}</p> : null}
+          {!recent.length ? <p className="muted small">{receipts.loading ? "Loading…" : "No receipts in the last year."}</p> : null}
         </Panel>
       </aside>
+      ) : null}
     </div>
     </>
   );
