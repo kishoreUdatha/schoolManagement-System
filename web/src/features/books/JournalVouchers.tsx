@@ -92,7 +92,10 @@ export function JournalVouchers() {
         if (!(await ask(`Delete draft ${j.entry_no}? It was never in the books.`))) return;
         await api.delete(`${BOOKS}/journals/${j.id}`);
         notify(`${j.entry_no} deleted.`);
+        // let go of the deleted voucher before reloading, so nothing asks for it again
         if (openId === j.id) router.replace(routeOf(1052), { scroll: false });
+        list.reload();
+        return;
       }
       reload();
     } catch (e) {
