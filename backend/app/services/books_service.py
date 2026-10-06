@@ -41,13 +41,17 @@ from app.core.enums import (
     RefundStatus,
     StorePayment,
 )
+from app.models.academic import Section
 from app.models.accounts import Expense, ExpenseCategory, FeeCollection, OtherIncome
 from app.models.fee import FeeHead, StudentFee
 from app.models.fee_extra import Refund
+from app.models.foundation import Department
 from app.models.inventory import StoreSale, Supplier
 from app.models.ledger import JournalEntry, JournalLine, LedgerAccount
 from app.models.payroll import PayrollRun, Payslip
 from app.models.purchasing import VendorBill, VendorPayment
+from app.models.rbac import Branch
+from app.models.staff import Staff
 from app.models.student import Student
 from app.models.user import User
 
@@ -339,14 +343,18 @@ def _span(col, frm: Optional[date], to: Optional[date]) -> list:
 
 def _entry(d, source, source_id, voucher, narration, lines, *,
            students: Optional[list] = None, student_name: Optional[str] = None,
-           detail: Optional[str] = None) -> dict:
+           detail: Optional[str] = None, branch: Optional[int] = None,
+           department: Optional[int] = None) -> dict:
     """One posting. `students` are the children it concerns (a receipt has
     one; a fees-raised line has everyone it was raised for); `detail` is the
-    narration without the child's name, for ledgers that show the name apart."""
+    narration without the child's name, for ledgers that show the name apart.
+    `branch` and `department` place it; a line may carry its own instead
+    (journal vouchers do)."""
     return {
         "date": d, "source": source, "source_id": source_id, "voucher": voucher,
         "narration": narration, "lines": lines,
         "students": students or [], "student_name": student_name, "detail": detail or narration,
+        "branch_id": branch, "department_id": department,
     }
 
 
@@ -354,9 +362,16 @@ def _line(key_or_id, debit=ZERO, credit=ZERO) -> dict:
     return {"ref": key_or_id, "debit": _m(debit), "credit": _m(credit)}
 
 
-def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) -> list[dict]:
+def entries(
+    db: Session, user: User, frm: Optional[date], to: Optional[date], scope: "Scope" = None,
+) -> list[dict]:
     """Every posting dated frm..to (either end open), oldest first, with each
-    line's account resolved to an id."""
+    line's account resolved to an id and its branch and department set.
+
+    Fees, receipts and refunds belong to the branch of the child's section;
+    payroll to each staff member's branch and department; supplier payments
+    to their bill; the rest carry what was chosen when they were entered.
+    `scope` keeps only the lines of one branch and/or department."""
     sid = user.school_id
     by_key = ensure_chart(db, user)
     out: list[dict] = []
@@ -366,12 +381,15 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         (StudentFee.status == FeeStatus.waived, StudentFee.amount_paid),
         else_=StudentFee.amount_due,
     )
-    for due, hid, head, period, n, amt, kids in db.execute(
+    for due, hid, head, period, n, amt, kids, br in db.execute(
         select(StudentFee.due_date, StudentFee.fee_head_id, FeeHead.name, StudentFee.period,
-               func.count(), func.sum(charge), func.array_agg(func.distinct(StudentFee.student_id)))
+               func.count(), func.sum(charge), func.array_agg(func.distinct(StudentFee.student_id)),
+               Section.branch_id)
         .join(FeeHead, FeeHead.id == StudentFee.fee_head_id)
+        .join(Student, Student.id == StudentFee.student_id, isouter=True)
+        .join(Section, Section.id == Student.section_id, isouter=True)
         .where(StudentFee.school_id == sid, *_span(StudentFee.due_date, frm, to))
-        .group_by(StudentFee.due_date, StudentFee.fee_head_id, FeeHead.name, StudentFee.period)
+        .group_by(StudentFee.due_date, StudentFee.fee_head_id, FeeHead.name, StudentFee.period, Section.branch_id)
     ).all():
         if not amt:
             continue
@@ -380,41 +398,45 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
             due, "fees_raised", None, None,
             f"{head} ({label}) due for {n} student{'s' if n != 1 else ''}",
             [_line("fees_receivable", debit=amt), _line(f"fee_head:{hid}", credit=amt)],
-            students=list(kids or []), detail=f"{head} ({label}) raised",
+            students=list(kids or []), detail=f"{head} ({label}) raised", branch=br,
         ))
 
-    for cid, on, amt, mode, rno, name, head, period, kid in db.execute(
+    for cid, on, amt, mode, rno, name, head, period, kid, br in db.execute(
         select(FeeCollection.id, FeeCollection.collected_on, FeeCollection.amount, FeeCollection.mode,
-               FeeCollection.receipt_no, Student.full_name, FeeHead.name, StudentFee.period, FeeCollection.student_id)
+               FeeCollection.receipt_no, Student.full_name, FeeHead.name, StudentFee.period, FeeCollection.student_id,
+               Section.branch_id)
         .join(StudentFee, StudentFee.id == FeeCollection.student_fee_id)
         .join(FeeHead, FeeHead.id == StudentFee.fee_head_id)
         .join(Student, Student.id == FeeCollection.student_id)
+        .join(Section, Section.id == Student.section_id, isouter=True)
         .where(FeeCollection.school_id == sid, *_span(FeeCollection.collected_on, frm, to))
     ).all():
         label = "" if period == "ONETIME" else f" {period}"
         out.append(_entry(
             on, "fee_receipt", cid, rno, f"{name}: {head}{label}",
             [_line(_money_key(mode), debit=amt), _line("fees_receivable", credit=amt)],
-            students=[kid], student_name=name, detail=f"{head}{label}",
+            students=[kid], student_name=name, detail=f"{head}{label}", branch=br,
         ))
 
-    for rid, on, amt, mode, ref, reason, name, kid in db.execute(
+    for rid, on, amt, mode, ref, reason, name, kid, br in db.execute(
         select(Refund.id, Refund.processed_on, Refund.amount, Refund.mode, Refund.reference,
-               Refund.reason, Student.full_name, Refund.student_id)
+               Refund.reason, Student.full_name, Refund.student_id, Section.branch_id)
         .join(Student, Student.id == Refund.student_id)
+        .join(Section, Section.id == Student.section_id, isouter=True)
         .where(Refund.school_id == sid, Refund.status == RefundStatus.processed,
                Refund.processed_on.is_not(None), *_span(Refund.processed_on, frm, to))
     ).all():
         out.append(_entry(
             on, "refund", rid, ref, f"Refund to {name}: {reason}"[:300],
             [_line("fees_receivable", debit=amt), _line(_money_key(mode), credit=amt)],
-            students=[kid], student_name=name, detail=f"Refund: {reason}"[:300],
+            students=[kid], student_name=name, detail=f"Refund: {reason}"[:300], branch=br,
         ))
 
     labels = dict(INCOME_SOURCES)
-    for iid, on, amt, mode, src, payer, rno in db.execute(
+    for iid, on, amt, mode, src, payer, rno, br, dep in db.execute(
         select(OtherIncome.id, OtherIncome.received_on, OtherIncome.amount, OtherIncome.mode,
-               OtherIncome.source, OtherIncome.payer, OtherIncome.receipt_no)
+               OtherIncome.source, OtherIncome.payer, OtherIncome.receipt_no,
+               OtherIncome.branch_id, OtherIncome.department_id)
         .where(OtherIncome.school_id == sid, OtherIncome.is_void.is_(False),
                *_span(OtherIncome.received_on, frm, to))
     ).all():
@@ -422,12 +444,14 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         out.append(_entry(
             on, "other_income", iid, rno, f"{labels.get(src, src.title())} from {payer}",
             [_line(_money_key(mode), debit=amt), _line(key, credit=amt)],
+            branch=br, department=dep,
         ))
 
-    for sale_id, on, amt, pay, bno, buyer, name, kid in db.execute(
+    for sale_id, on, amt, pay, bno, buyer, name, kid, br in db.execute(
         select(StoreSale.id, StoreSale.sold_on, StoreSale.total, StoreSale.payment, StoreSale.bill_no,
-               StoreSale.buyer_name, Student.full_name, StoreSale.student_id)
+               StoreSale.buyer_name, Student.full_name, StoreSale.student_id, Section.branch_id)
         .join(Student, Student.id == StoreSale.student_id, isouter=True)
+        .join(Section, Section.id == Student.section_id, isouter=True)
         .where(StoreSale.school_id == sid, StoreSale.is_void.is_(False),
                StoreSale.payment != StorePayment.add_to_fees,  # those come in as fees
                *_span(StoreSale.sold_on, frm, to))
@@ -435,12 +459,13 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         out.append(_entry(
             on, "store_sale", sale_id, bno, f"Store sale to {name or buyer or 'a walk-in buyer'}",
             [_line(_money_key(pay), debit=amt), _line("store_sales", credit=amt)],
-            students=[kid] if kid else [], student_name=name, detail="Store sale",
+            students=[kid] if kid else [], student_name=name, detail="Store sale", branch=br,
         ))
 
-    for eid, on, amt, mode, cat_id, desc, ref, payee, supplier in db.execute(
+    for eid, on, amt, mode, cat_id, desc, ref, payee, supplier, br, dep in db.execute(
         select(Expense.id, Expense.spent_on, Expense.amount, Expense.mode, Expense.category_id,
-               Expense.description, Expense.reference, Expense.payee, Supplier.name)
+               Expense.description, Expense.reference, Expense.payee, Supplier.name,
+               Expense.branch_id, Expense.department_id)
         .join(Supplier, Supplier.id == Expense.supplier_id, isouter=True)
         .where(Expense.school_id == sid, Expense.is_void.is_(False), *_span(Expense.spent_on, frm, to))
     ).all():
@@ -449,11 +474,12 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
             on, "expense", eid, ref, f"{desc}{f' ({who})' if who else ''}"[:300],
             # the amount already includes any tax
             [_line(f"expense_cat:{cat_id}", debit=amt), _line(_money_key(mode), credit=amt)],
+            branch=br, department=dep,
         ))
 
-    for bid, on, amt, tax, bno, supplier in db.execute(
+    for bid, on, amt, tax, bno, supplier, br, dep in db.execute(
         select(VendorBill.id, VendorBill.billed_on, VendorBill.amount, VendorBill.tax_amount,
-               VendorBill.bill_no, Supplier.name)
+               VendorBill.bill_no, Supplier.name, VendorBill.branch_id, VendorBill.department_id)
         .join(Supplier, Supplier.id == VendorBill.supplier_id, isouter=True)
         .where(VendorBill.school_id == sid, VendorBill.status != BillStatus.cancelled,
                *_span(VendorBill.billed_on, frm, to))
@@ -462,11 +488,13 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         out.append(_entry(
             on, "vendor_bill", bid, bno, f"Bill {bno} from {supplier or 'a supplier'}",
             [_line("purchases", debit=total), _line("payables", credit=total)],
+            branch=br, department=dep,
         ))
 
-    for pid, on, amt, mode, ref, bno, supplier in db.execute(
+    for pid, on, amt, mode, ref, bno, supplier, br, dep in db.execute(
         select(VendorPayment.id, VendorPayment.paid_on, VendorPayment.amount, VendorPayment.mode,
-               VendorPayment.reference, VendorBill.bill_no, Supplier.name)
+               VendorPayment.reference, VendorBill.bill_no, Supplier.name,
+               VendorBill.branch_id, VendorBill.department_id)
         .join(VendorBill, VendorBill.id == VendorPayment.bill_id)
         .join(Supplier, Supplier.id == VendorBill.supplier_id, isouter=True)
         .where(VendorPayment.school_id == sid, *_span(VendorPayment.paid_on, frm, to))
@@ -474,16 +502,21 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         out.append(_entry(
             on, "vendor_payment", pid, ref, f"Paid {supplier or 'supplier'} against bill {bno}",
             [_line("payables", debit=amt), _line(_money_key(mode), credit=amt)],
+            branch=br, department=dep,
         ))
 
-    for run_id, on, period, ref, gross, net, employer in db.execute(
+    names = _dim_names(db, sid)
+    for run_id, on, period, ref, gross, net, employer, br, dep in db.execute(
         select(PayrollRun.id, PayrollRun.paid_on, PayrollRun.period, PayrollRun.payment_ref,
                func.coalesce(func.sum(Payslip.gross), 0), func.coalesce(func.sum(Payslip.net_pay), 0),
-               func.coalesce(func.sum(Payslip.pf_employer + Payslip.esi_employer), 0))
+               func.coalesce(func.sum(Payslip.pf_employer + Payslip.esi_employer), 0),
+               Staff.branch_id, Staff.department_id)
         .join(Payslip, Payslip.run_id == PayrollRun.id)
+        .join(Staff, Staff.id == Payslip.staff_id, isouter=True)
         .where(PayrollRun.school_id == sid, PayrollRun.status == PayrollRunStatus.paid,
                PayrollRun.paid_on.is_not(None), *_span(PayrollRun.paid_on, frm, to))
-        .group_by(PayrollRun.id, PayrollRun.paid_on, PayrollRun.period, PayrollRun.payment_ref)
+        .group_by(PayrollRun.id, PayrollRun.paid_on, PayrollRun.period, PayrollRun.payment_ref,
+                  Staff.branch_id, Staff.department_id)
     ).all():
         gross, net, employer = _m(gross), _m(net), _m(employer)
         lines = [_line("salaries", debit=gross)]
@@ -493,7 +526,9 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         held = gross + employer - net  # deductions and the employer's share, owed to the authorities
         if held:
             lines.append(_line("payroll_deductions", credit=held))
-        out.append(_entry(on, "payroll", run_id, ref, f"Salaries for {period}", lines))
+        where = ", ".join(x for x in (names["branch"].get(br), names["department"].get(dep)) if x)
+        out.append(_entry(on, "payroll", run_id, ref, f"Salaries for {period}{f' ({where})' if where else ''}",
+                          lines, branch=br, department=dep))
 
     jes = list(db.execute(
         select(JournalEntry).where(
@@ -506,12 +541,17 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
         for ln in db.execute(
             select(JournalLine).where(JournalLine.entry_id.in_([j.id for j in jes])).order_by(JournalLine.id)
         ).scalars():
-            jlines[ln.entry_id].append({"ref": ln.account_id, "debit": _m(ln.debit), "credit": _m(ln.credit), "note": ln.note})
+            jlines[ln.entry_id].append({
+                "ref": ln.account_id, "debit": _m(ln.debit), "credit": _m(ln.credit), "note": ln.note,
+                "branch_id": ln.branch_id, "department_id": ln.department_id,
+            })
         for j in jes:
             out.append(_entry(j.entry_date, "journal", j.id, j.entry_no, j.narration, jlines[j.id]))
 
     for e in out:
         for ln in e["lines"]:
+            ln.setdefault("branch_id", e["branch_id"])
+            ln.setdefault("department_id", e["department_id"])
             ref = ln.pop("ref")
             if isinstance(ref, str):
                 acct = by_key.get(ref)
@@ -523,7 +563,83 @@ def entries(db: Session, user: User, frm: Optional[date], to: Optional[date]) ->
                 ln["account_id"] = ref
     order = list(SOURCE_LABEL)
     out.sort(key=lambda e: (e["date"], order.index(e["source"]), e["source_id"] or 0))
+    return _scoped(out, scope)
+
+
+# ---------- branch and department ----------
+
+# (branch, department): each None for all, "none" for not assigned, or an id
+Scope = Optional[tuple]
+NONE = "none"
+
+
+def parse_scope(branch: Optional[str], department: Optional[str]) -> Scope:
+    """Query values "", "none" or an id, for the two filters."""
+    def one(v):
+        if v in (None, ""):
+            return None
+        return NONE if v == NONE else int(v)
+
+    b, d = one(branch), one(department)
+    return None if b is None and d is None else (b, d)
+
+
+def _keep(value, want) -> bool:
+    if want is None:
+        return True
+    if want == NONE:
+        return value is None
+    return value == want
+
+
+def _scoped(rows: list[dict], scope: Scope) -> list[dict]:
+    if not scope:
+        return rows
+    b, d = scope
+    out = []
+    for e in rows:
+        lines = [ln for ln in e["lines"] if _keep(ln["branch_id"], b) and _keep(ln["department_id"], d)]
+        if lines:
+            out.append({**e, "lines": lines})
     return out
+
+
+def _dim_names(db: Session, school_id: int) -> dict[str, dict[int, str]]:
+    return {
+        "branch": dict(db.execute(select(Branch.id, Branch.name).where(Branch.school_id == school_id)).all()),
+        "department": dict(db.execute(select(Department.id, Department.name).where(Department.school_id == school_id)).all()),
+    }
+
+
+def dimensions(db: Session, user: User) -> dict:
+    """The choices for the two filters and the two fields on vouchers."""
+    sid = user.school_id
+    return {
+        "branches": [
+            {"id": i, "name": n, "code": c} for i, n, c in db.execute(
+                select(Branch.id, Branch.name, Branch.code)
+                .where(Branch.school_id == sid, Branch.is_active.is_(True)).order_by(Branch.is_main.desc(), Branch.name)
+            ).all()
+        ],
+        "departments": [
+            {"id": i, "name": n, "code": c} for i, n, c in db.execute(
+                select(Department.id, Department.name, Department.code)
+                .where(Department.school_id == sid, Department.is_active.is_(True)).order_by(Department.name)
+            ).all()
+        ],
+    }
+
+
+def check_dims(db: Session, school_id: int, branch_id: Optional[int], department_id: Optional[int]) -> None:
+    """A branch or department given on a voucher must be this school's."""
+    if branch_id:
+        b = db.get(Branch, branch_id)
+        if not b or b.school_id != school_id:
+            raise _400("That branch is not one of this school's.")
+    if department_id:
+        d = db.get(Department, department_id)
+        if not d or d.school_id != school_id:
+            raise _400("That department is not one of this school's.")
 
 
 def _balances(rows: Iterable[dict], accts: dict[int, LedgerAccount]) -> tuple[dict[int, Decimal], set[int]]:
@@ -556,13 +672,13 @@ def _window(frm: Optional[date], to: Optional[date]) -> tuple[date, date]:
 
 def day_book(
     db: Session, user: User, frm: Optional[date], to: Optional[date], *,
-    source: Optional[str] = None, page: int = 1, page_size: int = 100,
+    source: Optional[str] = None, page: int = 1, page_size: int = 100, scope: Scope = None,
 ) -> dict:
     frm, to = _window(frm, to)
     if (to - frm).days > 400:
         raise _400("Pick a range of at most about a year.")
     accts = _accounts(db, user.school_id)
-    rows = entries(db, user, frm, to)
+    rows = entries(db, user, frm, to, scope)
     if source:
         rows = [e for e in rows if e["source"] == source]
     total_dr = sum((ln["debit"] for e in rows for ln in e["lines"]), ZERO)
@@ -584,7 +700,7 @@ def day_book(
 
 
 def account_ledger(
-    db: Session, user: User, account_id: int, frm: Optional[date], to: Optional[date]
+    db: Session, user: User, account_id: int, frm: Optional[date], to: Optional[date], scope: Scope = None,
 ) -> dict:
     """One account's entries in the window with a running balance, the
     opening carried in, how many debits and credits there were, and how many
@@ -605,7 +721,7 @@ def account_ledger(
     total_dr = total_cr = ZERO
     n_dr = n_cr = 0
     kids: set[int] = set()
-    for e in entries(db, user, None, to):
+    for e in entries(db, user, None, to, scope):
         mine = [ln for ln in e["lines"] if ln["account_id"] == account_id]
         if not mine:
             continue
@@ -652,13 +768,14 @@ def account_ledger(
 
 def trial_balance(
     db: Session, user: User, frm: Optional[date], to: Optional[date], *, account_id: Optional[int] = None,
+    scope: Scope = None,
 ) -> dict:
     """Opening, movement and closing for every account with anything in it.
     Closing balances are split into debit and credit columns, which must
     agree. `balanced` and `difference` are always for the whole book; an
     account filter only narrows the rows and their totals."""
     frm, to = _window(frm, to)
-    rows_all = entries(db, user, None, to)
+    rows_all = entries(db, user, None, to, scope)
     accts = _accounts(db, user.school_id)  # entries() may have added accounts
     open_dr, open_cr = defaultdict(lambda: ZERO), defaultdict(lambda: ZERO)
     mov_dr, mov_cr = defaultdict(lambda: ZERO), defaultdict(lambda: ZERO)
@@ -703,7 +820,7 @@ def trial_balance(
 
 def profit_and_loss(
     db: Session, user: User, frm: Optional[date], to: Optional[date], *,
-    category: Optional[str] = None, account_id: Optional[int] = None,
+    category: Optional[str] = None, account_id: Optional[int] = None, scope: Scope = None,
 ) -> dict:
     """Income and expenditure for the window. A school run by a trust calls
     the bottom line surplus or deficit rather than profit.
@@ -714,7 +831,7 @@ def profit_and_loss(
     """
     frm, to = _window(frm, to)
     year_from = fy_start(frm)
-    rows_all = entries(db, user, year_from, to)
+    rows_all = entries(db, user, year_from, to, scope)
     accts = _accounts(db, user.school_id)
     open_dr, open_cr = defaultdict(lambda: ZERO), defaultdict(lambda: ZERO)
     dr, cr = defaultdict(lambda: ZERO), defaultdict(lambda: ZERO)
@@ -773,12 +890,14 @@ def profit_and_loss(
     }
 
 
-def balance_sheet(db: Session, user: User, as_of: Optional[date], account_id: Optional[int] = None) -> dict:
+def balance_sheet(
+    db: Session, user: User, as_of: Optional[date], account_id: Optional[int] = None, scope: Scope = None,
+) -> dict:
     """What the school owns and owes on a date. The surplus is not an
     account: it is income less expenditure, this year's and before."""
     as_of = as_of or date.today()
     year_from = fy_start(as_of)
-    rows = entries(db, user, None, as_of)
+    rows = entries(db, user, None, as_of, scope)
     accts = _accounts(db, user.school_id)
     bal, _ = _balances(rows, accts)
     prior, _ = _balances([e for e in rows if e["date"] < year_from], accts)
@@ -895,7 +1014,8 @@ def journal_dict(db: Session, j: JournalEntry) -> dict:
         "total": sum((_m(ln.debit) for ln, _ in lines), ZERO),
         "lines": [
             {"account_id": a.id, "account_code": a.code, "account_name": a.name,
-             "debit": _m(ln.debit), "credit": _m(ln.credit), "note": ln.note}
+             "debit": _m(ln.debit), "credit": _m(ln.credit), "note": ln.note,
+             "branch_id": ln.branch_id, "department_id": ln.department_id}
             for ln, a in lines
         ],
     }
@@ -937,6 +1057,7 @@ def create_journal(db: Session, user: User, data: dict) -> dict:
             raise _400(f"Line {i}: amounts cannot be negative.")
         if (d > 0) == (c > 0):
             raise _400(f"Line {i}: enter either a debit or a credit.")
+        check_dims(db, user.school_id, ln.get("branch_id"), ln.get("department_id"))
         dr += d
         cr += c
         seen.add(a.id)
@@ -966,6 +1087,7 @@ def create_journal(db: Session, user: User, data: dict) -> dict:
                 entry_id=j.id, account_id=int(ln["account_id"]),
                 debit=_m(ln.get("debit")), credit=_m(ln.get("credit")),
                 note=(ln.get("note") or "").strip() or None,
+                branch_id=ln.get("branch_id"), department_id=ln.get("department_id"),
             ))
         db.commit()
         db.refresh(j)

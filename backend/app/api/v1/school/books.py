@@ -16,6 +16,20 @@ router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
 Actor = SchoolAdminOrAccountant
 From = Annotated[Optional[date], Query(alias="from")]
+# "" for all, "none" for not assigned, or an id
+Dim = Annotated[Optional[str], Query(pattern=r"^(none|\d+)?$")]
+
+
+def scope(branch_id: Dim = None, department_id: Dim = None):
+    return svc.parse_scope(branch_id, department_id)
+
+
+Scope = Annotated[Optional[tuple], Depends(scope)]
+
+
+@router.get("/dimensions", summary="Branches and departments to filter and tag by")
+def dimensions(user: Actor, db: Db):
+    return svc.dimensions(db, user)
 
 
 @router.get("/accounts", summary="Chart of accounts, with each account's balance")
@@ -40,13 +54,13 @@ def remove_account(account_id: int, user: Actor, db: Db):
 
 
 @router.get("/accounts/{account_id}/ledger", summary="One account's entries with a running balance")
-def ledger(account_id: int, user: Actor, db: Db, frm: From = None, to: Optional[date] = None):
-    return svc.account_ledger(db, user, account_id, frm, to)
+def ledger(account_id: int, user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None):
+    return svc.account_ledger(db, user, account_id, frm, to, sc)
 
 
 @router.get("/accounts/{account_id}/ledger.xlsx", summary="One account's ledger as an Excel sheet")
-def ledger_xlsx(account_id: int, user: Actor, db: Db, frm: From = None, to: Optional[date] = None):
-    body, name = books_export.ledger_xlsx(db, user, account_id, frm, to)
+def ledger_xlsx(account_id: int, user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None):
+    body, name = books_export.ledger_xlsx(db, user, account_id, frm, to, sc)
     return Response(
         body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{name}"'},
@@ -54,8 +68,8 @@ def ledger_xlsx(account_id: int, user: Actor, db: Db, frm: From = None, to: Opti
 
 
 @router.get("/accounts/{account_id}/ledger.pdf", summary="One account's ledger as a PDF")
-def ledger_pdf(account_id: int, user: Actor, db: Db, frm: From = None, to: Optional[date] = None):
-    body, name = books_export.ledger_pdf(db, user, account_id, frm, to)
+def ledger_pdf(account_id: int, user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None):
+    body, name = books_export.ledger_pdf(db, user, account_id, frm, to, sc)
     return Response(
         body, media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{name}"'},
@@ -64,21 +78,21 @@ def ledger_pdf(account_id: int, user: Actor, db: Db, frm: From = None, to: Optio
 
 @router.get("/day-book", summary="Every posting in a window, automatic and manual")
 def day_book(
-    user: Actor, db: Db, frm: From = None, to: Optional[date] = None,
+    user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None,
     source: Optional[str] = Query(None, pattern="^(" + "|".join(svc.SOURCE_LABEL) + ")$"),
     page: int = Query(1, ge=1), page_size: int = Query(100, ge=1, le=500),
 ):
-    return svc.day_book(db, user, frm, to, source=source, page=page, page_size=page_size)
+    return svc.day_book(db, user, frm, to, source=source, page=page, page_size=page_size, scope=sc)
 
 
 @router.get("/trial-balance")
-def trial_balance(user: Actor, db: Db, frm: From = None, to: Optional[date] = None, account_id: Optional[int] = None):
-    return svc.trial_balance(db, user, frm, to, account_id=account_id)
+def trial_balance(user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None, account_id: Optional[int] = None):
+    return svc.trial_balance(db, user, frm, to, account_id=account_id, scope=sc)
 
 
 @router.get("/trial-balance.xlsx", summary="Trial balance as an Excel sheet")
-def trial_balance_xlsx(user: Actor, db: Db, frm: From = None, to: Optional[date] = None, account_id: Optional[int] = None):
-    body, name = books_export.trial_balance_xlsx(db, user, frm, to, account_id)
+def trial_balance_xlsx(user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None, account_id: Optional[int] = None):
+    body, name = books_export.trial_balance_xlsx(db, user, frm, to, account_id, sc)
     return Response(
         body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{name}"'},
@@ -86,8 +100,8 @@ def trial_balance_xlsx(user: Actor, db: Db, frm: From = None, to: Optional[date]
 
 
 @router.get("/trial-balance.pdf", summary="Trial balance as a PDF")
-def trial_balance_pdf(user: Actor, db: Db, frm: From = None, to: Optional[date] = None, account_id: Optional[int] = None):
-    body, name = books_export.trial_balance_pdf(db, user, frm, to, account_id)
+def trial_balance_pdf(user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None, account_id: Optional[int] = None):
+    body, name = books_export.trial_balance_pdf(db, user, frm, to, account_id, sc)
     return Response(
         body, media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{name}"'},
@@ -99,18 +113,18 @@ Category = Annotated[Optional[str], Query(max_length=60)]
 
 @router.get("/income-expenditure", summary="Income and expenditure (profit and loss) for a window")
 def income_expenditure(
-    user: Actor, db: Db, frm: From = None, to: Optional[date] = None,
+    user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None,
     category: Category = None, account_id: Optional[int] = None,
 ):
-    return svc.profit_and_loss(db, user, frm, to, category=category, account_id=account_id)
+    return svc.profit_and_loss(db, user, frm, to, category=category, account_id=account_id, scope=sc)
 
 
 @router.get("/income-expenditure.xlsx", summary="Income and expenditure as an Excel sheet")
 def income_expenditure_xlsx(
-    user: Actor, db: Db, frm: From = None, to: Optional[date] = None,
+    user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None,
     category: Category = None, account_id: Optional[int] = None,
 ):
-    body, name = books_export.income_expenditure_xlsx(db, user, frm, to, category, account_id)
+    body, name = books_export.income_expenditure_xlsx(db, user, frm, to, category, account_id, sc)
     return Response(
         body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{name}"'},
@@ -119,10 +133,10 @@ def income_expenditure_xlsx(
 
 @router.get("/income-expenditure.pdf", summary="Income and expenditure as a PDF")
 def income_expenditure_pdf(
-    user: Actor, db: Db, frm: From = None, to: Optional[date] = None,
+    user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None,
     category: Category = None, account_id: Optional[int] = None,
 ):
-    body, name = books_export.income_expenditure_pdf(db, user, frm, to, category, account_id)
+    body, name = books_export.income_expenditure_pdf(db, user, frm, to, category, account_id, sc)
     return Response(
         body, media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{name}"'},
@@ -130,13 +144,13 @@ def income_expenditure_pdf(
 
 
 @router.get("/balance-sheet")
-def balance_sheet(user: Actor, db: Db, as_of: Optional[date] = None, account_id: Optional[int] = None):
-    return svc.balance_sheet(db, user, as_of, account_id)
+def balance_sheet(user: Actor, db: Db, sc: Scope, as_of: Optional[date] = None, account_id: Optional[int] = None):
+    return svc.balance_sheet(db, user, as_of, account_id, sc)
 
 
 @router.get("/balance-sheet.xlsx", summary="Balance sheet as an Excel sheet")
-def balance_sheet_xlsx(user: Actor, db: Db, as_of: Optional[date] = None, account_id: Optional[int] = None):
-    body, name = books_export.balance_sheet_xlsx(db, user, as_of, account_id)
+def balance_sheet_xlsx(user: Actor, db: Db, sc: Scope, as_of: Optional[date] = None, account_id: Optional[int] = None):
+    body, name = books_export.balance_sheet_xlsx(db, user, as_of, account_id, sc)
     return Response(
         body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{name}"'},
@@ -144,8 +158,8 @@ def balance_sheet_xlsx(user: Actor, db: Db, as_of: Optional[date] = None, accoun
 
 
 @router.get("/balance-sheet.pdf", summary="Balance sheet as a PDF")
-def balance_sheet_pdf(user: Actor, db: Db, as_of: Optional[date] = None, account_id: Optional[int] = None):
-    body, name = books_export.balance_sheet_pdf(db, user, as_of, account_id)
+def balance_sheet_pdf(user: Actor, db: Db, sc: Scope, as_of: Optional[date] = None, account_id: Optional[int] = None):
+    body, name = books_export.balance_sheet_pdf(db, user, as_of, account_id, sc)
     return Response(
         body, media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{name}"'},

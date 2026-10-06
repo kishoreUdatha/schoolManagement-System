@@ -7,13 +7,13 @@ import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { downloadAuthed, isoToday } from "@/features/fees/common";
-import { BOOKS, fyStart, LedgerLink, useOpenOnYear, useYearPeriods } from "./common";
+import { BOOKS, DimFilters, fyStart, LedgerLink, useOpenOnYear, useYearPeriods } from "./common";
 import { BARS, DOWN, n2, PDF, PRINT, RESET, UP, XLS } from "./parts";
 import type { IERow, IncomeExpenditure as IE } from "./types";
 
 
-type Filters = { from: string; to: string; category: string; account: string };
-const initial = (): Filters => ({ from: fyStart(), to: isoToday(), category: "", account: "" });
+type Filters = { from: string; to: string; category: string; account: string; branch: string; department: string };
+const initial = (): Filters => ({ from: fyStart(), to: isoToday(), category: "", account: "", branch: "", department: "" });
 
 
 /**
@@ -33,7 +33,14 @@ export function IncomeExpenditure() {
   useOpenOnYear(openOn);
   const fresh = (): Filters => ({ ...initial(), ...(current ? { from: current[0], to: current[1] } : {}) });
   const [busy, setBusy] = useState("");
-  const params = { from: applied.from, to: applied.to, category: applied.category || undefined, account_id: applied.account || undefined };
+  const params = {
+    from: applied.from,
+    to: applied.to,
+    category: applied.category || undefined,
+    account_id: applied.account || undefined,
+    branch_id: applied.branch || undefined,
+    department_id: applied.department || undefined,
+  };
   const r = useApi<IE>(`${BOOKS}/income-expenditure`, params);
   const d = r.data;
   const surplus = Number(d?.surplus ?? 0);
@@ -119,6 +126,12 @@ export function IncomeExpenditure() {
           To date
           <input type="date" value={applied.to} min={applied.from} required onChange={(e) => e.target.value && setApplied({ ...applied, to: e.target.value })} />
         </label>
+        <DimFilters
+          branch={applied.branch}
+          department={applied.department}
+          onBranch={(v) => setApplied({ ...applied, branch: v })}
+          onDepartment={(v) => setApplied({ ...applied, department: v })}
+        />
         <label>
           Category
           <select value={applied.category} onChange={(e) => setApplied({ ...applied, category: e.target.value, account: "" })}>

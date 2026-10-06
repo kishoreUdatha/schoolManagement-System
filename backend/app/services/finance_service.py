@@ -418,6 +418,8 @@ def bill_to_dict(db: Session, b: VendorBill) -> dict:
             and b.status not in (BillStatus.paid, BillStatus.cancelled)
         ),
         "notes": b.notes,
+        "branch_id": b.branch_id,
+        "department_id": b.department_id,
     }
 
 
@@ -816,6 +818,9 @@ def create_bill(db: Session, tenant_id: int, school_id: int, data: dict) -> dict
     due = data.get("due_on")
     if due and due < data["billed_on"]:
         raise _400("A bill cannot fall due before it was raised.")
+    from app.services import books_service
+
+    books_service.check_dims(db, school_id, data.get("branch_id"), data.get("department_id"))
 
     bill = VendorBill(
         tenant_id=tenant_id, school_id=school_id, supplier_id=supplier.id,
@@ -826,6 +831,7 @@ def create_bill(db: Session, tenant_id: int, school_id: int, data: dict) -> dict
         tax_amount=Decimal(str(data.get("tax_amount") or 0)),
         status=BillStatus.unpaid,
         notes=data.get("notes"),
+        branch_id=data.get("branch_id"), department_id=data.get("department_id"),
     )
     db.add(bill)
     try:

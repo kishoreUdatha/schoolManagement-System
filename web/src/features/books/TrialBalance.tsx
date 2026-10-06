@@ -7,7 +7,7 @@ import { date } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
 import { downloadAuthed, isoToday } from "@/features/fees/common";
-import { BOOKS, fyStart, KIND_LABEL, KINDS, LedgerLink } from "./common";
+import { BOOKS, DimFilters, fyStart, KIND_LABEL, KINDS, LedgerLink } from "./common";
 import { n2, PDF, PRINT, RESET, XLS } from "./parts";
 import type { TrialBalance as TB } from "./types";
 
@@ -22,9 +22,11 @@ const COLS = ["opening_debit", "opening_credit", "debit", "credit", "closing_deb
 export function TrialBalance() {
   const [asOf, setAsOf] = useState(isoToday());
   const [account, setAccount] = useState("");
+  const [branch, setBranch] = useState("");
+  const [department, setDepartment] = useState("");
   const [busy, setBusy] = useState("");
   const from = fyStart(asOf);
-  const params = { from, to: asOf, account_id: account || undefined };
+  const params = { from, to: asOf, account_id: account || undefined, branch_id: branch || undefined, department_id: department || undefined };
   const r = useApi<TB>(`${BOOKS}/trial-balance`, params);
   const d = r.data;
 
@@ -47,6 +49,12 @@ export function TrialBalance() {
           As on date
           <input type="date" value={asOf} required onChange={(e) => e.target.value && setAsOf(e.target.value)} />
         </label>
+        <DimFilters
+          branch={branch}
+          department={department}
+          onBranch={(v) => setBranch(v)}
+          onDepartment={(v) => setDepartment(v)}
+        />
         <label>
           Account head
           <select value={account} onChange={(e) => setAccount(e.target.value)}>
@@ -70,6 +78,8 @@ export function TrialBalance() {
           onClick={() => {
             setAsOf(isoToday());
             setAccount("");
+            setBranch("");
+            setDepartment("");
           }}
         >
           {RESET}

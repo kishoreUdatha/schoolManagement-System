@@ -17,11 +17,24 @@ from app.models.tenant import School
 from app.models.user import User
 from app.services import books_service
 
+def scope_note(db: Session, user: User, scope) -> str:
+    """ "Branch: Main campus · Department: Admin" for a narrowed export, else ""."""
+    if not scope:
+        return ""
+    names = books_service._dim_names(db, user.school_id)
+    parts = []
+    for label, key, v in (("Branch", "branch", scope[0]), ("Department", "department", scope[1])):
+        if v is None:
+            continue
+        parts.append(f"{label}: {'Not assigned' if v == books_service.NONE else names[key].get(v, v)}")
+    return " · ".join(parts)
+
+
 COLUMNS = ["#", "Code", "Account head", "Category", "Opening balance (₹)", "Debit (₹)", "Credit (₹)", "Closing balance (₹)"]
 
 
-def _report(db: Session, user: User, frm, to, category, account_id) -> tuple[dict, str]:
-    rep = books_service.profit_and_loss(db, user, frm, to, category=category, account_id=account_id)
+def _report(db: Session, user: User, frm, to, category, account_id, scope=None) -> tuple[dict, str]:
+    rep = books_service.profit_and_loss(db, user, frm, to, category=category, account_id=account_id, scope=scope)
     school = db.get(School, user.school_id)
     return rep, school.name if school else ""
 
@@ -174,10 +187,10 @@ def _xlsx(sheet_name: str, titles: list[str], header: list[str], lines: list[tup
 
 def income_expenditure_xlsx(
     db: Session, user: User, frm: Optional[date], to: Optional[date],
-    category: Optional[str] = None, account_id: Optional[int] = None,
+    category: Optional[str] = None, account_id: Optional[int] = None, scope=None,
 ) -> tuple[bytes, str]:
-    rep, school = _report(db, user, frm, to, category, account_id)
-    body = _xlsx("Income and expenditure", [school, _title(rep)], COLUMNS, _lines(rep),
+    rep, school = _report(db, user, frm, to, category, account_id, scope)
+    body = _xlsx("Income and expenditure", [school, _title(rep), scope_note(db, user, scope)], COLUMNS, _lines(rep),
                  [5, 10, 34, 22, 20, 18, 18, 20], num_from=4)
     return body, f"income-expenditure_{rep['from_date']}_{rep['to_date']}.xlsx"
 
@@ -204,7 +217,7 @@ def inr(v, zero: str = "-") -> str:
 
 def income_expenditure_pdf(
     db: Session, user: User, frm: Optional[date], to: Optional[date],
-    category: Optional[str] = None, account_id: Optional[int] = None,
+    category: Optional[str] = None, account_id: Optional[int] = None, scope=None,
 ) -> tuple[bytes, str]:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
@@ -212,7 +225,8 @@ def income_expenditure_pdf(
     from reportlab.lib.units import cm
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-    rep, school = _report(db, user, frm, to, category, account_id)
+    rep, school = _report(db, user, frm, to, category, account_id, scope)
+    note = scope_note(db, user, scope)
     styles = getSampleStyleSheet()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=1.2 * cm, bottomMargin=1.2 * cm,
@@ -247,7 +261,7 @@ def income_expenditure_pdf(
     table.setStyle(TableStyle(style))
     story = [
         Paragraph(f"<b>{escape(school)}</b>", styles["Title"]),
-        Paragraph(escape(_title(rep)), styles["Normal"]),
+        Paragraph(escape(_title(rep) + (f" · {note}" if note else "")), styles["Normal"]),
         Spacer(1, 8),
         Paragraph(
             f"Income {inr(rep['total_income'], '0.00')} &nbsp;·&nbsp; Expenditure {inr(rep['total_expenses'], '0.00')} "
@@ -280,27 +294,29 @@ def _bs_lines(rep: dict) -> list[tuple[str, list]]:
     return out
 
 
-def balance_sheet_xlsx(db: Session, user: User, as_of: Optional[date], account_id: Optional[int] = None) -> tuple[bytes, str]:
-    rep = books_service.balance_sheet(db, user, as_of, account_id)
+def balance_sheet_xlsx(db: Session, user: User, as_of: Optional[date], account_id: Optional[int] = None, scope=None) -> tuple[bytes, str]:
+    rep = books_service.balance_sheet(db, user, as_of, account_id, scope)
     school = db.get(School, user.school_id)
-    body = _xlsx("Balance sheet", [school.name if school else "", f"Balance sheet as on {rep['as_of']:%d %b %Y}"],
+    body = _xlsx("Balance sheet", [school.name if school else "", f"Balance sheet as on {rep['as_of']:%d %b %Y}",
+                                   scope_note(db, user, scope)],
                  ["Code", "Particulars", "Schedule", "Amount (₹)"], _bs_lines(rep), [8, 44, 10, 20], num_from=3)
     return body, f"balance-sheet_{rep['as_of']}.xlsx"
 
 
-def balance_sheet_pdf(db: Session, user: User, as_of: Optional[date], account_id: Optional[int] = None) -> tuple[bytes, str]:
+def balance_sheet_pdf(db: Session, user: User, as_of: Optional[date], account_id: Optional[int] = None, scope=None) -> tuple[bytes, str]:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.lib.units import cm
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-    rep = books_service.balance_sheet(db, user, as_of, account_id)
+    rep = books_service.balance_sheet(db, user, as_of, account_id, scope)
     school = db.get(School, user.school_id)
     name = school.name if school else ""
     styles = getSampleStyleSheet()
     buf = io.BytesIO()
-    title = f"Balance sheet as on {rep['as_of']:%d %b %Y}"
+    note = scope_note(db, user, scope)
+    title = f"Balance sheet as on {rep['as_of']:%d %b %Y}" + (f" · {note}" if note else "")
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=1.2 * cm, bottomMargin=1.2 * cm,
                             leftMargin=1.2 * cm, rightMargin=1.2 * cm, title=title)
 
@@ -358,10 +374,13 @@ TB_COLUMNS = ["#", "Account code", "Account head", "Account group", "Opening Dr 
 _TB_KEYS = ("opening_debit", "opening_credit", "debit", "credit", "closing_debit", "closing_credit")
 
 
-def _tb(db: Session, user: User, frm, to, account_id) -> tuple[dict, str, str]:
-    rep = books_service.trial_balance(db, user, frm, to, account_id=account_id)
+def _tb(db: Session, user: User, frm, to, account_id, scope=None) -> tuple[dict, str, str]:
+    rep = books_service.trial_balance(db, user, frm, to, account_id=account_id, scope=scope)
     school = db.get(School, user.school_id)
     title = f"Trial balance as on {rep['to_date']:%d %b %Y} (transactions from {rep['from_date']:%d %b %Y})"
+    note = scope_note(db, user, scope)
+    if note:
+        title += f" · {note}"
     return rep, school.name if school else "", title
 
 
@@ -371,21 +390,21 @@ def _tb_lines(rep: dict) -> list[tuple[str, list]]:
     return out
 
 
-def trial_balance_xlsx(db: Session, user: User, frm, to, account_id=None) -> tuple[bytes, str]:
-    rep, school, title = _tb(db, user, frm, to, account_id)
+def trial_balance_xlsx(db: Session, user: User, frm, to, account_id=None, scope=None) -> tuple[bytes, str]:
+    rep, school, title = _tb(db, user, frm, to, account_id, scope)
     body = _xlsx("Trial balance", [school, title], TB_COLUMNS, _tb_lines(rep),
                  [5, 12, 32, 20, 16, 16, 18, 18, 16, 16], num_from=4)
     return body, f"trial-balance_{rep['to_date']}.xlsx"
 
 
-def trial_balance_pdf(db: Session, user: User, frm, to, account_id=None) -> tuple[bytes, str]:
+def trial_balance_pdf(db: Session, user: User, frm, to, account_id=None, scope=None) -> tuple[bytes, str]:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.lib.units import cm
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-    rep, school, title = _tb(db, user, frm, to, account_id)
+    rep, school, title = _tb(db, user, frm, to, account_id, scope)
     styles = getSampleStyleSheet()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=1.2 * cm, bottomMargin=1.2 * cm,
@@ -430,11 +449,14 @@ def trial_balance_pdf(db: Session, user: User, frm, to, account_id=None) -> tupl
 LEDGER_COLUMNS = ["#", "Date", "Voucher no.", "Student", "Particulars", "Reference", "Debit (₹)", "Credit (₹)", "Balance (₹)"]
 
 
-def _ledger(db: Session, user: User, account_id: int, frm, to) -> tuple[dict, str, str, list]:
-    rep = books_service.account_ledger(db, user, account_id, frm, to)
+def _ledger(db: Session, user: User, account_id: int, frm, to, scope=None) -> tuple[dict, str, str, list]:
+    rep = books_service.account_ledger(db, user, account_id, frm, to, scope)
     school = db.get(School, user.school_id)
     a = rep["account"]
     title = f"Ledger: {a['code']} {a['name']} ({a['category']}), {rep['from_date']:%d %b %Y} to {rep['to_date']:%d %b %Y}"
+    note = scope_note(db, user, scope)
+    if note:
+        title += f" · {note}"
     lines = [("row", [1, f"{rep['from_date']:%d-%m-%Y}", "OPENING", "", "Opening balance", "", "", "", rep["opening"]])]
     for i, ln in enumerate(rep["lines"], 2):
         lines.append(("row", [i, f"{ln['date']:%d-%m-%Y}", ln["voucher"] or "", ln["student"] or "",
@@ -443,20 +465,20 @@ def _ledger(db: Session, user: User, account_id: int, frm, to) -> tuple[dict, st
     return rep, school.name if school else "", title, lines
 
 
-def ledger_xlsx(db: Session, user: User, account_id: int, frm, to) -> tuple[bytes, str]:
-    rep, school, title, lines = _ledger(db, user, account_id, frm, to)
+def ledger_xlsx(db: Session, user: User, account_id: int, frm, to, scope=None) -> tuple[bytes, str]:
+    rep, school, title, lines = _ledger(db, user, account_id, frm, to, scope)
     body = _xlsx("Ledger", [school, title], LEDGER_COLUMNS, lines, [5, 12, 16, 24, 34, 16, 16, 16, 18], num_from=6)
     return body, f"ledger_{rep['account']['code']}_{rep['from_date']}_{rep['to_date']}.xlsx"
 
 
-def ledger_pdf(db: Session, user: User, account_id: int, frm, to) -> tuple[bytes, str]:
+def ledger_pdf(db: Session, user: User, account_id: int, frm, to, scope=None) -> tuple[bytes, str]:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.lib.units import cm
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-    rep, school, title, lines = _ledger(db, user, account_id, frm, to)
+    rep, school, title, lines = _ledger(db, user, account_id, frm, to, scope)
     styles = getSampleStyleSheet()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=1.2 * cm, bottomMargin=1.2 * cm,

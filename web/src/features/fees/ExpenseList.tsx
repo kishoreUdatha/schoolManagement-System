@@ -10,6 +10,7 @@ import { api, errorText } from "@/lib/api";
 import { date, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
+import { DimFields, dimId } from "@/features/books/common";
 import { Dialog, Field, isoToday, MODES, modeLabel, monthStart, sum } from "./common";
 import { DateRange } from "./IncomeList";
 import type { Expense, ExpenseCategory, Supplier } from "./types";
@@ -206,8 +207,10 @@ function NewExpense({ cats, suppliers, expense, onClose, onSaved }: { cats: Expe
           mode: expense.mode as string,
           reference: expense.reference ?? "",
           description: expense.description,
+          branch_id: expense.branch_id ? String(expense.branch_id) : "",
+          department_id: expense.department_id ? String(expense.department_id) : "",
         }
-      : { spent_on: isoToday(), category_id: "", supplier_id: "", payee: "", amount: "", tax_amount: "", mode: "bank_transfer", reference: "", description: "" },
+      : { spent_on: isoToday(), category_id: "", supplier_id: "", payee: "", amount: "", tax_amount: "", mode: "bank_transfer", reference: "", description: "", branch_id: "", department_id: "" },
   );
   const [f, setF] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -229,6 +232,8 @@ function NewExpense({ cats, suppliers, expense, onClose, onSaved }: { cats: Expe
       mode: f.mode,
       reference: t(f.reference),
       description: f.description.trim(),
+      branch_id: dimId(f.branch_id),
+      department_id: dimId(f.department_id),
     };
     try {
       if (expense) {
@@ -308,6 +313,7 @@ function NewExpense({ cats, suppliers, expense, onClose, onSaved }: { cats: Expe
           <Field label="Description" required full>
             <input value={f.description} onChange={set("description")} minLength={2} maxLength={300} required />
           </Field>
+          <DimFields branch={f.branch_id} department={f.department_id} onChange={(b, d) => setF({ ...f, branch_id: b, department_id: d })} />
         </div>
         <div className="row actions">
           <button type="button" className="btn" onClick={onClose}>

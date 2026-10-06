@@ -28,6 +28,8 @@ class ExpenseIn(BaseModel):
     reference: Optional[str] = Field(None, max_length=120)
     description: str = Field(..., min_length=2, max_length=300)
     bill_document_id: Optional[int] = None
+    branch_id: Optional[int] = None
+    department_id: Optional[int] = None
 
     @model_validator(mode="after")
     def _check(self):
@@ -55,6 +57,8 @@ class ExpenseRead(BaseModel):
     is_void: bool
     void_reason: Optional[str] = None
     created_at: datetime
+    branch_id: Optional[int] = None
+    department_id: Optional[int] = None
 
 
 class VoidIn(BaseModel):
@@ -69,6 +73,8 @@ class IncomeIn(BaseModel):
     mode: MoneyMode
     reference: Optional[str] = Field(None, max_length=120)
     notes: Optional[str] = Field(None, max_length=300)
+    branch_id: Optional[int] = None
+    department_id: Optional[int] = None
 
 
 class IncomeRead(IncomeIn):
@@ -213,3 +219,5 @@ class ExpenseUpdate(BaseModel):
     reference: Optional[str] = Field(None, max_length=120)
     description: Optional[str] = Field(None, min_length=2, max_length=300)
     bill_document_id: Optional[int] = None
+    branch_id: Optional[int] = None
+    department_id: Optional[int] = None

@@ -13,6 +13,7 @@ import { date, label, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { DimFields, dimId } from "@/features/books/common";
 import { Field, isoToday, sum } from "./common";
 import { qty, useNewFlag } from "./extra";
 import type { Bill, InventoryItem, Payables, PurchaseOrderFull, Supplier } from "./types";
@@ -460,6 +461,8 @@ function BillDialog({ suppliers, orders, order, onClose, onSaved }: { suppliers:
     amount: order ? String(Number(order.unbilled)) : "",
     tax_amount: "",
     notes: "",
+    branch_id: "",
+    department_id: "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -480,6 +483,8 @@ function BillDialog({ suppliers, orders, order, onClose, onSaved }: { suppliers:
         amount: f.amount,
         tax_amount: f.tax_amount || "0",
         notes: f.notes.trim() || null,
+        branch_id: dimId(f.branch_id),
+        department_id: dimId(f.department_id),
       });
       notify(`Bill ${r.bill_no} recorded: ${money(r.total)} owed to ${r.supplier_name ?? "the supplier"}.`);
       onSaved();
@@ -548,6 +553,7 @@ function BillDialog({ suppliers, orders, order, onClose, onSaved }: { suppliers:
         <Field label="Notes">
           <input value={f.notes} onChange={set("notes")} />
         </Field>
+        <DimFields branch={f.branch_id} department={f.department_id} onChange={(b, d) => setF({ ...f, branch_id: b, department_id: d })} />
       </div>
     </Dialog>
   );

@@ -29,6 +29,8 @@ class JournalLineIn(BaseModel):
     debit: Decimal = Field(Decimal("0"), ge=0, max_digits=14, decimal_places=2)
     credit: Decimal = Field(Decimal("0"), ge=0, max_digits=14, decimal_places=2)
     note: Optional[str] = Field(None, max_length=200)
+    branch_id: Optional[int] = None
+    department_id: Optional[int] = None
 
 
 class JournalIn(BaseModel):

@@ -96,6 +96,9 @@ class Expense(Base, PrimaryKeyMixin, TimestampMixin, _School):
     )
     is_void: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     void_reason: Mapped[Optional[str]] = mapped_column(String(300))
+    # where the money belongs, for branch- and department-wise books
+    branch_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("branches.id", ondelete="SET NULL"))
+    department_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("departments.id", ondelete="SET NULL"))
 
 
 class OtherIncome(Base, PrimaryKeyMixin, TimestampMixin, _School):
@@ -121,6 +124,9 @@ class OtherIncome(Base, PrimaryKeyMixin, TimestampMixin, _School):
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
     is_void: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # where the money belongs, for branch- and department-wise books
+    branch_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("branches.id", ondelete="SET NULL"))
+    department_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("departments.id", ondelete="SET NULL"))
 
 
 class Cheque(Base, PrimaryKeyMixin, TimestampMixin, _School):

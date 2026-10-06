@@ -10,6 +10,7 @@ import { api, errorText } from "@/lib/api";
 import { date, label, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
+import { DimFields, dimId } from "@/features/books/common";
 import { Dialog, Field, isoToday, MODES, modeLabel, monthStart, sum } from "./common";
 import type { Income } from "./types";
 
@@ -174,7 +175,7 @@ export function IncomeList() {
 }
 
 function NewIncome({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [f, setF] = useState({ received_on: isoToday(), source: "donation", payer: "", amount: "", mode: "bank_transfer", reference: "", notes: "" });
+  const [f, setF] = useState({ received_on: isoToday(), source: "donation", payer: "", amount: "", mode: "bank_transfer", reference: "", notes: "", branch_id: "", department_id: "" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (e: { target: { value: string } }) => setF({ ...f, [k]: e.target.value });
@@ -184,7 +185,14 @@ function NewIncome({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
     setSaving(true);
     setError(null);
     try {
-      const r = await api.post<Income>("/api/v1/school/accounts/income", { ...f, payer: f.payer.trim(), reference: f.reference.trim() || null, notes: f.notes.trim() || null });
+      const r = await api.post<Income>("/api/v1/school/accounts/income", {
+        ...f,
+        payer: f.payer.trim(),
+        reference: f.reference.trim() || null,
+        notes: f.notes.trim() || null,
+        branch_id: dimId(f.branch_id),
+        department_id: dimId(f.department_id),
+      });
       notify(`Receipt ${r.receipt_no} issued.`);
       onSaved();
     } catch (err) {
@@ -229,6 +237,7 @@ function NewIncome({ onClose, onSaved }: { onClose: () => void; onSaved: () => v
           <Field label="Reference">
             <input value={f.reference} onChange={set("reference")} maxLength={120} />
           </Field>
+          <DimFields branch={f.branch_id} department={f.department_id} onChange={(b, d) => setF({ ...f, branch_id: b, department_id: d })} />
           <Field label="Notes" full>
             <textarea value={f.notes} onChange={set("notes")} maxLength={300} />
           </Field>

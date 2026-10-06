@@ -7,7 +7,7 @@ import { money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
-import { isoToday } from "@/features/fees/common";
+import { Field, isoToday } from "@/features/fees/common";
 import type { Account, Kind } from "./types";
 
 export const BOOKS = "/api/v1/school/books";
@@ -196,3 +196,82 @@ export function ReportActions({ filename }: { filename: string }) {
     </div>
   );
 }
+
+/* ---------- branch and department ---------- */
+
+type Dim = { id: number; name: string; code: string };
+export type Dims = { branches: Dim[]; departments: Dim[] };
+
+/** The school's branches and departments (GET /school/books/dimensions). */
+export function useDimensions(): Dims {
+  const r = useApi<Dims>(`${BOOKS}/dimensions`);
+  return r.data ?? { branches: [], departments: [] };
+}
+
+/**
+ * The two statement filters: everything, what was never tagged ("none"), or
+ * one branch / department. Values go to the API as branch_id / department_id.
+ */
+export function DimFilters({ branch, department, onBranch, onDepartment }: { branch: string; department: string; onBranch: (v: string) => void; onDepartment: (v: string) => void }) {
+  const dims = useDimensions();
+  return (
+    <>
+      <label>
+        Campus / Branch
+        <select value={branch} onChange={(e) => onBranch(e.target.value)}>
+          <option value="">All branches</option>
+          {dims.branches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+          <option value="none">Not assigned</option>
+        </select>
+      </label>
+      <label>
+        Department
+        <select value={department} onChange={(e) => onDepartment(e.target.value)}>
+          <option value="">All departments</option>
+          {dims.departments.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+          <option value="none">Not assigned</option>
+        </select>
+      </label>
+    </>
+  );
+}
+
+/** Branch and department on a voucher form; both optional. */
+export function DimFields({ branch, department, onChange }: { branch: string; department: string; onChange: (branch: string, department: string) => void }) {
+  const dims = useDimensions();
+  return (
+    <>
+      <Field label="Campus / Branch">
+        <select value={branch} onChange={(e) => onChange(e.target.value, department)}>
+          <option value="">{dims.branches.length ? "Not assigned" : "No branches set up"}</option>
+          {dims.branches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Department">
+        <select value={department} onChange={(e) => onChange(branch, e.target.value)}>
+          <option value="">Not assigned</option>
+          {dims.departments.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+    </>
+  );
+}
+
+/** "" -> null, "12" -> 12, for the API. */
+export const dimId = (v: string) => (v ? Number(v) : null);

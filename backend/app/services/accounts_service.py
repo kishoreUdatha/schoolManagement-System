@@ -31,7 +31,7 @@ from app.schemas.accounts import (
     IncomeIn,
 )
 from app.schemas.fee import RecordPayment
-from app.services import ledger_service
+from app.services import books_service, ledger_service
 
 
 ZERO = Decimal("0")
@@ -97,6 +97,7 @@ def add_expense(db: Session, user: User, data: ExpenseIn) -> Expense:
         raise _400("Pick a supplier or enter who was paid")
     if data.spent_on > date.today():
         raise _400("Expense date is in the future")
+    books_service.check_dims(db, user.school_id, data.branch_id, data.department_id)
     e = Expense(tenant_id=user.tenant_id, school_id=user.school_id, recorded_by_user_id=user.id, **data.model_dump())
     db.add(e)
     db.commit()
@@ -120,6 +121,7 @@ def update_expense(db: Session, expense_id: int, user: User, data: ExpenseUpdate
         _scoped(db, Document, fields["bill_document_id"], user.school_id, "Bill document")
     if fields.get("spent_on") and fields["spent_on"] > date.today():
         raise _400("Expense date is in the future")
+    books_service.check_dims(db, user.school_id, fields.get("branch_id"), fields.get("department_id"))
     for k, v in fields.items():
         setattr(e, k, v)
     if not e.supplier_id and not (e.payee or "").strip():
@@ -144,7 +146,8 @@ def expense_to_read(db: Session, e: Expense) -> dict:
     sup = db.get(Supplier, e.supplier_id) if e.supplier_id else None
     return {
         **{k: getattr(e, k) for k in ("id", "spent_on", "category_id", "supplier_id", "amount", "tax_amount", "mode",
-                                       "reference", "description", "bill_document_id", "is_void", "void_reason", "created_at")},
+                                       "reference", "description", "bill_document_id", "is_void", "void_reason", "created_at",
+                                       "branch_id", "department_id")},
         "category_name": cat.name if cat else "",
         "payee_name": sup.name if sup else e.payee,
         "recorded_by_name": _name(db, e.recorded_by_user_id),
@@ -163,6 +166,7 @@ def list_expenses(db: Session, school_id: int, frm: date, to: date, category_id:
 def add_income(db: Session, user: User, data: IncomeIn) -> OtherIncome:
     if data.received_on > date.today():
         raise _400("Date is in the future")
+    books_service.check_dims(db, user.school_id, data.branch_id, data.department_id)
     for _ in range(3):
         prefix = f"OI{data.received_on:%y%m}-"
         n = db.execute(select(func.count(OtherIncome.id)).where(OtherIncome.school_id == user.school_id, OtherIncome.receipt_no.like(f"{prefix}%"))).scalar_one()

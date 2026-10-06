@@ -76,6 +76,8 @@ class BillIn(BaseModel):
     amount: Decimal = Field(..., ge=0)
     tax_amount: Decimal = Field(0, ge=0)
     notes: Optional[str] = None
+    branch_id: Optional[int] = None
+    department_id: Optional[int] = None
 
 
 class VendorPaymentIn(BaseModel):

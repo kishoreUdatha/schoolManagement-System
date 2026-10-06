@@ -126,6 +126,9 @@ class VendorBill(Base, _School, PrimaryKeyMixin, TimestampMixin):
         BigInteger, ForeignKey("documents.id", ondelete="SET NULL")
     )
     notes: Mapped[Optional[str]] = mapped_column(Text)
+    # where the money belongs, for branch- and department-wise books
+    branch_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("branches.id", ondelete="SET NULL"))
+    department_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("departments.id", ondelete="SET NULL"))
 
 
 class VendorPayment(Base, _School, PrimaryKeyMixin, TimestampMixin):

@@ -9,7 +9,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { downloadAuthed, isoToday } from "@/features/fees/common";
-import { BOOKS, fyStart, KIND_LABEL, KINDS, sourceHref, useOpenOnYear, useYearPeriods } from "./common";
+import { BOOKS, DimFilters, fyStart, KIND_LABEL, KINDS, sourceHref, useOpenOnYear, useYearPeriods } from "./common";
 import { ARROW_DOWN, ARROW_UP, n2, PDF, PEOPLE, PRINT, RESET, SWAP, XLS } from "./parts";
 import type { Account, Ledger as L } from "./types";
 
@@ -31,6 +31,8 @@ export function GeneralLedger() {
   const [to, setTo] = useState(params.get("to") ?? isoToday());
   const [account, setAccount] = useState<number | "">(Number(params.get("account")) || "");
   const [page, setPage] = useState(1);
+  const [branch, setBranch] = useState("");
+  const [department, setDepartment] = useState("");
   const [busy, setBusy] = useState("");
   const { current } = useYearPeriods();
 
@@ -46,7 +48,8 @@ export function GeneralLedger() {
   );
 
   const accounts = useApi<Account[]>(`${BOOKS}/accounts`);
-  const r = useApi<L>(account ? `${BOOKS}/accounts/${account}/ledger` : null, { from, to });
+  const dimParams = { branch_id: branch || undefined, department_id: department || undefined };
+  const r = useApi<L>(account ? `${BOOKS}/accounts/${account}/ledger` : null, { from, to, ...dimParams });
   const d = r.data && r.data.account.id === account ? r.data : null;
 
   const go = (id: number | "", f = from, t = to) => {
@@ -67,7 +70,8 @@ export function GeneralLedger() {
     if (!d) return;
     setBusy(kind);
     try {
-      await downloadAuthed(`${BOOKS}/accounts/${account}/ledger.${kind}?from=${from}&to=${to}`, `ledger_${d.account.code}_${from}_${to}.${kind}`);
+      const q = new URLSearchParams(Object.entries({ from, to, ...dimParams }).filter(([, v]) => v) as [string, string][]);
+      await downloadAuthed(`${BOOKS}/accounts/${account}/ledger.${kind}?${q}`, `ledger_${d.account.code}_${from}_${to}.${kind}`);
     } catch (e) {
       notify(errorText(e));
     } finally {
@@ -110,6 +114,12 @@ export function GeneralLedger() {
             ) : null}
           </span>
         </label>
+        <DimFilters
+          branch={branch}
+          department={department}
+          onBranch={(v) => (setBranch(v), setPage(1))}
+          onDepartment={(v) => (setDepartment(v), setPage(1))}
+        />
         <label>
           Date from
           <input type="date" value={from} max={to} required onChange={(e) => e.target.value && dates(e.target.value, to)} />
@@ -118,7 +128,15 @@ export function GeneralLedger() {
           Date to
           <input type="date" value={to} min={from} required onChange={(e) => e.target.value && dates(from, e.target.value)} />
         </label>
-        <button type="button" className="btn" onClick={() => dates(current?.[0] ?? fyStart(), current?.[1] ?? isoToday())}>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            setBranch("");
+            setDepartment("");
+            dates(current?.[0] ?? fyStart(), current?.[1] ?? isoToday());
+          }}
+        >
           {RESET}
           Reset
         </button>

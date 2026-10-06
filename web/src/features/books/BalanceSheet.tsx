@@ -9,7 +9,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { downloadAuthed, isoToday } from "@/features/fees/common";
-import { BOOKS, fyStart, KIND_LABEL, LedgerLink } from "./common";
+import { BOOKS, DimFilters, fyStart, KIND_LABEL, LedgerLink } from "./common";
 import { BANK, BARS, COINS, n2, PDF, PERCENT, PRINT, RESET, XLS } from "./parts";
 import type { BalanceSheet as Sheet, BSSection } from "./types";
 
@@ -24,8 +24,10 @@ const rupees = (v: string | number | null | undefined) => `₹ ${n2(v, "0.00")}`
 export function BalanceSheet() {
   const [asOf, setAsOf] = useState(isoToday());
   const [account, setAccount] = useState("");
+  const [branch, setBranch] = useState("");
+  const [department, setDepartment] = useState("");
   const [busy, setBusy] = useState("");
-  const params = { as_of: asOf, account_id: account || undefined };
+  const params = { as_of: asOf, account_id: account || undefined, branch_id: branch || undefined, department_id: department || undefined };
   const r = useApi<Sheet>(`${BOOKS}/balance-sheet`, params);
   const d = r.data;
   const from = d?.year_from ?? fyStart(asOf);
@@ -133,6 +135,12 @@ export function BalanceSheet() {
           As on date
           <input type="date" value={asOf} required onChange={(e) => e.target.value && setAsOf(e.target.value)} />
         </label>
+        <DimFilters
+          branch={branch}
+          department={department}
+          onBranch={(v) => setBranch(v)}
+          onDepartment={(v) => setDepartment(v)}
+        />
         <label>
           Account head
           <select value={account} onChange={(e) => setAccount(e.target.value)}>
@@ -156,6 +164,8 @@ export function BalanceSheet() {
           onClick={() => {
             setAsOf(isoToday());
             setAccount("");
+            setBranch("");
+            setDepartment("");
           }}
         >
           {RESET}

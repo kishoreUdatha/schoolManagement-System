@@ -254,6 +254,8 @@ export type Expense = {
   is_void: boolean;
   void_reason: string | null;
   created_at: string;
+  branch_id: number | null;
+  department_id: number | null;
 };
 
 export type ExpenseCategory = { id: number; name: string; is_active: boolean };

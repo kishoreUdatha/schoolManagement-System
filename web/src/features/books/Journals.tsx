@@ -13,7 +13,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { Dialog, Field, isoToday } from "@/features/fees/common";
-import { AccountSelect, amt, BOOKS, fyStart, KIND_LABEL, KINDS, Period, useOpenOnYear } from "./common";
+import { AccountSelect, amt, BOOKS, DimFields, dimId, fyStart, KIND_LABEL, KINDS, Period, useOpenOnYear } from "./common";
 import type { Account, Journal } from "./types";
 
 type Line = { account_id: number | ""; debit: string; credit: string; note: string };
@@ -144,6 +144,7 @@ function NewJournal({ accounts, onClose, onSaved }: { accounts: Account[]; onClo
   const [entryDate, setEntryDate] = useState(isoToday());
   const [narration, setNarration] = useState("");
   const [reference, setReference] = useState("");
+  const [dims, setDims] = useState({ branch: "", department: "" });
   const [lines, setLines] = useState<Line[]>([blank(), blank()]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -166,7 +167,14 @@ function NewJournal({ accounts, onClose, onSaved }: { accounts: Account[]; onClo
         entry_date: entryDate,
         narration: narration.trim(),
         reference: reference.trim() || null,
-        lines: used.map((l) => ({ account_id: l.account_id, debit: l.debit || "0", credit: l.credit || "0", note: l.note.trim() || null })),
+        lines: used.map((l) => ({
+          account_id: l.account_id,
+          debit: l.debit || "0",
+          credit: l.credit || "0",
+          note: l.note.trim() || null,
+          branch_id: dimId(dims.branch),
+          department_id: dimId(dims.department),
+        })),
       });
       onSaved(j);
     } catch (err) {
@@ -187,6 +195,7 @@ function NewJournal({ accounts, onClose, onSaved }: { accounts: Account[]; onClo
           <Field label="Reference">
             <input value={reference} onChange={(e) => setReference(e.target.value)} maxLength={120} placeholder="Bank slip, board resolution…" />
           </Field>
+          <DimFields branch={dims.branch} department={dims.department} onChange={(branch, department) => setDims({ branch, department })} />
           <Field label="Narration" required full>
             <input value={narration} onChange={(e) => setNarration(e.target.value)} minLength={3} maxLength={300} required placeholder="Opening balances as on 1 April" />
           </Field>

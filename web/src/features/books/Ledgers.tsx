@@ -7,7 +7,7 @@ import { ErrorNote } from "@/components/ui/states";
 import { date, money } from "@/lib/format";
 import { useApi } from "@/lib/useApi";
 import { isoToday, monthStart } from "@/features/fees/common";
-import { amt, BOOKS, Period, ReportActions, sourceHref } from "./common";
+import { amt, BOOKS, DimFilters, Period, ReportActions, sourceHref } from "./common";
 import type { DayBook as Book } from "./types";
 
 function Voucher({ source, id, voucher }: { source: string; id: number | null; voucher: string | null }) {
@@ -36,7 +36,17 @@ export function DayBook() {
   const [to, setTo] = useState(isoToday());
   const [source, setSource] = useState("");
   const [page, setPage] = useState(1);
-  const r = useApi<Book>(`${BOOKS}/day-book`, { from, to, source: source || undefined, page, page_size: 100 });
+  const [branch, setBranch] = useState("");
+  const [department, setDepartment] = useState("");
+  const r = useApi<Book>(`${BOOKS}/day-book`, {
+    from,
+    to,
+    source: source || undefined,
+    page,
+    page_size: 100,
+    branch_id: branch || undefined,
+    department_id: department || undefined,
+  });
   const d = r.data;
   const pages = d ? Math.max(1, Math.ceil(d.total / d.page_size)) : 1;
   return (
@@ -50,6 +60,12 @@ export function DayBook() {
           ))}
         </select>
         <Period from={from} to={to} onChange={(f, t) => (setFrom(f), setTo(t), setPage(1))} />
+        <DimFilters
+          branch={branch}
+          department={department}
+          onBranch={(v) => (setBranch(v), setPage(1))}
+          onDepartment={(v) => (setDepartment(v), setPage(1))}
+        />
       </div>
       <ErrorNote>{r.error}</ErrorNote>
       <Panel

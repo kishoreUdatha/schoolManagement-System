@@ -16,8 +16,10 @@ Run:
 """
 from __future__ import annotations
 
+import io
 import logging
 import sys
+import zipfile
 from datetime import date
 from decimal import Decimal
 
@@ -29,12 +31,15 @@ from app.core.enums import (
     BillStatus, FeeStatus, MoneyMode, PayrollRunStatus, RefundStatus, StorePayment, UserRole,
 )
 from app.database import engine
+from app.models.academic import Section
 from app.models.accounts import Expense, ExpenseCategory, FeeCollection, OtherIncome
 from app.models.fee import FeeHead, StudentFee
 from app.models.fee_extra import Refund
+from app.models.foundation import Department
 from app.models.inventory import StoreSale, Supplier
 from app.models.payroll import PayrollRun, Payslip
 from app.models.purchasing import VendorBill, VendorPayment
+from app.models.rbac import Branch
 from app.models.staff import Staff
 from app.models.student import Student
 from app.models.user import User
@@ -104,6 +109,14 @@ def run(db: Session) -> None:
     base_bs = books.balance_sheet(db, user, FY_TO)
 
     s = dict(tenant_id=tid, school_id=sid)
+    branch = Branch(**s, name="Smoke campus", code="SMKCMP")
+    dept = Department(**s, name="Smoke department", code="SMKDEP")
+    db.add_all([branch, dept])
+    db.flush()
+    db.get(Section, a.section_id).branch_id = branch.id
+    if b.section_id != a.section_id:
+        db.get(Section, b.section_id).branch_id = branch.id
+    staff.department_id, staff.branch_id = dept.id, None
     head = FeeHead(**s, name="Smoke books head", code="SMKBOOKS")
     cat = ExpenseCategory(**s, name="Smoke books category")
     sup = Supplier(**s, name="Smoke books supplier")
@@ -130,7 +143,8 @@ def run(db: Session) -> None:
         OtherIncome(**s, received_on=date(2031, 5, 7), source="donation", payer="Smoke donor", amount=D("999"),
                     mode=MoneyMode.cash, receipt_no="SMKB-OI-2", is_void=True),
         Expense(**s, spent_on=date(2031, 5, 8), category_id=cat.id, amount=D("1500"), tax_amount=D("0"),
-                mode=MoneyMode.cash, description="Smoke expense", payee="Smoke payee"),
+                mode=MoneyMode.cash, description="Smoke expense", payee="Smoke payee",
+                branch_id=branch.id, department_id=dept.id),
         Expense(**s, spent_on=date(2031, 5, 8), category_id=cat.id, amount=D("777"), tax_amount=D("0"),
                 mode=MoneyMode.cash, description="Smoke void expense", is_void=True),
         StoreSale(**s, bill_no="SMKB-S1", sold_on=date(2031, 5, 9), total=D("300"), payment=StorePayment.cash,
@@ -220,6 +234,27 @@ def run(db: Session) -> None:
     xlsx, _ = books_export.income_expenditure_xlsx(db, user, FY_FROM, FY_TO)
     pdf, _ = books_export.income_expenditure_pdf(db, user, FY_FROM, FY_TO)
     check("excel and pdf exports", (xlsx[:2], pdf[:4]), (b"PK", b"%PDF"))
+
+    print("branch and department")
+    on_branch = books.profit_and_loss(db, user, FY_FROM, FY_TO, scope=(branch.id, None))
+    no_branch = books.profit_and_loss(db, user, FY_FROM, FY_TO, scope=("none", None))
+    check("branch: fees of its children and its expense", (on_branch["total_income"], on_branch["total_expenses"]), (D("10000"), D("1500")))
+    check("not assigned: donation, store, bill, payroll", (no_branch["total_income"], no_branch["total_expenses"]), (D("3300"), D("26520")))
+    check("branch + not assigned = the whole school",
+          (on_branch["total_income"] + no_branch["total_income"], on_branch["total_expenses"] + no_branch["total_expenses"]),
+          (pl["total_income"], pl["total_expenses"]))
+    on_dept = books.profit_and_loss(db, user, FY_FROM, FY_TO, scope=(None, dept.id))
+    check("department: its expense and its staff's payroll", on_dept["total_expenses"], D("23300"))
+    check("a branch's balance sheet balances", books.balance_sheet(db, user, FY_TO, scope=(branch.id, None))["balanced"], True)
+    refused("a department from elsewhere", lambda: books.check_dims(db, sid, None, 10**12))
+    tagged = books.create_journal(db, user, {
+        "entry_date": date(2031, 6, 1), "narration": "Smoke cash banked at the campus",
+        "lines": [{"account_id": acct["bank"], "debit": D("100"), "branch_id": branch.id},
+                  {"account_id": acct["cash"], "credit": D("100"), "branch_id": branch.id}]})
+    check("journal lines keep their branch", [l["branch_id"] for l in tagged["lines"]], [branch.id, branch.id])
+    xlsx, _ = books_export.income_expenditure_xlsx(db, user, FY_FROM, FY_TO, scope=(branch.id, None))
+    sheet = zipfile.ZipFile(io.BytesIO(xlsx)).read("xl/worksheets/sheet1.xml").decode()
+    check("narrowed export names the branch", "Branch: Smoke campus" in sheet, True)
 
     print("balance sheet at 31 Mar 2032")
     bs = books.balance_sheet(db, user, FY_TO)

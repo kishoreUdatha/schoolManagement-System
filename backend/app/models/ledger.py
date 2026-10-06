@@ -106,3 +106,6 @@ class JournalLine(Base, PrimaryKeyMixin):
     debit: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0, nullable=False)
     credit: Mapped[Decimal] = mapped_column(Numeric(14, 2), default=0, nullable=False)
     note: Mapped[Optional[str]] = mapped_column(String(200))
+    # where the money belongs, for branch- and department-wise books
+    branch_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("branches.id", ondelete="SET NULL"))
+    department_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("departments.id", ondelete="SET NULL"))
