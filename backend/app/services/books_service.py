@@ -535,6 +535,7 @@ def entries(
     jes = list(db.execute(
         select(JournalEntry).where(
             JournalEntry.school_id == sid, JournalEntry.is_void.is_(False),
+            JournalEntry.status == "posted",  # a draft stays out of the books
             *_span(JournalEntry.entry_date, frm, to),
         )
     ).scalars())
@@ -1065,48 +1066,93 @@ def balance_sheet(
 
 # ---------- journal vouchers ----------
 
+JV_STATUS = ("draft", "posted", "void")
 
-def journal_dict(db: Session, j: JournalEntry) -> dict:
+
+def _jv_status(j: JournalEntry) -> str:
+    return "void" if j.is_void else j.status
+
+
+def journal_dict(db: Session, j: JournalEntry, names: Optional[dict] = None) -> dict:
     lines = list(db.execute(
         select(JournalLine, LedgerAccount)
         .join(LedgerAccount, LedgerAccount.id == JournalLine.account_id)
         .where(JournalLine.entry_id == j.id).order_by(JournalLine.id)
     ).all())
     who = db.get(User, j.created_by_user_id) if j.created_by_user_id else None
+    names = names or _dim_names(db, j.school_id)
+    cash_keys = {"cash", "bank"}
+    cash = [(ln, a) for ln, a in lines if a.system_key in cash_keys]
+    if cash and len(cash) == len(lines):
+        vtype = "Contra"
+    elif cash:
+        vtype = "Receipt" if sum((_m(ln.debit) - _m(ln.credit) for ln, _ in cash), ZERO) > 0 else "Payment"
+    else:
+        vtype = "Journal"
+    total = sum((_m(ln.debit) for ln, _ in lines), ZERO)
     return {
         "id": j.id, "entry_no": j.entry_no, "entry_date": j.entry_date, "narration": j.narration,
-        "reference": j.reference, "is_void": j.is_void, "void_reason": j.void_reason,
-        "created_by_name": who.full_name if who else None, "created_at": j.created_at,
-        "total": sum((_m(ln.debit) for ln, _ in lines), ZERO),
+        "description": j.description, "reference": j.reference,
+        "status": _jv_status(j), "voucher_type": vtype,
+        "is_void": j.is_void, "void_reason": j.void_reason,
+        "created_by_name": who.full_name if who else None, "created_at": j.created_at, "posted_at": j.posted_at,
+        "total": total, "total_debit": total, "total_credit": sum((_m(ln.credit) for ln, _ in lines), ZERO),
         "lines": [
             {"account_id": a.id, "account_code": a.code, "account_name": a.name,
              "debit": _m(ln.debit), "credit": _m(ln.credit), "note": ln.note,
-             "branch_id": ln.branch_id, "department_id": ln.department_id}
+             "branch_id": ln.branch_id, "department_id": ln.department_id,
+             "branch": names["branch"].get(ln.branch_id), "department": names["department"].get(ln.department_id)}
             for ln, a in lines
         ],
     }
 
 
-def list_journals(db: Session, user: User, frm: Optional[date], to: Optional[date]) -> list[dict]:
+def list_journals(
+    db: Session, user: User, frm: Optional[date], to: Optional[date], *,
+    status_: Optional[str] = None, voucher_type: Optional[str] = None, scope: Scope = None,
+) -> dict:
+    """Journal vouchers in the window, newest first, with counts by status.
+    Branch and department narrow to vouchers with a line placed there."""
     frm, to = _window(frm, to)
-    rows = db.execute(
-        select(JournalEntry).where(
-            JournalEntry.school_id == user.school_id, JournalEntry.entry_date.between(frm, to)
-        ).order_by(JournalEntry.entry_date.desc(), JournalEntry.id.desc())
-    ).scalars()
-    return [journal_dict(db, j) for j in rows]
+    names = _dim_names(db, user.school_id)
+    rows = [
+        journal_dict(db, j, names) for j in db.execute(
+            select(JournalEntry).where(
+                JournalEntry.school_id == user.school_id, JournalEntry.entry_date.between(frm, to)
+            ).order_by(JournalEntry.entry_date.desc(), JournalEntry.id.desc())
+        ).scalars()
+    ]
+    if scope:
+        b, d = scope
+        rows = [r for r in rows if any(_keep(ln["branch_id"], b) and _keep(ln["department_id"], d) for ln in r["lines"])]
+    if voucher_type:
+        rows = [r for r in rows if r["voucher_type"] == voucher_type]
+    counts = {k: sum(1 for r in rows if r["status"] == k) for k in JV_STATUS}
+    if status_:
+        rows = [r for r in rows if r["status"] == status_]
+    live = [r for r in rows if r["status"] != "void"]
+    return {
+        "from_date": frm, "to_date": to, "items": rows, "total": len(rows),
+        "total_debit": sum((r["total_debit"] for r in live), ZERO),
+        "total_credit": sum((r["total_credit"] for r in live), ZERO),
+        "posted": counts["posted"], "drafts": counts["draft"], "voided": counts["void"],
+    }
 
 
 def get_journal(db: Session, user: User, entry_id: int) -> dict:
+    return journal_dict(db, _own_journal(db, user, entry_id))
+
+
+def _own_journal(db: Session, user: User, entry_id: int) -> JournalEntry:
     j = db.get(JournalEntry, entry_id)
     if not j or j.school_id != user.school_id:
         raise _404("Journal entry")
-    return journal_dict(db, j)
+    return j
 
 
-def create_journal(db: Session, user: User, data: dict) -> dict:
-    ensure_chart(db, user)
-    lines = data["lines"]
+def _checked_lines(db: Session, user: User, lines: list[dict]) -> list[dict]:
+    """The lines must name this school's live accounts, take one side each,
+    touch two accounts at least, and balance."""
     if len(lines) < 2:
         raise _400("A journal entry needs at least two lines.")
     accts = _accounts(db, user.school_id)
@@ -1131,7 +1177,24 @@ def create_journal(db: Session, user: User, data: dict) -> dict:
         raise _400(f"Debits ({dr}) and credits ({cr}) must be equal.")
     if len(seen) < 2:
         raise _400("A journal entry must touch at least two accounts.")
+    return lines
 
+
+def _write_lines(db: Session, entry_id: int, lines: list[dict]) -> None:
+    for ln in lines:
+        db.add(JournalLine(
+            entry_id=entry_id, account_id=int(ln["account_id"]),
+            debit=_m(ln.get("debit")), credit=_m(ln.get("credit")),
+            note=(ln.get("note") or "").strip() or None,
+            branch_id=ln.get("branch_id"), department_id=ln.get("department_id"),
+        ))
+
+
+def create_journal(db: Session, user: User, data: dict) -> dict:
+    """A voucher, posted straight to the books or kept as a draft."""
+    ensure_chart(db, user)
+    lines = _checked_lines(db, user, data["lines"])
+    post = (data.get("status") or "posted") == "posted"
     count = db.execute(
         select(func.count()).select_from(JournalEntry).where(JournalEntry.school_id == user.school_id)
     ).scalar_one()
@@ -1140,6 +1203,8 @@ def create_journal(db: Session, user: User, data: dict) -> dict:
             tenant_id=user.tenant_id, school_id=user.school_id,
             entry_no=f"JV-{count + 1 + attempt:05d}", entry_date=data["entry_date"],
             narration=data["narration"].strip(), reference=(data.get("reference") or "").strip() or None,
+            description=(data.get("description") or "").strip() or None,
+            status="posted" if post else "draft", posted_at=func.now() if post else None,
             created_by_user_id=user.id,
         )
         db.add(j)
@@ -1148,25 +1213,66 @@ def create_journal(db: Session, user: User, data: dict) -> dict:
         except IntegrityError:
             db.rollback()
             continue
-        for ln in lines:
-            db.add(JournalLine(
-                entry_id=j.id, account_id=int(ln["account_id"]),
-                debit=_m(ln.get("debit")), credit=_m(ln.get("credit")),
-                note=(ln.get("note") or "").strip() or None,
-                branch_id=ln.get("branch_id"), department_id=ln.get("department_id"),
-            ))
+        _write_lines(db, j.id, lines)
         db.commit()
         db.refresh(j)
         return journal_dict(db, j)
     raise HTTPException(status.HTTP_409_CONFLICT, "Could not number the entry; try again.")
 
 
+def update_journal(db: Session, user: User, entry_id: int, data: dict) -> dict:
+    """Change a draft: its date, wording and lines. A posted voucher is
+    corrected by voiding it and entering a new one."""
+    j = _own_journal(db, user, entry_id)
+    if j.is_void or j.status != "draft":
+        raise _400("Only a draft can be changed. Void a posted voucher and enter a new one.")
+    lines = _checked_lines(db, user, data["lines"])
+    j.entry_date = data["entry_date"]
+    j.narration = data["narration"].strip()
+    j.reference = (data.get("reference") or "").strip() or None
+    j.description = (data.get("description") or "").strip() or None
+    db.execute(JournalLine.__table__.delete().where(JournalLine.entry_id == j.id))
+    _write_lines(db, j.id, lines)
+    if (data.get("status") or "draft") == "posted":
+        j.status, j.posted_at = "posted", func.now()
+    db.commit()
+    db.refresh(j)
+    return journal_dict(db, j)
+
+
+def post_journal(db: Session, user: User, entry_id: int) -> dict:
+    """Put a draft into the books."""
+    j = _own_journal(db, user, entry_id)
+    if j.is_void:
+        raise _400("That voucher is void.")
+    if j.status == "posted":
+        raise _400("That voucher is already posted.")
+    lines = [
+        {"account_id": ln.account_id, "debit": ln.debit, "credit": ln.credit,
+         "branch_id": ln.branch_id, "department_id": ln.department_id}
+        for ln in db.execute(select(JournalLine).where(JournalLine.entry_id == j.id)).scalars()
+    ]
+    _checked_lines(db, user, lines)  # an account may have been switched off since
+    j.status, j.posted_at = "posted", func.now()
+    db.commit()
+    db.refresh(j)
+    return journal_dict(db, j)
+
+
+def delete_draft(db: Session, user: User, entry_id: int) -> None:
+    j = _own_journal(db, user, entry_id)
+    if j.status != "draft" or j.is_void:
+        raise _400("Only a draft can be deleted. Void a posted voucher instead.")
+    db.delete(j)
+    db.commit()
+
+
 def void_journal(db: Session, user: User, entry_id: int, reason: str) -> dict:
-    j = db.get(JournalEntry, entry_id)
-    if not j or j.school_id != user.school_id:
-        raise _404("Journal entry")
+    j = _own_journal(db, user, entry_id)
     if j.is_void:
         raise _400("That entry is already void.")
+    if j.status == "draft":
+        raise _400("A draft is not in the books; delete it instead.")
     j.is_void = True
     j.void_reason = reason.strip()
     db.commit()

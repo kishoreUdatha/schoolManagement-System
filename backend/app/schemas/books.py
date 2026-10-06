@@ -37,6 +37,8 @@ class JournalIn(BaseModel):
     entry_date: date
     narration: str = Field(..., min_length=3, max_length=300)
     reference: Optional[str] = Field(None, max_length=120)
+    description: Optional[str] = Field(None, max_length=500)
+    status: Literal["draft", "posted"] = "posted"
     lines: list[JournalLineIn] = Field(..., min_length=2, max_length=50)
 
 

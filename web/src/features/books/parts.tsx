@@ -126,3 +126,34 @@ export const DOC = (
     <path d="M14 3v4h4M9 12h6M9 16h6" />
   </Svg>
 );
+
+export const RUPEE = (
+  <Svg>
+    <path d="M7 4h11M7 9h11M7 4c5 0 7 1.5 7 5s-3 5-7 5l8 6" />
+  </Svg>
+);
+export const CHECK_CIRCLE = (
+  <Svg>
+    <circle cx="12" cy="12" r="9" />
+    <path d="m8 12 3 3 5-6" />
+  </Svg>
+);
+export const CLOCK = (
+  <Svg>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3 2" />
+  </Svg>
+);
+export const EYE = (
+  <Svg>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+    <circle cx="12" cy="12" r="3" />
+  </Svg>
+);
+export const DOTS = (
+  <svg viewBox="0 0 24 24" className="ico" fill="currentColor" aria-hidden="true">
+    <circle cx="5" cy="12" r="1.8" />
+    <circle cx="12" cy="12" r="1.8" />
+    <circle cx="19" cy="12" r="1.8" />
+  </svg>
+);

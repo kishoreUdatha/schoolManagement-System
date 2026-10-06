@@ -581,3 +581,71 @@ def day_book_pdf(db: Session, user: User, frm, to, voucher_type=None, account_id
     ]
     doc.build(story)
     return buf.getvalue(), f"day-book_{rep['from_date']}_{rep['to_date']}.pdf"
+
+
+# ---------- journal vouchers ----------
+
+JV_COLUMNS = ["#", "Date", "Voucher no.", "Voucher type", "Particulars", "Reference", "Debit (₹)", "Credit (₹)", "Status"]
+
+
+def _jv(db: Session, user: User, frm, to, status_=None, voucher_type=None, scope=None):
+    rep = books_service.list_journals(db, user, frm, to, status_=status_, voucher_type=voucher_type, scope=scope)
+    school = db.get(School, user.school_id)
+    title = f"Journal vouchers, {rep['from_date']:%d %b %Y} to {rep['to_date']:%d %b %Y}"
+    note = scope_note(db, user, scope)
+    if note:
+        title += f" · {note}"
+    lines = [
+        ("row", [i, f"{v['entry_date']:%d-%m-%Y}", v["entry_no"], v["voucher_type"],
+                 v["narration"] + (f" ({v['description']})" if v["description"] else ""),
+                 v["reference"] or "", v["total_debit"], v["total_credit"], v["status"].title()])
+        for i, v in enumerate(rep["items"], 1)
+    ]
+    lines.append(("grand", ["", "", "", "", "Total (draft and void left out)", "", rep["total_debit"], rep["total_credit"], ""]))
+    return rep, school.name if school else "", title, lines
+
+
+def journals_xlsx(db: Session, user: User, frm, to, status_=None, voucher_type=None, scope=None) -> tuple[bytes, str]:
+    rep, school, title, lines = _jv(db, user, frm, to, status_, voucher_type, scope)
+    body = _xlsx("Journal vouchers", [school, title], JV_COLUMNS, lines, [5, 12, 14, 12, 46, 18, 16, 16, 10], num_from=6)
+    return body, f"journal-vouchers_{rep['from_date']}_{rep['to_date']}.xlsx"
+
+
+def journals_pdf(db: Session, user: User, frm, to, status_=None, voucher_type=None, scope=None) -> tuple[bytes, str]:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    rep, school, title, lines = _jv(db, user, frm, to, status_, voucher_type, scope)
+    styles = getSampleStyleSheet()
+    small = styles["BodyText"].clone("small", fontSize=8, leading=10)
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=landscape(A4), topMargin=1.2 * cm, bottomMargin=1.2 * cm,
+                            leftMargin=1 * cm, rightMargin=1 * cm, title=title)
+    data = [[c.replace("₹", "Rs") for c in JV_COLUMNS]]
+    for _, cells in lines:
+        data.append([
+            Paragraph(escape(str(c)), small) if j == 4 else (inr(c) if j in (6, 7) else str(c))
+            for j, c in enumerate(cells)
+        ])
+    last = len(data) - 1
+    table = Table(data, colWidths=[0.8 * cm, 2 * cm, 2.4 * cm, 2 * cm, 9 * cm, 3 * cm, 2.7 * cm, 2.7 * cm, 1.7 * cm], repeatRows=1)
+    table.setStyle(TableStyle([
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"), ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#E8F0FE")),
+        ("FONTSIZE", (0, 0), (-1, -1), 8), ("ALIGN", (6, 0), (7, -1), "RIGHT"), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LINEBELOW", (0, 0), (-1, -1), 0.25, colors.HexColor("#DCE5F2")),
+        ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ("FONTNAME", (0, last), (-1, last), "Helvetica-Bold"), ("BACKGROUND", (0, last), (-1, last), colors.HexColor("#DCE7FB")),
+    ]))
+    story = [
+        Paragraph(f"<b>{escape(school)}</b>", styles["Title"]),
+        Paragraph(escape(title), styles["Normal"]),
+        Spacer(1, 6),
+        Paragraph(f"{rep['total']} vouchers &nbsp;·&nbsp; {rep['posted']} posted, {rep['drafts']} draft, {rep['voided']} void", styles["Normal"]),
+        Spacer(1, 10),
+        table,
+    ]
+    doc.build(story)
+    return buf.getvalue(), f"journal-vouchers_{rep['from_date']}_{rep['to_date']}.pdf"

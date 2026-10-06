@@ -155,11 +155,29 @@ export type Journal = {
   entry_no: string;
   entry_date: string;
   narration: string;
+  description: string | null;
   reference: string | null;
+  status: "draft" | "posted" | "void";
+  voucher_type: "Receipt" | "Payment" | "Contra" | "Journal";
   is_void: boolean;
   void_reason: string | null;
   created_by_name: string | null;
   created_at: string;
+  posted_at: string | null;
   total: string;
-  lines: PostingLine[];
+  total_debit: string;
+  total_credit: string;
+  lines: (PostingLine & { branch_id: number | null; department_id: number | null; branch: string | null; department: string | null })[];
+};
+
+export type JournalList = {
+  from_date: string;
+  to_date: string;
+  items: Journal[];
+  total: number;
+  total_debit: string;
+  total_credit: string;
+  posted: number;
+  drafts: number;
+  voided: number;
 };

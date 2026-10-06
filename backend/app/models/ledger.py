@@ -8,7 +8,7 @@ leaves the books the moment it is voided. Only what has no other home is
 stored here: the accounts themselves, and journal vouchers for opening
 balances, bank transfers, depreciation and corrections.
 """
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
@@ -16,6 +16,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     Date,
+    DateTime,
     ForeignKey,
     Index,
     Numeric,
@@ -88,6 +89,10 @@ class JournalEntry(Base, PrimaryKeyMixin, TimestampMixin, _School):
     )
     is_void: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     void_reason: Mapped[Optional[str]] = mapped_column(String(300))
+    # "draft" is kept but stays out of the books; "posted" is in them
+    status: Mapped[str] = mapped_column(String(10), default="posted", server_default="posted", nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(String(500))
+    posted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
 
 
 class JournalLine(Base, PrimaryKeyMixin):

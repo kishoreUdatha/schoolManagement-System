@@ -194,6 +194,33 @@ def run(db: Session) -> None:
         "entry_date": date(2031, 5, 2), "narration": "Smoke to be voided",
         "lines": [{"account_id": acct["cash"], "debit": D("123")}, {"account_id": acct["capital"], "credit": D("123")}]})
     check("void", books.void_journal(db, user, spare["id"], "Smoke test")["is_void"], True)
+    draft = books.create_journal(db, user, {
+        "entry_date": date(2031, 5, 3), "narration": "Smoke draft", "status": "draft",
+        "lines": [{"account_id": acct["cash"], "debit": D("777")}, {"account_id": acct["capital"], "credit": D("777")}]})
+    check("draft saved as draft", draft["status"], "draft")
+    in_books = lambda: any(e["source"] == "journal" and e["source_id"] == draft["id"] for e in books.entries(db, user, FY_FROM, FY_TO))
+    check("a draft stays out of the books", in_books(), False)
+    edited = books.update_journal(db, user, draft["id"], {
+        "entry_date": date(2031, 5, 3), "narration": "Smoke draft, edited", "description": "Smoke description", "status": "draft",
+        "lines": [{"account_id": acct["cash"], "debit": D("888")}, {"account_id": acct["capital"], "credit": D("888")}]})
+    check("a draft can be changed", (edited["total"], edited["description"]), (D("888"), "Smoke description"))
+    refused("voiding a draft", lambda: books.void_journal(db, user, draft["id"], "no"))
+    posted = books.post_journal(db, user, draft["id"])
+    check("posting puts it in the books", (posted["status"], in_books()), ("posted", True))
+    refused("changing a posted voucher", lambda: books.update_journal(db, user, draft["id"], {
+        "entry_date": date(2031, 5, 3), "narration": "x", "lines": [{"account_id": acct["cash"], "debit": D("1")}, {"account_id": acct["capital"], "credit": D("1")}]}))
+    refused("deleting a posted voucher", lambda: books.delete_draft(db, user, draft["id"]))
+    books.void_journal(db, user, draft["id"], "Smoke: undo the posted draft")
+    gone = books.create_journal(db, user, {
+        "entry_date": date(2031, 5, 3), "narration": "Smoke draft to delete", "status": "draft",
+        "lines": [{"account_id": acct["cash"], "debit": D("5")}, {"account_id": acct["capital"], "credit": D("5")}]})
+    books.delete_draft(db, user, gone["id"])
+    jl = books.list_journals(db, user, FY_FROM, FY_TO)
+    check("voucher counts: posted, draft, void", (jl["posted"], jl["drafts"], jl["voided"]), (1, 0, 2))
+    check("voucher type of a cash-to-capital voucher", jl["items"][-1]["voucher_type"], "Receipt")
+    xlsx, _ = books_export.journals_xlsx(db, user, FY_FROM, FY_TO)
+    pdf, _ = books_export.journals_pdf(db, user, FY_FROM, FY_TO)
+    check("journal exports", (xlsx[:2], pdf[:4]), (b"PK", b"%PDF"))
     refused("deleting a system account", lambda: books.delete_account(db, user, acct["cash"]))
     refused("switching off a system account",
             lambda: books.update_account(db, user, acct["cash"], {"is_active": False}))

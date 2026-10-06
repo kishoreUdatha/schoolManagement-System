@@ -191,9 +191,33 @@ def balance_sheet_pdf(user: Actor, db: Db, sc: Scope, as_of: Optional[date] = No
     )
 
 
+JvStatus = Annotated[Optional[str], Query(alias="status", pattern="^(draft|posted|void)$")]
+
+
 @router.get("/journals", summary="Journal vouchers typed in by the accountant")
-def journals(user: Actor, db: Db, frm: From = None, to: Optional[date] = None):
-    return svc.list_journals(db, user, frm, to)
+def journals(user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None,
+             status_: JvStatus = None, voucher_type: VoucherType = None):
+    return svc.list_journals(db, user, frm, to, status_=status_, voucher_type=voucher_type, scope=sc)
+
+
+@router.get("/journals.xlsx", summary="Journal vouchers as an Excel sheet")
+def journals_xlsx(user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None,
+                  status_: JvStatus = None, voucher_type: VoucherType = None):
+    body, name = books_export.journals_xlsx(db, user, frm, to, status_, voucher_type, sc)
+    return Response(
+        body, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
+
+
+@router.get("/journals.pdf", summary="Journal vouchers as a PDF")
+def journals_pdf(user: Actor, db: Db, sc: Scope, frm: From = None, to: Optional[date] = None,
+                 status_: JvStatus = None, voucher_type: VoucherType = None):
+    body, name = books_export.journals_pdf(db, user, frm, to, status_, voucher_type, sc)
+    return Response(
+        body, media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
 
 
 @router.post("/journals", status_code=status.HTTP_201_CREATED)
@@ -204,6 +228,22 @@ def add_journal(payload: JournalIn, user: Actor, db: Db):
 @router.get("/journals/{entry_id}")
 def journal(entry_id: int, user: Actor, db: Db):
     return svc.get_journal(db, user, entry_id)
+
+
+@router.put("/journals/{entry_id}", summary="Change a draft voucher")
+def edit_journal(entry_id: int, payload: JournalIn, user: Actor, db: Db):
+    return svc.update_journal(db, user, entry_id, payload.model_dump())
+
+
+@router.post("/journals/{entry_id}/post", summary="Put a draft voucher into the books")
+def post_journal(entry_id: int, user: Actor, db: Db):
+    return svc.post_journal(db, user, entry_id)
+
+
+@router.delete("/journals/{entry_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a draft voucher")
+def delete_journal(entry_id: int, user: Actor, db: Db):
+    svc.delete_draft(db, user, entry_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/journals/{entry_id}/void")
