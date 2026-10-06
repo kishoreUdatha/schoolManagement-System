@@ -14,7 +14,7 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { Field, isoToday, MODES, modeLabel, StudentPicker } from "./common";
-import type { Collection, PickedStudent, StudentFee } from "./types";
+import type { Collection, Defaulter, DuesAgeing, PickedStudent, StudentFee } from "./types";
 
 /** A year back, so a student's recent receipts are not cut at the 1st of the month. */
 function yearAgo(): string {
@@ -124,7 +124,7 @@ export function FeeCollection() {
       </Prereq>
     <div className="two-col">
       <div className="stack">
-        <Panel title="Student account">
+        <Panel title={student ? "Student account" : "Who owes"} sub={student ? undefined : "Most overdue first. Pick one, or type a name below."}>
           {student ? (
             <>
               <div className="person">
@@ -158,12 +158,28 @@ export function FeeCollection() {
                 </div>
               </div>
               <div className="gap" />
-              <Link className="btn text" href={`${routeOf(161)}?id=${student.id}`}>
-                Open ledger
-              </Link>
+              <div className="row" style={{ gap: 16 }}>
+                <Link className="btn text" href={`${routeOf(161)}?id=${student.id}`}>
+                  Open ledger
+                </Link>
+                <button type="button" className="btn text" onClick={() => { setStudent(null); setFeeId(null); setAmount(""); }}>
+                  Back to who owes
+                </button>
+              </div>
             </>
           ) : (
-            <p className="muted small">{presetStudent.loading ? "Loading the student…" : "Choose a student to see what they owe."}</p>
+            presetStudent.loading ? (
+              <p className="muted small">Loading the student…</p>
+            ) : (
+              <WhoOwes
+                onPick={(d) => {
+                  setPresetDone(true);
+                  setStudent({ id: d.student_id, full_name: d.student_name, admission_no: d.admission_no, section_label: d.section_label });
+                  setFeeId(null);
+                  setError(null);
+                }}
+              />
+            )
           )}
         </Panel>
         <form id="fee-collection-form" className="panel" onSubmit={submit}>
@@ -243,5 +259,68 @@ export function FeeCollection() {
       </aside>
     </div>
     </>
+  );
+}
+
+/**
+ * Before a student is chosen: everyone with fees due, most overdue first
+ * (GET /analytics/dues-ageing, as on Outstanding dues), with search and a
+ * class filter. Collect picks the student for the form below.
+ */
+function WhoOwes({ onPick }: { onPick: (d: Defaulter) => void }) {
+  const dues = useApi<DuesAgeing>("/api/v1/school/analytics/dues-ageing");
+  const [q, setQ] = useState("");
+  const [cls, setCls] = useState("");
+  const [all, setAll] = useState(false);
+  const list = dues.data?.defaulters ?? [];
+  const classes = Array.from(new Set(list.map((x) => x.section_label).filter((x): x is string => Boolean(x)))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const term = q.trim().toLowerCase();
+  const shown = list
+    .filter((x) => (!term || `${x.student_name} ${x.admission_no}`.toLowerCase().includes(term)) && (!cls || x.section_label === cls))
+    .sort((a, b) => b.oldest_days - a.oldest_days || Number(b.owed) - Number(a.owed));
+  const SHORT = 6;
+  if (dues.loading && !dues.data) return <p className="muted small">Loading who owes…</p>;
+  if (dues.error) return <ErrorNote>{dues.error}</ErrorNote>;
+  if (!list.length) return <p className="muted small">Nobody owes the school anything right now.</p>;
+  return (
+    <div className="who-owes">
+      <div className="who-owes-filters">
+        <input type="search" placeholder="Search name or admission no." aria-label="Search who owes" value={q} onChange={(e) => setQ(e.target.value)} />
+        <select aria-label="Class" value={cls} onChange={(e) => setCls(e.target.value)}>
+          <option value="">All classes</option>
+          {classes.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <span className="muted small">{`${shown.length} of ${list.length} · ${money(dues.data!.total)} in all`}</span>
+      </div>
+      <table className="data-table who-owes-table">
+        <tbody>
+          {(all ? shown : shown.slice(0, SHORT)).map((d) => (
+            <tr key={d.student_id}>
+              <td>
+                {d.student_name}
+                <small className="muted" style={{ display: "block", fontWeight: 500 }}>{[d.section_label, d.admission_no].filter(Boolean).join(" · ")}</small>
+              </td>
+              <td className="num">{money(d.owed)}</td>
+              <td>{d.oldest_days > 0 ? <span className="badge warn">{`${d.oldest_days} days overdue`}</span> : <span className="badge neutral">Not yet due</span>}</td>
+              <td className="num">
+                <button type="button" className="btn" onClick={() => onPick(d)}>
+                  Collect
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {shown.length > SHORT ? (
+        <button type="button" className="btn text" onClick={() => setAll(!all)}>
+          {all ? "Show fewer" : `Show all ${shown.length}`}
+        </button>
+      ) : null}
+      {!shown.length ? <p className="muted small">No one matches.</p> : null}
+    </div>
   );
 }

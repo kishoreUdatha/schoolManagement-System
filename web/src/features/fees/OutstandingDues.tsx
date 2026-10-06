@@ -121,7 +121,16 @@ export function OutstandingDues() {
         <DataTable
           columns={["Student", "Class", "Items", "Outstanding", "Overdue days"]}
           rows={rows}
-          onView={(i) => router.push(`${routeOf(161)}?id=${items[i].student_id}`)}
+          actions={(i) => (
+            <>
+              <button type="button" className="btn primary" onClick={() => router.push(`${routeOf(158)}?student=${items[i].student_id}`)}>
+                Collect
+              </button>
+              <button type="button" className="btn" onClick={() => router.push(`${routeOf(161)}?id=${items[i].student_id}`)}>
+                Ledger
+              </button>
+            </>
+          )}
           empty={dues.loading ? "Loading dues…" : q || cls || age ? "No accounts match these filters." : undefined}
           emptyState={{
             title: "Nobody owes the school anything",

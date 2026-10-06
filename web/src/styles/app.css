@@ -1009,3 +1009,13 @@ tr.jv-open td{background:#f5f8ff}
 .panel-head>div:first-child:has(>h2)>p{margin-top:0}
 /* the row count at the end of a filter bar, in place of a table heading */
 .filter-count{font-size:12.5px;color:var(--muted);white-space:nowrap;margin-left:auto}
+
+/* Collect fees: who owes, before a student is chosen (features/fees/FeeCollection WhoOwes). */
+.who-owes-filters{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.who-owes-filters input,.who-owes-filters select{height:34px;border:1px solid #dce5f2;border-radius:8px;padding:0 10px;font-size:13px;background:#fff}
+.who-owes-filters input{flex:1;min-width:160px}
+.who-owes-filters span{margin-left:auto}
+.who-owes-table td{padding-top:6px!important;padding-bottom:6px!important}
+.who-owes-table td:first-child{padding-left:0!important}
+.who-owes-table td:last-child{padding-right:0!important}
+.who-owes-table tr:first-child td{border-top:1px solid #edf1f7}
