@@ -55,12 +55,27 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
   Parent: [[37, "Dashboard", "grid"], [57, "My children", "cap"], [60, "Attendance", "check"], [61, "Exams & results", "chart"], [131, "Homework", "book"], [78, "Payments & receipts", "money"], [251, "Parent-teacher meeting", "calendar"], [253, "Messages", "message"], [296, "Notifications", "bell"], [73, "My profile", "users"]],
   "Super Admin": [[9, "Platform overview", "grid"], [10, "Organizations", "building"], [13, "Subscription plans", "file"], [14, "Billing", "money"], [15, "Usage & limits", "chart"], [16, "Platform users", "users"], [17, "Support tickets", "message"], [18, "Service health", "check"], [19, "Announcements", "bell"], [1083, "Integrations", "settings"], [20, "Platform settings", "settings"]],
   Principal: [[34, "Dashboard", "grid"], [55, "Students", "cap"], [80, "Teachers", "users"], [104, "Lesson plan review", "book"], [53, "Admission approvals", "file"], [105, "Syllabus progress", "chart"], [117, "Attendance", "check"], [270, "Academic performance", "chart"], [1080, "Approval requests", "check"], [246, "School calendar", "calendar"], [252, "Announcements", "message"]],
-  Accountant: [[38, "Dashboard", "grid"], [158, "Collect fee", "money"], [155, "Fee structures", "file"], [161, "Student ledger", "book"], [162, "Outstanding dues", "chart"], [165, "Refund requests", "money"], [167, "Expenses", "file"], [170, "Cash & bank book", "book"], [1056, "Books of account", "book"], [1040, "Fee heads", "file"], [1041, "Generate fees", "money"], [1042, "Waivers & adjustments", "money"], [1044, "Payment reconciliation", "check"], [1045, "Cheques", "file"], [171, "Finance reports", "chart"]],
+  // One entry per area; the rest of each area is the row of tabs on its page (ROLE_TABS).
+  Accountant: [[38, "Dashboard", "grid"], [158, "Fee collection", "money"], [155, "Fee setup", "file"], [166, "Income & expenses", "book"], [1056, "Books of account", "book"], [171, "Finance reports", "chart"]],
   Staff: [[39, "Dashboard", "grid"], [1090, "My attendance", "check"], [1091, "My leave", "calendar"], [1092, "My payslips", "money"], [1093, "My library", "book"], [296, "Notifications", "bell"], [1097, "My profile", "users"]],
   "HR Manager": [[39, "Dashboard", "grid"], [80, "Staff directory", "users"], [172, "Recruitment", "file"], [174, "Candidates", "cap"], [178, "Onboarding", "check"], [179, "Staff attendance", "calendar"], [181, "Leave requests", "file"], [184, "Payroll", "money"], [1060, "Candidate pool", "users"], [1061, "Leave balances", "calendar"], [1062, "Salary & bank files", "money"], [89, "Leave reports", "chart"]],
   "Admission Officer": [[40, "Dashboard", "grid"], [44, "Enquiries", "users"], [47, "Follow-up calendar", "calendar"], [48, "Applications", "file"], [51, "Document verification", "check"], [52, "Assessments", "chart"], [53, "Admission approvals", "file"], [1002, "Campaigns", "message"], [1001, "Online admission link", "pin"], [265, "Admission reports", "chart"]],
   "Transport Manager": [[41, "Dashboard", "grid"], [1072, "Transport dashboard", "bus"], [186, "Vehicles", "bus"], [189, "Routes", "pin"], [191, "Stops", "pin"], [192, "Drivers & conductors", "users"], [193, "Student assignment", "cap"], [194, "Trip sheets", "file"], [195, "Live GPS tracking", "pin"], [197, "Maintenance & fuel", "settings"], [279, "Transport reports", "chart"]],
   Librarian: [[42, "Dashboard", "grid"], [198, "Book catalogue", "book"], [201, "Library members", "users"], [202, "Issue book", "book"], [203, "Return book", "check"], [204, "Renew & reserve", "calendar"], [205, "Fines & lost books", "money"], [206, "Digital library", "folder"], [1073, "Library settings", "settings"], [207, "Library reports", "chart"]],
+};
+
+/**
+ * Screens a role reaches as tabs rather than menu entries: the menu names an
+ * area once and its page shows the rest of the area as tabs. Without this a
+ * role's tab rows hold only screens already in its menu.
+ */
+const ROLE_TABS: Record<string, number[]> = {
+  Accountant: [
+    158, 160, 159, 1044, 1045, 161, 162, 165, // fee collection
+    155, 1040, 157, 1041, 163, 164, 1042, // fee setup (online payment keys stay the admin's)
+    166, 167, 1046, 168, 169, 1047, 170, // income, expenses, vendors, purchases, cash & bank
+    1056, 1057, 1055, 1054, 1053, 1052, 1049, // books of account
+  ],
 };
 
 /** Modules without a place in the main menu, listed under "More modules". */
@@ -430,7 +445,7 @@ function SignedInFrame({ s, children }: { s: Screen; children: ReactNode }) {
   const perms = usePermissions();
   const roleNav = ROLE_NAV[viewer.role];
   const mine = roleNav
-    ? new Set([...roleNav.flatMap(screensIn), ...heldJobs(perms).flatMap((j) => j.items.map(([n]) => n))])
+    ? new Set([...roleNav.flatMap(screensIn), ...(ROLE_TABS[viewer.role] ?? []), ...heldJobs(perms).flatMap((j) => j.items.map(([n]) => n))])
     : null;
   const tabs = (group?.tabs ?? []).filter(([n]) => n === s.n || ((!mine || mine.has(n)) && usableBy(n, sess?.user.role)));
   const note = titled ? titled.note : SCREEN_NOTE[s.n];
