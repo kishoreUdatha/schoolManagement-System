@@ -10,7 +10,7 @@ import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
 import { downloadAuthed, isoToday } from "@/features/fees/common";
 import { BOOKS, fyStart, KIND_LABEL, KINDS, sourceHref, useOpenOnYear, useYearPeriods } from "./common";
-import { ARROW_DOWN, ARROW_UP, n2, PDF, PEOPLE, PRINT, RESET, SWAP, WALLET, XLS } from "./parts";
+import { ARROW_DOWN, ARROW_UP, n2, PDF, PEOPLE, PRINT, RESET, SWAP, XLS } from "./parts";
 import type { Account, Ledger as L } from "./types";
 
 const PAGE = 25;
@@ -122,6 +122,13 @@ export function GeneralLedger() {
           {RESET}
           Reset
         </button>
+        {d ? (
+          <p className="lg-meta">
+            <span>{`Code ${d.account.code}`}</span>
+            <span>{d.account.category}</span>
+            <span>{`Opening ₹ ${n2(d.opening, "0.00")}`}</span>
+          </p>
+        ) : null}
       </div>
       <ErrorNote>{accounts.error ?? r.error}</ErrorNote>
 
@@ -133,26 +140,6 @@ export function GeneralLedger() {
         </section>
       ) : (
         <>
-          <div className="lg-info">
-            <span className="lg-info-ico">{WALLET}</span>
-            <div>
-              <p>Account code</p>
-              <strong>{d?.account.code ?? "…"}</strong>
-            </div>
-            <div>
-              <p>Account head</p>
-              <strong>{d?.account.name ?? "…"}</strong>
-            </div>
-            <div>
-              <p>Account group</p>
-              <strong>{d?.account.category ?? "…"}</strong>
-            </div>
-            <div className="lg-info-open">
-              <p>Opening balance</p>
-              <strong>{d ? `₹ ${n2(d.opening, "0.00")}` : "…"}</strong>
-            </div>
-          </div>
-
           <div className="ie-cards bs-cards">
             <div className="ie-card income">
               <span className="ie-card-ico">{ARROW_DOWN}</span>

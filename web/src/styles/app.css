@@ -732,3 +732,26 @@ h1.titled-tab{display:flex;align-items:center;gap:12px}
 h1.titled-tab .page-ico{width:30px;height:30px;color:var(--blue)}
 /* Books statements: the filters sit in their own white card, as in the mocks. */
 .ie-filters{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;box-shadow:0 1px 2px rgba(22,44,80,.04)}
+
+/* Books screens, compact: the figures, not the furniture, get the height. */
+.page-head:has(h1.titled-tab){margin-bottom:8px}
+h1.titled-tab{font-size:21px}
+h1.titled-tab .page-ico{width:24px;height:24px}
+.page-head:has(h1.titled-tab)+.page-tabs{margin-bottom:12px}
+.ie-filters{padding:8px 14px;gap:10px;margin-bottom:12px}
+.ie-filters label{gap:3px;font-size:11.5px}
+.ie-filters select,.ie-filters input{height:34px;font-size:12.5px;padding:0 10px}
+.ie-filters .btn{height:34px}
+.bs-exports .btn{height:34px}
+.ie-cards{gap:10px;margin-bottom:12px}
+.ie-card{padding:6px 12px;gap:10px;border-left-width:3px}
+.ie-card p{font-size:11px;margin:0}
+.ie-card strong{font-size:16px}
+.ie-card small{font-size:10.5px;margin:0}
+.ie-card-ico{width:28px;height:28px}
+.ie-card-ico .ico{width:15px;height:15px}
+.lg-filters{grid-template-columns:minmax(240px,340px) 150px 150px 90px 1fr}
+.lg-meta{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-self:end;margin:0 0 6px}
+.lg-meta span{background:#eef3fe;color:#1e3a8a;border-radius:6px;padding:3px 8px;font-size:11.5px;font-weight:650;white-space:nowrap}
+.ie-head{padding:10px 16px!important}
+@media(max-width:1150px){.lg-filters{grid-template-columns:1fr 1fr}.lg-meta{grid-column:1/-1;justify-content:flex-start}}
