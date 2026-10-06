@@ -73,17 +73,16 @@ const PDF = (
 
 /**
  * NEW-1056: income and expenditure account. GET /school/books/income-expenditure
- * (+ .xlsx, .pdf) with from, to, category and account_id. Filters take effect on
- * Apply. Opening is what each account built up from 1 April to the day before
+ * (+ .xlsx, .pdf) with from, to, category and account_id. A filter takes effect
+ * as soon as it changes. Opening is what each account built up from 1 April to the day before
  * From; the cards are the period's own income, expenditure and surplus.
  */
 export function IncomeExpenditure() {
-  const [draft, setDraft] = useState<Filters>(initial);
+  // every change loads at once: there is no Apply step
   const [applied, setApplied] = useState<Filters>(initial);
   const { periods, current } = useYearPeriods();
   // open on the current academic year, the one the top bar shows
   const openOn = useCallback((from: string, to: string) => {
-    setDraft((f) => ({ ...f, from, to }));
     setApplied((f) => ({ ...f, from, to }));
   }, []);
   useOpenOnYear(openOn);
@@ -93,8 +92,7 @@ export function IncomeExpenditure() {
   const r = useApi<IE>(`${BOOKS}/income-expenditure`, params);
   const d = r.data;
   const surplus = Number(d?.surplus ?? 0);
-  const period = periods.find(([, f, t]) => f === draft.from && t === draft.to)?.[0] ?? "";
-  const dirty = JSON.stringify(draft) !== JSON.stringify(applied);
+  const period = periods.find(([, f, t]) => f === applied.from && t === applied.to)?.[0] ?? "";
 
   async function download(kind: "xlsx" | "pdf") {
     const q = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]);
@@ -150,20 +148,14 @@ export function IncomeExpenditure() {
 
   return (
     <>
-      <form
-        className="ie-filters"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setApplied(draft);
-        }}
-      >
+      <div className="ie-filters">
         <label>
           Academic year
           <select
             value={period}
             onChange={(e) => {
               const p = periods.find(([l]) => l === e.target.value);
-              if (p) setDraft({ ...draft, from: p[1], to: p[2] });
+              if (p) setApplied({ ...applied, from: p[1], to: p[2] });
             }}
           >
             {!period ? <option value="">Custom</option> : null}
@@ -176,15 +168,15 @@ export function IncomeExpenditure() {
         </label>
         <label>
           From date
-          <input type="date" value={draft.from} max={draft.to} required onChange={(e) => e.target.value && setDraft({ ...draft, from: e.target.value })} />
+          <input type="date" value={applied.from} max={applied.to} required onChange={(e) => e.target.value && setApplied({ ...applied, from: e.target.value })} />
         </label>
         <label>
           To date
-          <input type="date" value={draft.to} min={draft.from} required onChange={(e) => e.target.value && setDraft({ ...draft, to: e.target.value })} />
+          <input type="date" value={applied.to} min={applied.from} required onChange={(e) => e.target.value && setApplied({ ...applied, to: e.target.value })} />
         </label>
         <label>
           Category
-          <select value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value, account: "" })}>
+          <select value={applied.category} onChange={(e) => setApplied({ ...applied, category: e.target.value, account: "" })}>
             <option value="">All categories</option>
             {(d?.categories ?? []).map((c) => (
               <option key={c} value={c}>
@@ -195,7 +187,7 @@ export function IncomeExpenditure() {
         </label>
         <label>
           Account head
-          <select value={draft.account} onChange={(e) => setDraft({ ...draft, account: e.target.value })}>
+          <select value={applied.account} onChange={(e) => setApplied({ ...applied, account: e.target.value })}>
             <option value="">All account heads</option>
             {(["income", "expense"] as const).map((k) => (
               <optgroup key={k} label={k === "income" ? "Income" : "Expenditure"}>
@@ -210,21 +202,17 @@ export function IncomeExpenditure() {
             ))}
           </select>
         </label>
-        <button type="submit" className={`btn primary ${dirty ? "pulse" : ""}`}>
-          Apply
-        </button>
         <button
           type="button"
           className="btn"
           onClick={() => {
-            setDraft(fresh());
             setApplied(fresh());
           }}
         >
           {RESET}
           Reset
         </button>
-      </form>
+      </div>
 
       <div className="ie-cards">
         <div className="ie-card income">
