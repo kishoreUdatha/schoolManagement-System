@@ -7,7 +7,7 @@ import { label as pretty } from "@/lib/format";
 // sections of fields, each with its type and whether this class requires it,
 // does not ask it, or always requires it.
 
-export type FieldType = "text" | "date" | "select" | "phone" | "email" | "aadhaar" | "apaar" | "pen" | "pin" | "textarea" | "bool";
+export type FieldType = "text" | "date" | "select" | "phone" | "email" | "aadhaar" | "apaar" | "pen" | "pin" | "year" | "textarea" | "bool";
 export type FormField = {
   key: string;
   label: string;
@@ -16,6 +16,13 @@ export type FormField = {
   options: string[] | null;
   core: boolean;
   help: string | null;
+  /** asked only sometimes: "foreign" (not an Indian national), "comm_abroad" / "perm_abroad" (address outside India) */
+  when: "foreign" | "comm_abroad" | "perm_abroad" | null;
+  /** a date that may be ahead of today (a passport's expiry) */
+  future: boolean;
+  /** one of the school's own questions */
+  custom: boolean;
+  id?: number;
   required: boolean;
   hidden: boolean;
   locked: boolean;
@@ -24,14 +31,27 @@ export type FormSection = { key: string; title: string; fields: FormField[] };
 export type AdmissionFormDef = { class_id: number | null; sections: FormSection[] };
 export type Values = Record<string, string | boolean | null | undefined>;
 
-const DIGITS: Partial<Record<FieldType, number>> = { aadhaar: 12, apaar: 12, pen: 11, pin: 6, phone: 10 };
+const DIGITS: Partial<Record<FieldType, number>> = { aadhaar: 12, apaar: 12, pen: 11, pin: 6, year: 4 };
 const PERMANENT = /^perm_/;
+export const ABROAD = "Outside India";
 
-/** Whether a field is shown: not hidden, and the permanent address only when it differs. */
-export function shown(f: FormField, v: Values): boolean {
-  if (f.hidden) return false;
+/** A nationality typed and not Indian (services/admission_form.is_foreign). */
+export function isForeign(v: Values): boolean {
+  const n = String(v.nationality ?? "").toLowerCase().replace(/[^a-z]/g, "");
+  return Boolean(n) && !["indian", "india", "bharatiya", "bhartiya"].includes(n);
+}
+
+/** Whether a field is asked given what is filled in (services/admission_form.asked). */
+export function asked(f: FormField, v: Values): boolean {
+  if (f.when === "foreign") return isForeign(v);
+  if (f.when === "comm_abroad" || f.when === "perm_abroad") return v[`${f.when.slice(0, 4)}_state`] === ABROAD;
   if (PERMANENT.test(f.key) && v.permanent_same) return false;
   return true;
+}
+
+/** Whether a field is shown: not hidden by the school, and asked. */
+export function shown(f: FormField, v: Values): boolean {
+  return !f.hidden && asked(f, v);
 }
 
 /** Labels of required fields still empty (a ticked declaration counts as filled). */
@@ -63,7 +83,7 @@ export function split(def: AdmissionFormDef | null, v: Values): { core: Values; 
   return { core, details };
 }
 
-function Control({ f, value, onChange, readOnly }: { f: FormField; value: Values[string]; onChange: (v: string | boolean) => void; readOnly?: boolean }) {
+function Control({ f, value, onChange, readOnly, abroad }: { f: FormField; value: Values[string]; onChange: (v: string | boolean) => void; readOnly?: boolean; abroad?: boolean }) {
   const common = { id: `af-${f.key}`, name: f.key, disabled: readOnly, "aria-required": f.required || undefined };
   const text = value === undefined || value === null || typeof value === "boolean" ? "" : value;
   if (f.type === "bool")
@@ -85,14 +105,15 @@ function Control({ f, value, onChange, readOnly }: { f: FormField; value: Values
       </select>
     );
   if (f.type === "textarea") return <textarea {...common} rows={2} maxLength={500} value={text} onChange={(e) => onChange(e.target.value)} />;
-  if (f.type === "date") return <input type="date" {...common} max={new Date().toISOString().slice(0, 10)} value={text} onChange={(e) => onChange(e.target.value)} />;
-  const n = DIGITS[f.type];
+  if (f.type === "date") return <input type="date" {...common} max={f.future ? undefined : new Date().toISOString().slice(0, 10)} value={text} onChange={(e) => onChange(e.target.value)} />;
+  // an address abroad has a postal code of its own shape
+  const n = f.type === "pin" && abroad ? undefined : DIGITS[f.type];
   return (
     <input
       type={f.type === "email" ? "email" : f.type === "phone" ? "tel" : "text"}
       inputMode={n ? "numeric" : undefined}
-      maxLength={n ? n + 4 : f.core && f.key === "notes" ? 5000 : 160}
-      placeholder={n && f.type !== "phone" ? `${n} digits` : undefined}
+      maxLength={n ? n + 4 : f.type === "phone" ? 20 : f.type === "pin" ? 12 : f.core && f.key === "notes" ? 5000 : 160}
+      placeholder={f.type === "year" ? "e.g. 2024" : n ? `${n} digits` : f.type === "phone" ? "10-digit mobile, or +country code" : undefined}
       {...common}
       value={text}
       onChange={(e) => onChange(e.target.value)}
@@ -145,7 +166,7 @@ export function AdmissionFields({
                     {f.label}
                     {f.required ? <span className="req">*</span> : null}
                   </span>
-                  <Control f={f} value={values[f.key]} onChange={(v) => onChange(f.key, v)} readOnly={readOnly} />
+                  <Control f={f} value={values[f.key]} onChange={(v) => onChange(f.key, v)} readOnly={readOnly} abroad={values[`${f.key.slice(0, 4)}_state`] === ABROAD} />
                   {f.help ? <small className="muted">{f.help}</small> : null}
                 </label>
               ),

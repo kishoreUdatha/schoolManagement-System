@@ -81,7 +81,7 @@ def run(db: Session) -> None:
     print(f"school {sid}, class {cls}, section {sec.id}")
 
     print("the fields")
-    check("75 fields in 9 sections", (len(af.FIELDS), len(af.SECTIONS)), (75, 9))
+    check("87 built-in fields in 11 sections", (len(af.FIELDS), len(af.SECTIONS)), (87, 11))
     f = af.form(db, sid, None)
     req = {x["key"] for s in f["sections"] for x in s["fields"] if x["required"]}
     check("built-in required", req, af.DEFAULT_REQUIRED)
@@ -99,13 +99,13 @@ def run(db: Session) -> None:
     refused("unknown field", lambda: af.save_settings(db, user, None, ["shoe_size"], []), "Unknown")
 
     print("format checks")
-    refused("Aadhaar of 11 digits", lambda: af.clean_details({"aadhaar_no": "12345678901"}), "12 digits")
-    refused("PEN of 10 digits", lambda: af.clean_details({"pen_no": "1234567890"}), "11 digits")
-    refused("PIN starting with 0", lambda: af.clean_details({"comm_pin": "012345"}), "PIN")
-    refused("mobile of 9 digits", lambda: af.clean_details({"father_mobile": "987654321"}), "mobile")
-    refused("religion not on the list", lambda: af.clean_details({"religion": "Jedi"}), "listed")
-    refused("TC dated in the future", lambda: af.clean_details({"tc_date": "2999-01-01"}), "future")
-    c = af.clean_details({"aadhaar_no": "1234 5678 9012", "comm_pin": "500 081", "permanent_same": True,
+    refused("Aadhaar of 11 digits", lambda: af.clean_details(db, sid, {"aadhaar_no": "12345678901"}), "12 digits")
+    refused("PEN of 10 digits", lambda: af.clean_details(db, sid, {"pen_no": "1234567890"}), "11 digits")
+    refused("PIN starting with 0", lambda: af.clean_details(db, sid, {"comm_pin": "012345"}), "PIN")
+    refused("mobile of 9 digits", lambda: af.clean_details(db, sid, {"father_mobile": "987654321"}), "mobile")
+    refused("religion not on the list", lambda: af.clean_details(db, sid, {"religion": "Jedi"}), "listed")
+    refused("TC dated in the future", lambda: af.clean_details(db, sid, {"tc_date": "2999-01-01"}), "future")
+    c = af.clean_details(db, sid, {"aadhaar_no": "1234 5678 9012", "comm_pin": "500 081", "permanent_same": True,
                           "comm_city": "Hyderabad", "unknown": "x", "father_name": "ignored here"})
     check("spaces removed, permanent copied, unknown and core keys dropped",
           (c.get("aadhaar_no"), c.get("comm_pin"), c.get("perm_city"), "unknown" in c, "father_name" in c),
@@ -152,6 +152,52 @@ def run(db: Session) -> None:
     af.clear_class(db, user, cls)
     r3, _ = af.rules(db, sid, cls)
     check("clearing a class falls back to the default", ("category" in r3, "pen_no" in r3), (True, False))
+
+    print("boards")
+    cbse = next(p for p in af.settings(db, sid)["presets"] if p["key"] == "cbse")
+    st_ = af.save_settings(db, user, None, cbse["required"], cbse["hidden"], "cbse")
+    check("board saved with the default", (st_["board"], "pen_no" in st_["default"]["required"]), ("cbse", True))
+    refused("unknown board", lambda: af.save_settings(db, user, None, [], [], "hogwarts"), "board")
+    ib = next(p for p in st_["presets"] if p["key"] == "ib")
+    check("IB preset does not ask caste", ("caste" in ib["hidden"], "aadhaar_no" in ib["required"]), (True, False))
+
+    print("international students and addresses abroad")
+    core = {"student_name": "X", "guardian_name": "Y", "phone": "9876543210", "dob": "2019-01-01", "gender": "male",
+            "father_name": "F", "mother_name": "M", "category": "General"}
+    filled = {"comm_line1": "1", "comm_city": "C", "comm_state": "Telangana", "comm_pin": "500001", "declaration": True,
+              "emergency_phone": "9876543211", "aadhaar_no": "123412341234", "apaar_id": "123412341234",
+              "mother_tongue": "Telugu", "religion": "Hindu", "pen_no": "12345678901", "second_language": "Hindi"}
+    indian = af.missing_required(db, sid, None, core, {**filled, "nationality": "Indian"})
+    foreign = af.missing_required(db, sid, None, core, {**filled, "nationality": "British"})
+    check("passport asked only of a foreign national", (indian, "Passport number" in foreign), ([], True))
+    c2 = af.clean_details(db, sid, {"passport_expiry": "2031-05-01", "comm_state": "Outside India", "comm_pin": "SW1A 1AA",
+                                    "comm_country": "United Kingdom", "father_mobile": "+44 7911 123456",
+                                    "board_exam_year": "2024", "second_language": "Spanish"})
+    check("future passport expiry, overseas postcode and phone, Spanish",
+          (c2["passport_expiry"], c2["comm_pin"], c2["father_mobile"], c2["second_language"]),
+          ("2031-05-01", "SW1A 1AA", "+44 7911 123456", "Spanish"))
+    check("address abroad names the country", af.composed_address(c2), "United Kingdom - SW1A 1AA")
+    refused("board exam year ahead", lambda: af.clean_details(db, sid, {"board_exam_year": "2099"}), "future")
+    refused("Indian PIN still checked", lambda: af.clean_details(db, sid, {"comm_state": "Kerala", "comm_pin": "SW1A"}), "PIN")
+
+    print("the school's own questions")
+    st_ = af.add_question(db, user, "House preference", "additional", "select", ["Red", "Blue", "Blue", " "], None)
+    q = st_["custom"][0]
+    check("question added, options cleaned", (q["key"].startswith("custom_"), q["options"]), (True, ["Red", "Blue"]))
+    sections = [s["key"] for s in af.form(db, sid, None)["sections"]]
+    check("Additional information appears", "additional" in sections, True)
+    refused("same question twice", lambda: af.add_question(db, user, "house preference", "additional", "text", None, None), "already")
+    refused("a choice with one option", lambda: af.add_question(db, user, "Bus", "other", "select", ["A"], None), "two options")
+    refused("unknown type", lambda: af.add_question(db, user, "Photo", "other", "file", None, None), "type")
+    af.save_settings(db, user, None, cbse["required"] + [q["key"]], cbse["hidden"])
+    check("it can be required", "House preference" in af.missing_required(db, sid, None, core, filled), True)
+    refused("an answer not on its list", lambda: af.clean_details(db, sid, {q["key"]: "Green"}), "listed")
+    af.edit_question(db, user, q["id"], "School house", "other", ["Red", "Blue", "Green"], "We place siblings together")
+    check("edited", af.clean_details(db, sid, {q["key"]: "Green"}), {q["key"]: "Green"})
+    af.remove_question(db, user, q["id"])
+    keys = {f["key"] for s in af.form(db, sid, None)["sections"] for f in s["fields"]}
+    check("removed: no longer asked, old answers kept", (q["key"] in keys, af.clean_details(db, sid, {q["key"]: "Red"})),
+          (False, {q["key"]: "Red"}))
 
 
 if __name__ == "__main__":

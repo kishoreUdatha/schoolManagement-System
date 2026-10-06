@@ -118,11 +118,11 @@ def _check_refs(db: Session, school_id: int, data: ApplicationIn) -> None:
             raise _400("Unknown class")
 
 
-def _split(data: ApplicationIn) -> tuple[dict, dict]:
+def _split(db: Session, school_id: int, data: ApplicationIn) -> tuple[dict, dict]:
     """The application's own columns, and the rest of the form, checked.
     With no single address typed, the communication address fills it."""
     values = data.model_dump(exclude={"details"})
-    details = admission_form.clean_details(data.details)
+    details = admission_form.clean_details(db, school_id, data.details)
     if not (values.get("address") or "").strip():
         values["address"] = admission_form.composed_address(details)
     return values, details
@@ -140,7 +140,7 @@ def create(db: Session, tenant_id: int, school_id: int, data: ApplicationIn, use
         e = db.get(AdmissionEnquiry, enquiry_id)
         if not e or e.school_id != school_id:
             raise _400("Unknown enquiry")
-    values, details = _split(data)
+    values, details = _split(db, school_id, data)
     if submitted:
         admission_form.require_complete(db, school_id, data.class_id, values, details)
     a = AdmissionApplication(
@@ -171,7 +171,7 @@ def update(db: Session, user: User, application_id: int, data: ApplicationIn) ->
     if a.status in (ApplicationStatus.admitted, ApplicationStatus.withdrawn):
         raise _400("This application can no longer be edited")
     _check_refs(db, user.school_id, data)
-    values, details = _split(data)
+    values, details = _split(db, user.school_id, data)
     if a.status != ApplicationStatus.draft:
         # past the draft stage the form has to stay complete
         admission_form.require_complete(db, user.school_id, data.class_id, values, details)

@@ -2,7 +2,7 @@
 full admission details (see services/admission_form.py for the fields)."""
 from typing import Optional
 
-from sqlalchemy import BigInteger, ForeignKey, Index, text
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Index, Integer, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -30,6 +30,28 @@ class AdmissionFormSetting(Base, PrimaryKeyMixin, TimestampMixin, _School):
     class_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("school_classes.id", ondelete="CASCADE"))
     required: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
     hidden: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    # the school's board (on the default row): which preset it started from
+    board: Mapped[Optional[str]] = mapped_column(String(20))
+
+
+class AdmissionCustomField(Base, PrimaryKeyMixin, TimestampMixin, _School):
+    """A question the school adds to its admission form. Its answers travel
+    in `details` under `key` (custom_<id>), like the built-in fields'.
+    Removing one only stops asking it: answers already given are kept."""
+
+    __audited__ = True
+
+    __tablename__ = "admission_custom_fields"
+    __table_args__ = (Index("uq_admission_custom_field_key", "school_id", "key", unique=True),)
+
+    key: Mapped[str] = mapped_column(String(40), nullable=False)
+    label: Mapped[str] = mapped_column(String(120), nullable=False)
+    section: Mapped[str] = mapped_column(String(20), nullable=False)
+    type: Mapped[str] = mapped_column(String(12), nullable=False)
+    options: Mapped[Optional[list]] = mapped_column(JSONB)
+    help: Mapped[Optional[str]] = mapped_column(String(200))
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"), nullable=False)
 
 
 class StudentProfile(Base, PrimaryKeyMixin, TimestampMixin, _School):
