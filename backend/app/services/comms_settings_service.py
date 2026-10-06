@@ -12,7 +12,7 @@ import string
 from typing import Iterable, Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.enums import (
@@ -258,6 +258,82 @@ def set_preference(db: Session, user: User, channel: NoticeChannel,
             row.is_enabled = False
         db.commit()
     return preferences(db, user)
+
+
+def _parent_ids(db: Session, school_id: int) -> list[int]:
+    return list(db.execute(
+        select(User.id).where(User.school_id == school_id, User.role == UserRole.parent)
+    ).scalars())
+
+
+def preferences_all(db: Session, school_id: int) -> dict:
+    """The same grid for every parent in the school at once: how many of
+    them have each channel and category on."""
+    ids = _parent_ids(db, school_id)
+    off: dict = {}
+    if ids:
+        for channel, category, n in db.execute(
+            select(NotificationPreference.channel, NotificationPreference.category, func.count())
+            .where(NotificationPreference.user_id.in_(ids), NotificationPreference.is_enabled.is_(False))
+            .group_by(NotificationPreference.channel, NotificationPreference.category)
+        ).all():
+            off[(channel, category)] = n
+    total = len(ids)
+    rows = []
+    for channel in NoticeChannel:
+        for category in NotificationCategory:
+            locked = category in LOCKED or channel in LOCKED_CHANNELS
+            on = total if locked else total - off.get((channel, category), 0)
+            rows.append({
+                "channel": channel.value,
+                "category": category.value,
+                # on only when every parent has it on; enabled_count tells the rest
+                "is_enabled": on == total,
+                "enabled_count": on,
+                "total": total,
+                "locked": locked,
+                "locked_because": (
+                    "The school has to be able to reach parents about this."
+                    if category in LOCKED
+                    else "This is where the message is kept, so it is always on."
+                    if channel in LOCKED_CHANNELS
+                    else None
+                ),
+            })
+    return {"user_id": None, "rows": rows, "total": total,
+            "locked_categories": sorted(c.value for c in LOCKED),
+            "locked_channels": sorted(c.value for c in LOCKED_CHANNELS)}
+
+
+def set_preference_all(db: Session, tenant_id: int, school_id: int, channel: NoticeChannel,
+                       category: NotificationCategory, enabled: bool) -> dict:
+    """Turn one channel and category on or off for every parent in the
+    school. Parents can still change their own afterwards."""
+    if not enabled and category in LOCKED:
+        raise _400(f"{category.value.capitalize()} messages cannot be switched off — "
+                   "the school has to be able to reach parents about them.")
+    if not enabled and channel in LOCKED_CHANNELS:
+        raise _400("In-app messages cannot be switched off; that is where they are kept.")
+    ids = _parent_ids(db, school_id)
+    rows = {r.user_id: r for r in db.execute(
+        select(NotificationPreference).where(
+            NotificationPreference.user_id.in_(ids),
+            NotificationPreference.channel == channel,
+            NotificationPreference.category == category,
+        )
+    ).scalars()} if ids else {}
+    for uid in ids:
+        row = rows.get(uid)
+        if enabled:
+            if row is not None:
+                db.delete(row)
+        elif row is None:
+            db.add(NotificationPreference(tenant_id=tenant_id, school_id=school_id, user_id=uid,
+                                          channel=channel, category=category, is_enabled=False))
+        else:
+            row.is_enabled = False
+    db.commit()
+    return preferences_all(db, school_id)
 
 
 def wants(db: Session, user_id: int, channel: NoticeChannel,

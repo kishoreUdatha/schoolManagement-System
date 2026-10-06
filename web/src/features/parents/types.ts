@@ -90,8 +90,17 @@ export type Receipt = {
 };
 
 /** GET /api/v1/parent/me/preferences. */
-export type PreferenceRow = { channel: string; category: string; is_enabled: boolean; locked: boolean; locked_because: string | null };
-export type Preferences = { user_id: number; rows: PreferenceRow[]; locked_categories: string[]; locked_channels: string[] };
+export type PreferenceRow = {
+  channel: string;
+  category: string;
+  is_enabled: boolean;
+  locked: boolean;
+  locked_because: string | null;
+  /** for all parents at once: how many have it on, of how many */
+  enabled_count?: number;
+  total?: number;
+};
+export type Preferences = { user_id: number | null; rows: PreferenceRow[]; locked_categories: string[]; locked_channels: string[]; total?: number };
 
 /** GET /api/v1/school/ptm and /ptm/{id}. */
 export type PtmSession = {

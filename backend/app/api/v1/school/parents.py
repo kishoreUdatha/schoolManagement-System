@@ -206,6 +206,17 @@ class PreferenceIn(BaseModel):
     is_enabled: bool
 
 
+@router.get("/preferences/all", summary="Every parent at once: how many have each channel and category on")
+def get_preferences_all(current_user: ParentManager, db: Annotated[Session, Depends(get_db)]):
+    return comms_settings_service.preferences_all(db, current_user.school_id)
+
+
+@router.put("/preferences/all", summary="Turn one channel and category on or off for every parent")
+def put_preference_all(payload: PreferenceIn, current_user: ParentManager, db: Annotated[Session, Depends(get_db)]):
+    return comms_settings_service.set_preference_all(db, current_user.tenant_id, current_user.school_id,
+                                                     payload.channel, payload.category, payload.is_enabled)
+
+
 @router.get("/{user_id}/preferences", summary="What this parent has chosen to be sent")
 def get_preferences(user_id: int, current_user: ParentManager, db: Annotated[Session, Depends(get_db)]):
     u = parent_service.get_parent(db, user_id, current_user.tenant_id, current_user.school_id)

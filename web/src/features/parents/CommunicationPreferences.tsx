@@ -24,7 +24,9 @@ const CATEGORY_NOTE: Record<string, string> = {
  * SCR-075, live. A signed-in parent: GET/PUT /api/v1/parent/me/preferences
  * ({channel, category, is_enabled}), saved as each switch moves. School staff:
  * pick a parent (?id=, from GET /school/parents) and read or change theirs via
- * GET/PUT /school/parents/{id}/preferences. Attendance and fees, and the
+ * GET/PUT /school/parents/{id}/preferences, or choose All parents (?id=all)
+ * to set one channel and category for every parent at once through
+ * GET/PUT /school/parents/preferences/all. Attendance and fees, and the
  * in-app inbox, are locked on by the school either way.
  */
 export function CommunicationPreferences() {
@@ -36,7 +38,14 @@ export function CommunicationPreferences() {
   const path = usePathname();
   const parentId = params.get("id");
   const parents = useApi<Parent[]>(hydrated && !isParent ? "/api/v1/school/parents" : null);
-  const base = isParent ? "/api/v1/parent/me/preferences" : parentId ? `/api/v1/school/parents/${parentId}/preferences` : null;
+  const everyone = !isParent && parentId === "all";
+  const base = isParent
+    ? "/api/v1/parent/me/preferences"
+    : everyone
+      ? "/api/v1/school/parents/preferences/all"
+      : parentId
+        ? `/api/v1/school/parents/${parentId}/preferences`
+        : null;
   const [prefs, setPrefs] = useState<Preferences | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -62,7 +71,8 @@ export function CommunicationPreferences() {
     try {
       const next = await api.put<Preferences>(base, { channel: row.channel, category: row.category, is_enabled: !row.is_enabled });
       setPrefs(next);
-      notify(row.is_enabled ? `${label(row.category)} by ${CHANNEL[row.channel] ?? row.channel} turned off.` : `${label(row.category)} by ${CHANNEL[row.channel] ?? row.channel} turned on.`);
+      const what = `${label(row.category)} by ${CHANNEL[row.channel] ?? row.channel}`;
+      notify(`${what} turned ${row.is_enabled ? "off" : "on"}${everyone ? ` for all ${next.total ?? ""} parents` : ""}.`);
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -79,7 +89,9 @@ export function CommunicationPreferences() {
         <p className="muted small" style={{ margin: "8px 0 15px" }}>
           {isParent
             ? "Choose how school updates reach you. Everything is on unless you turn it off."
-            : "What this parent has chosen to be sent. Changes here are made on their behalf and recorded in the audit log."}
+            : everyone
+              ? "Set what every parent is sent, in one go. Each switch applies to all parents in the school; a parent can still change their own afterwards."
+              : "What this parent has chosen to be sent. Changes here are made on their behalf and recorded in the audit log."}
         </p>
         {isParent ? null : (
           <label className="field" style={{ marginBottom: 12 }}>
@@ -95,7 +107,8 @@ export function CommunicationPreferences() {
               }}
             >
               <option value="">{parents.loading ? "Loading parents…" : "Select a parent"}</option>
-              {parentId && parents.data && !who ? <option value={parentId}>{`Parent #${parentId}`}</option> : null}
+              <option value="all">{`All parents${parents.data ? ` (${parents.data.length})` : ""}`}</option>
+              {parentId && parentId !== "all" && parents.data && !who ? <option value={parentId}>{`Parent #${parentId}`}</option> : null}
               {parents.data?.map((x) => (
                 <option key={x.user_id} value={x.user_id}>
                   {`${x.full_name}${x.email ? ` · ${x.email}` : ""}`}
@@ -117,6 +130,11 @@ export function CommunicationPreferences() {
                   <div>
                     <strong>{label(r.category)}</strong>
                     <p>{r.locked_because ?? CATEGORY_NOTE[r.category] ?? ""}</p>
+                    {everyone && !r.locked && r.total ? (
+                      <p className={r.enabled_count === r.total ? "" : "pref-mixed"}>
+                        {r.enabled_count === r.total ? `On for all ${r.total} parents` : r.enabled_count ? `On for ${r.enabled_count} of ${r.total} parents` : `Off for all ${r.total} parents`}
+                      </p>
+                    ) : null}
                   </div>
                   <label className="switch">
                     <input
@@ -134,7 +152,15 @@ export function CommunicationPreferences() {
         ))}
       </div>
       <div className="form-footer">
-        <span>{isParent ? "Applies to this account · saved as you switch" : who ? `Applies to ${who.full_name} · saved as you switch` : "Saved as you switch"}</span>
+        <span>
+          {isParent
+            ? "Applies to this account · saved as you switch"
+            : everyone
+              ? "Applies to every parent in the school · saved as you switch"
+              : who
+                ? `Applies to ${who.full_name} · saved as you switch`
+                : "Saved as you switch"}
+        </span>
       </div>
     </div>
   );
