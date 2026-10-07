@@ -10,6 +10,8 @@ import { ErrorNote } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
+import { usePermissions } from "@/lib/jobs";
+import { useSession } from "@/lib/useSession";
 import { Field, Modal, ModalActions, Tip, orNull, useNewFlag, type Lab, type StaffRow } from "./common";
 
 import { ask } from "@/lib/dialog";
@@ -109,11 +111,14 @@ function LabDialog({ existing, onClose, onSaved }: { existing: Lab | null; onClo
   const staff = useApi<StaffRow[]>("/api/v1/school/directory/staff");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const setup = useLabSetup();
   const num = (v: FormDataEntryValue | null) => (orNull(v) ? Number(v) : null);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
+    // the set-up fields are locked for a lab assistant (and not sent by the form): keep the lab's own
+    const kept = !setup && existing ? { name: existing.name, code: existing.code, room_id: existing.room_id, subject_id: existing.subject_id, in_charge_user_id: existing.in_charge_user_id } : null;
     const body = {
       name: String(f.get("name") ?? "").trim(),
       code: String(f.get("code") ?? "").trim().toUpperCase(),
@@ -124,6 +129,7 @@ function LabDialog({ existing, onClose, onSaved }: { existing: Lab | null; onClo
       equipment: orNull(f.get("equipment")),
       safety_notes: orNull(f.get("safety_notes")),
       is_active: existing ? f.get("is_active") === "on" : true,
+      ...(kept ?? {}),
     };
     setSaving(true);
     setError(null);
@@ -154,6 +160,8 @@ function LabDialog({ existing, onClose, onSaved }: { existing: Lab | null; onClo
     <Modal title={existing ? `Edit ${existing.name}` : "Add lab"} onClose={onClose}>
       <form onSubmit={submit}>
         <ErrorNote>{error ?? rooms.error ?? staff.error}</ErrorNote>
+        {!setup ? <p className="muted small">You can update the equipment, capacity, safety notes and whether the lab is in use. The office sets up the lab itself.</p> : null}
+        <fieldset disabled={!setup} style={{ border: 0, padding: 0, margin: 0, display: "contents" }}>
         <div className="form-grid">
           <Field label="Lab name" required>
             <input name="name" required defaultValue={existing?.name} placeholder="Chemistry lab" />
@@ -191,6 +199,9 @@ function LabDialog({ existing, onClose, onSaved }: { existing: Lab | null; onClo
               ))}
             </select>
           </Field>
+        </div>
+        </fieldset>
+        <div className="form-grid">
           <Field label="Capacity">
             <input name="capacity" type="number" min={1} defaultValue={existing?.capacity ?? ""} />
           </Field>
@@ -208,7 +219,7 @@ function LabDialog({ existing, onClose, onSaved }: { existing: Lab | null; onClo
           ) : null}
         </div>
         {existing && (existing.upcoming_bookings ?? 0) === 0 ? (
-          <button type="button" className="btn" style={{ marginTop: 16 }} onClick={remove}>
+          <button type="button" className="btn" style={{ marginTop: 16 }} onClick={remove} hidden={!setup}>
             Delete lab
           </button>
         ) : null}
@@ -216,4 +227,16 @@ function LabDialog({ existing, onClose, onSaved }: { existing: Lab | null; onClo
       </form>
     </Modal>
   );
+}
+
+/** Setting a lab up (add, rename, room, in-charge, delete) is the office's; a lab assistant keeps its equipment. */
+export function useLabSetup(): boolean {
+  const perms = usePermissions();
+  const role = useSession()?.user.role;
+  return role === "school_admin" || !!perms?.has("settings.manage");
+}
+
+/** The page-head "Add lab": the office only. */
+export function LabSetupOnly({ children }: { children: React.ReactNode }) {
+  return useLabSetup() ? <>{children}</> : null;
 }

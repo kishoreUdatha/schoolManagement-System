@@ -283,9 +283,40 @@ def book(db: Session, user: User, data: BookingIn) -> LabBooking:
         notify.staff_users(db, tenant_id=b.tenant_id, school_id=b.school_id, user_ids=[teacher_id],
                            title=f"Lab booked: {lab.name}",
                            body=f"{data.booking_date:%a %d %b}, period {p.period_number}." + (f" {data.purpose}" if data.purpose else ""))
-        db.commit()
+    _tell_keepers(db, lab, b, p, cancelled=False, actor_id=user.id)
+    db.commit()
     db.refresh(b)
     return b
+
+
+def lab_keepers(db: Session, lab: Lab) -> list[int]:
+    """Whoever prepares the lab: its in-charge, or else the lab assistants
+    (staff holding inventory.manage; the accountant and the office are left out)."""
+    from app.services import rbac_service
+
+    if lab.in_charge_user_id:
+        return [lab.in_charge_user_id]
+    return rbac_service.holders(db, lab.school_id, "inventory.manage",
+                                exclude_roles=(UserRole.accountant, UserRole.school_admin, UserRole.principal))
+
+
+def _tell_keepers(db: Session, lab: Lab, b: LabBooking, p, *, cancelled: bool, actor_id: int) -> None:
+    keepers = [k for k in lab_keepers(db, lab) if k != actor_id]
+    if not keepers:
+        return
+    teacher = db.get(User, b.teacher_user_id) if b.teacher_user_id else None
+    sec = db.get(Section, b.section_id) if b.section_id else None
+    cls = None
+    if sec:
+        from app.models.academic import SchoolClass
+
+        c = db.get(SchoolClass, sec.class_id)
+        cls = f"{c.name} {sec.name}" if c else sec.name
+    detail = ", ".join(x for x in (f"{b.booking_date:%a %d %b}", f"period {p.period_number}", cls,
+                                   teacher.full_name if teacher else None) if x)
+    notify.staff_users(db, tenant_id=b.tenant_id, school_id=b.school_id, user_ids=keepers,
+                       title=f"{lab.name}: booking {'cancelled' if cancelled else 'made'}",
+                       body=detail + "." + (f" {b.purpose}" if b.purpose and not cancelled else ""))
 
 
 def cancel(db: Session, user: User, booking_id: int, reason: Optional[str]) -> LabBooking:
@@ -304,6 +335,9 @@ def cancel(db: Session, user: User, booking_id: int, reason: Optional[str]) -> L
         notify.staff_users(db, tenant_id=b.tenant_id, school_id=b.school_id, user_ids=[b.teacher_user_id],
                            title=f"Lab booking cancelled: {lab.name}",
                            body=f"{b.booking_date:%a %d %b}." + (f" {reason}" if reason else ""))
+    lab = db.get(Lab, b.lab_id)
+    if lab:
+        _tell_keepers(db, lab, b, _period(db, b.period_id, b.school_id), cancelled=True, actor_id=user.id)
     db.commit()
     db.refresh(b)
     return b

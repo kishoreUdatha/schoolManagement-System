@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
-import { LabRegister } from "@/features/inventory/LabRegister";
+import { LabRegister, LabSetupOnly } from "@/features/inventory/LabRegister";
 
 export const metadata = { title: "SCR-242 · Lab Register · BrightCampus" };
 
@@ -19,10 +19,12 @@ export default function Page() {
           <Icon name="download" className="sm" />
           Export
         </button>
+        <LabSetupOnly>
         <Link href="/inventory-labs/lab-register?new=1" className="btn primary" scroll={false}>
           <Icon name="plus" className="sm" />
           Add lab
         </Link>
+        </LabSetupOnly>
       </>}>
       <Suspense>
         <LabRegister />

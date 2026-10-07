@@ -300,6 +300,15 @@ def has_permission(db: Session, user: User, code: str) -> bool:
     return code in permissions_for(db, user)
 
 
+def holders(db: Session, school_id: int, code: str, *, exclude_roles: tuple = ()) -> list[int]:
+    """Active staff of the school who hold a permission (for notices to
+    whoever does a job), leaving out the given sign-in roles."""
+    staff = db.execute(select(User).where(
+        User.school_id == school_id, User.is_active.is_(True),
+        User.role.not_in((UserRole.parent, UserRole.student, UserRole.super_admin, *exclude_roles)))).scalars()
+    return [u.id for u in staff if has_permission(db, u, code)]
+
+
 def _custom_permissions(db: Session, user: User) -> set[str]:
     """What the custom roles a person has been given carry (not their base role)."""
     return set(db.execute(

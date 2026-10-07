@@ -111,6 +111,25 @@ export function LabBookingCalendar() {
         </button>
       </div>
       <ErrorNote>{list.error ?? labs.error}</ErrorNote>
+      {live.some((b) => b.booking_date === todayIso) ? (
+        <Panel title="Today" sub="To prepare the apparatus" flush>
+          <div className="table-wrap">
+            <table className="data-table">
+              <tbody>
+                {live.filter((b) => b.booking_date === todayIso).sort((x, y) => x.period_number - y.period_number).map((b) => (
+                  <tr key={b.id}>
+                    <td>{`Period ${b.period_number}${b.start_time ? ` · ${b.start_time.slice(0, 5)}` : ""}`}</td>
+                    <td>{b.lab_name}</td>
+                    <td>{[b.section_label, b.subject_name].filter(Boolean).join(" · ") || "—"}</td>
+                    <td>{b.teacher_name ?? "—"}</td>
+                    <td className="wrap">{b.purpose ?? ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+      ) : null}
       <Panel
         title={`${MONTHS[month.getMonth()]} ${month.getFullYear()}`}
         sub={`${plural(bookings.length, "booking")}${labs.data ? ` · ${plural(labs.data.length, "lab")}` : ""} · double-click a day to book it${list.loading ? " · Loading…" : ""}`}

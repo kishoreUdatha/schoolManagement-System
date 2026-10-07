@@ -32,6 +32,7 @@ Db = Annotated[Session, Depends(get_db)]
 Staff = Annotated[User, Depends(_school_staff)]
 # setting rooms and labs up is an admin job; a school can delegate it
 Setup = Annotated[User, Depends(allow(UserRole.school_admin, permission="settings.manage"))]
+LabKeeper = Annotated[User, Depends(allow(UserRole.school_admin, any_of=("settings.manage", "inventory.manage")))]
 
 
 # ---------- rooms ----------
@@ -72,7 +73,15 @@ def create_lab(payload: LabIn, current_user: Setup, db: Db):
 
 
 @router.put("/labs/{lab_id}", response_model=LabRead)
-def update_lab(lab_id: int, payload: LabIn, current_user: Setup, db: Db):
+def update_lab(lab_id: int, payload: LabIn, current_user: LabKeeper, db: Db):
+    from app.services import rbac_service
+
+    if current_user.role != UserRole.school_admin and not rbac_service.has_permission(db, current_user, "settings.manage"):
+        # a lab assistant: equipment, capacity, safety notes and whether it is in use; the rest stays
+        lab = svc.get_lab(db, lab_id, current_user.school_id)
+        payload = LabIn(name=lab.name, code=lab.code, room_id=lab.room_id, subject_id=lab.subject_id,
+                        in_charge_user_id=lab.in_charge_user_id, capacity=payload.capacity, equipment=payload.equipment,
+                        safety_notes=payload.safety_notes, is_active=payload.is_active)
     return svc.labs_to_read(db, [svc.update_lab(db, current_user, lab_id, payload)])[0]
 
 

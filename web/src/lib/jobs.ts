@@ -28,6 +28,9 @@ export const ROLE_ONLY: Record<number, string[]> = {
   250: ["school_admin", "teacher"], // PTM setup: the office, or a class teacher for their class
   254: ["school_admin", "teacher"], // bulk messages
   255: ["school_admin", "principal"], // communication history
+  // labs are the lab assistant's (and the office's); the accountant keeps the store, not the labs
+  242: ["school_admin", "principal", "staff", "teacher"],
+  243: ["school_admin", "principal", "staff", "teacher"],
   // School-wide reports are the admin's and the principal's (api/v1/school/analytics.py);
   // an accountant holding reports.view sees the money ones.
   ...Object.fromEntries([264, 266, 267, 268, 269, 270, 271, 272, 278, 282].map((n) => [n, ["school_admin", "principal"]])),
@@ -79,6 +82,7 @@ export const JOBS: Job[] = [
       [234, "Inventory dashboard"], [235, "Item catalogue"], [236, "Stock in"], [237, "Stock issue & return"],
       [238, "Suppliers"], [239, "Asset register"], [240, "Asset assignment"], [241, "Asset maintenance"],
       [1048, "School store sales"], [245, "Stock & asset reports"],
+      [242, "Labs"], [243, "Lab equipment"], [244, "Lab bookings"],
     ],
   },
   {

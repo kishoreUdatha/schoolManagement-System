@@ -46,7 +46,7 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
   // One entry per page group; the group's other pages are its tabs (ROLE_TABS).
   Teacher: [
     [35, "Dashboard", "grid"], [1096, "My classes & students", "cap"], [110, "Mark attendance", "check"], [126, "My timetable", "calendar"],
-    { title: "Teaching", icon: "book", items: [[102, "Lesson plans & syllabus"], [1021, "Rubrics"]] },
+    { title: "Teaching", icon: "book", items: [[102, "Lesson plans & syllabus"], [1021, "Rubrics"], [244, "Book a lab"]] },
     { title: "Homework & tests", icon: "file", items: [[128, "Homework"], [134, "Assignments"], [1023, "Online tests"]] },
     { title: "Marks & report cards", icon: "chart", items: [[145, "Marks entry"], [1051, "Report card remarks"]] },
     { title: "Class teacher", icon: "users", items: [[115, "Student leave"], [251, "Parent-teacher meetings"], [1094, "Behaviour notes"], [1095, "Weekly reports"], [1108, "Refer to counsellor"]] },

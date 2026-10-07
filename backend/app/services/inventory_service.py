@@ -148,6 +148,7 @@ def record_move(db: Session, user: User, data: StockMoveIn, *, commit: bool = Tr
     _scoped(db, Supplier, data.supplier_id, user.school_id, "Supplier")
     if data.kind == StockMoveKind.purchase and data.unit_cost is None:
         raise _400("Enter the purchase cost per unit")
+    have = None
     if direction(data.kind) < 0:
         have = Decimal(on_hand(db, [item.id]).get(item.id, 0))
         if data.qty > have:
@@ -155,6 +156,19 @@ def record_move(db: Session, user: User, data: StockMoveIn, *, commit: bool = Tr
     m = StockMove(tenant_id=user.tenant_id, school_id=user.school_id, recorded_by_user_id=user.id,
                   **{**data.model_dump(), "moved_on": data.moved_on or date.today()})
     db.add(m)
+    level = item.reorder_level or Decimal("0")
+    if have is not None and level > 0 and have > level >= have - data.qty:
+        # it has just gone low: the store keepers and lab assistants hear once, until it is restocked
+        from app.core import notify
+        from app.services import rbac_service
+
+        left = have - data.qty
+        keepers = [k for k in rbac_service.holders(db, user.school_id, "inventory.manage",
+                                                    exclude_roles=(UserRole.school_admin, UserRole.principal)) if k != user.id]
+        if keepers:
+            notify.staff_users(db, tenant_id=user.tenant_id, school_id=user.school_id, user_ids=keepers,
+                               title=f"Low stock: {item.name}",
+                               body=f"{left:g} {item.unit} left; reorder at {level:g}." + (f" Kept at {item.location}." if item.location else ""))
     if commit:
         db.commit()
         db.refresh(m)
