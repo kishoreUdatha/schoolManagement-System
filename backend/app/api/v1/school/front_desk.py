@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query, status
@@ -25,6 +25,7 @@ from app.schemas.visitor import (
     VisitRead,
     VisitUpdate,
 )
+from app.services import front_office_service as office
 from app.services import visitor_service as svc
 
 
@@ -181,3 +182,58 @@ def create_incident(payload: IncidentIn, current_user: FrontDeskUser, db: Db):
 @router.patch("/incidents/{incident_id}", response_model=IncidentRead)
 def update_incident(incident_id: int, payload: IncidentUpdate, current_user: SchoolAdminUser, db: Db):
     return IncidentRead.model_validate(svc.incident_to_read(db, svc.update_incident(db, incident_id, current_user.school_id, payload)))
+
+
+
+# ---------- late arrivals at the gate ----------
+
+
+class LateIn(BaseModel):
+    student_id: int
+    arrived_at: Optional[time] = None
+    reason: Optional[str] = Field(None, max_length=200)
+
+
+@router.post("/late-arrivals", summary="A child coming in late today: marked late, the family told")
+def late_arrival(payload: LateIn, current_user: FrontDeskUser, db: Db):
+    return office.late_arrival(db, current_user, payload.student_id, payload.arrived_at, payload.reason)
+
+
+@router.get("/late-arrivals", summary="Who came in late today")
+def late_arrivals(current_user: FrontDeskUser, db: Db):
+    return office.late_today(db, current_user.school_id)
+
+
+# ---------- post and courier register ----------
+
+
+class PostIn(BaseModel):
+    direction: str = Field(..., pattern="^(in|out)$")
+    kind: str = Field("letter", pattern="^(letter|parcel|document)$")
+    party: str = Field(..., min_length=1, max_length=160)
+    for_user_id: Optional[int] = None
+    for_text: Optional[str] = Field(None, max_length=160)
+    courier: Optional[str] = Field(None, max_length=80)
+    tracking_no: Optional[str] = Field(None, max_length=80)
+    note: Optional[str] = Field(None, max_length=300)
+
+
+class HandIn(BaseModel):
+    to_name: Optional[str] = Field(None, max_length=120)
+
+
+@router.get("/post", summary="The post and courier register")
+def post_register(current_user: FrontDeskUser, db: Db, open_only: bool = Query(False), direction: Optional[str] = Query(None, pattern="^(in|out)$")):
+    return office.list_post(db, current_user.school_id, open_only=open_only, direction=direction)
+
+
+@router.post("/post", status_code=status.HTTP_201_CREATED, summary="Log a letter or parcel in or out; the staff member it is for is told")
+def add_post(payload: PostIn, current_user: FrontDeskUser, db: Db):
+    p = office.add_post(db, current_user, payload.model_dump())
+    return {"id": p.id}
+
+
+@router.post("/post/{post_id}/handed", summary="Collected by the person it was for (in), or sent (out)")
+def hand_over(post_id: int, payload: HandIn, current_user: FrontDeskUser, db: Db):
+    p = office.hand_over(db, current_user, post_id, payload.to_name)
+    return {"id": p.id, "handed_at": p.handed_at}

@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import notify
-from app.core.enums import GatePassStatus, UserRole, VisitStatus
+from app.core.enums import IncidentSeverity, GatePassStatus, UserRole, VisitStatus
 from app.core.scoping import get_school_student, require_linked_child, section_label
 from app.services import foundation_service
 from app.models.student import Student
@@ -518,6 +518,15 @@ def parent_passes(db: Session, parent_user_id: int, student_id: int) -> list[Gat
 def create_incident(db: Session, tenant_id: int, school_id: int, actor_id: int, data: IncidentIn) -> SecurityIncident:
     i = SecurityIncident(tenant_id=tenant_id, school_id=school_id, reported_by_user_id=actor_id, **data.model_dump())
     db.add(i)
+    db.flush()
+    if i.severity == IncidentSeverity.high:
+        heads = list(db.execute(select(User.id).where(
+            User.school_id == school_id, User.is_active.is_(True),
+            User.role.in_((UserRole.principal, UserRole.school_admin)))).scalars())
+        if heads:
+            notify.staff_users(db, tenant_id=tenant_id, school_id=school_id, user_ids=heads,
+                               title=f"Security incident: {i.category}",
+                               body=(f"{i.location}: " if i.location else "") + i.description[:300])
     db.commit()
     db.refresh(i)
     return i

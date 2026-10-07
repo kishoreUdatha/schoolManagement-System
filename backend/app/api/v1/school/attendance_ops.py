@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import AttendanceOffice, CurrentUser, SchoolAdminOrPrincipal, TeacherUser
+from app.core.deps import AttendanceOffice, CurrentUser, SchoolAdminOrPrincipal, TeacherUser, TimesReader, TimesRecorder
 from app.core.enums import AttendanceStatus, ContactMethod, CorrectionStatus, UserRole
 from app.core.scoping import require_linked_child
 from app.database import get_db
@@ -124,7 +124,18 @@ def gaps(current_user: CurrentUser, db: Db,
 
 
 @router.put("/times", summary="Record a late arrival or an early departure")
-def set_times(payload: TimesIn, current_user: CurrentUser, db: Db):
+def set_times(payload: TimesIn, current_user: TimesRecorder, db: Db):
+    if current_user.role == UserRole.teacher:
+        from app.models.academic import Section
+        from app.models.student import Student
+        from app.services import rbac_service
+
+        held = rbac_service.permissions_for(db, current_user)
+        if not ({"attendance.correct", "frontdesk.manage"} & held):
+            st = db.get(Student, payload.student_id)
+            sec = db.get(Section, st.section_id) if st and st.school_id == current_user.school_id else None
+            if not sec or sec.class_teacher_user_id != current_user.id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only for your own class")
     return svc.set_times(
         db, current_user.school_id, payload.student_id, payload.date,
         arrived_at=payload.arrived_at, left_at=payload.left_at, remark=payload.remark,
@@ -133,7 +144,7 @@ def set_times(payload: TimesIn, current_user: CurrentUser, db: Db):
 
 
 @router.get("/times", summary="Everybody late or away early, over a window")
-def late_and_early(user: SchoolAdminOrPrincipal, db: Db,
+def late_and_early(user: TimesReader, db: Db,
                    frm: date = Query(..., alias="from"), to: date = Query(...)):
     return svc.late_and_early(db, user.school_id, frm=frm, to=to)
 

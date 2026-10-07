@@ -435,6 +435,12 @@ AcademicsReader = Annotated[User, Depends(allow_job(UserRole.school_admin, UserR
 CoverManager = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="cover.manage"))]
 # The attendance office: the office, or whoever holds the job (attendance.correct).
 AttendanceOffice = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="attendance.correct"))]
+# Late arrivals and early departures: the office, the attendance office, the
+# front desk, and teachers (a class teacher, for their own class: checked by the route)
+TimesRecorder = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.principal, UserRole.teacher,
+                                               any_of=("attendance.correct", "frontdesk.manage")))]
+TimesReader = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.principal,
+                                            any_of=("attendance.correct", "frontdesk.manage")))]
 
 # ---------- office jobs on the school's records ----------
 # The fee counter (fees.collect): fee records, recording payments, dues.

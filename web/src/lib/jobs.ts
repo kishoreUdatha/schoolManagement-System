@@ -86,7 +86,7 @@ export const JOBS: Job[] = [
     title: "Front desk",
     items: [
       [226, "Visitor dashboard"], [227, "Visitor check-in"], [228, "Visitor approval"], [230, "Visitor check-out"],
-      [231, "Early pickup & gate pass"], [232, "Staff & vehicle gate log"], [233, "Security incidents"], [1070, "Visitor directory"],
+      [231, "Early pickup & gate pass"], [232, "Staff & vehicle gate log"], [233, "Security incidents"], [1070, "Visitor directory"], [1105, "Late arrivals"], [1106, "Post register"],
       [1026, "Parent help desk"],
     ],
   },

@@ -75,8 +75,8 @@ export const TAB_GROUPS: TabGroup[] = [
   { label: "Counselling", tabs: [[221, "Appointments"], [222, "Case notes"]] },
   { label: "Discipline", tabs: [[223, "Incidents"], [224, "Follow-up"], [1094, "Behaviour notes"]] },
   // Campus security
-  { label: "Visitors", tabs: [[227, "Check-in"], [228, "Approval"], [229, "Passes"], [230, "Check-out"], [1070, "Directory"]] },
-  { label: "Gate", tabs: [[231, "Early pickup"], [232, "Gate log"], [233, "Incidents"]] },
+  { label: "Visitors", tabs: [[227, "Check-in"], [228, "Approval"], [229, "Passes"], [230, "Check-out"], [1070, "Directory"], [1106, "Post"]] },
+  { label: "Gate", tabs: [[231, "Early pickup"], [1105, "Late arrivals"], [232, "Gate log"], [233, "Incidents"]] },
   // Inventory and labs
   { label: "Stock", tabs: [[235, "Items"], [236, "Stock in"], [237, "Issue & return"], [238, "Suppliers"], [1048, "Store sales"]] },
   { label: "Assets", tabs: [[239, "Register"], [240, "Who has what"], [241, "Maintenance"]] },
@@ -216,6 +216,8 @@ export const SCREEN_NOTE: Record<number, string> = {
   1003: "Which admission form fields are required and which are not asked, for every class or one class.",
   1049: "The school's accounts. Fees, receipts, expenses, bills and payroll post to them by themselves.",
   1098: "The float for small bills: pay from it against a voucher, and top it back up.",
+  1105: "Children coming in late: marked late on the day's register, their family told.",
+  1106: "Letters and parcels in and out: who they are for, the courier, and when they were collected or sent.",
   1104: "Beds filled room by room, the month's roll calls, and outings: taken, back late, out past their time.",
   1103: "Scan the shelves against the catalogue: what is missing, what is out on loan, what turned up after being written off.",
   1102: "Where fees stand: collected, still owed and overdue, by class and month, and who owes most. To read, not to collect.",

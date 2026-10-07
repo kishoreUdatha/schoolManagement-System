@@ -68,6 +68,8 @@ const DEFS: Def[] = [
   [1102, "Fee Overview", "fees", "Principal", "table", "/fees-finance/fee-overview"],
   [1103, "Stock Check", "library", "Librarian", "table", "/library/stock-check"],
   [1104, "Hostel Report", "hostel", "Hostel Warden", "table", "/hostel/hostel-report"],
+  [1105, "Late Arrivals", "security", "Receptionist", "table", "/campus-security/late-arrivals"],
+  [1106, "Post Register", "security", "Receptionist", "table", "/campus-security/post-register"],
   [1048, "School Store Sales", "inventory", "Store Keeper", "table", "/inventory-labs/school-store-sales"],
   [1050, "Result Overrides", "exams", "Principal", "table", "/examinations/result-overrides"],
   [1051, "Report Card Printing", "exams", "School Admin", "table", "/examinations/report-card-printing"],
