@@ -165,6 +165,10 @@ def _apply(db: Session, a: ApprovalRequest) -> None:
         from app.services import payroll_service
 
         payroll_service.apply_approval(db, a)
+    elif a.kind == ApprovalKind.receipt_cancel:
+        from app.services import receipt_cancel_service
+
+        receipt_cancel_service.apply_approval(db, a)
 
 
 def _apply_result_publishing(db: Session, a: ApprovalRequest) -> None:

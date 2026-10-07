@@ -5,9 +5,11 @@ import { useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
+import { askText } from "@/lib/dialog";
 import { dateTime, initials, money } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
+import { useRouter } from "next/navigation";
 import { useApi } from "@/lib/useApi";
 import { DownloadButton } from "./common";
 
@@ -44,6 +46,7 @@ const period = (p: string) => {
 export function CounterReceipt({ id }: { id: string }) {
   const r = useApi<Receipt>(`/api/v1/school/accounts/collections/${id}/receipt`);
   const [sending, setSending] = useState<string | null>(null);
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const d = r.data;
   if (!d) return r.error ? <ErrorNote>{r.error}</ErrorNote> : <Loading what="Loading the receipt…" />;
@@ -61,6 +64,26 @@ export function CounterReceipt({ id }: { id: string }) {
       setError(errorText(e));
     } finally {
       setSending(null);
+    }
+  }
+
+  async function cancelReceipt() {
+    const reason = await askText(
+      `Cancel receipt ${d!.receipt_no} (${money(d!.amount)})? Its fees become unpaid again; a copy is kept under cancelled receipts. The school admin or principal approves an accountant's request.`,
+      { placeholder: "Why, e.g. wrong student or wrong amount", required: true },
+    );
+    if (!reason) return;
+    setError(null);
+    try {
+      const r = await api.post<{ status: string }>(`/api/v1/school/accounts/collections/${id}/cancel`, { reason });
+      if (r.status === "cancelled") {
+        notify(`Receipt ${d!.receipt_no} cancelled. Its fees are due again.`);
+        router.push(routeOf(160));
+      } else {
+        notify(`Sent to the principal: cancel receipt ${d!.receipt_no}. It stands until approved.`);
+      }
+    } catch (e) {
+      setError(errorText(e));
     }
   }
 
@@ -242,6 +265,9 @@ export function CounterReceipt({ id }: { id: string }) {
           <button type="button" className="btn text" disabled={sending !== null} onClick={() => send("parent")}>
             <Icon name="message" className="sm" />
             {sending === "parent" ? "Sending…" : "Send to parent"}
+          </button>
+          <button type="button" className="btn text rc-cancel" onClick={cancelReceipt}>
+            Cancel receipt
           </button>
           {s.has_login ? (
             <button type="button" className="btn text" disabled={sending !== null} onClick={() => send("student")}>

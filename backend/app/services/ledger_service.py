@@ -42,11 +42,20 @@ def next_receipt(db: Session, school_id: int, on: date) -> str:
     transaction ends; several lines of one payment then share the number."""
     db.execute(text("select pg_advisory_xact_lock(:k)"), {"k": 7_000_000_000 + school_id})
     prefix = f"FR{on:%y%m}-"
-    n = db.execute(
-        select(func.count(func.distinct(FeeCollection.receipt_no)))
-        .where(FeeCollection.school_id == school_id, FeeCollection.receipt_no.like(f"{prefix}%"))
-    ).scalar_one()
-    return f"{prefix}{n + 1:05d}"
+    from app.models.accounts import CancelledReceipt
+
+    # the highest number used this month, live or cancelled: a cancelled
+    # receipt's number is never handed out again
+    top = 0
+    for model in (FeeCollection, CancelledReceipt):
+        last = db.execute(select(func.max(model.receipt_no)).where(
+            model.school_id == school_id, model.receipt_no.like(f"{prefix}%"))).scalar_one()
+        if last:
+            try:
+                top = max(top, int(last[len(prefix):]))
+            except ValueError:
+                pass
+    return f"{prefix}{top + 1:05d}"
 
 
 def record_collection(

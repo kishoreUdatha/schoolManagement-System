@@ -236,3 +236,25 @@ class PettyCashEntry(Base, PrimaryKeyMixin, TimestampMixin, _School):
     is_void: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     void_reason: Mapped[Optional[str]] = mapped_column(String(200))
     created_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
+
+
+class CancelledReceipt(Base, PrimaryKeyMixin, TimestampMixin, _School):
+    """A fee receipt cancelled as entered in error: what it said, why it was
+    cancelled, who asked and who approved (services/receipt_cancel_service.py)."""
+
+    __audited__ = True
+    __tablename__ = "cancelled_receipts"
+    __table_args__ = (Index("ix_cancelled_receipts_school", "school_id", "collected_on"),)
+
+    receipt_no: Mapped[str] = mapped_column(String(30), nullable=False)
+    student_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+    collected_on: Mapped[date] = mapped_column(Date, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    mode: Mapped[str] = mapped_column(String(20), nullable=False)
+    reference: Mapped[Optional[str]] = mapped_column(String(120))
+    collected_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
+    lines: Mapped[list] = mapped_column(JSONB, default=list, nullable=False)
+    reason: Mapped[str] = mapped_column(String(300), nullable=False)
+    requested_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
+    approved_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
+    cancelled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

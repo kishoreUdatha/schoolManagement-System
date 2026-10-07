@@ -227,6 +227,7 @@ function ReceiptList() {
   const [from, setFrom] = useState(monthStart());
   const [to, setTo] = useState(isoToday());
   const [closing, setClosing] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
   const [mode, setMode] = useState("");
   const [q, setQ] = useState("");
   const list = useApi<Collection[]>("/api/v1/school/accounts/collections", { from, to, mode: mode || undefined });
@@ -279,6 +280,12 @@ function ReceiptList() {
       </div>
       <ErrorNote>{list.error}</ErrorNote>
       {closing && list.data ? <DayClose day={from} receipts={rows} /> : null}
+      <div className="row" style={{ justifyContent: "flex-end", marginBottom: 8 }}>
+        <button type="button" className="btn text" onClick={() => setShowCancelled(!showCancelled)}>
+          {showCancelled ? "Hide cancelled receipts" : "Show cancelled receipts"}
+        </button>
+      </div>
+      {showCancelled ? <CancelledReceipts from={from} to={to} /> : null}
       <Panel
         title="Receipts"
         sub={list.data ? `${rows.length} receipt${rows.length === 1 ? "" : "s"} · ${money(total)} received · ${date(from)} – ${date(to)}` : "Fee payments taken at the counter"}
@@ -513,5 +520,72 @@ function BankDeposit({ day }: { day: string }) {
         </form>
       ) : null}
     </div>
+  );
+}
+
+type Cancelled = {
+  id: number;
+  receipt_no: string;
+  collected_on: string;
+  amount: string;
+  mode: string;
+  student_name: string;
+  admission_no: string;
+  lines: { fee_head: string; period: string; amount: string }[];
+  reason: string;
+  cancelled_at: string;
+  collected_by_name: string | null;
+  requested_by_name: string | null;
+  approved_by_name: string | null;
+};
+
+/** Receipts cancelled as entered in error, in the same dates (GET /accounts/cancelled-receipts). */
+function CancelledReceipts({ from, to }: { from: string; to: string }) {
+  const r = useApi<Cancelled[]>("/api/v1/school/accounts/cancelled-receipts", { from, to });
+  const rows = r.data ?? [];
+  return (
+    <Panel title="Cancelled receipts" sub={`${rows.length} · ${money(rows.reduce((t, x) => t + Number(x.amount), 0))} · kept for the record, not counted anywhere`} flush>
+      <ErrorNote>{r.error}</ErrorNote>
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Receipt</th>
+              <th>Paid on</th>
+              <th>Student</th>
+              <th>Fees</th>
+              <th className="num">Amount</th>
+              <th>Reason</th>
+              <th>Asked by · Approved by</th>
+              <th>Cancelled</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((c) => (
+              <tr key={c.id}>
+                <td>{c.receipt_no}</td>
+                <td>{date(c.collected_on)}</td>
+                <td>
+                  {c.student_name}
+                  <small className="muted" style={{ display: "block", fontWeight: 500 }}>{c.admission_no}</small>
+                </td>
+                <td className="wrap">{c.lines.map((l) => l.fee_head).join(", ")}</td>
+                <td className="num">{money(c.amount)}</td>
+                <td className="wrap">{c.reason}</td>
+                <td>{`${c.requested_by_name ?? "—"} · ${c.approved_by_name ?? "—"}`}</td>
+                <td>{dateTime(c.cancelled_at)}</td>
+              </tr>
+            ))}
+            {!rows.length ? (
+              <tr>
+                <td colSpan={8} className="table-empty">
+                  {r.loading ? "Loading…" : "No receipts were cancelled in these dates."}
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
   );
 }

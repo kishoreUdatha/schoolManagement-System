@@ -29,7 +29,7 @@ from app.schemas.accounts import (
     VoidIn,
 )
 from app.services import accounts_service as svc
-from app.services import petty_cash_service, receipt_service
+from app.services import petty_cash_service, receipt_cancel_service, receipt_service
 
 
 router = APIRouter()
@@ -186,6 +186,21 @@ def receipt(collection_id: int, current_user: Actor, db: Db):
 def receipt_pdf(collection_id: int, current_user: Actor, db: Db):
     data, filename = receipt_service.pdf(db, current_user.school_id, collection_id)
     return Response(content=data, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{filename}"'})
+
+
+class CancelIn(BaseModel):
+    reason: str = Field(..., min_length=3, max_length=300)
+
+
+@router.post("/collections/{collection_id}/cancel", summary="Cancel a receipt entered in error (the principal approves an accountant's)")
+def cancel_receipt(collection_id: int, payload: CancelIn, current_user: Actor, db: Db):
+    return receipt_cancel_service.request(db, current_user, collection_id, payload.reason)
+
+
+@router.get("/cancelled-receipts", summary="Receipts cancelled as entered in error, in a date range")
+def cancelled_receipts(current_user: Actor, db: Db, frm: Optional[date] = Query(None, alias="from"), to: Optional[date] = Query(None)):
+    f, t = _range(frm, to)
+    return receipt_cancel_service.cancelled(db, current_user.school_id, f, t)
 
 
 class SendIn(BaseModel):
