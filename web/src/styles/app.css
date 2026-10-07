@@ -210,7 +210,7 @@ option{background:#fff}
 .wizard-dot.done .setup-num{background:#dcf5e8;color:#0f8a57}
 .wizard-dot.on .setup-num{background:var(--blue);color:#fff;box-shadow:0 0 0 4px #dbe8ff}
 .wizard-dot.on{color:var(--ink);font-weight:700}
-.wizard-dot-label{font-size:11.5px;white-space:nowrap}
+.wizard-dot-label{font-size:11.5px;text-align:center;line-height:1.25;max-width:72px}
 .wizard-card{padding:22px 24px}
 .wizard-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
 .wizard-card-head h2{font-size:20px;margin:2px 0 4px}

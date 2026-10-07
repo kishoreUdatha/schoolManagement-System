@@ -125,3 +125,33 @@ def cancel(booking_id: int, current_user: Staff, db: Db, reason: Optional[str] =
 @router.get("/lab-availability", response_model=Availability, summary="Which labs are free in each period")
 def availability(current_user: Staff, db: Db, on: date = Query(..., alias="date")):
     return svc.availability(db, current_user.school_id, on)
+
+
+
+@router.get("/setup/classroom", summary="What is left of the classroom set-up: rooms, class and subject teachers, timetables")
+def classroom_setup(current_user: Setup, db: Db):
+    from sqlalchemy import func, select
+
+    from app.models.academic import AcademicYear, SchoolClass, Section
+    from app.models.facility import Room
+    from app.models.subject import ClassSubject
+    from app.models.timetable import TimetableEntry
+
+    sid = current_user.school_id
+    year = db.execute(select(AcademicYear).where(AcademicYear.school_id == sid, AcademicYear.is_current.is_(True))).scalars().first()
+    if year is None:
+        return {"rooms": 0, "sections": 0}
+    rows = db.execute(select(Section, SchoolClass.name).join(SchoolClass, SchoolClass.id == Section.class_id)
+                      .where(SchoolClass.academic_year_id == year.id).order_by(SchoolClass.display_order, Section.name)).all()
+    label = {sec.id: f"{cls} {sec.name}" for sec, cls in rows}
+    with_tt = set(db.execute(select(TimetableEntry.section_id).where(TimetableEntry.section_id.in_(list(label) or [-1])).distinct()).scalars())
+    cs = db.execute(select(func.count(ClassSubject.id), func.count(ClassSubject.teacher_user_id))
+                    .join(SchoolClass, SchoolClass.id == ClassSubject.class_id).where(SchoolClass.academic_year_id == year.id)).one()
+    return {
+        "rooms": db.execute(select(func.count(Room.id)).where(Room.school_id == sid, Room.is_active.is_(True))).scalar(),
+        "sections": len(rows),
+        "without_class_teacher": [label[sec.id] for sec, _ in rows if not sec.class_teacher_user_id],
+        "class_subjects": cs[0], "without_teacher": cs[0] - cs[1],
+        "without_timetable": [label[sec.id] for sec, _ in rows if sec.id not in with_tt],
+        "unpublished": [label[sec.id] for sec, _ in rows if sec.id in with_tt and not sec.timetable_published_at],
+    }

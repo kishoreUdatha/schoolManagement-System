@@ -49,6 +49,7 @@ export function useSetupStatus() {
   const students = useApi<Paged>("/api/v1/school/students", { page_size: 1 });
   const gateway = useApi<{ configured: boolean }>("/api/v1/school/payments/gateway");
   const whatsapp = useApi<{ configured: boolean }>("/api/v1/school/whatsapp");
+  const room = useApi<Classroom>("/api/v1/school/setup/classroom");
 
   const p = profile.data;
   const cls = classes.data ?? [];
@@ -59,7 +60,11 @@ export function useSetupStatus() {
     { key: "subjects", short: "Subjects", title: "Subjects", why: "Needed for the timetable, homework, marks and report cards.", done: (subjects.data?.length ?? 0) > 0 && (taught.data?.length ?? 0) > 0, detail: subjects.data?.length ? `${subjects.data.length} subjects` : undefined },
     { key: "periods", short: "Periods", title: "School day (periods)", why: "The timetable is built on these periods.", done: (periods.data?.length ?? 0) > 0 },
     { key: "grading", short: "Grading", title: "Grading scale", why: "Turns marks into grades on report cards.", done: Boolean(scales.data?.some((s) => s.is_default && s.is_active)) },
+    { key: "rooms", short: "Rooms", title: "Rooms", why: "Classrooms, labs and halls: each section's home room, lab bookings and exam seating use them.", done: (room.data?.rooms ?? 0) > 0, detail: room.data?.rooms ? `${plural(room.data.rooms, "room")}` : undefined },
     { key: "staff", short: "Staff", title: "Staff", why: "Teachers and office staff each get their own login.", done: (staff.data?.length ?? 0) > 0, detail: staff.data?.length ? `${staff.data.length} staff` : undefined },
+    { key: "class_teachers", short: "Class teachers", title: "Class teachers", why: "A class teacher takes the register, decides student leave, writes report-card remarks and hears from the sick room.", done: Boolean(room.data && room.data.sections > 0 && room.data.without_class_teacher.length === 0), detail: room.data?.without_class_teacher.length ? `${room.data.without_class_teacher.length} of ${room.data.sections} sections have none` : undefined },
+    { key: "subject_teachers", short: "Subject teachers", title: "Subject teachers", why: "Who teaches each subject in each class: marks entry, homework and the timetable follow from it.", done: Boolean(room.data && room.data.class_subjects > 0 && room.data.without_teacher === 0), detail: room.data?.without_teacher ? `${room.data.without_teacher} of ${room.data.class_subjects} have no teacher` : undefined },
+    { key: "timetable", short: "Timetable", title: "Timetable", why: "Teachers, students and parents see their week once a section's timetable is published.", done: Boolean(room.data && room.data.sections > 0 && room.data.without_timetable.length === 0 && room.data.unpublished.length === 0), detail: room.data && (room.data.without_timetable.length || room.data.unpublished.length) ? [room.data.without_timetable.length ? `${room.data.without_timetable.length} sections not built` : "", room.data.unpublished.length ? `${room.data.unpublished.length} not published` : ""].filter(Boolean).join(" · ") : undefined },
     { key: "fees", short: "Fees", title: "Fees", why: "What each class pays, so fees can be raised and collected.", done: (fees.data?.length ?? 0) > 0 },
     { key: "students", short: "Students", title: "Students", why: "Add them one by one, import a spreadsheet, or admit them through admissions.", done: (students.data?.total ?? 0) > 0, detail: students.data?.total ? `${students.data.total} student${students.data.total === 1 ? "" : "s"}` : undefined },
     { key: "payments", short: "Payments", title: "Online fee payments", why: "Your Razorpay account, so parents can pay from the app.", done: Boolean(gateway.data?.configured), optional: true },
@@ -68,14 +73,14 @@ export function useSetupStatus() {
   // settled = every query that can run has answered (the first step to open depends on all of them)
   const pending = (q: { data: unknown; error: string | null }, runs = true) => runs && q.data === null && q.error === null;
   const loading =
-    [profile, years, subjects, periods, scales, staff, students, gateway, whatsapp].some((q) => pending(q)) ||
+    [profile, years, subjects, periods, scales, staff, students, gateway, whatsapp, room].some((q) => pending(q)) ||
     pending(terms, Boolean(current)) || pending(classes, Boolean(current)) || pending(fees, Boolean(current)) || pending(taught, Boolean(firstClass));
   const reload = () => {
-    for (const x of [profile, years, terms, classes, subjects, taught, periods, scales, staff, fees, students, gateway, whatsapp]) x.reload();
+    for (const x of [profile, years, terms, classes, subjects, taught, periods, scales, staff, fees, students, gateway, whatsapp, room]) x.reload();
   };
   const required = steps.filter((s) => !s.optional);
   return {
-    steps, loading, reload, current, classes: cls, subjects: subjects.data ?? [], profile: p,
+    steps, loading, reload, current, classes: cls, subjects: subjects.data ?? [], profile: p, classroom: room.data,
     done: required.filter((s) => s.done).length, total: required.length,
   };
 }
@@ -297,6 +302,22 @@ function FinishCard({ s, go }: { s: Ctx; go: (i: number) => void }) {
 }
 
 type Ctx = ReturnType<typeof useSetupStatus>;
+type Classroom = { rooms: number; sections: number; without_class_teacher: string[]; class_subjects: number; without_teacher: number; without_timetable: string[]; unpublished: string[] };
+
+/** The sections a step still waits on, named, with the screen that does it. */
+function Remaining({ names, none, label, go }: { names?: string[]; none: string; label?: string; go: React.ReactNode }) {
+  if (!names?.length) return none ? <p className="muted">{none}</p> : null;
+  return (
+    <div className="row" style={{ alignItems: "flex-start" }}>
+      <p className="muted" style={{ flex: 1 }}>
+        {label ? <strong>{`${label}: `}</strong> : null}
+        {names.slice(0, 12).join(", ")}
+        {names.length > 12 ? ` and ${names.length - 12} more` : ""}
+      </p>
+      {go}
+    </div>
+  );
+}
 type Run = (label: string, fn: () => Promise<void>, stay?: boolean) => Promise<void>;
 type StepProps = { s: Ctx; busy: boolean; run: Run; setProgress: (t: string | null) => void };
 
@@ -350,6 +371,29 @@ function StepBody({ step, ...p }: StepProps & { step: string }) {
           <p className="muted" style={{ flex: 1 }}>Enter your Razorpay keys so parents can pay fees online. You can collect fees at the counter without it.</p>
           <GoTo n={1043} label="Set up online payments" />
         </div>
+      );
+    case "rooms":
+      return (
+        <div className="row">
+          <p className="muted" style={{ flex: 1 }}>Add the classrooms (give each its section), labs, library and halls.</p>
+          <GoTo n={107} label="Add rooms" />
+        </div>
+      );
+    case "class_teachers":
+      return <Remaining names={s.classroom?.without_class_teacher} none="Every section has a class teacher." go={<GoTo n={84} label="Choose class teachers" />} />;
+    case "subject_teachers":
+      return (
+        <div className="row">
+          <p className="muted" style={{ flex: 1 }}>{s.classroom?.without_teacher ? `${s.classroom.without_teacher} class subjects still need a teacher.` : "Every subject in every class has a teacher."}</p>
+          <GoTo n={85} label="Assign subject teachers" />
+        </div>
+      );
+    case "timetable":
+      return (
+        <>
+          <Remaining names={s.classroom?.without_timetable} none="" label="Not built yet" go={<GoTo n={124} label="Generate timetables" />} />
+          <Remaining names={s.classroom?.unpublished} none="Every section's timetable is published." label="Built, not published" go={<GoTo n={125} label="Review and publish" primary={false} />} />
+        </>
       );
     case "whatsapp":
       return (
