@@ -291,7 +291,8 @@ def get_student_for_parent(
             ParentStudent.student_id == student_id,
         )
     ).scalar_one_or_none()
-    if not link:
+    own = db.execute(select(Student.id).where(Student.id == student_id, Student.user_id == parent_user_id)).scalar()
+    if not link and not own:  # a parent's link, or the student's own login
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Child not linked to this parent",

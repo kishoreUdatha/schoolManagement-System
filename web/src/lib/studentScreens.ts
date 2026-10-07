@@ -22,6 +22,12 @@ export const STUDENT_SCREENS: StudentScreen[] = [
   { id: "SM-008", n: 8, title: "Calendar", route: "/student/calendar", tab: "more", public: false },
   { id: "SM-009", n: 9, title: "My profile", route: "/student/profile", tab: "more", public: false },
   { id: "SM-010", n: 10, title: "Change password", route: "/student/change-password", tab: "more", public: false },
+  { id: "SM-011", n: 11, title: "Online tests", route: "/student/online-tests", tab: "more", public: false },
+  { id: "SM-012", n: 12, title: "Online test", route: "/student/online-test", tab: "more", public: false },
+  { id: "SM-013", n: 13, title: "Notices", route: "/student/notices", tab: "more", public: false },
+  { id: "SM-014", n: 14, title: "Attendance", route: "/student/attendance", tab: "more", public: false },
+  { id: "SM-015", n: 15, title: "Library", route: "/student/library", tab: "more", public: false },
+  { id: "SM-016", n: 16, title: "Study material", route: "/student/study-material", tab: "more", public: false },
 ];
 
 const BY_N = new Map(STUDENT_SCREENS.map((s) => [s.n, s]));

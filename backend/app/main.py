@@ -143,6 +143,7 @@ from app.api.v1.parent import (
 )
 from app.api.v1.student import (
     auth as student_auth,
+    learning as student_learning,
     portal as student_portal,
 )
 from app.api.v1.teacher import (
@@ -639,6 +640,11 @@ app.include_router(
 )
 app.include_router(
     student_portal.router,
+    prefix="/api/v1/student",
+    tags=["student / portal"],
+)
+app.include_router(
+    student_learning.router,
     prefix="/api/v1/student",
     tags=["student / portal"],
 )

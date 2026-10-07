@@ -386,6 +386,18 @@ def download(db: Session, resource_id: int, school_id: int, *, user: Optional[Us
 # ---------- parent view ----------
 
 
+def child_resource_file(db: Session, user_id: int, student_id: int, resource_id: int) -> TeachingResource:
+    """A study file the child (or their parent) may open: shared with families
+    and set for the child's own class."""
+    student: Student = require_linked_child(db, user_id, student_id)
+    r = _resource(db, resource_id, student.school_id)
+    sec = db.get(Section, student.section_id)
+    cs = db.get(ClassSubject, r.class_subject_id)
+    if not sec or not cs or cs.class_id != sec.class_id:
+        raise _404("Resource")
+    return download(db, resource_id, student.school_id, parent_view=True)  # counts the download
+
+
 def child_resources(db: Session, user: User, student_id: int, subject_id: Optional[int] = None) -> list[dict]:
     student: Student = require_linked_child(db, user.id, student_id)
     sec = db.get(Section, student.section_id)

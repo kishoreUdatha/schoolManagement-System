@@ -11,10 +11,13 @@
  *   GET  /parent/me/test-attempts/{attempt}/result       score, once released
  * The server keeps the clock: seconds_left comes from it, and it closes an
  * attempt that runs past its deadline even if this page is shut.
+ *
+ * The same pages serve the student app (SM-011/012), which takes its own
+ * tests from /student/…: the addresses come from a TestHost.
  */
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useParent } from "@/components/parent/ParentShell";
 import { api, errorText } from "@/lib/api";
 import { dateTime } from "@/lib/format";
@@ -89,23 +92,62 @@ type AttemptResult = {
   questions?: ReviewQuestion[];
 };
 
-const testPath = (attempt: number) => `${parentRoute(102)}?attempt=${attempt}`;
 const num = (v: string | null | undefined) => (v == null ? "—" : String(Number(v)));
+
+/** Where the test pages read and write, and where they lead: the parent's child, or the student themselves. */
+export type TestHostValue = {
+  list: string | null;
+  start: (testId: number) => string;
+  attempt: (attemptId: number) => string;
+  paperRoute: (attemptId: number) => string;
+  back: () => void;
+  /** "your child's" or "your" */
+  whose: string;
+};
+export const TestHost = createContext<TestHostValue | null>(null);
+
+function useHost(): TestHostValue {
+  const h = useContext(TestHost);
+  if (!h) throw new Error("The online test pages need a <TestHost>");
+  return h;
+}
+
+function ParentHost({ children }: { children: ReactNode }) {
+  const base = useChildPath();
+  const { go } = useParent();
+  return (
+    <TestHost.Provider
+      value={{
+        list: base && `${base}/tests`,
+        start: (id) => `${base}/tests/${id}/start`,
+        attempt: (a) => `/api/v1/parent/me/test-attempts/${a}`,
+        paperRoute: (a) => `${parentRoute(102)}?attempt=${a}`,
+        back: () => go(101),
+        whose: "your child's",
+      }}
+    >
+      {children}
+    </TestHost.Provider>
+  );
+}
 
 /* ------------------------------------------------------------------ PM-101 */
 
 export function OnlineTests() {
   return (
     <ChildGate>
-      <TestList />
+      <ParentHost>
+        <OnlineTestList />
+      </ParentHost>
     </ChildGate>
   );
 }
 
-function TestList() {
+export function OnlineTestList() {
   const router = useRouter();
-  const base = useChildPath();
-  const tests = useApi<ChildTest[]>(base && `${base}/tests`);
+  const host = useHost();
+  const testPath = host.paperRoute;
+  const tests = useApi<ChildTest[]>(host.list);
   const [confirm, setConfirm] = useState<ChildTest | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -117,11 +159,11 @@ function TestList() {
   const missed = all.filter((t) => t.state === "missed");
 
   async function start(t: ChildTest) {
-    if (!base) return;
+    if (!host.list) return;
     setBusy(true);
     setErr(null);
     try {
-      const paper = await api.post<Paper>(`${base}/tests/${t.id}/start`);
+      const paper = await api.post<Paper>(host.start(t.id));
       router.push(testPath(paper.attempt_id));
     } catch (e) {
       setErr(errorText(e));
@@ -203,7 +245,7 @@ function TestList() {
       ))}
 
       {!all.length && !tests.error ? (
-        <PmEmpty title="No online tests yet">Tests your child&apos;s teachers set online will appear here.</PmEmpty>
+        <PmEmpty title="No online tests yet">{`Tests ${host.whose} teachers set online will appear here.`}</PmEmpty>
       ) : null}
     </>
   );
@@ -212,9 +254,18 @@ function TestList() {
 /* ------------------------------------------------------------------ PM-102 */
 
 export function OnlineTest() {
+  return (
+    <ParentHost>
+      <OnlineTestPage />
+    </ParentHost>
+  );
+}
+
+export function OnlineTestPage() {
   const attempt = Number(useSearchParams().get("attempt")) || 0;
-  const { go } = useParent();
-  const paper = useApi<Paper>(attempt ? `/api/v1/parent/me/test-attempts/${attempt}` : null);
+  const host = useHost();
+  const go = (_: number) => host.back();
+  const paper = useApi<Paper>(attempt ? host.attempt(attempt) : null);
   const [result, setResult] = useState<AttemptResult | null>(null);
 
   if (!attempt)
@@ -235,7 +286,7 @@ export function OnlineTest() {
 }
 
 function LoadResult({ attempt }: { attempt: number }) {
-  const r = useApi<AttemptResult>(`/api/v1/parent/me/test-attempts/${attempt}/result`);
+  const r = useApi<AttemptResult>(`${useHost().attempt(attempt)}/result`);
   if (r.loading && !r.data) return <PmLoading />;
   if (r.error) return <PmError>{r.error}</PmError>;
   return r.data ? <ResultView r={r.data} /> : null;
@@ -254,7 +305,7 @@ function clock(s: number) {
 }
 
 function TakeTest({ paper, onDone }: { paper: Paper; onDone: (r: AttemptResult) => void }) {
-  const base = `/api/v1/parent/me/test-attempts/${paper.attempt_id}`;
+  const base = useHost().attempt(paper.attempt_id);
   const [answers, setAnswers] = useState<Record<number, Response>>(() =>
     Object.fromEntries(paper.questions.filter((q) => answered(q.response)).map((q) => [q.question_id, q.response as Response])),
   );
@@ -429,7 +480,8 @@ function shownAnswer(q: PaperQuestion, r: Response | undefined): string {
 }
 
 function ResultView({ r }: { r: AttemptResult }) {
-  const { go } = useParent();
+  const { back } = useHost();
+  const go = (_: number) => back();
   return (
     <>
       <div className="panel soft">

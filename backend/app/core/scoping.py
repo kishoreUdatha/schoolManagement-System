@@ -20,7 +20,11 @@ def get_school_student(db: Session, student_id: int, school_id: int) -> Student:
 
 
 def require_linked_child(db: Session, parent_user_id: int, student_id: int) -> Student:
-    """The student, but only if this parent is linked to them (404 otherwise)."""
+    """The student, but only if this parent is linked to them (404 otherwise).
+
+    The student's own login passes too: the student app reads the same
+    records through the same services. Parent routes admit only parents and
+    student routes pass the student's own id, so neither reaches further."""
     student = db.execute(
         select(Student)
         .join(ParentStudent, ParentStudent.student_id == Student.id)
@@ -29,6 +33,10 @@ def require_linked_child(db: Session, parent_user_id: int, student_id: int) -> S
             ParentStudent.student_id == student_id,
         )
     ).scalar_one_or_none()
+    if not student:
+        student = db.execute(
+            select(Student).where(Student.id == student_id, Student.user_id == parent_user_id)
+        ).scalar_one_or_none()
     if not student:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

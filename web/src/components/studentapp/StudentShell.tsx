@@ -32,7 +32,12 @@ const TABS: [key: string, label: string, n: number][] = [
 ];
 
 const MORE: [string, number][] = [
+  ["Online tests", 11],
+  ["Notices", 13],
+  ["Attendance", 14],
   ["Calendar", 8],
+  ["Study material", 16],
+  ["Library", 15],
   ["My profile", 9],
   ["Change password", 10],
 ];
@@ -60,6 +65,7 @@ export function StudentShell({ screen: n, children }: { screen: number; children
         screen={`s${n}`}
         title={n === 2 ? "BrightCampus" : s.title}
         showHeader={n > 1}
+        noBack={n === 2}
         noNav={!!s.noNav}
         tabs={TABS.map(([key, label, to]) => ({ key, label, active: s.tab === key, onPress: () => go(to) }))}
         menu={MORE.map(([label, to]) => ({ label, onPress: () => go(to) }))}

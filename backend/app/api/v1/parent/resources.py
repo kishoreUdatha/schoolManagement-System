@@ -22,8 +22,7 @@ def child_resources(student_id: int, current_user: ParentUser, db: Db, subject_i
 
 @router.get("/{student_id}/resources/{resource_id}/file")
 def download(student_id: int, resource_id: int, current_user: ParentUser, db: Db):
-    student = svc.require_linked_child(db, current_user.id, student_id)
-    r = svc.download(db, resource_id, student.school_id, parent_view=True)
+    r = svc.child_resource_file(db, current_user.id, student_id, resource_id)
     return Response(
         content=storage.read(r.file_key), media_type=r.content_type or "application/octet-stream",
         headers={"Content-Disposition": storage.content_disposition(r.file_name or "resource")},

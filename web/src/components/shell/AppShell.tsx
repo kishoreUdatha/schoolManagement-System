@@ -41,7 +41,6 @@ const NAV: [title: string, links: [number, string, IconName, number[]][]][] = [
 ];
 
 const ROLE_NAV: Record<string, RoleEntry[]> = {
-  Student: [[36, "Dashboard", "grid"], [131, "My homework", "book"], [59, "My academics", "cap"], [60, "My attendance", "check"], [125, "My timetable", "calendar"], [61, "Exams & results", "chart"], [62, "My fees", "money"], [67, "My library", "book"], [63, "My documents", "file"], [246, "School events", "calendar"], [57, "My profile", "users"]],
   // A teacher's day first, then the work that groups: the notification centre
   // is a tab of Messages, so it is not listed twice.
   // One entry per page group; the group's other pages are its tabs (ROLE_TABS).
@@ -438,14 +437,17 @@ export function ShellFrame({ children }: { children: ReactNode }) {
   );
 }
 
-/** Parents have their own app: an office address sends them to its home. */
+/** Parents and students have their own apps: an office address sends them to its home. */
+const OWN_APP: Record<string, string> = { parent: "/parent/home", student: "/student/home" };
+
 function OfficeOnly({ children }: { children: ReactNode }) {
-  const parent = useSession()?.user.role === "parent";
+  const role = useSession()?.user.role;
+  const app = role ? OWN_APP[role] : undefined;
   const router = useRouter();
   useEffect(() => {
-    if (parent) router.replace("/parent/home");
-  }, [parent, router]);
-  return parent ? null : <>{children}</>;
+    if (app) router.replace(app);
+  }, [app, router]);
+  return app ? null : <>{children}</>;
 }
 
 /**
