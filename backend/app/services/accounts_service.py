@@ -1,7 +1,7 @@
 """Accounts: expenses, other income, cheques (PDC), concessions, fee
 collection receipts and the cash book."""
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Optional
 
@@ -319,11 +319,15 @@ def add_concession(db: Session, user: User, data: ConcessionIn) -> tuple[Concess
     student = get_school_student(db, data.student_id, user.school_id)
     _scoped(db, FeeHead, data.fee_head_id, user.school_id, "Fee head")
     fields = data.model_dump(exclude={"apply_to_pending", "for_approval"})
-    if data.for_approval:
+    # only the school admin and the principal give a concession outright;
+    # anyone else's is a request for them to approve
+    if data.for_approval or not _concession_approver(user):
         c = Concession(tenant_id=user.tenant_id, school_id=user.school_id, requested_by_user_id=user.id,
                        is_active=False, approval_status="pending",
                        apply_to_pending_on_approval=data.apply_to_pending, **fields)
         db.add(c)
+        db.flush()
+        _file_concession_request(db, user, c, student)
         db.commit()
         db.refresh(c)
         return c, 0
@@ -363,13 +367,56 @@ def _apply_to_pending(db: Session, c: Concession, student_id: int) -> int:
     return applied
 
 
+def _concession_approver(user: User) -> bool:
+    from app.core.enums import UserRole
+
+    return user.role in (UserRole.school_admin, UserRole.principal)
+
+
+def _file_concession_request(db: Session, user: User, c: Concession, student: Student) -> None:
+    """Put the request in the principal's Approval requests."""
+    from app.core.enums import ApprovalKind, ApprovalStatus
+    from app.models.approval import ApprovalRequest
+
+    head = db.get(FeeHead, c.fee_head_id) if c.fee_head_id else None
+    value = f"{c.value.normalize():f}%" if c.kind == ConcessionKind.percent else f"Rs {c.value:,.2f}"
+    db.add(ApprovalRequest(
+        tenant_id=user.tenant_id, school_id=user.school_id, kind=ApprovalKind.concession,
+        status=ApprovalStatus.pending, requested_by_user_id=user.id, reason=c.notes or c.reason,
+        payload={"student": f"{student.full_name} ({student.admission_no})", "fee": head.name if head else "All fees",
+                 "concession": value, "type": c.reason, "from": c.valid_from.isoformat(),
+                 "to": c.valid_to.isoformat() if c.valid_to else "", "concession_ref": str(c.id)},
+    ))
+
+
+def _close_concession_request(db: Session, c: Concession, user: User, approve: bool, note: Optional[str]) -> None:
+    """A request decided on the Concessions screen is decided in Approval requests too."""
+    from app.core.enums import ApprovalKind, ApprovalStatus
+    from app.models.approval import ApprovalRequest
+
+    for a in db.execute(select(ApprovalRequest).where(
+        ApprovalRequest.school_id == c.school_id, ApprovalRequest.kind == ApprovalKind.concession,
+        ApprovalRequest.status == ApprovalStatus.pending, ApprovalRequest.payload["concession_ref"].astext == str(c.id),
+    )).scalars():
+        a.status = ApprovalStatus.approved if approve else ApprovalStatus.rejected
+        a.reviewed_by_user_id, a.decision_remark = user.id, note
+        a.decided_at = datetime.now(timezone.utc)
+
+
 def decide_concession(db: Session, concession_id: int, user: User, approve: bool,
-                      note: Optional[str] = None) -> tuple[Concession, int]:
+                      note: Optional[str] = None, *, from_approvals: bool = False) -> tuple[Concession, int]:
     """Approve (it comes into force, and reduces unpaid fees if the request
-    asked for that) or reject a pending concession request."""
+    asked for that) or reject a pending concession request. Only the school
+    admin or principal decides, and not on a request of their own making
+    unless they are the school admin."""
     c = _scoped(db, Concession, concession_id, user.school_id, "Concession")
+    if not _concession_approver(user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="The principal or school admin approves concessions")
     if c.approval_status != "pending":
         raise _400("This concession is not waiting for approval")
+    if not from_approvals:
+        _close_concession_request(db, c, user, approve, note)
     c.approved_by_user_id = user.id
     if note:
         c.notes = f"{c.notes} · {note}" if c.notes else note

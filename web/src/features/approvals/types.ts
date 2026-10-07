@@ -1,9 +1,9 @@
 /** GET /api/v1/school/approvals, /api/v1/principal/approvals (ApprovalRead). */
 
-export type ApprovalKind = "marks_correction" | "attendance_edit" | "staff_leave" | "result_publishing" | "fee_waiver" | "payroll_run" | "receipt_cancel";
+export type ApprovalKind = "marks_correction" | "attendance_edit" | "staff_leave" | "result_publishing" | "fee_waiver" | "payroll_run" | "receipt_cancel" | "concession";
 
 /** Kinds the system files by itself (a big waiver, a finalised payroll); nobody files them by hand. */
-export const SYSTEM_KINDS: ApprovalKind[] = ["fee_waiver", "payroll_run", "receipt_cancel"];
+export const SYSTEM_KINDS: ApprovalKind[] = ["fee_waiver", "payroll_run", "receipt_cancel", "concession"];
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 
 export type Approval = {
@@ -29,6 +29,7 @@ export const KIND_LABEL: Record<ApprovalKind, string> = {
   fee_waiver: "Fee waiver",
   payroll_run: "Payroll",
   receipt_cancel: "Cancel a receipt",
+  concession: "Fee concession",
 };
 
 export const STATUS_LABEL: Record<ApprovalStatus, string> = {
@@ -46,6 +47,7 @@ export const KIND_EFFECT: Record<ApprovalKind, string> = {
   fee_waiver: "Approving writes the fee off at once, with the accountant's reason on it. Rejecting leaves it due.",
   payroll_run: "Approving lets the accountant mark this payroll paid. Rejecting keeps it unpaid; they can reopen and correct it.",
   receipt_cancel: "Approving cancels the receipt: its fees become unpaid again and a copy is kept under cancelled receipts. Rejecting leaves it as it is.",
+  concession: "Approving puts the concession in force for fees raised from now on (and unpaid ones, if the request asked). Rejecting discards it.",
 };
 
 export type Exam = { id: number; name: string; academic_year_name?: string | null; is_published?: boolean };

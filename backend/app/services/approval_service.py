@@ -127,6 +127,8 @@ def decide(
     a.reviewed_by_user_id = reviewer_user_id
     if data.status == ApprovalStatus.approved:
         _apply(db, a)
+    elif a.kind == ApprovalKind.concession:
+        _decide_concession(db, a, approve=False, note=data.decision_remark)
 
     a.status = data.status
     a.decision_remark = data.decision_remark
@@ -169,6 +171,8 @@ def _apply(db: Session, a: ApprovalRequest) -> None:
         from app.services import receipt_cancel_service
 
         receipt_cancel_service.apply_approval(db, a)
+    elif a.kind == ApprovalKind.concession:
+        _decide_concession(db, a, approve=True)
 
 
 def _apply_result_publishing(db: Session, a: ApprovalRequest) -> None:
@@ -197,3 +201,13 @@ def can_request(user: User) -> bool:
     """Who's allowed to file an approval request? School admin + teacher
     today (the natural sources of marks/attendance/result changes)."""
     return user.role in (UserRole.school_admin, UserRole.teacher)
+
+
+
+def _decide_concession(db: Session, a: ApprovalRequest, approve: bool, note: Optional[str] = None) -> None:
+    """Approving or rejecting a concession request here decides the concession."""
+    from app.services import accounts_service
+
+    reviewer = db.get(User, a.reviewed_by_user_id)
+    cid = int((a.payload or {}).get("concession_ref") or 0)
+    accounts_service.decide_concession(db, cid, reviewer, approve, note, from_approvals=True)

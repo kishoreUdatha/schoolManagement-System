@@ -11,6 +11,13 @@ import { date, initials, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
+
+/** Only the school admin and principal give or approve a concession outright. */
+function useApprover(): boolean {
+  const role = useSession()?.user.role;
+  return role === "school_admin" || role === "principal";
+}
 import { Dialog, Field, isoToday, StudentPicker } from "./common";
 import type { Concession, FeeHead, PickedStudent } from "./types";
 
@@ -27,6 +34,7 @@ const describe = (c: Concession) => (c.kind === "percent" ? `${Number(c.value)}%
  * to stop it. A request changes no fee until it is approved.
  */
 export function Concessions() {
+  const approver = useApprover();
   const list = useApi<Concession[]>("/api/v1/school/accounts/concessions", { active_only: false });
   const heads = useApi<FeeHead[]>("/api/v1/school/fees/heads", { active_only: true });
   const [q, setQ] = useState("");
@@ -133,7 +141,8 @@ export function Concessions() {
                 <Link className="btn" href={`${routeOf(161)}?id=${c.student_id}`}>
                   Ledger
                 </Link>
-                {c.approval_status === "pending" ? (
+                {c.approval_status === "pending" && !approver ? <span className="muted small">Waiting for the principal</span> : null}
+                {c.approval_status === "pending" && approver ? (
                   <>
                     <button type="button" className="btn primary" onClick={() => decide(c, true)}>
                       Approve concession
@@ -192,6 +201,7 @@ export function Concessions() {
 }
 
 function NewConcession({ heads, onSaved }: { heads: FeeHead[]; onSaved: () => void }) {
+  const approver = useApprover();
   const [student, setStudent] = useState<PickedStudent | null>(null);
   const [f, setF] = useState({ fee_head_id: "", kind: "percent", value: "", reason: "sibling", valid_from: isoToday(), valid_to: "", notes: "", apply_to_pending: true, for_approval: false });
   const [saving, setSaving] = useState(false);
@@ -274,13 +284,17 @@ function NewConcession({ heads, onSaved }: { heads: FeeHead[]; onSaved: () => vo
           <input type="checkbox" checked={f.apply_to_pending} onChange={(e) => setF({ ...f, apply_to_pending: e.target.checked })} />
           <span>Also reduce unpaid fees already raised in this period</span>
         </label>
-        <label className="check-item">
-          <input type="checkbox" checked={f.for_approval} onChange={(e) => setF({ ...f, for_approval: e.target.checked })} />
-          <span>Send for approval instead of applying now</span>
-        </label>
+        {approver ? (
+          <label className="check-item">
+            <input type="checkbox" checked={f.for_approval} onChange={(e) => setF({ ...f, for_approval: e.target.checked })} />
+            <span>Send for approval instead of applying now</span>
+          </label>
+        ) : (
+          <p className="muted small">It goes to the principal under Approval requests and applies once approved.</p>
+        )}
         <button type="submit" className="btn primary" disabled={saving || !student}>
           <Icon name="check" className="sm" />
-          {saving ? "Saving…" : f.for_approval ? "Request concession" : "Save concession"}
+          {saving ? "Saving…" : f.for_approval || !approver ? "Request concession" : "Save concession"}
         </button>
       </div>
     </form>
