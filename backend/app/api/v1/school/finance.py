@@ -9,7 +9,9 @@ from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import FeeCounter, SchoolAdminOrAccountant
+from app.core.deps import FeeCounter, SchoolAdminOrAccountant, allow
+from app.core.enums import UserRole
+from app.models.user import User
 from app.core.enums import MoneyMode, PurchaseOrderStatus
 from app.database import get_db
 from app.services import finance_service
@@ -17,6 +19,8 @@ from app.services import finance_service
 
 router = APIRouter()
 Db = Annotated[Session, Depends(get_db)]
+# reading where fees stand: the office and the principal (who approves waivers and refunds)
+FeeReader = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.principal, UserRole.accountant))]
 
 
 class AssignmentIn(BaseModel):
@@ -250,3 +254,11 @@ def reminder_slips(user: SchoolAdminOrAccountant, db: Db, class_id: Optional[int
                                                                overdue_only=overdue_only, pay_by=pay_by)
     return Response(content=data, media_type="application/pdf",
                     headers={"Content-Disposition": f'inline; filename="{name}"', "X-Slip-Count": str(count)})
+
+
+
+@router.get("/overview", summary="Where fees stand, read-only: for the principal as well as the office")
+def fee_overview(user: FeeReader, db: Db):
+    from app.services import fee_reports_service
+
+    return fee_reports_service.overview(db, user.school_id)

@@ -300,3 +300,49 @@ def reminder_slips_pdf(db: Session, school_id: int, *, class_id: Optional[int] =
     SimpleDocTemplate(buf, pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=12 * mm, bottomMargin=10 * mm,
                       title="Fee reminder slips").build(story)
     return buf.getvalue(), f"fee-reminder-slips-{today:%Y%m%d}.pdf", len(per)
+
+
+# ---------- the principal's read-only view of fees ----------
+
+
+def overview(db: Session, school_id: int) -> dict:
+    """Where fees stand, to read, not to act on: collected this year, month
+    and today; what is still due and overdue; by class; month by month; and
+    the students owing most."""
+    today = date.today()
+    start, end = fy(today)
+    monthly = monthly_collections(db, school_id, start)
+    month_key = f"{today.year}-{today.month:02d}"
+    collected_today = db.execute(select(func.coalesce(func.sum(FeeCollection.amount), 0)).where(
+        FeeCollection.school_id == school_id, FeeCollection.collected_on == today)).scalar_one()
+    by_class = dues_by(db, school_id, "class")
+    secs, classes = _labels(db, school_id)
+    owing: dict[int, dict] = {}
+    for sid, amt_due, paid, st, due_date, section_id, active in _dues_rows(db, school_id):
+        left = amt_due - paid if st == FeeStatus.pending else ZERO
+        if left <= 0 or not active:
+            continue
+        o = owing.setdefault(sid, {"student_id": sid, "owed": ZERO, "oldest": due_date, "section_id": section_id})
+        o["owed"] += left
+        o["oldest"] = min(o["oldest"], due_date)
+    top = sorted(owing.values(), key=lambda o: -o["owed"])[:10]
+    names = {s.id: s for s in db.execute(select(Student).where(Student.id.in_([o["student_id"] for o in top] or [-1]))).scalars()}
+    defaulters = []
+    for o in top:
+        st = names.get(o["student_id"])
+        sec = secs.get(o["section_id"])
+        defaulters.append({"student_id": o["student_id"], "student_name": st.full_name if st else "",
+                           "admission_no": st.admission_no if st else "",
+                           "class_label": f"{classes.get(sec.class_id, '')} {sec.name}".strip() if sec else None,
+                           "owed": o["owed"], "overdue_days": max((today - o["oldest"]).days, 0)})
+    return {
+        "year_from": start, "year_to": end,
+        "collected_year": monthly["total"],
+        "collected_month": next((m["total"] for m in monthly["months"] if m["month"] == month_key), ZERO),
+        "collected_today": Decimal(collected_today),
+        "raised": by_class["totals"]["raised"], "due": by_class["totals"]["due"], "overdue": by_class["totals"]["overdue"],
+        "students_owing": by_class["students_owing"],
+        "by_class": by_class["rows"],
+        "months": [{"label": m["label"], "total": m["total"]} for m in monthly["months"]],
+        "top_owing": defaulters,
+    }

@@ -216,6 +216,7 @@ export const SCREEN_NOTE: Record<number, string> = {
   1003: "Which admission form fields are required and which are not asked, for every class or one class.",
   1049: "The school's accounts. Fees, receipts, expenses, bills and payroll post to them by themselves.",
   1098: "The float for small bills: pay from it against a voucher, and top it back up.",
+  1102: "Where fees stand: collected, still owed and overdue, by class and month, and who owes most. To read, not to collect.",
   1101: "The bank's statement against the books: match it, record charges and interest, find what's missing.",
   1100: "Dues from earlier years: entered from the old register, or last year's fees still unpaid.",
   1099: "The year's budget for each account, against what has come in and gone out.",

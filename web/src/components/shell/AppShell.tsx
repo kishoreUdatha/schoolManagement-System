@@ -54,7 +54,18 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
   ],
   Parent: [[37, "Dashboard", "grid"], [57, "My children", "cap"], [60, "Attendance", "check"], [61, "Exams & results", "chart"], [131, "Homework", "book"], [78, "Payments & receipts", "money"], [251, "Parent-teacher meeting", "calendar"], [253, "Messages", "message"], [296, "Notifications", "bell"], [73, "My profile", "users"]],
   "Super Admin": [[9, "Platform overview", "grid"], [10, "Organizations", "building"], [13, "Subscription plans", "file"], [14, "Billing", "money"], [15, "Usage & limits", "chart"], [16, "Platform users", "users"], [17, "Support tickets", "message"], [18, "Service health", "check"], [19, "Announcements", "bell"], [1083, "Integrations", "settings"], [20, "Platform settings", "settings"]],
-  Principal: [[34, "Dashboard", "grid"], [55, "Students", "cap"], [80, "Teachers", "users"], [104, "Lesson plan review", "book"], [53, "Admission approvals", "file"], [105, "Syllabus progress", "chart"], [117, "Attendance", "check"], [270, "Academic performance", "chart"], [1080, "Approval requests", "check"], [246, "School calendar", "calendar"], [252, "Announcements", "message"]],
+  // One entry per area, grouped; the rest of each area is the row of tabs on its page (ROLE_TABS).
+  Principal: [
+    [34, "Dashboard", "grid"], [1080, "Approval requests", "check"],
+    { title: "Students", icon: "cap", items: [[55, "Students"], [117, "Attendance"], [113, "Attendance correction"], [115, "Student leave"], [223, "Discipline"], [221, "Counselling"]] },
+    { title: "Teaching", icon: "book", items: [[105, "Syllabus & lesson plans"], [125, "Timetables"], [127, "Substitutions"], [109, "Co-curricular"]] },
+    { title: "Exams & results", icon: "chart", items: [[138, "Exam dashboard"], [139, "Exam setup"], [148, "Marks sign-off"], [150, "Results"]] },
+    { title: "Staff", icon: "users", items: [[80, "Teachers & staff"], [90, "Class observations"], [179, "Attendance & leave"], [172, "Hiring"]] },
+    { title: "Admissions", icon: "file", items: [[43, "Admissions dashboard"], [44, "Enquiries"], [48, "Applications"]] },
+    { title: "Fees", icon: "money", items: [[1102, "Fee overview"], [165, "Refund approvals"]] },
+    { title: "Communication", icon: "message", items: [[252, "Notices"], [246, "School calendar"]] },
+    { title: "Reports", icon: "chart", items: [[264, "Analytics"], [265, "School reports"], [273, "Office reports"], [283, "Report builder"]] },
+  ],
   // One entry per area; the rest of each area is the row of tabs on its page (ROLE_TABS).
   Accountant: [[38, "Dashboard", "grid"], [158, "Fee collection", "money"], [1040, "Fee setup", "file"], [166, "Income & expenses", "book"], [1056, "Books of account", "book"], [171, "Finance reports", "chart"]],
   Staff: [[39, "Dashboard", "grid"], [1090, "My attendance", "check"], [1091, "My leave", "calendar"], [1092, "My payslips", "money"], [1093, "My library", "book"], [296, "Notifications", "bell"], [1097, "My profile", "users"]],
@@ -70,6 +81,15 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
  * role's tab rows hold only screens already in its menu.
  */
 const ROLE_TABS: Record<string, number[]> = {
+  Principal: [
+    117, 118, 119, 113, 223, 224, 221, 222, // students: attendance, corrections, discipline, counselling
+    98, 100, 101, 102, 104, 105, 106, 123, 125, 126, 120, 108, 107, // teaching: curriculum, timetables
+    139, 140, 141, 142, 143, 144, 146, 148, 149, 150, 152, // exams
+    80, 86, 87, 90, 179, 88, 180, 181, 182, 1061, 89, 172, 173, 174, 1060, 176, 177, 178, // staff
+    44, 47, 1002, 1001, 48, 51, 52, 53, // admissions
+    252, 255, 296, 246, 249, // communication
+    265, 266, 267, 268, 269, 270, 271, 272, 278, 273, 274, 275, 276, 282, // reports
+  ],
   Accountant: [
     158, 160, 159, 1044, 1045, 161, 162, 1100, 165, // fee collection
     155, 1040, 157, 1041, 163, 164, 1042, // fee setup (online payment keys stay the admin's)
@@ -192,7 +212,11 @@ function Sidebar({ s, viewer, school, collapsed, onToggle }: { s: Screen | undef
   const own = new Set([...(roleNav ?? []).flatMap(screensIn), ...(ROLE_TABS[viewer.role] ?? [])]);
   for (const [n, head] of Object.entries(PARENT)) if (own.has(head)) own.add(Number(n));
   const jobs = roleNav ? heldJobs(perms).map((j) => ({ ...j, items: jobMenu(j, own, sess?.user.role) })).filter((j) => j.items.length) : [];
-  const here = s ? (PARENT[s.n] ?? s.n) : -1;
+  // the menu entry for this screen: itself, else the head of its tab group,
+  // else whichever entry opens a page in the same group (Marks sign-off for Grading)
+  const menuNs = [...(roleNav ?? []).flatMap(screensIn), ...jobs.flatMap((j) => j.items.map(([n]) => n))];
+  const sameGroup = (n: number) => !!s && !!tabGroupOf(s.n) && tabGroupOf(n) === tabGroupOf(s.n);
+  const here = !s ? -1 : menuNs.includes(s.n) ? s.n : menuNs.includes(PARENT[s.n]) ? PARENT[s.n] : (menuNs.find(sameGroup) ?? PARENT[s.n] ?? s.n);
   const scroller = useRef<HTMLDivElement>(null);
 
   // Keep the menu where it was between screens, and the current item in view.

@@ -11,6 +11,7 @@ import { ErrorNote } from "@/components/ui/states";
 import { date } from "@/lib/format";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import { jobRolesOf, ROLE_LABEL, type JobRole, type Staff, type StaffLeave, type StaffRole } from "./types";
 import { downloadCsv, todayIso } from "./util";
 
@@ -32,8 +33,13 @@ export function StaffDirectory() {
 
   const jobId = role.startsWith("job:") ? Number(role.slice(4)) : undefined;
   const list = useApi<Staff[]>("/api/v1/school/staff", { role: jobId ? "" : role, job_role_id: jobId, status, search });
-  const jobs = jobRolesOf(useApi<JobRole[]>("/api/v1/school/roles").data);
+  const isAdmin = useSession()?.user.role === "school_admin";
+  const roles = useApi<JobRole[]>(isAdmin ? "/api/v1/school/roles" : null);
   const all = useApi<Staff[]>("/api/v1/school/staff");
+  // the roles list is the school admin's; anyone else filters by the jobs the staff hold
+  const jobs: JobRole[] = isAdmin
+    ? jobRolesOf(roles.data)
+    : [...new Map((all.data ?? []).flatMap((s) => s.job_roles ?? []).map((j) => [j.id, { ...j, base_role: "", is_system: false, is_active: true, description: null }])).values()].sort((a, b) => a.name.localeCompare(b.name));
   const approved = useApi<StaffLeave[]>("/api/v1/school/staff-leaves", { status: "approved" });
 
   const today = todayIso();

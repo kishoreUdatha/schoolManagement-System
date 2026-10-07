@@ -178,9 +178,9 @@ export function PrincipalDashboard() {
       <StatStrip items={stats} />
       <QuickActions
         items={[
-          ["/students/add-student", "cap", "Add student"],
-          ["/attendance/daily-class-attendance", "check", "Mark attendance"],
-          ["/fees-finance/fee-collection", "money", "Collect fee"],
+          ["/settings/approval-requests", "check", "Approval requests"],
+          ["/staff/performance-classroom-observation", "users", "Observe a class"],
+          ["/fees-finance/fee-overview", "money", "Fee overview"],
           ["/communication/announcements", "message", "Create notice"],
         ]}
       />
