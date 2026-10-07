@@ -63,6 +63,7 @@ export function MobileFrame({
   screen,
   title,
   showHeader,
+  noBack,
   headerRight,
   subBar,
   noNav,
@@ -78,6 +79,8 @@ export function MobileFrame({
   screen: number | string;
   title: string;
   showHeader: boolean;
+  /** The app's first page: nothing to go back to. */
+  noBack?: boolean;
   headerRight?: ReactNode;
   subBar?: ReactNode;
   /** Hide the bottom navigation (sign-in and account screens). */
@@ -100,9 +103,13 @@ export function MobileFrame({
       <div className={`phone ${noNav ? "no-nav" : ""}`} data-screen={screen} onClick={onBodyClick}>
         {showHeader ? (
           <header id="app-header">
-            <button className="icon-button" aria-label="Go back" onClick={() => router.back()}>
-              <Ico name="back" />
-            </button>
+            {noBack ? (
+              <span style={{ width: 38 }} />
+            ) : (
+              <button className="icon-button" aria-label="Go back" onClick={() => router.back()}>
+                <Ico name="back" />
+              </button>
+            )}
             <h2>{title}</h2>
             {headerRight ?? <span style={{ width: 38 }} />}
           </header>

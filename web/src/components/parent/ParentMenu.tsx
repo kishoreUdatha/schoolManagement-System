@@ -61,6 +61,7 @@ export const QUICK_ACCESS: MenuTile[] = [
   { label: "Results", n: 21, icon: "results", tone: "green" },
   { label: "Messages", n: 35, icon: "chat", tone: "teal" },
   { label: "Track bus", n: 30, icon: "bus", tone: "blue" },
+  { label: "Notices", n: 33, icon: "notice", tone: "blue" },
   { label: "Apply leave", n: 12, icon: "leave", tone: "purple" },
 ];
 
@@ -152,16 +153,36 @@ export function TileGrid({ tiles, onPick }: { tiles: MenuTile[]; onPick: (n: num
   );
 }
 
-/** Every section as a titled card of tiles. */
-export function MenuSections({ onPick }: { onPick: (n: number) => void }) {
+/**
+ * Screens for services the child doesn't use (no school bus, not in the
+ * hostel, no menu published): their tiles are left out rather than opening
+ * on "not using this". Unknown (still loading) hides nothing.
+ */
+export function hiddenFor(child: { uses_transport?: boolean | null; in_hostel?: boolean | null; has_meal_menu?: boolean | null } | null): Set<number> {
+  const out = new Set<number>();
+  if (child?.uses_transport === false) [29, 30, 31, 32].forEach((n) => out.add(n));
+  if (child?.in_hostel === false) out.add(52);
+  if (child?.has_meal_menu === false) out.add(53);
+  return out;
+}
+
+/** The quick-access row: eight tiles, the bus only for a child who takes it. */
+export function quickAccess(hide: Set<number>): MenuTile[] {
+  return QUICK_ACCESS.filter((t) => !hide.has(t.n)).slice(0, 8);
+}
+
+/** Every section as a titled card of tiles, less what the child doesn't use. */
+export function MenuSections({ onPick, hide }: { onPick: (n: number) => void; hide?: Set<number> }) {
   return (
     <>
-      {MENU_SECTIONS.map((s) => (
-        <section key={s.title} className="tile-card">
-          <h3>{s.title}</h3>
-          <TileGrid tiles={s.tiles} onPick={onPick} />
-        </section>
-      ))}
+      {MENU_SECTIONS.map((s) => ({ ...s, tiles: s.tiles.filter((t) => !hide?.has(t.n)) }))
+        .filter((s) => s.tiles.length)
+        .map((s) => (
+          <section key={s.title} className="tile-card">
+            <h3>{s.title}</h3>
+            <TileGrid tiles={s.tiles} onPick={onPick} />
+          </section>
+        ))}
     </>
   );
 }

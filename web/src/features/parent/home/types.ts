@@ -5,6 +5,8 @@ export type AttendanceSummary = {
   days_absent: number;
   days_late: number;
   days_half_day: number;
+  /** when the counted records start */
+  first_marked_on?: string | null;
   days_marked: number;
   attendance_percent: number | null;
 };

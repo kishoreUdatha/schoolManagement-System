@@ -21,7 +21,13 @@ def list_children(
     current_user: ParentUser,
     db: Annotated[Session, Depends(get_db)],
 ):
+    from app.services import hostel_service, parent_services_service, transport_service
+
     rows = parent_service.list_children_for_parent_portal(db, current_user.id)
+    for r in rows:
+        r["uses_transport"] = transport_service.child_transport(db, current_user.id, r["id"]) is not None
+        r["in_hostel"] = hostel_service.child_hostel(db, current_user.id, r["id"]) is not None
+        r["has_meal_menu"] = parent_services_service.child_meal_menu(db, current_user.id, r["id"]).get("source") != "none"
     return [ChildOverview.model_validate(r) for r in rows]
 
 

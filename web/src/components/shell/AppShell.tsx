@@ -53,7 +53,6 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
     { title: "Class teacher", icon: "users", items: [[115, "Student leave"], [251, "Parent-teacher meetings"], [1094, "Behaviour notes"], [1095, "Weekly reports"]] },
     [253, "Messages", "message"], [1091, "My leave & records", "calendar"], [1093, "My library", "book"],
   ],
-  Parent: [[37, "Dashboard", "grid"], [57, "My children", "cap"], [60, "Attendance", "check"], [61, "Exams & results", "chart"], [131, "Homework", "book"], [78, "Payments & receipts", "money"], [251, "Parent-teacher meeting", "calendar"], [253, "Messages", "message"], [296, "Notifications", "bell"], [73, "My profile", "users"]],
   "Super Admin": [[9, "Platform overview", "grid"], [10, "Organizations", "building"], [13, "Subscription plans", "file"], [14, "Billing", "money"], [15, "Usage & limits", "chart"], [16, "Platform users", "users"], [17, "Support tickets", "message"], [18, "Service health", "check"], [19, "Announcements", "bell"], [1083, "Integrations", "settings"], [20, "Platform settings", "settings"]],
   // One entry per area, grouped; the rest of each area is the row of tabs on its page (ROLE_TABS).
   Principal: [
@@ -432,7 +431,21 @@ export function ShellFrame({ children }: { children: ReactNode }) {
   // Sign-in, the workspace chooser and the rest of the public pages draw
   // themselves; they have no menu and no one signed in to send away.
   if (!s || s.module === MODULES[0]) return <>{children}</>;
-  return <SignedInFrame s={s}>{children}</SignedInFrame>;
+  return (
+    <OfficeOnly>
+      <SignedInFrame s={s}>{children}</SignedInFrame>
+    </OfficeOnly>
+  );
+}
+
+/** Parents have their own app: an office address sends them to its home. */
+function OfficeOnly({ children }: { children: ReactNode }) {
+  const parent = useSession()?.user.role === "parent";
+  const router = useRouter();
+  useEffect(() => {
+    if (parent) router.replace("/parent/home");
+  }, [parent, router]);
+  return parent ? null : <>{children}</>;
 }
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { MenuSections, QUICK_ACCESS, TileGrid } from "@/components/parent/ParentMenu";
+import { hiddenFor, quickAccess, TileGrid } from "@/components/parent/ParentMenu";
 import { initialsOf, useParent, type Child } from "@/components/parent/ParentShell";
 import { money } from "@/lib/format";
 import { parentRoute } from "@/lib/parentScreens";
@@ -103,7 +103,13 @@ function HomeFor({ childId, child }: { childId: number; child: Child }) {
                 {pctValue === null || pctValue === undefined ? "—" : Math.round(pctValue)}
                 <span>%</span>
               </b>
-              <small>{att ? `${att.days_present} of ${att.days_marked} marked days` : profile.loading ? "Loading…" : "Not marked yet"}</small>
+              <small>
+                {att?.days_marked
+                  ? `${att.days_present} of ${att.days_marked} days${att.first_marked_on ? ` since ${shortDay(att.first_marked_on)}` : ""}`
+                  : profile.loading
+                    ? "Loading…"
+                    : "Not marked yet"}
+              </small>
             </span>
             <span className="v-icon white mini">{peopleIcon}</span>
           </button>
@@ -122,7 +128,7 @@ function HomeFor({ childId, child }: { childId: number; child: Child }) {
       </section>
       <section className="tile-card">
         <h3>Quick access</h3>
-        <TileGrid tiles={QUICK_ACCESS} onPick={go} />
+        <TileGrid tiles={quickAccess(hiddenFor(child))} onPick={go} />
       </section>
       <div className="section-head">
         <h3>Needs your attention</h3>
@@ -211,10 +217,6 @@ function HomeFor({ childId, child }: { childId: number; child: Child }) {
           </div>
         </>
       ) : null}
-      <div className="section-head">
-        <h3>All services</h3>
-      </div>
-      <MenuSections onPick={go} />
     </>
   );
 }
@@ -251,4 +253,10 @@ function TodayStatus({ day }: { day: AttendanceDay | null }) {
       )}
     </div>
   );
+}
+
+/** "14 Sep" */
+function shortDay(iso: string): string {
+  const [y, m, d] = iso.slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }

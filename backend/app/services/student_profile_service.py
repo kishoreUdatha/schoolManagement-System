@@ -36,7 +36,9 @@ def _attendance_summary(db: Session, student_id: int) -> dict:
         pct = round(((present + late + 0.5 * half) / marked) * 100, 1)
     else:
         pct = None
+    first = db.execute(select(func.min(StudentAttendance.date)).where(StudentAttendance.student_id == student_id)).scalar()
     return {
+        "first_marked_on": first,
         "days_present": present,
         "days_absent": absent,
         "days_late": late,

@@ -13,7 +13,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { MenuSections } from "@/components/parent/ParentMenu";
+import { hiddenFor, MenuSections } from "@/components/parent/ParentMenu";
 import { Ico, MobileFrame, useToast } from "@/components/mobile/MobileFrame";
 import { PARENT_SCREENS, parentRoute, parentScreen } from "@/lib/parentScreens";
 import { session } from "@/lib/session";
@@ -31,6 +31,10 @@ export type Child = {
   is_active: boolean;
   attendance_percent: number | null;
   fees_pending_amount: number | null;
+  /** optional services that apply to the child (GET /parent/me/children) */
+  uses_transport?: boolean | null;
+  in_hostel?: boolean | null;
+  has_meal_menu?: boolean | null;
   relation: string | null;
 };
 
@@ -140,6 +144,7 @@ export function ParentShell({ screen: n, children: body }: { screen: number; chi
         screen={n}
         title={n === 6 ? "BrightCampus" : s.title}
         showHeader={n > 1}
+        noBack={n === 6}
         headerRight={
           isParent ? (
             <button className="icon-button" aria-label="Notifications" onClick={() => go(7)}>
@@ -163,6 +168,7 @@ export function ParentShell({ screen: n, children: body }: { screen: number; chi
         menu={[]}
         menuBody={(close) => (
           <MenuSections
+            hide={hiddenFor(child)}
             onPick={(to) => {
               close();
               go(to);

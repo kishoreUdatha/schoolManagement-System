@@ -25,6 +25,7 @@ class AttendanceSummary(BaseModel):
     days_absent: int
     days_late: int
     days_half_day: int
+    first_marked_on: Optional[date] = None  # when the counted records start
     days_marked: int  # any status
     attendance_percent: Optional[float] = None  # null when days_marked == 0
 

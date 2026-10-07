@@ -100,3 +100,7 @@ class ChildOverview(BaseModel):
     attendance_percent: Optional[float] = None
     fees_pending_amount: Optional[float] = None
     relation: ParentRelation
+    # which optional services apply to the child, so the app shows only those (list only)
+    uses_transport: Optional[bool] = None
+    in_hostel: Optional[bool] = None
+    has_meal_menu: Optional[bool] = None
