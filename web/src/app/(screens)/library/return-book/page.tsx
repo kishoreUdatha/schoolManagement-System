@@ -8,15 +8,19 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { ReturnBook } from "@/features/library/Desk";
+import { RemindOverdueButton } from "@/features/library/Tools";
 
 export const metadata = { title: "SCR-203 · Return Book · BrightCampus" };
 
 export default function Page() {
   return (
-    <AppShell screen="SCR-203" actions={<button type="submit" form="return-form" className="btn primary">
-          <Icon name="check" className="sm" />
-          Confirm return
-        </button>}>
+    <AppShell screen="SCR-203" actions={<>
+          <RemindOverdueButton />
+          <button type="submit" form="return-form" className="btn primary">
+            <Icon name="check" className="sm" />
+            Confirm return
+          </button>
+        </>}>
       <Suspense>
         <ReturnBook />
       </Suspense>

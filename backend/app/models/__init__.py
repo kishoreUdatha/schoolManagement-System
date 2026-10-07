@@ -127,7 +127,7 @@ from app.models.inventory import (
     Supplier,
 )
 from app.models.learning_video import LearningVideo, LearningVideoCompletion
-from app.models.library import Book, BookCopy, LibrarySettings, Loan, Reservation
+from app.models.library import Book, BookCopy, LibrarySettings, Loan, Reservation, StockCheck, StockCheckScan
 from app.models.mark import Mark
 from app.models.messaging import Conversation, Message
 from app.models.notice import Notice, NoticeRecipient

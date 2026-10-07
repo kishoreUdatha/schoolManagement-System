@@ -9,15 +9,20 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
 import { CatalogueBrowser } from "@/features/library/Catalogue";
+import { ImportBooksButton, LabelsButton } from "@/features/library/Tools";
 
 export const metadata = { title: "SCR-198 · Library Catalogue · BrightCampus" };
 
 export default function Page() {
   return (
-    <AppShell screen="SCR-198" actions={<Link href="/library/add-edit-book" className="btn primary">
-          <Icon name="plus" className="sm" />
-          Add book
-        </Link>}>
+    <AppShell screen="SCR-198" actions={<>
+          <ImportBooksButton />
+          <LabelsButton />
+          <Link href="/library/add-edit-book" className="btn primary">
+            <Icon name="plus" className="sm" />
+            Add book
+          </Link>
+        </>}>
       <Suspense>
         <CatalogueBrowser />
       </Suspense>

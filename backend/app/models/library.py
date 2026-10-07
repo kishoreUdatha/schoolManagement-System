@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Optional
 
@@ -204,3 +204,34 @@ class Reservation(Base, PrimaryKeyMixin, TimestampMixin):
     # today), and how they want to hear that it is ready.
     reserved_on: Mapped[Optional[date]] = mapped_column(Date)
     notify_channel: Mapped[Optional[str]] = mapped_column(String(20))
+
+
+class StockCheck(Base, PrimaryKeyMixin, TimestampMixin):
+    """A physical check of the shelves (services/library_tools_service.py)."""
+
+    __audited__ = True
+    __tablename__ = "library_stock_checks"
+
+    tenant_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False)
+    school_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("schools.id", ondelete="CASCADE"), nullable=False, index=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    started_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
+    closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    closed_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
+    note: Mapped[Optional[str]] = mapped_column(String(200))
+
+
+class StockCheckScan(Base):
+    """One accession number seen on the shelf during a stock check."""
+
+    __tablename__ = "library_stock_check_scans"
+    __table_args__ = (UniqueConstraint("check_id", "accession_no", name="uq_stock_scan_once"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    check_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("library_stock_checks.id", ondelete="CASCADE"), nullable=False, index=True)
+    school_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("schools.id", ondelete="CASCADE"), nullable=False)
+    accession_no: Mapped[str] = mapped_column(String(40), nullable=False)
+    copy_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("library_copies.id", ondelete="SET NULL"))
+    shelf: Mapped[Optional[str]] = mapped_column(String(40))
+    scanned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    scanned_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))

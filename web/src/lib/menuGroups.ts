@@ -58,7 +58,7 @@ export const TAB_GROUPS: TabGroup[] = [
   { label: "Routes", tabs: [[189, "Routes"], [191, "Stops"], [193, "Student routes"]] },
   { label: "Daily trips", tabs: [[194, "Trip sheets"], [196, "Boarding"], [195, "Live tracking"]] },
   // Library
-  { label: "Books", tabs: [[198, "Books"], [206, "Digital library"], [201, "Members"], [1073, "Settings"]] },
+  { label: "Books", tabs: [[198, "Books"], [206, "Digital library"], [201, "Members"], [1103, "Stock check"], [1073, "Settings"]] },
   { label: "Issue & return", tabs: [[202, "Issue"], [203, "Return"], [204, "Renew & reserve"], [205, "Fines & lost books"]] },
   // Communication
   { label: "Messages", tabs: [[252, "Announcements"], [253, "Inbox"], [254, "Bulk messages"], [255, "History"], [296, "Notifications"]] },
@@ -216,6 +216,7 @@ export const SCREEN_NOTE: Record<number, string> = {
   1003: "Which admission form fields are required and which are not asked, for every class or one class.",
   1049: "The school's accounts. Fees, receipts, expenses, bills and payroll post to them by themselves.",
   1098: "The float for small bills: pay from it against a voucher, and top it back up.",
+  1103: "Scan the shelves against the catalogue: what is missing, what is out on loan, what turned up after being written off.",
   1102: "Where fees stand: collected, still owed and overdue, by class and month, and who owes most. To read, not to collect.",
   1101: "The bank's statement against the books: match it, record charges and interest, find what's missing.",
   1100: "Dues from earlier years: entered from the old register, or last year's fees still unpaid.",

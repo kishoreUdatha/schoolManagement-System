@@ -50,7 +50,7 @@ export const JOBS: Job[] = [
     title: "Library",
     items: [
       [198, "Book catalogue"], [201, "Library members"], [202, "Issue book"], [203, "Return book"],
-      [204, "Renew & reserve"], [205, "Fines & lost books"], [206, "Digital library"], [1073, "Library settings"], [207, "Library reports"],
+      [204, "Renew & reserve"], [205, "Fines & lost books"], [206, "Digital library"], [1103, "Stock check"], [1073, "Library settings"], [207, "Library reports"],
     ],
   },
   {

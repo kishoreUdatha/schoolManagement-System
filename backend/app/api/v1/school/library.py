@@ -1,6 +1,9 @@
+from datetime import date
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import Response
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.deps import LibraryManager, SchoolAdminUser
@@ -33,6 +36,7 @@ from app.schemas.library import (
     ReturnRequest,
 )
 from app.services import library_service as svc
+from app.services import library_tools_service as tools
 
 
 router = APIRouter()
@@ -245,3 +249,101 @@ def cancel(reservation_id: int, current_user: LibraryManager, db: Db):
     return ReservationRead.model_validate(
         svc.reservation_to_read(db, svc.cancel_reservation(db, reservation_id, current_user.school_id))
     )
+
+
+
+# --- The librarian's bulk work: import, labels, overdue reminders, stock check ---
+
+
+class ImportRow(BaseModel):
+    title: Optional[str] = Field(None, max_length=400)
+    authors: Optional[str] = Field(None, max_length=400)
+    isbn: Optional[str] = Field(None, max_length=40)
+    publisher: Optional[str] = Field(None, max_length=200)
+    edition: Optional[str] = Field(None, max_length=60)
+    publish_year: Optional[str] = Field(None, max_length=10)
+    category: Optional[str] = Field(None, max_length=100)
+    language: Optional[str] = Field(None, max_length=60)
+    shelf: Optional[str] = Field(None, max_length=60)
+    copies: Optional[str] = Field(None, max_length=10)
+    accession_nos: Optional[str] = Field(None, max_length=8000)
+    price: Optional[str] = Field(None, max_length=20)
+
+
+class ImportIn(BaseModel):
+    rows: list[ImportRow] = Field(..., min_length=1, max_length=5000)
+    dry_run: bool = True
+
+
+class ScanIn(BaseModel):
+    accession_nos: list[str] = Field(..., min_length=1, max_length=2000)
+    shelf: Optional[str] = Field(None, max_length=40)
+
+
+class CopyIdsIn(BaseModel):
+    copy_ids: list[int] = Field(..., min_length=1, max_length=5000)
+
+
+class StockCheckIn(BaseModel):
+    note: Optional[str] = Field(None, max_length=200)
+
+
+@router.post("/import", summary="Bring in books from a spreadsheet: check (dry_run) then save the good rows")
+def import_books(payload: ImportIn, current_user: LibraryManager, db: Db):
+    return tools.import_books(db, current_user, [r.model_dump() for r in payload.rows], payload.dry_run)
+
+
+@router.get("/labels.pdf", summary="Spine / barcode labels, 24 to an A4 sheet")
+def labels(current_user: LibraryManager, db: Db, book_id: Optional[int] = None, copy_ids: Optional[str] = None,
+           from_no: Optional[str] = Query(None, max_length=40), to_no: Optional[str] = Query(None, max_length=40),
+           since: Optional[date] = None):
+    ids = [int(x) for x in (copy_ids or "").split(",") if x.strip().isdigit()] or None
+    body, n = tools.labels_pdf(db, current_user.school_id, copy_ids=ids, book_id=book_id, from_no=from_no, to_no=to_no, since=since)
+    return Response(body, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="library-labels-{n}.pdf"'})
+
+
+@router.post("/overdue-reminders", summary="Tell each family (and member of staff) about their overdue books")
+def overdue_reminders(current_user: LibraryManager, db: Db):
+    return tools.remind_overdue(db, current_user)
+
+
+@router.get("/stock-checks", summary="Stock checks, newest first")
+def stock_checks(current_user: LibraryManager, db: Db):
+    return tools.list_checks(db, current_user.school_id)
+
+
+@router.post("/stock-checks", status_code=status.HTTP_201_CREATED, summary="Start a stock check")
+def start_stock_check(payload: StockCheckIn, current_user: LibraryManager, db: Db):
+    c = tools.start_check(db, current_user, payload.note)
+    return tools.check_detail(db, current_user, c.id)
+
+
+@router.get("/stock-checks/{check_id}", summary="What the shelves showed against the catalogue")
+def stock_check(check_id: int, current_user: LibraryManager, db: Db):
+    return tools.check_detail(db, current_user, check_id)
+
+
+@router.post("/stock-checks/{check_id}/scans", summary="Accession numbers seen on the shelf")
+def stock_scan(check_id: int, payload: ScanIn, current_user: LibraryManager, db: Db):
+    return tools.scan(db, current_user, check_id, payload.accession_nos, payload.shelf)
+
+
+@router.delete("/stock-checks/{check_id}/scans/{accession_no}", status_code=204, summary="Take back a scan")
+def stock_unscan(check_id: int, accession_no: str, current_user: LibraryManager, db: Db):
+    tools.unscan(db, current_user, check_id, accession_no)
+
+
+@router.post("/stock-checks/{check_id}/mark-lost", summary="Write off missing copies as lost")
+def stock_mark_lost(check_id: int, payload: CopyIdsIn, current_user: LibraryManager, db: Db):
+    return tools.mark_missing_lost(db, current_user, check_id, payload.copy_ids)
+
+
+@router.post("/stock-checks/{check_id}/mark-found", summary="Put copies recorded as lost back in stock")
+def stock_mark_found(check_id: int, payload: CopyIdsIn, current_user: LibraryManager, db: Db):
+    return tools.mark_found(db, current_user, check_id, payload.copy_ids)
+
+
+@router.post("/stock-checks/{check_id}/close", summary="Finish the stock check")
+def stock_close(check_id: int, current_user: LibraryManager, db: Db):
+    tools.close_check(db, current_user, check_id)
+    return tools.check_detail(db, current_user, check_id)
