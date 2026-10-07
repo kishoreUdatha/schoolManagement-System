@@ -113,7 +113,9 @@ class PaymentLine(BaseModel):
 class RecordPayments(BaseModel):
     """One payment at the counter covering several of a student's fees."""
     student_id: int
-    lines: list[PaymentLine] = Field(..., min_length=1, max_length=50)
+    lines: list[PaymentLine] = Field(default_factory=list, max_length=50)
+    # paid beyond the fees ticked: kept as the student's advance, on the same receipt
+    advance: Optional[Decimal] = Field(None, gt=0)
     payment_mode: Optional[str] = Field(None, max_length=40)
     payment_ref: Optional[str] = Field(None, max_length=120)
     paid_at: Optional[datetime] = None

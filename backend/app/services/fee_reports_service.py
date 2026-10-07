@@ -83,7 +83,8 @@ def _dues_rows(db: Session, school_id: int):
         select(StudentFee.student_id, StudentFee.amount_due, StudentFee.amount_paid, StudentFee.status,
                StudentFee.due_date, Student.section_id, Student.is_active)
         .join(Student, Student.id == StudentFee.student_id)
-        .where(StudentFee.school_id == school_id, StudentFee.status != FeeStatus.waived)
+        .join(FeeHead, FeeHead.id == StudentFee.fee_head_id)
+        .where(StudentFee.school_id == school_id, StudentFee.status != FeeStatus.waived, FeeHead.code != "ADVANCE")
     ).all()
 
 

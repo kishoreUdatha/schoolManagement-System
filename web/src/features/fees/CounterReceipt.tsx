@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { ErrorNote, Loading } from "@/components/ui/states";
 import { api, errorText } from "@/lib/api";
@@ -11,7 +11,9 @@ import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/lib/useApi";
-import { DownloadButton } from "./common";
+import { Dialog } from "@/components/ui/Dialog";
+import { DownloadButton, StudentPicker } from "./common";
+import type { PickedStudent } from "./types";
 
 type Receipt = {
   id: number;
@@ -47,6 +49,7 @@ export function CounterReceipt({ id }: { id: string }) {
   const r = useApi<Receipt>(`/api/v1/school/accounts/collections/${id}/receipt`);
   const [sending, setSending] = useState<string | null>(null);
   const router = useRouter();
+  const [moving, setMoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const d = r.data;
   if (!d) return r.error ? <ErrorNote>{r.error}</ErrorNote> : <Loading what="Loading the receipt…" />;
@@ -266,6 +269,9 @@ export function CounterReceipt({ id }: { id: string }) {
             <Icon name="message" className="sm" />
             {sending === "parent" ? "Sending…" : "Send to parent"}
           </button>
+          <button type="button" className="btn text" onClick={() => setMoving(true)}>
+            Move to another student
+          </button>
           <button type="button" className="btn text rc-cancel" onClick={cancelReceipt}>
             Cancel receipt
           </button>
@@ -277,6 +283,79 @@ export function CounterReceipt({ id }: { id: string }) {
           ) : null}
         </div>
       </div>
+      {moving ? (
+        <MoveDialog
+          receiptId={id}
+          receiptNo={d.receipt_no}
+          amount={d.amount}
+          fromName={s.name}
+          onClose={() => setMoving(false)}
+          onDone={(moved) => {
+            setMoving(false);
+            if (moved) router.push(routeOf(160));
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+/** Move the payment to another student: cancelled here, recorded on their unpaid fees (the rest as their advance). */
+function MoveDialog({ receiptId, receiptNo, amount, fromName, onClose, onDone }: { receiptId: string; receiptNo: string; amount: string; fromName: string; onClose: () => void; onDone: (moved: boolean) => void }) {
+  const [to, setTo] = useState<PickedStudent | null>(null);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    if (!to) return setError("Choose the student it belongs to.");
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await api.post<{ status: string; receipt_no?: string; as_advance?: string }>(`/api/v1/school/accounts/collections/${receiptId}/move`, { student_id: to.id, reason });
+      if (r.status === "moved") {
+        notify(`Moved to ${to.full_name}: new receipt ${r.receipt_no}${Number(r.as_advance) ? `, ${money(r.as_advance)} kept as their advance` : ""}.`);
+        onDone(true);
+      } else {
+        notify(`Sent to the principal: move receipt ${receiptNo} to ${to.full_name}.`);
+        onDone(false);
+      }
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Dialog
+      open
+      title={`Move receipt ${receiptNo}`}
+      onClose={onClose}
+      onSubmit={save}
+      actions={
+        <>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="btn primary" disabled={busy || !to || reason.trim().length < 3}>
+            {busy ? "Moving…" : "Move payment"}
+          </button>
+        </>
+      }
+    >
+      <ErrorNote>{error}</ErrorNote>
+      <p className="muted small" style={{ marginBottom: 10 }}>
+        {`${money(amount)} was recorded for ${fromName}. Moving it cancels this receipt (their fees become unpaid again) and records the same money, same day and method, on the other student's unpaid fees, oldest first; anything left becomes their advance. The principal approves an accountant's move.`}
+      </p>
+      <div className="form-grid">
+        <StudentPicker value={to} onChange={setTo} label="It belongs to" />
+        <label className="field">
+          <span>
+            Why<span className="req">*</span>
+          </span>
+          <input value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} placeholder="e.g. Paid for his sister by mistake" />
+        </label>
+      </div>
+    </Dialog>
   );
 }

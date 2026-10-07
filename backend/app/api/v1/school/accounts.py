@@ -29,7 +29,7 @@ from app.schemas.accounts import (
     VoidIn,
 )
 from app.services import accounts_service as svc
-from app.services import petty_cash_service, receipt_cancel_service, receipt_service
+from app.services import advance_service, petty_cash_service, receipt_cancel_service, receipt_service
 
 
 router = APIRouter()
@@ -186,6 +186,40 @@ def receipt(collection_id: int, current_user: Actor, db: Db):
 def receipt_pdf(collection_id: int, current_user: Actor, db: Db):
     data, filename = receipt_service.pdf(db, current_user.school_id, collection_id)
     return Response(content=data, media_type="application/pdf", headers={"Content-Disposition": f'inline; filename="{filename}"'})
+
+
+class MoveIn(BaseModel):
+    student_id: int
+    reason: str = Field(..., min_length=3, max_length=300)
+
+
+class AdvanceLine(BaseModel):
+    fee_id: int
+    amount: Decimal = Field(..., gt=0)
+
+
+class UseAdvanceIn(BaseModel):
+    lines: list[AdvanceLine] = Field(..., min_length=1, max_length=50)
+
+
+@router.post("/collections/{collection_id}/move", summary="Move a payment to another student (the principal approves an accountant's)")
+def move_payment(collection_id: int, payload: MoveIn, current_user: Actor, db: Db):
+    return advance_service.move_request(db, current_user, collection_id, payload.student_id, payload.reason)
+
+
+@router.get("/advances", summary="Students holding an advance: the excess payments report")
+def advances(current_user: Actor, db: Db):
+    return advance_service.holders(db, current_user.school_id)
+
+
+@router.get("/advances/{student_id}", summary="One student's advance: what came in and what it paid")
+def advance_statement(student_id: int, current_user: Actor, db: Db):
+    return advance_service.statement(db, current_user.school_id, student_id)
+
+
+@router.post("/advances/{student_id}/use", summary="Pay some of the student's fees from their advance")
+def use_advance(student_id: int, payload: UseAdvanceIn, current_user: Actor, db: Db):
+    return advance_service.apply(db, current_user, student_id, [ln.model_dump() for ln in payload.lines])
 
 
 class CancelIn(BaseModel):

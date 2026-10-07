@@ -173,6 +173,10 @@ def _apply(db: Session, a: ApprovalRequest) -> None:
         receipt_cancel_service.apply_approval(db, a)
     elif a.kind == ApprovalKind.concession:
         _decide_concession(db, a, approve=True)
+    elif a.kind == ApprovalKind.payment_move:
+        from app.services import advance_service
+
+        advance_service.apply_approval(db, a)
 
 
 def _apply_result_publishing(db: Session, a: ApprovalRequest) -> None:

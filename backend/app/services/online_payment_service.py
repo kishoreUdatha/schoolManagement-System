@@ -340,6 +340,12 @@ def _apply_paid(db: Session, order: FeePaymentOrder, payment_id: str) -> FeePaym
                 db, sf, applied, MoneyMode.online, reference=payment_id,
                 actor_id=order.parent_user_id, notes=f"Online order {order.id}",
             )
+    if excess > 0:
+        from app.services import advance_service
+
+        advance_service.add_advance(db, tenant_id=order.tenant_id, school_id=order.school_id, student_id=order.student_id,
+                                    amount=excess, mode=MoneyMode.online, on=now.date(), reference=payment_id,
+                                    actor_id=order.parent_user_id, note=f"Online order {order.id}: paid beyond what was due")
     order.status = OnlinePaymentStatus.paid
     order.provider_payment_id = payment_id
     order.paid_at = now

@@ -727,6 +727,8 @@ def record_payment(
 def record_payments(db: Session, school_id: int, data, recorded_by_user_id: int) -> dict:
     """Several of one student's fees paid at once: every line checked, then
     all recorded under one receipt number, or none of them."""
+    if not data.lines and not data.advance:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tick a fee or enter an advance")
     ids = [ln.fee_id for ln in data.lines]
     if len(set(ids)) != len(ids):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A fee appears twice in this payment")
@@ -764,9 +766,21 @@ def record_payments(db: Session, school_id: int, data, recorded_by_user_id: int)
             notes=data.notes, receipt_no=receipt_no,
         )
         first = first or row
+    if data.advance:
+        from app.models.student import Student
+        from app.services import advance_service
+
+        st = db.get(Student, data.student_id)
+        if not st or st.school_id != school_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+        row = advance_service.add_advance(db, tenant_id=st.tenant_id, school_id=school_id, student_id=st.id,
+                                          amount=data.advance, mode=mode, on=on, reference=data.payment_ref,
+                                          actor_id=recorded_by_user_id, note="Paid in advance at the counter",
+                                          receipt_no=receipt_no)
+        first = first or row
     db.commit()
-    return {"receipt_no": receipt_no, "collection_id": first.id, "lines": len(fees),
-            "total": sum((a for _, a in fees), Decimal("0"))}
+    return {"receipt_no": receipt_no, "collection_id": first.id, "lines": len(fees) + (1 if data.advance else 0),
+            "total": sum((a for _, a in fees), Decimal("0")) + (data.advance or Decimal("0"))}
 
 
 def waive_or_request(db: Session, user, fee_id: int, reason: str) -> dict:

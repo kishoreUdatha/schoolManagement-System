@@ -258,3 +258,17 @@ class CancelledReceipt(Base, PrimaryKeyMixin, TimestampMixin, _School):
     requested_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
     approved_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))
     cancelled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class AdvanceUse(Base, PrimaryKeyMixin, TimestampMixin, _School):
+    """Part of a student's advance used to pay one of their fees (services/advance_service.py)."""
+
+    __audited__ = True
+    __tablename__ = "advance_uses"
+    __table_args__ = (Index("ix_advance_uses_student", "student_id"),)
+
+    student_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+    student_fee_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("student_fees.id", ondelete="CASCADE"), nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    used_on: Mapped[date] = mapped_column(Date, nullable=False)
+    used_by_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"))

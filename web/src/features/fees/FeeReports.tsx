@@ -28,6 +28,7 @@ const REPORTS: [string, string][] = [
   ["feetype", "Students by fee type"],
   ["concessions", "Concessions given"],
   ["cheques", "Bounced cheques"],
+  ["advances", "Advances held (excess payments)"],
   ["slips", "Fee reminder slips"],
 ];
 
@@ -59,6 +60,7 @@ export function FeeReports() {
       {report === "feetype" ? <FeeTypeStudents /> : null}
       {report === "concessions" ? <ConcessionsReport /> : null}
       {report === "cheques" ? <BouncedCheques /> : null}
+      {report === "advances" ? <Advances /> : null}
       {report === "slips" ? <ReminderSlips /> : null}
     </>
   );
@@ -472,5 +474,71 @@ function ReminderSlips() {
         Several slips to an A4 page, with a cut line between them. To send reminders by message instead, use Outstanding dues → Send reminder.
       </p>
     </Panel>
+  );
+}
+
+function Advances() {
+  type Row = { student_id: number; student_name: string; admission_no: string; class_label: string | null; paid_in: string; used: string; balance: string; still_owing: string; is_active: boolean };
+  const r = useApi<{ rows: Row[]; total: string }>("/api/v1/school/accounts/advances");
+  const d = r.data;
+  if (!d) return r.error ? <ErrorNote>{r.error}</ErrorNote> : <Loading what="Loading advances…" />;
+  return (
+    <>
+      <StatStrip
+        compact
+        items={[
+          { label: "Held as advance", value: money(d.total), note: `${d.rows.length} student${d.rows.length === 1 ? "" : "s"}` },
+          { label: "Could be used now", value: money(d.rows.reduce((t, x) => t + Math.min(Number(x.balance), Number(x.still_owing)), 0)), note: "Against fees they owe" },
+          { label: "In the books", value: "Fees received in advance", note: "A liability, not income" },
+          { label: "Where it comes from", value: "Extra paid", note: "At the counter, online, or a moved payment" },
+        ]}
+      />
+      <Panel flush>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Class</th>
+                <th className="num">Paid in</th>
+                <th className="num">Used</th>
+                <th className="num">Held now</th>
+                <th className="num">Still owing</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {d.rows.map((x) => (
+                <tr key={x.student_id}>
+                  <td>
+                    {x.student_name}
+                    <small className="muted" style={{ display: "block", fontWeight: 500 }}>{`${x.admission_no}${x.is_active ? "" : " · left"}`}</small>
+                  </td>
+                  <td>{x.class_label ?? "—"}</td>
+                  <td className="num">{money(x.paid_in)}</td>
+                  <td className="num">{money(x.used)}</td>
+                  <td className="num">
+                    <strong>{money(x.balance)}</strong>
+                  </td>
+                  <td className="num">{Number(x.still_owing) ? money(x.still_owing) : "—"}</td>
+                  <td className="num">
+                    <Link className="btn" href={`${routeOf(158)}?student=${x.student_id}`}>
+                      {Number(x.still_owing) ? "Use on fees" : "Open"}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+              {!d.rows.length ? (
+                <tr>
+                  <td colSpan={7} className="table-empty">
+                    No student holds an advance. Extra paid at the counter, online overpayments and moved payments appear here.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+    </>
   );
 }

@@ -74,6 +74,8 @@ DEFAULT_ACCOUNTS = [
     ("payables", "2100", "Supplier payables", "liability", "Supplier bills not yet paid."),
     ("payroll_deductions", "2200", "Payroll deductions payable", "liability",
      "PF, ESI, professional tax and TDS held back from salaries, and the employer's share, until paid over."),
+    ("advances_received", "2150", "Fees received in advance", "liability",
+     "Money families paid beyond what was due, held until it pays a later fee."),
     (None, "2300", "Caution deposits received", "liability", None),
     (None, "2400", "Loans", "liability", None),
     ("capital", "3100", "Capital fund", "equity", "Opening balances and money put in by the trust or owners."),
@@ -96,7 +98,7 @@ KIND_CATEGORY = {
 }
 KEY_CATEGORY = {
     "cash": "Cash and bank", "bank": "Cash and bank", "petty_cash": "Cash and bank", "fees_receivable": "Receivables",
-    "payables": "Current liabilities", "payroll_deductions": "Current liabilities",
+    "payables": "Current liabilities", "payroll_deductions": "Current liabilities", "advances_received": "Current liabilities",
     "capital": "Capital fund", "store_sales": "Sales", "salaries": "Staff costs",
     "employer_contrib": "Staff costs", "purchases": "Purchases",
 }
@@ -125,6 +127,7 @@ SOURCE_LABEL = {
     "store_sale": "Store sale",
     "expense": "Expense",
     "petty_cash": "Petty cash",
+    "advance_use": "Advance used",
     "vendor_bill": "Supplier bill",
     "vendor_payment": "Supplier payment",
     "payroll": "Payroll",
@@ -204,8 +207,8 @@ def ensure_chart(db: Session, user: User) -> dict[str, LedgerAccount]:
     for key, code, name, kind, desc in wanted:
         add(key, code, name, kind, desc)
     for hid, name, code in heads:
-        if code == "PREV_DUES":
-            continue  # earlier years' dues post to the capital fund, not to an income account
+        if code in ("PREV_DUES", "ADVANCE"):
+            continue  # earlier years' dues post to the capital fund, advances to a liability: neither is income
         key = f"fee_head:{hid}"
         if key not in by_key:
             add(key, _next_code(4101, used), name, "income", "Fees raised under this head.")
@@ -421,6 +424,8 @@ def entries(
 
     # dues from earlier years, entered when the school started: an opening balance
     prev_heads = set(db.execute(select(FeeHead.id).where(FeeHead.school_id == sid, FeeHead.code == "PREV_DUES")).scalars())
+    # money paid beyond what was due: held as a liability, not income
+    adv_heads = set(db.execute(select(FeeHead.id).where(FeeHead.school_id == sid, FeeHead.code == "ADVANCE")).scalars())
     # fees raised: one entry per head, period and due date
     charge = case(
         (StudentFee.status == FeeStatus.waived, StudentFee.amount_paid),
@@ -442,7 +447,7 @@ def entries(
         out.append(_entry(
             due, "fees_raised", None, None,
             f"{head} ({label}) due for {n} student{'s' if n != 1 else ''}",
-            [_line("fees_receivable", debit=amt), _line("capital" if hid in prev_heads else f"fee_head:{hid}", credit=amt)],
+            [_line("fees_receivable", debit=amt), _line("capital" if hid in prev_heads else "advances_received" if hid in adv_heads else f"fee_head:{hid}", credit=amt)],
             students=list(kids or []), detail=f"{head} ({label}) raised", branch=br,
         ))
 
@@ -521,6 +526,17 @@ def entries(
             [_line(f"expense_cat:{cat_id}", debit=amt), _line(_money_key(mode), credit=amt)],
             branch=br, department=dep,
         ))
+
+    # an advance used to pay a fee: no new money, the advance settles the fee
+    from app.models.accounts import AdvanceUse
+
+    for u, name in db.execute(
+        select(AdvanceUse, Student.full_name).join(Student, Student.id == AdvanceUse.student_id)
+        .where(AdvanceUse.school_id == sid, *_span(AdvanceUse.used_on, frm, to)).order_by(AdvanceUse.id)
+    ).all():
+        out.append(_entry(u.used_on, "advance_use", u.id, None, f"{name}: advance used against a fee",
+                          [_line("advances_received", debit=u.amount), _line("fees_receivable", credit=u.amount)],
+                          students=[u.student_id], student_name=name, detail="Advance used"))
 
     # petty cash: a top-up moves money into the float, a spend pays a small bill from it
     from app.models.accounts import PettyCashEntry

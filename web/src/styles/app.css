@@ -1109,3 +1109,6 @@ tr.jv-open td{background:#f5f8ff}
 /* Finance reports: the report picker (features/fees/FeeReports). */
 .report-pick select{min-width:260px;font-weight:600}
 .data-table tr.muted-row td{color:#94a0b4}
+
+.advance-held{display:flex;align-items:center;gap:10px;margin:0 18px 10px}
+.advance-held span{flex:1}

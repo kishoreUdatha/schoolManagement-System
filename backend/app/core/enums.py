@@ -112,6 +112,7 @@ class ApprovalKind(str, enum.Enum):
     payroll_run = "payroll_run"  # a finalised payroll, before it is paid
     receipt_cancel = "receipt_cancel"  # cancelling a fee receipt entered in error
     concession = "concession"  # a concession the accountant asked for
+    payment_move = "payment_move"  # moving a payment to another student
 
 
 class ApprovalStatus(str, enum.Enum):

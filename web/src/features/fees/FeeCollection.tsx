@@ -45,6 +45,9 @@ export function FeeCollection() {
   const [paidOn, setPaidOn] = useState(isoToday());
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
+  // paid beyond the ticked fees: kept as the student's advance, on the same receipt
+  const [extra, setExtra] = useState("");
+  const [usingAdvance, setUsingAdvance] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paid, setPaid] = useState<Paid | null>(null);
@@ -76,7 +79,37 @@ export function FeeCollection() {
 
   const totalOwed = pending.reduce((s, f) => s + Number(f.amount_outstanding), 0);
   const ticked = pending.filter((f) => f.id in paying);
-  const total = ticked.reduce((s, f) => s + (Number(paying[f.id]) || 0), 0);
+  const total = ticked.reduce((s, f) => s + (Number(paying[f.id]) || 0), 0) + (Number(extra) || 0);
+  const advance = useApi<{ balance: string }>(sid ? `/api/v1/school/accounts/advances/${sid}` : null);
+  const held = Number(advance.data?.balance ?? 0);
+
+  // pay the ticked fees from the advance, oldest first, as far as it goes
+  async function useAdvance() {
+    if (!student) return;
+    let left = held;
+    const lines: { fee_id: number; amount: string }[] = [];
+    for (const f of ticked) {
+      if (left <= 0) break;
+      const amt = Math.min(left, Number(paying[f.id]) || 0);
+      if (amt > 0) {
+        lines.push({ fee_id: f.id, amount: amt.toFixed(2) });
+        left -= amt;
+      }
+    }
+    if (!lines.length) return setError("Tick the fees to pay from the advance.");
+    setUsingAdvance(true);
+    setError(null);
+    try {
+      const r = await api.post<{ used: string; balance: string }>(`/api/v1/school/accounts/advances/${student.id}/use`, { lines });
+      notify(`${money(r.used)} paid from the advance. ${money(r.balance)} left in it.`);
+      fees.reload();
+      advance.reload();
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setUsingAdvance(false);
+    }
+  }
   const recent = (receipts.data ?? []).slice(0, 4);
 
   function choose(s: PickedStudent | null) {
@@ -88,7 +121,7 @@ export function FeeCollection() {
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!student || !ticked.length) {
+    if (!student || (!ticked.length && !(Number(extra) > 0))) {
       setError(student ? "Tick at least one fee." : "Choose a student first.");
       return;
     }
@@ -103,12 +136,15 @@ export function FeeCollection() {
       const r = await api.post<Paid>("/api/v1/school/fees/student-fees/pay", {
         student_id: student.id,
         lines: ticked.map((f) => ({ fee_id: f.id, amount: paying[f.id] })),
+        advance: Number(extra) > 0 ? extra : null,
         payment_mode: mode,
         payment_ref: reference.trim() || null,
         paid_at: paidOn && paidOn !== isoToday() ? `${paidOn}T12:00:00` : null,
         notes: notes.trim() || null,
       });
       setPaid(r);
+      setExtra("");
+      advance.reload();
       notify(`Receipt ${r.receipt_no}: ${money(r.total)} for ${r.lines} ${r.lines === 1 ? "fee" : "fees"}.`);
       setReference("");
       setNotes("");
@@ -177,6 +213,17 @@ export function FeeCollection() {
                   </div>
                 </div>
                 <ErrorNote>{presetStudent.error ?? fees.error}</ErrorNote>
+                {held > 0 ? (
+                  <div className="tip advance-held">
+                    <Icon name="money" className="sm" />
+                    <span>{`${money(held)} held as advance (paid beyond what was due).`}</span>
+                    {pending.length ? (
+                      <button type="button" className="btn" disabled={usingAdvance || !ticked.length} onClick={useAdvance}>
+                        {usingAdvance ? "Using…" : "Use it on the ticked fees"}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
                 {fees.loading && !fees.data ? (
                   <p className="muted small panel-pad">Loading their fees…</p>
                 ) : pending.length ? (
@@ -285,11 +332,18 @@ export function FeeCollection() {
                     <Field label="Remarks">
                       <input value={notes} maxLength={300} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" />
                     </Field>
+                    <Field label="Extra paid, kept as advance (₹)">
+                      <input type="number" min={0} step="0.01" value={extra} onChange={(e) => setExtra(e.target.value)} placeholder="0" />
+                    </Field>
                   </div>
                 </div>
                 <div className="form-footer">
-                  <span>{ticked.length ? `One receipt for ${ticked.length} ${ticked.length === 1 ? "fee" : "fees"}` : "Tick the fees being paid"}</span>
-                  <button type="submit" className="btn primary" disabled={saving || !ticked.length || !(total > 0)}>
+                  <span>
+                    {ticked.length || Number(extra) > 0
+                      ? `One receipt for ${ticked.length} ${ticked.length === 1 ? "fee" : "fees"}${Number(extra) > 0 ? ` and ${money(extra)} advance` : ""}`
+                      : "Tick the fees being paid"}
+                  </span>
+                  <button type="submit" className="btn primary" disabled={saving || (!ticked.length && !(Number(extra) > 0)) || !(total > 0)}>
                     <Icon name="check" className="sm" />
                     {saving ? "Recording…" : `Record ${money(total)}`}
                   </button>
