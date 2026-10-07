@@ -264,3 +264,13 @@ class TripBoarding(Base, PrimaryKeyMixin, TimestampMixin):
     marked_by_user_id: Mapped[Optional[int]] = mapped_column(
         BigInteger, ForeignKey("users.id", ondelete="SET NULL")
     )
+
+
+class TransportSettings(Base, PrimaryKeyMixin, TimestampMixin, _SchoolScoped):
+    """How the school bus talks to families (services/transport_notices_service.py)."""
+
+    __tablename__ = "transport_settings"
+    __table_args__ = (UniqueConstraint("school_id", name="uq_transport_settings_school"),)
+
+    # a parent-app notice when a child boards or is dropped, or misses the pickup
+    boarding_notices: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)

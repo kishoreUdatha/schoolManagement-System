@@ -860,7 +860,8 @@ def mark_boarding(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=f"Trip is {t.status.value}"
         )
-    allowed = {s["student_id"] for s in _trip_students(db, t)}
+    on_trip = {s["student_id"]: s for s in _trip_students(db, t)}
+    allowed = set(on_trip)
     bad = [m.student_id for m in data.marks if m.student_id not in allowed]
     if bad:
         raise HTTPException(
@@ -876,6 +877,8 @@ def mark_boarding(
         for b in db.execute(select(TripBoarding).where(TripBoarding.trip_id == t.id)).scalars()
     }
     now = datetime.now(timezone.utc)
+    changed = [(m.student_id, m.status, on_trip[m.student_id]["stop_name"]) for m in data.marks
+               if not existing.get(m.student_id) or existing[m.student_id].status != m.status]
     for m in data.marks:
         row = existing.get(m.student_id)
         if row:
@@ -892,6 +895,9 @@ def mark_boarding(
             )
     if t.status == TripStatus.scheduled:
         t.status, t.started_at = TripStatus.in_progress, now
+    from app.services import transport_notices_service
+
+    transport_notices_service.boarding_changed(db, t, changed)
     db.commit()
     db.refresh(t)
     return t

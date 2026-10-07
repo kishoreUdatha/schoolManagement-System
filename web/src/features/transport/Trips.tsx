@@ -1,5 +1,6 @@
 "use client";
 
+import { BoardingNoticesSwitch, MessageFamiliesButton } from "./Notices";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
@@ -298,6 +299,11 @@ export function TripSheet() {
               </div>
             </form>
           </Panel>
+          <Panel title="Families">
+            <BoardingNoticesSwitch />
+            <div className="gap" />
+            <MessageFamiliesButton tripId={t.id} />
+          </Panel>
           <Link href={routeOf(194)} className="btn">
             <Icon name="arrow" className="sm" />
             All trips
@@ -363,7 +369,7 @@ export function BoardingAttendance() {
     <>
       <StatStrip items={tripStats(live)} compact />
       <ErrorNote>{error}</ErrorNote>
-      {!editable ? <div className="tip">{`This trip is ${STATUS[t.status].toLowerCase()}; its marks can no longer change.`}</div> : null}
+      {!editable ? <div className="tip">{`This trip is ${STATUS[t.status].toLowerCase()}; its marks can no longer change.`}</div> : <NoticeHint />}
       <form id="boarding-form" onSubmit={save}>
         <Panel title={tripName(t)} sub={`${date(t.trip_date)} · ${t.vehicle_label ?? "No vehicle"} · ${t.driver_name ?? "No driver"}`} action={<Badge>{STATUS[t.status]}</Badge>} flush>
           <div className="table-wrap">
@@ -594,4 +600,10 @@ function TrackMap({ points, last, stale }: { points: LocationPoint[]; last: { la
       <span className="map-key">{`${plural(points.length, "reading")} today · north up, to scale, no street map${stale ? " · last reading is stale" : ""}`}</span>
     </div>
   );
+}
+
+/** Says whether saving the marks tells families. */
+function NoticeHint() {
+  const s = useApi<{ boarding_notices: boolean }>("/api/v1/school/transport/settings");
+  return s.data?.boarding_notices ? <div className="tip">Families are told in the parent app when you save: boarded, dropped, or not at the stop.</div> : null;
 }

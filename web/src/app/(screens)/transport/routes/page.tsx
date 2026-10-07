@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
+import { MessageFamiliesButton } from "@/features/transport/Notices";
 import { RouteList } from "@/features/transport/Routes";
 
 export const metadata = { title: "SCR-189 · Routes · BrightCampus" };
@@ -19,6 +20,7 @@ export default function Page() {
           <Icon name="download" className="sm" />
           Export
         </button>
+        <MessageFamiliesButton label="Message a route" />
         <Link href="/transport/create-edit-route" className="btn primary">
           <Icon name="plus" className="sm" />
           Create route

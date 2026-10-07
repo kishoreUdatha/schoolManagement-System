@@ -30,7 +30,7 @@ export const ROLE_ONLY: Record<number, string[]> = {
   255: ["school_admin", "principal"], // communication history
   // School-wide reports are the admin's and the principal's (api/v1/school/analytics.py);
   // an accountant holding reports.view sees the money ones.
-  ...Object.fromEntries([264, 266, 267, 268, 269, 270, 271, 272, 278, 279, 282].map((n) => [n, ["school_admin", "principal"]])),
+  ...Object.fromEntries([264, 266, 267, 268, 269, 270, 271, 272, 278, 282].map((n) => [n, ["school_admin", "principal"]])),
   275: ["school_admin", "accountant"], // finance summary: the cash book
 };
 export const usableBy = (n: number, role: string | undefined) => !role || !ROLE_ONLY[n] || ROLE_ONLY[n].includes(role);
@@ -59,6 +59,7 @@ export const JOBS: Job[] = [
     items: [
       [1072, "Transport dashboard"], [186, "Vehicles"], [189, "Routes"], [191, "Stops"], [192, "Drivers & conductors"],
       [193, "Student assignment"], [194, "Trip sheets"], [196, "Boarding attendance"], [195, "Live GPS tracking"], [197, "Maintenance & fuel"],
+      [279, "Transport report"],
     ],
   },
   {

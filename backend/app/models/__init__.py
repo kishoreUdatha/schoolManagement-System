@@ -192,6 +192,7 @@ from app.models.transport import (
     TransportRoute,
     TransportStop,
     Trip,
+    TransportSettings,
     TripBoarding,
     Vehicle,
     VehicleLocation,

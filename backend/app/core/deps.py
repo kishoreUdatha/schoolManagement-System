@@ -358,6 +358,7 @@ def allow_job(*roles: UserRole, permission: str, also: tuple[str, ...] = ()):
 
 LibraryManager = Annotated[User, Depends(allow(UserRole.school_admin, permission="library.manage"))]
 TransportManager = Annotated[User, Depends(allow(UserRole.school_admin, permission="transport.manage"))]
+TransportReportReader = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.principal, permission="transport.manage"))]
 # The clinic: the office, or the school nurse given the Health & clinic job
 # (the same rule as the wellbeing screens).
 HealthStaff = Annotated[User, Depends(allow(UserRole.school_admin, UserRole.principal, permission="health.manage"))]

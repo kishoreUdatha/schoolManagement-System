@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import StaffDirectoryReader, AssetKeeper, DuesReader, LibraryReports, ReportReader, SchoolAdminOrPrincipal
+from app.core.deps import StaffDirectoryReader, TransportReportReader, AssetKeeper, DuesReader, LibraryReports, ReportReader, SchoolAdminOrPrincipal
 from app.database import get_db
 from app.schemas.analytics import (
     ChronicAbsence,
@@ -224,7 +224,7 @@ def staff_attendance(
 
 
 @router.get("/transport", response_model=TransportUtilisation)
-def transport(user: SchoolAdminOrPrincipal, db: Annotated[Session, Depends(get_db)]):
+def transport(user: TransportReportReader, db: Annotated[Session, Depends(get_db)]):
     return analytics_service.transport_utilisation(db, user.school_id)
 
 

@@ -3,6 +3,7 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.deps import SchoolAdminUser, TransportManager
@@ -34,6 +35,7 @@ from app.schemas.transport import (
     VehicleRead,
     VehicleUpdate,
 )
+from app.services import transport_notices_service as notices
 from app.services import transport_service as svc
 
 
@@ -304,3 +306,37 @@ def generate_fees(payload: TransportFeeGenerate, current_user: SchoolAdminUser, 
     return TransportFeeResult.model_validate(
         svc.generate_fees(db, current_user.tenant_id, current_user.school_id, payload)
     )
+
+
+
+# --- Telling families ---
+
+
+class TransportSettingsIn(BaseModel):
+    boarding_notices: bool
+
+
+class MessageIn(BaseModel):
+    text: str = Field(..., min_length=3, max_length=500)
+
+
+@router.get("/settings", summary="How the school bus talks to families")
+def transport_settings(current_user: TransportManager, db: Db):
+    s = notices.settings(db, current_user.tenant_id, current_user.school_id)
+    return {"boarding_notices": s.boarding_notices}
+
+
+@router.patch("/settings", summary="Switch boarding / drop notices to families on or off")
+def update_transport_settings(payload: TransportSettingsIn, current_user: TransportManager, db: Db):
+    s = notices.update_settings(db, current_user, payload.boarding_notices)
+    return {"boarding_notices": s.boarding_notices}
+
+
+@router.post("/routes/{route_id}/message", summary="A notice to every family on the route")
+def message_route(route_id: int, payload: MessageIn, current_user: TransportManager, db: Db):
+    return notices.message(db, current_user, route_id=route_id, text=payload.text)
+
+
+@router.post("/trips/{trip_id}/message", summary="A notice to every family on this trip")
+def message_trip(trip_id: int, payload: MessageIn, current_user: TransportManager, db: Db):
+    return notices.message(db, current_user, trip_id=trip_id, text=payload.text)
