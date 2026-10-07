@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import SchoolAdminOrAccountant
 from app.database import get_db
 from app.schemas.books import AccountImport, AccountIn, AccountUpdate, JournalIn, VoidIn
-from app.services import books_export, budget_service, tally_export
+from app.services import bank_rec_service, books_export, budget_service, tally_export
 from app.services import books_service as svc
 
 router = APIRouter()
@@ -310,3 +310,84 @@ def tally(user: Actor, db: Db, frm: From = None, to: Optional[date] = None):
     data, filename, count = tally_export.xml(db, user, frm, to)
     return Response(content=data, media_type="application/xml",
                     headers={"Content-Disposition": f'attachment; filename="{filename}"', "X-Voucher-Count": str(count)})
+
+
+
+# ---------- bank reconciliation ----------
+
+
+class StatementRow(BaseModel):
+    date: str = Field(..., max_length=30)
+    description: Optional[str] = Field(None, max_length=500)
+    reference: Optional[str] = Field(None, max_length=200)
+    debit: Optional[str] = Field(None, max_length=30)
+    credit: Optional[str] = Field(None, max_length=30)
+    balance: Optional[str] = Field(None, max_length=30)
+
+
+class StatementIn(BaseModel):
+    account_name: str = Field("Bank account", max_length=120)
+    file_name: Optional[str] = Field(None, max_length=200)
+    opening_balance: Optional[str] = Field(None, max_length=30)
+    closing_balance: Optional[str] = Field(None, max_length=30)
+    rows: list[StatementRow] = Field(..., min_length=1, max_length=5000)
+
+
+class MatchIn(BaseModel):
+    keys: list[str] = Field(..., min_length=1, max_length=200)
+
+
+class IgnoreIn(BaseModel):
+    reason: str = Field(..., min_length=2, max_length=200)
+
+
+class RecordLineIn(BaseModel):
+    kind: str = Field(..., pattern="^(charges|interest|account)$")
+    account_id: Optional[int] = None
+    narration: Optional[str] = Field(None, max_length=300)
+
+
+@router.get("/bank-rec/statements", summary="Bank statements uploaded for reconciliation")
+def bank_statements(user: Actor, db: Db):
+    return bank_rec_service.statements(db, user.school_id)
+
+
+@router.post("/bank-rec/statements", status_code=status.HTTP_201_CREATED, summary="Upload a statement; it is matched to the books at once")
+def upload_statement(payload: StatementIn, user: Actor, db: Db):
+    return bank_rec_service.create(db, user, payload.account_name, [r.model_dump() for r in payload.rows],
+                                   payload.file_name, payload.opening_balance, payload.closing_balance)
+
+
+@router.get("/bank-rec/statements/{statement_id}", summary="A statement, its matches and the reconciliation")
+def bank_statement(statement_id: int, user: Actor, db: Db):
+    return bank_rec_service.detail(db, user, statement_id)
+
+
+@router.post("/bank-rec/statements/{statement_id}/auto-match", summary="Match what can be matched by amount and date")
+def bank_auto_match(statement_id: int, user: Actor, db: Db):
+    return bank_rec_service.auto_match(db, user, statement_id)
+
+
+@router.delete("/bank-rec/statements/{statement_id}", status_code=204, summary="Remove a statement uploaded in error")
+def bank_statement_delete(statement_id: int, user: Actor, db: Db):
+    bank_rec_service.delete(db, user, statement_id)
+
+
+@router.post("/bank-rec/lines/{line_id}/match", summary="Match a bank line to one or more entries in the books")
+def bank_line_match(line_id: int, payload: MatchIn, user: Actor, db: Db):
+    return bank_rec_service.match(db, user, line_id, payload.keys)
+
+
+@router.post("/bank-rec/lines/{line_id}/unmatch", summary="Undo a match")
+def bank_line_unmatch(line_id: int, user: Actor, db: Db):
+    return bank_rec_service.unmatch(db, user, line_id)
+
+
+@router.post("/bank-rec/lines/{line_id}/ignore", summary="Set a line aside, with the reason")
+def bank_line_ignore(line_id: int, payload: IgnoreIn, user: Actor, db: Db):
+    return bank_rec_service.ignore(db, user, line_id, payload.reason)
+
+
+@router.post("/bank-rec/lines/{line_id}/record", summary="Record a bank-only line in the books (charges, interest, other) and match it")
+def bank_line_record(line_id: int, payload: RecordLineIn, user: Actor, db: Db):
+    return bank_rec_service.record(db, user, line_id, payload.kind, payload.account_id, payload.narration)

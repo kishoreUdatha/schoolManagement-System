@@ -1112,3 +1112,19 @@ tr.jv-open td{background:#f5f8ff}
 
 .advance-held{display:flex;align-items:center;gap:10px;margin:0 18px 10px}
 .advance-held span{flex:1}
+
+/* Bank reconciliation (features/fees/BankReconciliation). */
+.bank-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(320px,1fr);gap:12px;align-items:start}
+@media(max-width:1100px){.bank-grid{grid-template-columns:1fr}}
+.bank-lines tr.st-matched td{background:#f4fbf7}
+.bank-lines tr.st-ignored td{color:#8a97ab}
+.bank-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.bank-rec{display:grid;grid-template-columns:1fr auto;row-gap:6px;column-gap:12px;margin:0;font-size:13px}
+.bank-rec dt{color:#5b6b85}
+.bank-rec dd{margin:0;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.bank-rec .total{border-top:1px solid var(--line);padding-top:6px;color:var(--ink);font-weight:700}
+.bank-rec .good{color:#087a52;font-weight:700}
+.bank-rec .bad{color:#b3261e;font-weight:700}
+.bank-map{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.bank-preview{margin-bottom:6px}
+.bank-off{color:#b3261e}

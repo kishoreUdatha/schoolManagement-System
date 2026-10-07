@@ -46,7 +46,7 @@ export const TAB_GROUPS: TabGroup[] = [
   // A student's ledger is not a tab: it opens from the student (Collect fees, Outstanding dues, a receipt).
   { label: "Fee collection", tabs: [[158, "Collect fees"], [160, "Receipts"], [162, "Outstanding dues"], [1100, "Previous year dues"], [159, "Online payments"], [1044, "Match payments"], [1045, "Cheques"], [165, "Refunds"]] },
   // a purchase runs vendor, order, then the bill and its payment
-  { label: "Accounts", tabs: [[166, "Income"], [167, "Expenses"], [1098, "Petty cash"], [1046, "Expense categories"], [168, "Vendors"], [1047, "Purchase orders"], [169, "Purchases"], [170, "Cash & bank"]] },
+  { label: "Accounts", tabs: [[166, "Income"], [167, "Expenses"], [1098, "Petty cash"], [1046, "Expense categories"], [168, "Vendors"], [1047, "Purchase orders"], [169, "Purchases"], [170, "Cash & bank"], [1101, "Bank reconciliation"]] },
   {
     label: "Books of account",
     tabs: [[1056, "Income & expenditure"], [1057, "Balance sheet"], [1055, "Trial balance"], [1054, "Ledger"], [1053, "Day book"], [1052, "Journal vouchers"], [1049, "Chart of accounts"], [1099, "Budget"]],
@@ -216,6 +216,7 @@ export const SCREEN_NOTE: Record<number, string> = {
   1003: "Which admission form fields are required and which are not asked, for every class or one class.",
   1049: "The school's accounts. Fees, receipts, expenses, bills and payroll post to them by themselves.",
   1098: "The float for small bills: pay from it against a voucher, and top it back up.",
+  1101: "The bank's statement against the books: match it, record charges and interest, find what's missing.",
   1100: "Dues from earlier years: entered from the old register, or last year's fees still unpaid.",
   1099: "The year's budget for each account, against what has come in and gone out.",
   1052: "Entries the system cannot make itself: opening balances, cash banked, depreciation, corrections.",
