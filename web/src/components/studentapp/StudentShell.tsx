@@ -38,6 +38,7 @@ const MORE: [string, number][] = [
   ["Calendar", 8],
   ["Study material", 16],
   ["Library", 15],
+  ["Talk to the counsellor", 17],
   ["My profile", 9],
   ["Change password", 10],
 ];

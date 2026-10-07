@@ -141,6 +141,7 @@ from app.api.v1.parent import (
     videos as parent_videos,
     weekly_reports as parent_weekly_reports,
 )
+from app.api.v1.parent import counselling as parent_counselling  # noqa: E402
 from app.api.v1.student import (
     auth as student_auth,
     learning as student_learning,
@@ -642,6 +643,11 @@ app.include_router(
     student_portal.router,
     prefix="/api/v1/student",
     tags=["student / portal"],
+)
+app.include_router(
+    parent_counselling.router,
+    prefix="/api/v1/parent/me/children",
+    tags=["parent / counselling"],
 )
 app.include_router(
     student_learning.router,

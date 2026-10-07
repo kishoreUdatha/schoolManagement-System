@@ -10,6 +10,7 @@ from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
@@ -114,3 +115,27 @@ def notices(current_user: StudentUser, db: Db, limit: int = Query(50, ge=1, le=2
     return [{"id": n.id, "title": n.title, "body": n.body, "category": n.category.value, "sent_at": n.sent_at,
              "event_date": n.event_date, "event_venue": n.event_venue, "attachment_url": n.attachment_url, "link": n.link}
             for n in rows]
+
+
+
+# ---------- talking to the counsellor ----------
+
+
+class CounsellingRequestIn(BaseModel):
+    about: str = Field(..., min_length=5, max_length=2000)
+    preferred_times: Optional[str] = Field(None, max_length=200)
+
+
+@router.get("/counselling-requests", summary="Your requests to see the counsellor, and where they stand")
+def counselling_requests(current_user: StudentUser, db: Db):
+    from app.services import pastoral_service
+
+    return pastoral_service.family_requests(db, current_user, me(db, current_user))
+
+
+@router.post("/counselling-requests", status_code=201, summary="Ask to see the school counsellor (your parents aren't told)")
+def ask_counsellor(payload: CounsellingRequestIn, current_user: StudentUser, db: Db):
+    from app.services import pastoral_service
+
+    c = pastoral_service.family_request(db, current_user, me(db, current_user), payload.about, payload.preferred_times)
+    return {"id": c.id}

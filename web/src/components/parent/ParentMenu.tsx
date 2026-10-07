@@ -111,6 +111,7 @@ export const MENU_SECTIONS: MenuSection[] = [
       { label: "Photos", n: 103, icon: "photo", tone: "teal" },
       { label: "Feedback", n: 54, icon: "feedback", tone: "teal" },
       { label: "Help desk", n: 44, icon: "help", tone: "teal" },
+      { label: "Counsellor", n: 104, icon: "chat", tone: "teal" },
     ],
   },
   {

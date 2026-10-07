@@ -216,6 +216,7 @@ export const SCREEN_NOTE: Record<number, string> = {
   1003: "Which admission form fields are required and which are not asked, for every class or one class.",
   1049: "The school's accounts. Fees, receipts, expenses, bills and payroll post to them by themselves.",
   1098: "The float for small bills: pay from it against a voucher, and top it back up.",
+  1108: "Refer a child you are worried about to the counsellor, and see where your referrals stand. The notes stay with the counsellor.",
   1107: "A month of the sick room: what children came in with, how visits ended, who came often, check-ups and vaccines.",
   1105: "Children coming in late: marked late on the day's register, their family told.",
   1106: "Letters and parcels in and out: who they are for, the courier, and when they were collected or sent.",

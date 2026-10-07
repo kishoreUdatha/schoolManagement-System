@@ -120,7 +120,7 @@ export function Student360({ id, back }: { id: string; back: string }) {
               <Icon name="message" className="sm" />
               Message Parent
             </Link>
-            <MoreMenu back={back} />
+            <MoreMenu back={back} student={s} />
           </div>
         </div>
         <div className="s360-kpis">
@@ -160,7 +160,7 @@ export function Student360({ id, back }: { id: string; back: string }) {
 }
 
 /** The banner’s "⋮": where the actions that are not the two buttons live. */
-function MoreMenu({ back }: { back: string }) {
+function MoreMenu({ back, student }: { back: string; student: { id: number; full_name: string } }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -190,6 +190,9 @@ function MoreMenu({ back }: { back: string }) {
           </Link>
           <Link role="menuitem" href={routeOf(1094)}>
             Add a note
+          </Link>
+          <Link role="menuitem" href={`${routeOf(1108)}?student=${student.id}&name=${encodeURIComponent(student.full_name)}`}>
+            Refer to the counsellor
           </Link>
         </div>
       ) : null}

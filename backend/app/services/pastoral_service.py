@@ -350,13 +350,91 @@ def create_case(db: Session, user: User, data: CaseIn) -> CounsellingCase:
     )
     db.add(c)
     db.flush()
-    if c.counsellor_user_id and c.counsellor_user_id != user.id:
-        notify.staff_users(db, tenant_id=c.tenant_id, school_id=c.school_id, user_ids=[c.counsellor_user_id],
-                           title=f"Counselling case {c.reference_no}",
-                           body=f"{st.full_name} — {c.title} ({c.priority.value} priority).")
+    _tell_about_case(db, c, st, user.id)
     db.commit()
     db.refresh(c)
     return c
+
+
+def counsellors(db: Session, school_id: int) -> list[int]:
+    """Everyone who holds the counselling job (the principal does by default)."""
+    from app.services import rbac_service
+
+    staff = db.execute(select(User).where(
+        User.school_id == school_id, User.is_active.is_(True),
+        User.role.not_in((UserRole.parent, UserRole.student, UserRole.super_admin)))).scalars()
+    return [u.id for u in staff if rbac_service.has_permission(db, u, "counselling.access")]
+
+
+def _tell_about_case(db: Session, c: CounsellingCase, st: Student, actor_id: Optional[int]) -> None:
+    """The assigned counsellor, or every counsellor when nobody is assigned
+    (the principal if the school has none); and the principal for a high
+    priority case. Never the notes. Caller commits."""
+    from app.core.enums import Priority
+
+    told: set[int] = set()
+    body = f"{st.full_name}: {c.title} ({c.priority.value} priority)."
+    if c.counsellor_user_id:
+        targets = [c.counsellor_user_id]
+    else:
+        targets = counsellors(db, c.school_id) or list(db.execute(select(User.id).where(
+            User.school_id == c.school_id, User.role == UserRole.principal, User.is_active.is_(True))).scalars())
+    targets = [t for t in targets if t != actor_id]
+    if targets:
+        notify.staff_users(db, tenant_id=c.tenant_id, school_id=c.school_id, user_ids=targets,
+                           title=f"Counselling case {c.reference_no}" + ("" if c.counsellor_user_id else ": needs a counsellor"), body=body)
+        told.update(targets)
+    if c.priority == Priority.high:
+        heads = [u for u in db.execute(select(User.id).where(
+            User.school_id == c.school_id, User.role == UserRole.principal, User.is_active.is_(True))).scalars()
+            if u not in told and u != actor_id]
+        if heads:
+            notify.staff_users(db, tenant_id=c.tenant_id, school_id=c.school_id, user_ids=heads,
+                               title=f"High-priority counselling case {c.reference_no}",
+                               body=f"A high-priority case was opened for {st.full_name}. The counsellor has the details.")
+
+
+# ---------- a family asking to see the counsellor ----------
+
+
+def family_request(db: Session, requester: User, student: Student, about: str, preferred_times: Optional[str]) -> CounsellingCase:
+    """A parent (for their child) or a student (for themselves) asks to see
+    the counsellor: an open case marked as asked for by the family."""
+    from app.core.enums import CounsellingCategory
+
+    who = "the student" if requester.role == UserRole.student else "a parent"
+    concern = about.strip() + (f"\n\nPreferred times: {preferred_times.strip()}" if (preferred_times or "").strip() else "")
+    c = CounsellingCase(
+        tenant_id=student.tenant_id, school_id=student.school_id, student_id=student.id,
+        reference_no=_next_ref(db, student.school_id, CounsellingCase, "CNS"),
+        title=f"Asked for by {who}", category=CounsellingCategory.other, concern=concern[:5000],
+        opened_on=school_today(db, student.school_id), referred_by_user_id=requester.id,
+    )
+    db.add(c)
+    db.flush()
+    _tell_about_case(db, c, student, requester.id)
+    db.commit()
+    db.refresh(c)
+    return c
+
+
+def family_requests(db: Session, requester: User, student: Student) -> list[dict]:
+    """The requests this person made for this child, with where they stand:
+    open, an appointment booked (when), or closed. Never the notes."""
+    from app.models.wellbeing import CounsellingAppointment
+
+    cases = list(db.execute(select(CounsellingCase).where(
+        CounsellingCase.student_id == student.id, CounsellingCase.referred_by_user_id == requester.id)
+        .order_by(CounsellingCase.id.desc())).scalars())
+    out = []
+    for c in cases:
+        appt = db.execute(select(CounsellingAppointment).where(
+            CounsellingAppointment.case_id == c.id, CounsellingAppointment.scheduled_on >= school_today(db, c.school_id))
+            .order_by(CounsellingAppointment.scheduled_on, CounsellingAppointment.scheduled_at)).scalars().first()
+        out.append({"id": c.id, "asked_on": c.opened_on, "about": c.concern.split("\n\nPreferred times:")[0],
+                    "status": "closed" if c.status == CaseStatus.closed else ("booked" if appt and appt.status.value == "booked" else "open"),
+                    "appointment_on": appt.scheduled_on if appt else None, "appointment_at": appt.scheduled_at if appt else None})
+    return out
 
 
 def _check_counsellor(db: Session, school_id: int, user_id: int) -> None:
@@ -406,7 +484,7 @@ def add_session(db: Session, user: User, case_id: int, data: SessionIn) -> Couns
 def list_cases(db: Session, user: User, *, student_id: Optional[int], status_: Optional[CaseStatus],
                counsellor_user_id: Optional[int]) -> list[CounsellingCase]:
     stmt = select(CounsellingCase).where(CounsellingCase.school_id == user.school_id)
-    if user.role not in OFFICE:
+    if user.role not in OFFICE and not _may_counsel(db, user):
         stmt = stmt.where(or_(
             CounsellingCase.counsellor_user_id == user.id,
             (CounsellingCase.referred_by_user_id == user.id) & (CounsellingCase.is_sensitive.is_(False)),
