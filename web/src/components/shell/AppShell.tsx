@@ -49,7 +49,7 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
     { title: "Teaching", icon: "book", items: [[102, "Lesson plans & syllabus"], [1021, "Rubrics"], [244, "Book a lab"]] },
     { title: "Homework & tests", icon: "file", items: [[128, "Homework"], [134, "Assignments"], [1023, "Online tests"]] },
     { title: "Marks & report cards", icon: "chart", items: [[145, "Marks entry"], [1051, "Report card remarks"]] },
-    { title: "Class teacher", icon: "users", items: [[115, "Student leave"], [251, "Parent-teacher meetings"], [1094, "Behaviour notes"], [1095, "Weekly reports"], [1108, "Refer to counsellor"]] },
+    { title: "Class teacher", icon: "users", items: [[1109, "Class attendance"], [115, "Student leave"], [251, "Parent-teacher meetings"], [1094, "Behaviour notes"], [1095, "Weekly reports"], [1108, "Refer to counsellor"]] },
     [253, "Messages", "message"], [1091, "My leave & records", "calendar"], [1093, "My library", "book"],
   ],
   "Super Admin": [[9, "Platform overview", "grid"], [10, "Organizations", "building"], [13, "Subscription plans", "file"], [14, "Billing", "money"], [15, "Usage & limits", "chart"], [16, "Platform users", "users"], [17, "Support tickets", "message"], [18, "Service health", "check"], [19, "Announcements", "bell"], [1083, "Integrations", "settings"], [20, "Platform settings", "settings"]],

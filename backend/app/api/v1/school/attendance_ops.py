@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import AttendanceOffice, CurrentUser, SchoolAdminOrPrincipal, TeacherUser, TimesReader, TimesRecorder
 from app.core.enums import AttendanceStatus, ContactMethod, CorrectionStatus, UserRole
 from app.core.scoping import require_linked_child
+from app.schemas.attendance import AttendanceSaveRequest
 from app.database import get_db
 from app.models.user import User
 from app.services import attendance_ops_service as svc
@@ -208,3 +209,24 @@ def log_contact(payload: ContactIn, user: AttendanceOffice, db: Db):
 @router.get("/contacts/{student_id}", summary="What has been tried for this child")
 def contact_history(student_id: int, user: AttendanceOffice, db: Db):
     return svc.contact_history(db, user.school_id, student_id)
+
+
+
+# ----- the office takes a register -----
+
+
+@router.get("/day", summary="Any section's register for a day (the office, or the attendance office)")
+def office_day(user: AttendanceOffice, db: Db, section_id: int = Query(...), on_date: date = Query(..., alias="date")):
+    from app.schemas.attendance import AttendanceViewRead
+    from app.services import attendance_service
+
+    return AttendanceViewRead.model_validate(attendance_service.get_view(db, user.id, user.school_id, section_id, on_date, office=True))
+
+
+@router.post("/day/save", summary="Mark any section's register (the office, or the attendance office)")
+def office_save(payload: AttendanceSaveRequest, user: AttendanceOffice, db: Db):
+    from app.schemas.attendance import AttendanceSaveResult
+    from app.services import attendance_service
+
+    return AttendanceSaveResult.model_validate(attendance_service.save(
+        db, user.tenant_id, user.school_id, user.id, payload.section_id, payload.date, payload.entries, office=True))

@@ -10,6 +10,8 @@ import { api, errorText } from "@/lib/api";
 import { dateTime, initials } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
+import { useYears } from "@/features/academics/setupKit";
 import { longDay, statusClass, statusLabel, useSchoolDay } from "./shared";
 import { DAILY_FORM, STATUSES, type DayRow, type DayView, type MyClasses, type Status } from "./types";
 
@@ -19,12 +21,23 @@ const TONES = ["mint", "", "peach", "lilac"];
  * SCR-110, live: the class teacher's daily register.
  * GET /teacher/my-classes, GET /teacher/attendance?section_id&date,
  * POST /teacher/attendance/save (status, remark and check-in time per child).
+ * The office (school admin, principal, attendance office) marks any section:
+ * GET /school/classes, GET/POST /school/attendance-ops/day…
  * The day defaults to the school's day.
  */
 export function DailyAttendance() {
   const initialSection = useSearchParams().get("section_id");
   const schoolDay = useSchoolDay();
-  const mine = useApi<MyClasses>("/api/v1/teacher/my-classes");
+  const role = useSession()?.user.role;
+  // anyone but a teacher here is the office: every section of the current year
+  const office = Boolean(role && role !== "teacher");
+  const mine = useApi<MyClasses>(role === "teacher" ? "/api/v1/teacher/my-classes" : null);
+  const { yearId } = useYears();
+  const classes = useApi<{ id: number; name: string; sections: { id: number; name: string }[] }[]>(office && yearId ? "/api/v1/school/classes" : null, { academic_year_id: yearId });
+  const sections = office
+    ? (classes.data ?? []).flatMap((c) => c.sections.map((x) => ({ section_id: x.id, section_label: `${c.name} ${x.name}` })))
+    : (mine.data?.class_teacher_of ?? []);
+  const BASE = office ? "/api/v1/school/attendance-ops/day" : "/api/v1/teacher/attendance";
   const [sectionId, setSectionId] = useState<number | null>(initialSection ? Number(initialSection) : null);
   const [day, setDay] = useState<string | null>(null);
   const [show, setShow] = useState("");
@@ -33,13 +46,13 @@ export function DailyAttendance() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (sectionId === null && mine.data?.class_teacher_of.length) setSectionId(mine.data.class_teacher_of[0].section_id);
-  }, [mine.data, sectionId]);
+    if (sectionId === null && sections.length) setSectionId(sections[0].section_id);
+  }, [sections, sectionId]);
   useEffect(() => {
     if (day === null && schoolDay) setDay(schoolDay);
   }, [schoolDay, day]);
 
-  const view = useApi<DayView>(sectionId && day ? "/api/v1/teacher/attendance" : null, { section_id: sectionId, date: day });
+  const view = useApi<DayView>(sectionId && day ? BASE : null, { section_id: sectionId, date: day });
   useEffect(() => {
     if (view.data) setRows(view.data.rows);
   }, [view.data]);
@@ -85,7 +98,7 @@ export function DailyAttendance() {
     setSaving(true);
     setError(null);
     try {
-      const r = await api.post<{ saved: number }>("/api/v1/teacher/attendance/save", { section_id: sectionId, date: day, entries });
+      const r = await api.post<{ saved: number }>(`${BASE}/save`, { section_id: sectionId, date: day, entries });
       notify(`Attendance saved for ${r.saved} students.`);
       view.reload();
     } catch (err) {
@@ -95,13 +108,13 @@ export function DailyAttendance() {
     }
   }
 
-  if (mine.data && !mine.data.class_teacher_of.length)
+  if (!office && mine.data && !mine.data.class_teacher_of.length)
     return (
       <section className="panel">
         <div className="panel-pad muted">You are not the class teacher of any section, so there is no daily register to mark.</div>
       </section>
     );
-  if (!day || (mine.loading && !mine.data)) return <Loading what="Finding today's register…" />;
+  if (!day || (!office && mine.loading && !mine.data) || (office && !classes.data && !classes.error)) return <Loading what="Finding today's register…" />;
 
   // The register on screen, updating as the teacher marks.
   const n = (x: number) => (view.loading ? "…" : !view.data ? "—" : String(x));
@@ -120,7 +133,7 @@ export function DailyAttendance() {
       <StatStrip items={stats} compact />
       <div className="filterbar">
         <select aria-label="Section" value={sectionId ?? ""} onChange={(e) => setSectionId(Number(e.target.value))}>
-          {mine.data?.class_teacher_of.map((s) => (
+          {sections.map((s) => (
             <option key={s.section_id} value={s.section_id}>
               {s.section_label}
             </option>

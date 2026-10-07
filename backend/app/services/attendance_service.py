@@ -56,7 +56,7 @@ def _holiday_for(db: Session, school_id: int, target: date) -> Optional[Holiday]
 
 
 def _check_class_teacher_access(
-    db: Session, teacher_user_id: int, section_id: int, school_id: int
+    db: Session, teacher_user_id: int, section_id: int, school_id: int, *, office: bool = False
 ) -> Section:
     """For attendance marking, only the section's class teacher can mark.
 
@@ -68,7 +68,9 @@ def _check_class_teacher_access(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Section not found"
         )
-    if sec.class_teacher_user_id != teacher_user_id:
+    # the office (school admin, principal, attendance office) marks any section:
+    # a teacher away is no reason for a class to go without a register
+    if not office and sec.class_teacher_user_id != teacher_user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only the class teacher can mark daily attendance for this section",
@@ -77,9 +79,9 @@ def _check_class_teacher_access(
 
 
 def get_view(
-    db: Session, teacher_user_id: int, school_id: int, section_id: int, on_date: date
+    db: Session, teacher_user_id: int, school_id: int, section_id: int, on_date: date, *, office: bool = False
 ) -> dict:
-    sec = _check_class_teacher_access(db, teacher_user_id, section_id, school_id)
+    sec = _check_class_teacher_access(db, teacher_user_id, section_id, school_id, office=office)
     is_editable, _ = _check_date(on_date, school_today(db, school_id))
     holiday = _holiday_for(db, school_id, on_date)
 
@@ -160,8 +162,10 @@ def save(
     section_id: int,
     on_date: date,
     entries: list[dict],
+    *,
+    office: bool = False,
 ) -> dict:
-    sec = _check_class_teacher_access(db, teacher_user_id, section_id, school_id)
+    sec = _check_class_teacher_access(db, teacher_user_id, section_id, school_id, office=office)
 
     today = school_today(db, school_id)
     is_editable, _ = _check_date(on_date, today)
