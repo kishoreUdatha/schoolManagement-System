@@ -1,6 +1,5 @@
 "use client";
 
-import { Icon } from "@/components/ui/Icon";
 import { Fragment, useCallback, useState } from "react";
 import { ErrorNote } from "@/components/ui/states";
 import { errorText } from "@/lib/api";
@@ -215,26 +214,6 @@ export function IncomeExpenditure() {
             <button type="button" className="btn" onClick={() => window.print()}>
               {PRINT}
               Print
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={Boolean(busy)}
-              title="Every voucher in these dates, with its ledgers, as a Tally import file"
-              onClick={async () => {
-                setBusy("tally");
-                try {
-                  await downloadAuthed(`${BOOKS}/tally.xml?from=${applied.from}&to=${applied.to}`, `tally_${applied.from}_${applied.to}.xml`);
-                  notify("Tally file saved. In Tally: Gateway of Tally → Import → Masters, then Vouchers, and choose this file.");
-                } catch (e) {
-                  notify(errorText(e));
-                } finally {
-                  setBusy("");
-                }
-              }}
-            >
-              <Icon name="download" className="sm" />
-              {busy === "tally" ? "Preparing…" : "Export to Tally"}
             </button>
           </div>
         </div>

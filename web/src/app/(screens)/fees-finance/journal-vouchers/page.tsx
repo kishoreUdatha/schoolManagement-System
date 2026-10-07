@@ -5,6 +5,7 @@
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
+import { TallyExport } from "@/features/books/TallyExport";
 import { ClientOnly } from "@/features/fees/common";
 import { JournalVouchers } from "@/features/books/JournalVouchers";
 
@@ -12,7 +13,7 @@ export const metadata = { title: "NEW-052 · Journal Vouchers · BrightCampus" }
 
 export default function Page() {
   return (
-    <AppShell screen="NEW-052">
+    <AppShell screen="NEW-052" actions={<TallyExport />}>
       <ClientOnly>
         <Suspense>
           <JournalVouchers />

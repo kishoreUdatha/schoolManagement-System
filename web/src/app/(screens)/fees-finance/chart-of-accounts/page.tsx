@@ -4,6 +4,7 @@
 // Wired: GET/POST /api/v1/school/books/accounts, PATCH/DELETE /books/accounts/{id}, POST /books/accounts/import, GET /books/accounts.xlsx. Hand-maintained.
 
 import { AppShell } from "@/components/shell/AppShell";
+import { TallyExport } from "@/features/books/TallyExport";
 import { ClientOnly } from "@/features/fees/common";
 import { ChartOfAccounts } from "@/features/books/ChartOfAccounts";
 
@@ -11,7 +12,7 @@ export const metadata = { title: "NEW-049 · Chart of Accounts · BrightCampus" 
 
 export default function Page() {
   return (
-    <AppShell screen="NEW-049">
+    <AppShell screen="NEW-049" actions={<TallyExport />}>
       <ClientOnly>
         <ChartOfAccounts />
       </ClientOnly>

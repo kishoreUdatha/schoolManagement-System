@@ -4,6 +4,7 @@
 // Wired: GET /api/v1/school/books/income-expenditure?from=&to=&category=&account_id= (+ .xlsx, .pdf). Hand-maintained.
 
 import { AppShell } from "@/components/shell/AppShell";
+import { TallyExport } from "@/features/books/TallyExport";
 import { ClientOnly } from "@/features/fees/common";
 import { IncomeExpenditure } from "@/features/books/IncomeExpenditure";
 
@@ -11,7 +12,7 @@ export const metadata = { title: "NEW-056 · Income & Expenditure · BrightCampu
 
 export default function Page() {
   return (
-    <AppShell screen="NEW-056">
+    <AppShell screen="NEW-056" actions={<TallyExport />}>
       <ClientOnly>
         <IncomeExpenditure />
       </ClientOnly>

@@ -5,6 +5,7 @@
 
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
+import { TallyExport } from "@/features/books/TallyExport";
 import { ClientOnly } from "@/features/fees/common";
 import { GeneralLedger } from "@/features/books/Ledger";
 
@@ -12,7 +13,7 @@ export const metadata = { title: "NEW-054 · General Ledger · BrightCampus" };
 
 export default function Page() {
   return (
-    <AppShell screen="NEW-054">
+    <AppShell screen="NEW-054" actions={<TallyExport />}>
       <ClientOnly>
         <Suspense>
           <GeneralLedger />
