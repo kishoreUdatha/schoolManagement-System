@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import PlainTextResponse
 from sqlalchemy.orm import Session
 
-from app.core.deps import AssetKeeper, DuesReader, LibraryReports, ReportReader, SchoolAdminOrPrincipal
+from app.core.deps import StaffDirectoryReader, AssetKeeper, DuesReader, LibraryReports, ReportReader, SchoolAdminOrPrincipal
 from app.database import get_db
 from app.schemas.analytics import (
     ChronicAbsence,
@@ -215,7 +215,7 @@ def dues_ageing_csv(user: DuesReader, db: Annotated[Session, Depends(get_db)]):
 
 @router.get("/staff-attendance", response_model=StaffAttendanceSummary)
 def staff_attendance(
-    user: SchoolAdminOrPrincipal,
+    user: StaffDirectoryReader,
     db: Annotated[Session, Depends(get_db)],
     year: int = Query(..., ge=2000, le=2100),
     month: int = Query(..., ge=1, le=12),

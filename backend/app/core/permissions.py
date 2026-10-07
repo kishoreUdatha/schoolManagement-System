@@ -71,7 +71,10 @@ SYSTEM_ROLE_PERMISSIONS: dict[str, list[str]] = {
     "accountant": ["fees.manage", "fees.collect", "fees.waive", "fees.refund.request", "accounts.manage",
                    "payroll.manage", "inventory.manage", "reports.view"],
     "teacher": ["reportcards.remark", "notices.send"],
-    "staff": ["frontdesk.manage", "library.manage", "inventory.manage", "hostel.manage"],
+    # a staff login is a person, not a job: library, hostel, store and front
+    # desk come from the Librarian, Hostel Warden, Lab Assistant and
+    # Receptionist jobs, so a nurse or a driver doesn't get them all
+    "staff": [],
     "parent": [],
     "student": [],
 }
@@ -104,6 +107,7 @@ STARTER_ROLES: dict[str, tuple[str, str, list[str], str]] = {
     "nurse": ("Nurse", "staff", ["health.manage"], "The clinic and students' health records"),
     "hostel_warden": ("Hostel Warden", "staff", ["hostel.manage"], "Rooms, allocations and roll call"),
     "it_admin": ("IT Admin", "staff", ["settings.manage", "audit.view"], "School setup and the audit log"),
-    "hr": ("HR", "staff", ["hr.manage", "staff.manage", "reports.view"], "Staff records, recruitment and leave"),
+    # staff reports come with hr.manage; reports.view would open the fee reports
+    "hr": ("HR", "staff", ["hr.manage", "staff.manage"], "Staff records, recruitment and leave"),
     "support_staff": ("Support Staff", "staff", [], "Drivers, attendants, housekeeping and security"),
 }

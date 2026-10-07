@@ -142,7 +142,7 @@ export function HrDashboard() {
         [routeOf(80), "users", "Staff directory"],
         [routeOf(181), "file", "Leave requests"],
         [routeOf(179), "calendar", "Staff attendance"],
-        [routeOf(184), "money", "Payroll"],
+        [routeOf(172), "file", "Hiring"],
       ]}
     />
   );

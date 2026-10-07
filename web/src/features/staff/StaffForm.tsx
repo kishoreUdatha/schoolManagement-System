@@ -9,6 +9,7 @@ import { api, errorText } from "@/lib/api";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import { EMPLOYMENT_LABEL, jobRolesOf, ROLE_LABEL, type Department, type EmploymentType, type JobRole, type Staff, type StaffRole } from "./types";
 
 /** The form id the page-head button submits. */
@@ -34,7 +35,9 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
   const [saving, setSaving] = useState(false);
   const [login, setLogin] = useState<StaffRole>("teacher");
   // the jobs a school has set up; someone who cannot read roles simply does not see the field
-  const roleList = useApi<JobRole[]>("/api/v1/school/roles");
+  // giving someone a job is the school admin's: others don't see the field (or load the list)
+  const isAdmin = useSession()?.user.role === "school_admin";
+  const roleList = useApi<JobRole[]>(isAdmin ? "/api/v1/school/roles" : null);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Created | null>(null);
   const [addingCommon, setAddingCommon] = useState(false);
@@ -194,7 +197,7 @@ export function StaffForm({ mode }: { mode: "add" | "edit" }) {
                   ),
                 )}
                 {field("Designation", <input name="designation" maxLength={120} defaultValue={s?.designation ?? ""} placeholder="e.g. Mathematics Teacher" />)}
-                {roleList.error ? null : field(
+                {!isAdmin || roleList.error ? null : field(
                   "Job role",
                   <select
                     name="job_role_id"

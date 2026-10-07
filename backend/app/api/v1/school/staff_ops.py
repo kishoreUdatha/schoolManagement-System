@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser, StaffRecordReader
+from app.core.deps import SchoolAdminOrPrincipal, SchoolAdminUser, StaffDirectoryReader, StaffRecordKeeper, StaffRecordReader
 from app.core.enums import ClearanceArea, ExitClearanceStatus
 from app.database import get_db
 from app.services import analytics_service, staff_ops_service as svc
@@ -81,7 +81,7 @@ def workload(user: SchoolAdminOrPrincipal, db: Db):
 
 
 @router.get("/attendance-summary", summary="A month of staff attendance per person")
-def attendance_summary(user: SchoolAdminOrPrincipal, db: Db,
+def attendance_summary(user: StaffDirectoryReader, db: Db,
                        year: int = Query(..., ge=2000, le=2100),
                        month: int = Query(..., ge=1, le=12)):
     # The analytics service already does this; there is no second version.
@@ -110,14 +110,14 @@ def share_observation(observation_id: int, payload: ShareIn,
 
 
 @router.get("/clearances", summary="Departures under way")
-def list_clearances(user: SchoolAdminUser, db: Db,
+def list_clearances(user: StaffRecordKeeper, db: Db,
                     state: Optional[ExitClearanceStatus] = None):
     return svc.list_clearances(db, user.school_id, state=state)
 
 
 @router.post("/clearances", status_code=status.HTTP_201_CREATED,
              summary="Start a leaver's checklist")
-def start_clearance(payload: ClearanceIn, user: SchoolAdminUser, db: Db):
+def start_clearance(payload: ClearanceIn, user: StaffRecordKeeper, db: Db):
     return svc.start_clearance(
         db, user.school_id, user.tenant_id, user.id, payload.staff_id,
         last_working_day=payload.last_working_day, reason=payload.reason,
@@ -126,7 +126,7 @@ def start_clearance(payload: ClearanceIn, user: SchoolAdminUser, db: Db):
 
 
 @router.post("/clearances/items/{item_id}", summary="Sign off one area")
-def clear_item(item_id: int, payload: ClearItemIn, user: SchoolAdminUser, db: Db):
+def clear_item(item_id: int, payload: ClearItemIn, user: StaffRecordKeeper, db: Db):
     return svc.clear_item(db, user.school_id, user.id, item_id,
                           payload.cleared, payload.note)
 
@@ -134,32 +134,32 @@ def clear_item(item_id: int, payload: ClearItemIn, user: SchoolAdminUser, db: Db
 @router.post("/clearances/{clearance_id}/complete",
              summary="Finish a departure — refused while anything is outstanding")
 def complete_clearance(clearance_id: int, payload: CompleteIn,
-                       user: SchoolAdminUser, db: Db):
+                       user: StaffRecordKeeper, db: Db):
     return svc.complete_clearance(db, user.school_id, clearance_id,
                                   deactivate=payload.deactivate)
 
 
 @router.post("/clearances/{clearance_id}/cancel", summary="They are staying after all")
-def cancel_clearance(clearance_id: int, user: SchoolAdminUser, db: Db):
+def cancel_clearance(clearance_id: int, user: StaffRecordKeeper, db: Db):
     return svc.cancel_clearance(db, user.school_id, clearance_id)
 
 
 @router.get("/qualifications", summary="Everyone's qualifications and documents, counted")
-def qualifications_overview(user: SchoolAdminOrPrincipal, db: Db):
+def qualifications_overview(user: StaffDirectoryReader, db: Db):
     return svc.qualifications_overview(db, user.school_id)
 
 
 @router.post("/qualifications/{qualification_id}/verify",
              summary="Mark a qualification as checked against its certificate")
 def verify_qualification(qualification_id: int, payload: VerifyIn,
-                         user: SchoolAdminUser, db: Db):
+                         user: StaffRecordKeeper, db: Db):
     return svc.verify_qualification(db, user.school_id, user.id,
                                     qualification_id, payload.verified)
 
 
 @router.delete("/qualifications/{qualification_id}",
                status_code=status.HTTP_204_NO_CONTENT)
-def delete_qualification(qualification_id: int, user: SchoolAdminUser, db: Db):
+def delete_qualification(qualification_id: int, user: StaffRecordKeeper, db: Db):
     svc.delete_qualification(db, user.school_id, qualification_id)
 
 
@@ -172,18 +172,18 @@ def profile(staff_id: int, user: StaffRecordReader, db: Db):
 
 
 @router.get("/{staff_id}/qualifications", summary="What they are qualified to do")
-def list_qualifications(staff_id: int, user: SchoolAdminOrPrincipal, db: Db):
+def list_qualifications(staff_id: int, user: StaffDirectoryReader, db: Db):
     return svc.list_qualifications(db, user.school_id, staff_id)
 
 
 @router.post("/{staff_id}/qualifications", status_code=status.HTTP_201_CREATED)
 def add_qualification(staff_id: int, payload: QualificationIn,
-                      user: SchoolAdminUser, db: Db):
+                      user: StaffRecordKeeper, db: Db):
     return svc.add_qualification(
         db, user.school_id, user.tenant_id, staff_id, payload.model_dump()
     )
 
 
 @router.get("/{staff_id}/exit", summary="This person's leaving checklist, if any")
-def get_clearance(staff_id: int, user: SchoolAdminUser, db: Db):
+def get_clearance(staff_id: int, user: StaffRecordKeeper, db: Db):
     return svc.get_clearance(db, user.school_id, staff_id)

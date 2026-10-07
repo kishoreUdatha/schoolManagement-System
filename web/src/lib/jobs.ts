@@ -30,7 +30,7 @@ export const ROLE_ONLY: Record<number, string[]> = {
   255: ["school_admin", "principal"], // communication history
   // School-wide reports are the admin's and the principal's (api/v1/school/analytics.py);
   // an accountant holding reports.view sees the money ones.
-  ...Object.fromEntries([264, 266, 267, 268, 269, 270, 271, 272, 276, 278, 279, 282].map((n) => [n, ["school_admin", "principal"]])),
+  ...Object.fromEntries([264, 266, 267, 268, 269, 270, 271, 272, 278, 279, 282].map((n) => [n, ["school_admin", "principal"]])),
   275: ["school_admin", "accountant"], // finance summary: the cash book
 };
 export const usableBy = (n: number, role: string | undefined) => !role || !ROLE_ONLY[n] || ROLE_ONLY[n].includes(role);
@@ -94,6 +94,7 @@ export const JOBS: Job[] = [
       [172, "Requisitions"], [173, "Job openings"], [174, "Candidates"], [1060, "Candidate pool"], [176, "Interviews"],
       [177, "Offers"], [178, "Onboarding"], [180, "Leave policies"], [1061, "Leave balances"],
       [179, "Staff attendance"], [181, "Staff leave requests"], [182, "Leave approval"],
+      [88, "Attendance summary"], [89, "Leave summary"], [276, "Staff attendance report"],
     ],
   },
   {
@@ -191,7 +192,8 @@ export const JOBS: Job[] = [
   {
     permission: "staff.manage",
     title: "Staff records",
-    items: [[80, "Staff directory"], [81, "Add staff"], [82, "Staff profile"], [1085, "Departments"]],
+    // one entry, Staff: the rest are its tabs; adding and opening a person start from the directory
+    items: [[80, "Staff"], [1085, "Departments"], [87, "Qualifications"], [91, "Exit"]],
   },
   {
     permission: "reports.view",

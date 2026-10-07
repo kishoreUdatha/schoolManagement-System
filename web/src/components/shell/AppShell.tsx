@@ -67,7 +67,8 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
   ],
   // One entry per area; the rest of each area is the row of tabs on its page (ROLE_TABS).
   Accountant: [[38, "Dashboard", "grid"], [158, "Fee collection", "money"], [1040, "Fee setup", "file"], [166, "Income & expenses", "book"], [1056, "Books of account", "book"], [171, "Finance reports", "chart"]],
-  Staff: [[39, "Dashboard", "grid"], [1090, "My attendance", "check"], [1091, "My leave", "calendar"], [1092, "My payslips", "money"], [1093, "My library", "book"], [296, "Notifications", "bell"], [1097, "My profile", "users"]],
+  // my attendance, payslips and profile are tabs of My leave & records (ROLE_TABS)
+  Staff: [[39, "Dashboard", "grid"], [1091, "My leave & records", "calendar"], [1093, "My library", "book"], [296, "Notifications", "bell"]],
   "HR Manager": [[39, "Dashboard", "grid"], [80, "Staff directory", "users"], [172, "Recruitment", "file"], [174, "Candidates", "cap"], [178, "Onboarding", "check"], [179, "Staff attendance", "calendar"], [181, "Leave requests", "file"], [184, "Payroll", "money"], [1060, "Candidate pool", "users"], [1061, "Leave balances", "calendar"], [1062, "Salary & bank files", "money"], [89, "Leave reports", "chart"]],
   "Admission Officer": [[40, "Dashboard", "grid"], [44, "Enquiries", "users"], [47, "Follow-up calendar", "calendar"], [48, "Applications", "file"], [51, "Document verification", "check"], [52, "Assessments", "chart"], [53, "Admission approvals", "file"], [1002, "Campaigns", "message"], [1001, "Online admission link", "pin"], [265, "Admission reports", "chart"]],
   "Transport Manager": [[41, "Dashboard", "grid"], [1072, "Transport dashboard", "bus"], [186, "Vehicles", "bus"], [189, "Routes", "pin"], [191, "Stops", "pin"], [192, "Drivers & conductors", "users"], [193, "Student assignment", "cap"], [194, "Trip sheets", "file"], [195, "Live GPS tracking", "pin"], [197, "Maintenance & fuel", "settings"], [279, "Transport reports", "chart"]],
@@ -80,6 +81,7 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
  * role's tab rows hold only screens already in its menu.
  */
 const ROLE_TABS: Record<string, number[]> = {
+  Staff: [1091, 1090, 1092, 1097],
   Teacher: [
     102, 105, 106, // lesson plans, syllabus coverage, resources
     1023, 1022, // online tests, question bank

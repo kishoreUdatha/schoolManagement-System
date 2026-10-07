@@ -448,6 +448,8 @@ RefundReader = Annotated[User, Depends(allow_job(
 # Staff records (staff.manage). A job holder adds and edits teachers and
 # office staff only, never the office roles (see api/v1/school/staff.py).
 StaffManager = Annotated[User, Depends(allow_job(UserRole.school_admin, permission="staff.manage"))]
+# keeping staff records: qualifications checked, a leaver's exit run (HR or the office)
+StaffRecordKeeper = Annotated[User, Depends(allow(UserRole.school_admin, any_of=("staff.manage", "hr.manage")))]
 StaffRecordReader = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="staff.manage"))]
 # Student records (students.manage): student logins, leavers, enrolments.
 StudentRecords = Annotated[User, Depends(allow_job(UserRole.school_admin, permission="students.manage"))]
