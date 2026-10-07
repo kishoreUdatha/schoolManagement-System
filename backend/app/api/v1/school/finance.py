@@ -197,3 +197,56 @@ def report(user: SchoolAdminOrAccountant, db: Db,
            frm: Optional[date] = Query(None, alias="from"),
            to: Optional[date] = None):
     return finance_service.finance_report(db, user.school_id, frm=frm, to=to)
+
+
+# ----- the fee office's everyday reports (services/fee_reports_service.py) -----
+
+
+@router.get("/reports/monthly-collections", summary="Collections month by month for a financial year, by payment method")
+def monthly_collections(user: SchoolAdminOrAccountant, db: Db, year_from: Optional[date] = None):
+    from app.services import fee_reports_service
+
+    return fee_reports_service.monthly_collections(db, user.school_id, year_from)
+
+
+@router.get("/reports/dues-by", summary="Raised, paid and still due, per class or per branch")
+def dues_by(user: SchoolAdminOrAccountant, db: Db, by: str = Query("class", pattern="^(class|branch)$")):
+    from app.services import fee_reports_service
+
+    return fee_reports_service.dues_by(db, user.school_id, by)
+
+
+@router.get("/reports/fee-type-students", summary="The students on one fee type: paid, unpaid or all")
+def fee_type_students(user: SchoolAdminOrAccountant, db: Db, fee_head_id: int,
+                      state: str = Query("all", pattern="^(all|paid|unpaid)$")):
+    from app.services import fee_reports_service
+
+    return fee_reports_service.head_students(db, user.school_id, fee_head_id, state)
+
+
+@router.get("/reports/bounced-cheques", summary="Cheques that bounced, received in a date range")
+def bounced_cheques(user: SchoolAdminOrAccountant, db: Db, frm: Optional[date] = Query(None, alias="from"), to: Optional[date] = None):
+    from app.services import fee_reports_service
+
+    start, _ = fee_reports_service.fy()
+    return fee_reports_service.bounced_cheques(db, user.school_id, frm or start, to or date.today())
+
+
+@router.get("/reports/concessions", summary="Concessions given, by type, and what they took off this year's fees")
+def concessions_report(user: SchoolAdminOrAccountant, db: Db, year_from: Optional[date] = None):
+    from app.services import fee_reports_service
+
+    return fee_reports_service.concessions(db, user.school_id, year_from)
+
+
+@router.get("/reports/reminder-slips.pdf", summary="Printable fee reminder slips for students who owe, three to a page")
+def reminder_slips(user: SchoolAdminOrAccountant, db: Db, class_id: Optional[int] = None, section_id: Optional[int] = None,
+                   overdue_only: bool = False, pay_by: Optional[date] = None):
+    from fastapi.responses import Response
+
+    from app.services import fee_reports_service
+
+    data, name, count = fee_reports_service.reminder_slips_pdf(db, user.school_id, class_id=class_id, section_id=section_id,
+                                                               overdue_only=overdue_only, pay_by=pay_by)
+    return Response(content=data, media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="{name}"', "X-Slip-Count": str(count)})
