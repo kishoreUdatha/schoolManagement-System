@@ -266,6 +266,30 @@ export function LeaveOuting() {
         </select>
       </div>
       <ErrorNote>{!add.open ? (error ?? hostels.error ?? outings.error) : null}</ErrorNote>
+      {all.some((o) => o.status === "out" && o.overdue) ? (
+        <Panel title="Not back yet" sub="Out past the time they were due back" flush>
+          <div className="table-wrap">
+            <table className="data-table">
+              <tbody>
+                {all.filter((o) => o.status === "out" && o.overdue).map((o) => (
+                  <tr key={o.id} className="st-late">
+                    <td>{o.student_name}</td>
+                    <td>{`Due back ${dateTime(o.return_by)}`}</td>
+                    <td className="num">
+                      <button type="button" className="btn" disabled={saving} onClick={() => act(o, "remind-late", undefined, "The family has been asked.")}>
+                        Ask the family
+                      </button>{" "}
+                      <button type="button" className="btn primary" disabled={saving} onClick={() => act(o, "returned", undefined, `${o.student_name} is back.`)}>
+                        Returned
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+      ) : null}
       {!hostel ? (
         <NoHostel loading={hostels.loading} />
       ) : (

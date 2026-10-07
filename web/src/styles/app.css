@@ -1138,3 +1138,6 @@ tr.jv-open td{background:#f5f8ff}
 .fo-month{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
 .fo-month span{width:100%;max-width:22px;background:#3b6cf6;border-radius:3px 3px 0 0;min-height:2px}
 .fo-month small{font-size:10px;color:#5b6b85}
+
+/* Hostel: out past their return time (features/hostel/Daily). */
+.data-table tr.st-late td{background:#fff6ed}

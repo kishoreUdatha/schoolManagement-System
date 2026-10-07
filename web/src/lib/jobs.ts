@@ -66,8 +66,10 @@ export const JOBS: Job[] = [
     permission: "hostel.manage",
     title: "Hostel",
     items: [
-      [208, "Hostels"], [209, "Rooms & beds"], [210, "Allocation"], [211, "Wardens"], [212, "Hostel attendance"],
-      [213, "Leave & outings"], [214, "Mess & meals"], [215, "Complaints & fees"],
+      // residents (allocation, roll call, outings, complaints) are one entry; setting hostels
+      // up and naming wardens is the school admin's
+      [210, "Residents"], [212, "Hostel attendance"], [213, "Leave & outings"], [215, "Complaints & fees"],
+      [209, "Rooms & beds"], [214, "Mess & meals"], [1104, "Hostel report"],
     ],
   },
   {

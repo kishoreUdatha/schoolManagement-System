@@ -271,8 +271,15 @@ def rooms(db: Session, hostel_id: int, user: User) -> list[dict]:
 
 # --- Allocation ---
 
+def _bed_hostel_id(db: Session, bed_id: int) -> Optional[int]:
+    bed = db.get(HostelBed, bed_id)
+    room = db.get(HostelRoom, bed.room_id) if bed else None
+    return room.hostel_id if room else None
+
+
 def allocate(db: Session, user: User, data: AllocationIn) -> HostelAllocation:
-    _require_manager(user)
+    """The school admin or principal anywhere; a warden in their own hostel
+    (_hostel checks it), and not to take a child out of another hostel."""
     student = get_school_student(db, data.student_id, user.school_id)
     if not student.is_active:
         raise _400("Student is inactive")
@@ -290,6 +297,9 @@ def allocate(db: Session, user: User, data: AllocationIn) -> HostelAllocation:
         select(HostelAllocation).where(HostelAllocation.student_id == student.id, HostelAllocation.end_date.is_(None))
     ).scalar_one_or_none()
     if current:
+        if not is_manager(user) and _bed_hostel_id(db, current.bed_id) != hostel.id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                                detail="This student has a bed in another hostel: the office moves them between hostels")
         if current.start_date >= start:
             raise _400("Student already has a bed from that date")
         current.end_date = start - timedelta(days=1)  # room change
@@ -311,10 +321,10 @@ def transfer(db: Session, allocation_id: int, user: User, data: TransferIn) -> H
     allocation the day before the new one starts and opens the new bed, so the
     history reads as one continuous stay in two places.
     """
-    _require_manager(user)
     a = db.get(HostelAllocation, allocation_id)
     if not a or a.school_id != user.school_id:
         raise _404("Allocation")
+    from_hostel = _hostel(db, _bed_hostel_id(db, a.bed_id), user)  # a warden moves only their own residents
     if a.end_date:
         raise _400("This resident has already moved out — allocate a bed instead")
     bed = db.get(HostelBed, data.bed_id)
@@ -326,6 +336,8 @@ def transfer(db: Session, allocation_id: int, user: User, data: TransferIn) -> H
     hostel = _hostel(db, room.hostel_id, user)
     if not hostel.is_active:
         raise _400("Hostel is inactive")
+    if hostel.id != from_hostel.id and not is_manager(user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="The office moves residents between hostels")
     taken = _occupant(db, bed.id)
     if taken:
         raise _400(f"Bed {room.room_no}-{bed.label} is taken")
@@ -342,10 +354,10 @@ def transfer(db: Session, allocation_id: int, user: User, data: TransferIn) -> H
 
 
 def vacate(db: Session, allocation_id: int, user: User, end: Optional[date]) -> HostelAllocation:
-    _require_manager(user)
     a = db.get(HostelAllocation, allocation_id)
     if not a or a.school_id != user.school_id:
         raise _404("Allocation")
+    _hostel(db, _bed_hostel_id(db, a.bed_id), user)  # a warden vacates only their own residents
     if a.end_date:
         raise _400("Already vacated")
     end = end or date.today()
@@ -437,13 +449,24 @@ def roll_call(db: Session, hostel_id: int, user: User, data: RollCallIn) -> int:
         if changed and m.status == HostelAttendanceStatus.absent and data.date == today:
             absentees.append(m.student_id)
     db.flush()
+    names = []
     for sid in absentees:
         s = db.get(Student, sid)
+        names.append(s.full_name)
         notify.student_parents(
             db, s, f"Hostel roll call: {s.full_name} absent",
             f"{s.full_name} was not present at the {data.session.value} roll call in {h.name} on {data.date:%d %b}. "
             "Please contact the warden if you know where they are.",
         )
+    if names:
+        # a child missing from the hostel is the school's to know at once, not only the family's
+        heads = list(db.execute(select(User.id).where(
+            User.school_id == h.school_id, User.is_active.is_(True),
+            User.role.in_((UserRole.principal, UserRole.school_admin)))).scalars())
+        if heads:
+            notify.staff_users(db, tenant_id=h.tenant_id, school_id=h.school_id, user_ids=heads,
+                               title=f"{h.name}: {len(names)} absent at {data.session.value} roll call",
+                               body=f"Not present on {data.date:%d %b}: {', '.join(names)}. Their families have been told.")
     db.commit()
     return len(data.marks)
 
@@ -538,8 +561,34 @@ def mark_out(db: Session, outing_id: int, user: User) -> HostelOuting:
         raise _400(f"Outing is {o.status.value}")
     o.status = OutingStatus.out
     o.went_out_at = datetime.now(timezone.utc)
+    s = db.get(Student, o.student_id)
+    tz = _tz(db, o.school_id)
+    notify.student_parents(
+        db, s, f"{s.full_name} has left the hostel",
+        f"Signed out at {o.went_out_at.astimezone(tz):%d %b %I:%M %p}"
+        + (f" with {o.escort_name}" if o.escort_name else "")
+        + f". Due back by {o.return_by.astimezone(tz):%d %b %I:%M %p}.",
+    )
     db.commit()
     db.refresh(o)
+    return o
+
+
+def remind_late(db: Session, outing_id: int, user: User) -> HostelOuting:
+    """The child is out past the time they were due back: ask the family."""
+    o, _ = _outing(db, outing_id, user)
+    if o.status != OutingStatus.out:
+        raise _400("Student isn't marked out")
+    if o.return_by > datetime.now(timezone.utc):
+        raise _400("They aren't due back yet")
+    s = db.get(Student, o.student_id)
+    tz = _tz(db, o.school_id)
+    notify.student_parents(
+        db, s, f"{s.full_name} hasn't returned to the hostel",
+        f"{s.full_name} was due back by {o.return_by.astimezone(tz):%d %b %I:%M %p} and is not back yet. "
+        "Please call the warden to say when they will return.",
+    )
+    db.commit()
     return o
 
 
@@ -773,3 +822,58 @@ def child_hostel(db: Session, parent_user_id: int, student_id: int) -> Optional[
         "curfew": h.curfew, "menu_today": menu,
         "attendance_last_7_days": [{"date": x.date, "session": x.session.value, "status": x.status.value} for x in att],
     }
+
+
+
+# --- Report ---
+
+def report(db: Session, user: User, month: str) -> dict:
+    """For each hostel the person sees: beds filled (room by room), the
+    month's roll calls, and outings (taken, back late, still out)."""
+    from calendar import monthrange
+
+    try:
+        y, m = (int(x) for x in month.split("-"))
+        first = date(y, m, 1)
+    except ValueError:
+        raise _400("month must look like 2026-09")
+    last = date(y, m, monthrange(y, m)[1])
+    today = date.today()
+    now = datetime.now(timezone.utc)
+    out = []
+    for h in visible_hostels(db, user):
+        rooms = list(db.execute(select(HostelRoom).where(HostelRoom.hostel_id == h.id, HostelRoom.is_active.is_(True))
+                                .order_by(HostelRoom.room_no)).scalars())
+        beds = {b.id: b for b in db.execute(select(HostelBed).where(
+            HostelBed.room_id.in_([r.id for r in rooms] or [-1]), HostelBed.is_active.is_(True))).scalars()}
+        taken = set(db.execute(select(HostelAllocation.bed_id).where(
+            HostelAllocation.bed_id.in_(list(beds) or [-1]), HostelAllocation.start_date <= today,
+            or_(HostelAllocation.end_date.is_(None), HostelAllocation.end_date >= today))).scalars())
+        room_rows = [{"room_no": r.room_no, "floor": r.floor, "beds": sum(1 for b in beds.values() if b.room_id == r.id),
+                      "occupied": sum(1 for b in beds.values() if b.room_id == r.id and b.id in taken)} for r in rooms]
+        att = {}
+        for sess, st, n in db.execute(select(HostelAttendance.session, HostelAttendance.status, func.count())
+                                      .where(HostelAttendance.hostel_id == h.id, HostelAttendance.date.between(first, last))
+                                      .group_by(HostelAttendance.session, HostelAttendance.status)).all():
+            att.setdefault(sess.value, {"present": 0, "absent": 0, "on_leave": 0})[st.value] = n
+        for v in att.values():
+            marked = v["present"] + v["absent"]
+            v["present_pct"] = round(v["present"] / marked * 100, 1) if marked else None
+        residents = set(db.execute(select(HostelAllocation.student_id).where(
+            HostelAllocation.bed_id.in_(list(beds) or [-1]), HostelAllocation.start_date <= last,
+            or_(HostelAllocation.end_date.is_(None), HostelAllocation.end_date >= first))).scalars())
+        outs = list(db.execute(select(HostelOuting).where(
+            HostelOuting.student_id.in_(list(residents) or [-1]),
+            HostelOuting.leave_at >= datetime.combine(first, datetime.min.time(), timezone.utc),
+            HostelOuting.leave_at < datetime.combine(last, datetime.max.time(), timezone.utc))).scalars())
+        taken_out = [o for o in outs if o.went_out_at]
+        out.append({
+            "hostel_id": h.id, "name": h.name, "kind": h.kind.value,
+            "beds": len(beds), "occupied": len(taken), "rooms": room_rows, "residents_in_month": len(residents),
+            "roll_call": att,
+            "outings": {"requested": len(outs), "taken": len(taken_out),
+                        "back_late": sum(1 for o in taken_out if o.returned_at and o.returned_at > o.return_by),
+                        "still_out": sum(1 for o in taken_out if o.status == OutingStatus.out),
+                        "overdue_now": sum(1 for o in taken_out if o.status == OutingStatus.out and o.return_by < now)},
+        })
+    return {"month": month, "hostels": out}

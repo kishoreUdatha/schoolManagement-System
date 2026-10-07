@@ -12,11 +12,23 @@ import { date, label, money, plural } from "@/lib/format";
 import { notify } from "@/lib/notify";
 import { routeOf } from "@/lib/screens";
 import { useApi } from "@/lib/useApi";
+import { useSession } from "@/lib/useSession";
 import { Field, Kv, Modal, ModalActions, SearchBox, StudentPicker, addDays, formNum, formText, today, type PickedStudent } from "@/features/transport/kit";
 import type { Bed, Hostel, Resident, Room, Rota, StaffOption } from "./types";
 
 import { ask } from "@/lib/dialog";
 export const HOSTELS = "/api/v1/school/hostels";
+
+/** Setting hostels and rooms up is the school admin's or principal's; a warden looks. */
+export function useHostelManager(): boolean {
+  const role = useSession()?.user.role;
+  return role === "school_admin" || role === "principal";
+}
+
+/** Page-head buttons only the office uses. */
+export function ManagerOnly({ children }: { children: React.ReactNode }) {
+  return useHostelManager() ? <>{children}</> : null;
+}
 
 /** ?new=1 opens the page's "add" dialog; the page-head button links to it. */
 export function useAddDialog(screen: number) {
@@ -203,6 +215,7 @@ export function HostelList() {
 
 /** SCR-209, live: GET/POST /hostels/{id}/rooms, PATCH /hostels/rooms/{id}. */
 export function RoomsBeds() {
+  const manager = useHostelManager();
   const { hostels, hostel, select } = useHostel();
   const rooms = useApi<Room[]>(hostel ? `${HOSTELS}/${hostel.id}/rooms` : null);
   const add = useAddDialog(209);
@@ -307,7 +320,12 @@ export function RoomsBeds() {
           <div className="panel-pad muted">{rooms.loading ? "Loading rooms…" : "No rooms match. Add rooms to this hostel."}</div>
         </section>
       )}
-      {(add.open && hostel) || r ? (
+      {r && !manager ? (
+        <Modal title={`Room ${r.room_no}`} onClose={close}>
+          <Kv rows={r.beds.map((b): [string, string] => [`Bed ${b.label}`, b.student_name ? `${b.student_name}${b.section_label ? ` · ${b.section_label}` : ""} · since ${date(b.since)}` : "Free"])} />
+          <p className="muted small">Moving a resident is on the Residents page. Changing the room is the office's.</p>
+        </Modal>
+      ) : (add.open && hostel && manager) || r ? (
         <Modal title={r ? `Room ${r.room_no}` : `Add room to ${hostel?.name}`} onClose={close}>
           <form onSubmit={save}>
             <ErrorNote>{error}</ErrorNote>

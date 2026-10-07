@@ -159,3 +159,14 @@ def update_complaint(complaint_id: int, payload: ComplaintUpdate, current_user: 
 @router.post("/fees/generate", summary="Raise the month's hostel fee for every resident")
 def generate_fees(payload: HostelFeeGenerate, current_user: HostelFeeRaiser, db: Db):
     return svc.generate_fees(db, current_user, payload)
+
+
+
+@router.post("/outings/{outing_id}/remind-late", response_model=OutingRead, summary="Ask the family about a child out past their return time")
+def remind_late(outing_id: int, current_user: Staff, db: Db):
+    return OutingRead.model_validate(svc.outing_to_read(db, svc.remind_late(db, outing_id, current_user)))
+
+
+@router.get("/report", summary="Beds filled, the month's roll calls and outings, per hostel")
+def hostel_report(current_user: Staff, db: Db, month: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$")):
+    return svc.report(db, current_user, month or date.today().strftime("%Y-%m"))

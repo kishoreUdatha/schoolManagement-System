@@ -8,16 +8,18 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AppShell } from "@/components/shell/AppShell";
 import { Icon } from "@/components/ui/Icon";
-import { RoomsBeds } from "@/features/hostel/Setup";
+import { ManagerOnly, RoomsBeds } from "@/features/hostel/Setup";
 
 export const metadata = { title: "SCR-209 · Rooms & Beds · BrightCampus" };
 
 export default function Page() {
   return (
-    <AppShell screen="SCR-209" actions={<Link href="/hostel/rooms-beds?new=1" className="btn primary">
-          <Icon name="plus" className="sm" />
-          Add room
-        </Link>}>
+    <AppShell screen="SCR-209" actions={<ManagerOnly>
+          <Link href="/hostel/rooms-beds?new=1" className="btn primary">
+            <Icon name="plus" className="sm" />
+            Add room
+          </Link>
+        </ManagerOnly>}>
       <Suspense>
         <RoomsBeds />
       </Suspense>
