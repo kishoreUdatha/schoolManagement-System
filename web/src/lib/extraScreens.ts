@@ -62,6 +62,7 @@ const DEFS: Def[] = [
   [1057, "Balance Sheet", "fees", "Accountant", "report", "/fees-finance/balance-sheet"],
   [1098, "Petty Cash", "fees", "Accountant", "table", "/fees-finance/petty-cash"],
   [1099, "Budget", "fees", "Accountant", "report", "/fees-finance/budget"],
+  [1100, "Previous Year Dues", "fees", "Accountant", "table", "/fees-finance/previous-year-dues"],
   [1048, "School Store Sales", "inventory", "Store Keeper", "table", "/inventory-labs/school-store-sales"],
   [1050, "Result Overrides", "exams", "Principal", "table", "/examinations/result-overrides"],
   [1051, "Report Card Printing", "exams", "School Admin", "table", "/examinations/report-card-printing"],

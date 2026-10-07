@@ -299,6 +299,38 @@ def correct_charge(
     )
 
 
+class PrevDueRow(BaseModel):
+    admission_no: str = Field(..., max_length=40)
+    amount: str = Field(..., max_length=20)
+    year: Optional[str] = Field(None, max_length=12)
+    note: Optional[str] = Field(None, max_length=200)
+
+
+class PrevDuesIn(BaseModel):
+    rows: list[PrevDueRow] = Field(..., min_length=1, max_length=2000)
+
+
+@router.get("/previous-dues", summary="Unpaid dues from earlier years: entered, or carried over")
+def previous_dues(current_user: SchoolAdminOrAccountant, db: Annotated[Session, Depends(get_db)]):
+    from app.services import prev_dues_service
+
+    return prev_dues_service.report(db, current_user.school_id)
+
+
+@router.post("/previous-dues", summary="Enter dues from earlier years, one row per student")
+def add_previous_dues(payload: PrevDuesIn, current_user: SchoolAdminOrAccountant, db: Annotated[Session, Depends(get_db)]):
+    from app.services import prev_dues_service
+
+    return prev_dues_service.add(db, current_user, [r.model_dump() for r in payload.rows])
+
+
+@router.delete("/previous-dues/{fee_id}", status_code=204, summary="Take back an entered due typed in error")
+def remove_previous_due(fee_id: int, current_user: SchoolAdminOrAccountant, db: Annotated[Session, Depends(get_db)]):
+    from app.services import prev_dues_service
+
+    prev_dues_service.remove(db, current_user, fee_id)
+
+
 @router.get("/waiver-limit", summary="Fee waivers above this need the principal or school admin")
 def waiver_limit(current_user: SchoolAdminOrAccountant, db: Annotated[Session, Depends(get_db)]):
     from app.models.tenant import School

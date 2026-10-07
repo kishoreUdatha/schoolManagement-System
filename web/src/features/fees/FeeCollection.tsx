@@ -218,7 +218,8 @@ export function FeeCollection() {
                               </td>
                               <td>
                                 {f.fee_head_name}
-                                <small className="muted" style={{ display: "block", fontWeight: 500 }}>{f.period}</small>
+                                {f.fee_head_code === "PREV_DUES" ? <span className="badge warn" style={{ marginLeft: 6 }}>Previous year</span> : null}
+                                <small className="muted" style={{ display: "block", fontWeight: 500 }}>{f.fee_head_code === "PREV_DUES" ? (f.notes ?? "") : f.period}</small>
                               </td>
                               <td>
                                 {date(f.due_date)}

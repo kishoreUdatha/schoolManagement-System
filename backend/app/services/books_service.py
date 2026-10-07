@@ -179,7 +179,7 @@ def ensure_chart(db: Session, user: User) -> dict[str, LedgerAccount]:
         wanted += [d for d in DEFAULT_ACCOUNTS if d[0] and d[0] not in by_key]
 
     heads = db.execute(
-        select(FeeHead.id, FeeHead.name).where(FeeHead.school_id == sid).order_by(FeeHead.id)
+        select(FeeHead.id, FeeHead.name, FeeHead.code).where(FeeHead.school_id == sid).order_by(FeeHead.id)
     ).all()
     cats = db.execute(
         select(ExpenseCategory.id, ExpenseCategory.name)
@@ -203,7 +203,9 @@ def ensure_chart(db: Session, user: User) -> dict[str, LedgerAccount]:
 
     for key, code, name, kind, desc in wanted:
         add(key, code, name, kind, desc)
-    for hid, name in heads:
+    for hid, name, code in heads:
+        if code == "PREV_DUES":
+            continue  # earlier years' dues post to the capital fund, not to an income account
         key = f"fee_head:{hid}"
         if key not in by_key:
             add(key, _next_code(4101, used), name, "income", "Fees raised under this head.")
@@ -417,6 +419,8 @@ def entries(
     by_key = ensure_chart(db, user)
     out: list[dict] = []
 
+    # dues from earlier years, entered when the school started: an opening balance
+    prev_heads = set(db.execute(select(FeeHead.id).where(FeeHead.school_id == sid, FeeHead.code == "PREV_DUES")).scalars())
     # fees raised: one entry per head, period and due date
     charge = case(
         (StudentFee.status == FeeStatus.waived, StudentFee.amount_paid),
@@ -438,7 +442,7 @@ def entries(
         out.append(_entry(
             due, "fees_raised", None, None,
             f"{head} ({label}) due for {n} student{'s' if n != 1 else ''}",
-            [_line("fees_receivable", debit=amt), _line(f"fee_head:{hid}", credit=amt)],
+            [_line("fees_receivable", debit=amt), _line("capital" if hid in prev_heads else f"fee_head:{hid}", credit=amt)],
             students=list(kids or []), detail=f"{head} ({label}) raised", branch=br,
         ))
 

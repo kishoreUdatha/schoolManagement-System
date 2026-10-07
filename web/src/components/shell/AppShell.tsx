@@ -71,7 +71,7 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
  */
 const ROLE_TABS: Record<string, number[]> = {
   Accountant: [
-    158, 160, 159, 1044, 1045, 161, 162, 165, // fee collection
+    158, 160, 159, 1044, 1045, 161, 162, 1100, 165, // fee collection
     155, 1040, 157, 1041, 163, 164, 1042, // fee setup (online payment keys stay the admin's)
     166, 167, 1098, 1046, 168, 169, 1047, 170, // income, expenses, petty cash, vendors, purchases, cash & bank
     1056, 1057, 1055, 1054, 1053, 1052, 1049, 1099, // books of account, budget
