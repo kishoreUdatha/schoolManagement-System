@@ -108,6 +108,45 @@ function Roster() {
           }}
         />
       </Panel>
+      {sectionId ? <MedicalAlerts sectionId={sectionId} /> : null}
     </>
+  );
+}
+
+type Alert = { student_id: number; student_name: string; allergies: string | null; chronic_conditions: string | null; current_medications: string | null; blood_group: string | null };
+
+/** Who in the class has an allergy, a condition or regular medication: for PE, trips and lunch. */
+function MedicalAlerts({ sectionId }: { sectionId: number }) {
+  const r = useApi<Alert[]>(`/api/v1/teacher/sections/${sectionId}/medical-alerts`);
+  const list = r.data ?? [];
+  return (
+    <Panel title="Medical alerts" sub={r.data ? (list.length ? `${plural(list.length, "student")} to know about · from the school nurse's records` : "Nobody in this class has an allergy or condition on file") : "Loading…"} flush>
+      {list.length ? (
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Allergies</th>
+                <th>Conditions</th>
+                <th>Medication</th>
+                <th>Blood group</th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((a) => (
+                <tr key={a.student_id}>
+                  <td>{a.student_name}</td>
+                  <td className="wrap">{a.allergies ? <strong className="bank-off">{a.allergies}</strong> : "—"}</td>
+                  <td className="wrap">{a.chronic_conditions ?? "—"}</td>
+                  <td className="wrap">{a.current_medications ?? "—"}</td>
+                  <td>{a.blood_group ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </Panel>
   );
 }

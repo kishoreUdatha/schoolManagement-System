@@ -71,7 +71,7 @@ export const TAB_GROUPS: TabGroup[] = [
   { label: "Hostel setup", tabs: [[208, "Hostels"], [209, "Rooms & beds"], [211, "Wardens"]] },
   { label: "Residents", tabs: [[210, "Room allocation"], [212, "Attendance"], [213, "Leave & outings"], [215, "Complaints & fees"]] },
   // Health and wellbeing
-  { label: "Clinic", tabs: [[218, "Clinic visits"], [217, "Medical profiles"], [219, "Medication"], [220, "Vaccines & allergies"], [1071, "Check-ups"], [225, "Emergency contacts"]] },
+  { label: "Clinic", tabs: [[218, "Clinic visits"], [217, "Medical profiles"], [219, "Medication"], [220, "Vaccines & allergies"], [1071, "Check-ups"], [225, "Emergency contacts"], [1107, "Report"]] },
   { label: "Counselling", tabs: [[221, "Appointments"], [222, "Case notes"]] },
   { label: "Discipline", tabs: [[223, "Incidents"], [224, "Follow-up"], [1094, "Behaviour notes"]] },
   // Campus security
@@ -216,6 +216,7 @@ export const SCREEN_NOTE: Record<number, string> = {
   1003: "Which admission form fields are required and which are not asked, for every class or one class.",
   1049: "The school's accounts. Fees, receipts, expenses, bills and payroll post to them by themselves.",
   1098: "The float for small bills: pay from it against a voucher, and top it back up.",
+  1107: "A month of the sick room: what children came in with, how visits ended, who came often, check-ups and vaccines.",
   1105: "Children coming in late: marked late on the day's register, their family told.",
   1106: "Letters and parcels in and out: who they are for, the courier, and when they were collected or sent.",
   1104: "Beds filled room by room, the month's roll calls, and outings: taken, back late, out past their time.",

@@ -41,3 +41,13 @@ def section_roster(
         db, current_user.id, section_id, current_user.school_id
     )
     return [RosterStudent.model_validate(r) for r in rows]
+
+
+
+@router.get("/sections/{section_id}/medical-alerts", summary="Students in the section with an allergy, condition or medication")
+def section_medical_alerts(section_id: int, current_user: TeacherUser, db: Annotated[Session, Depends(get_db)]):
+    from app.services import health_service
+
+    teacher_service.teacher_can_access_section(db, current_user.id, section_id, current_user.school_id)
+    return [{k: a[k] for k in ("student_id", "student_name", "allergies", "chronic_conditions", "current_medications", "blood_group")}
+            for a in health_service.alerts(db, current_user.school_id, section_id=section_id)]

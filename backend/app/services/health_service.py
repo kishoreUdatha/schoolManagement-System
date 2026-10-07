@@ -149,9 +149,61 @@ def record_visit(db: Session, school_id: int, actor_id: int, data: VisitIn) -> C
         if v.outcome == ClinicOutcome.referred_hospital:
             lines.append("Please contact the school office immediately.")
         v.parent_notified = notify.student_parents(db, student, f"Health update: {student.full_name}", "\n".join(lines)) > 0
+    _beyond_the_clinic(db, student, v, actor_id)
     db.commit()
     db.refresh(v)
     return v
+
+
+def _beyond_the_clinic(db: Session, student: Student, v: ClinicVisit, actor_id: int) -> None:
+    """A child leaving school from the sick room: the gate gets a pickup pass
+    (the family gets its code), the register shows them leaving early, and
+    the class teacher is told. A hospital referral reaches the class teacher
+    too. Caller commits."""
+    from zoneinfo import ZoneInfo
+
+    from app.core.enums import GatePassStatus
+    from app.models.academic import Section
+    from app.models.attendance import StudentAttendance
+    from app.models.tenant import School
+    from app.models.visitor import GatePass
+    from app.services import visitor_service
+
+    if v.outcome not in (ClinicOutcome.sent_home, ClinicOutcome.parent_picked_up, ClinicOutcome.referred_hospital):
+        return
+    school = db.get(School, student.school_id)
+    try:
+        tz = ZoneInfo(school.timezone or "Asia/Kolkata") if school else ZoneInfo("Asia/Kolkata")
+    except Exception:
+        tz = ZoneInfo("Asia/Kolkata")
+    local = v.visited_at.astimezone(tz)
+    today = datetime.now(tz).date()
+    when = local.strftime("%I:%M %p").lstrip("0")
+    if v.outcome == ClinicOutcome.sent_home and local.date() == today:
+        already = db.execute(select(GatePass.id).where(
+            GatePass.student_id == student.id, GatePass.leave_on == today,
+            GatePass.status.in_((GatePassStatus.approved, GatePassStatus.requested)))).first()
+        if not already:
+            g = GatePass(tenant_id=student.tenant_id, school_id=student.school_id, student_id=student.id, leave_on=today,
+                         leave_time=local.strftime("%H:%M"), reason=f"Sent home from the sick room: {v.complaint}"[:300],
+                         pickup_name="Parent / guardian", code=visitor_service._new_code(), status=GatePassStatus.approved,
+                         requested_by_user_id=actor_id, decided_by_user_id=actor_id)
+            db.add(g)
+            db.flush()
+            visitor_service._approved_notice(db, g, student)
+    if v.outcome in (ClinicOutcome.sent_home, ClinicOutcome.parent_picked_up) and local.date() == today:
+        row = db.execute(select(StudentAttendance).where(StudentAttendance.student_id == student.id,
+                                                         StudentAttendance.date == today)).scalar_one_or_none()
+        if row is not None and not row.left_at:
+            row.left_at = local.time().replace(second=0, microsecond=0)
+            row.times_authorised_by = "Sick room"
+            row.times_recorded_by_user_id = actor_id
+    sec = db.get(Section, student.section_id)
+    if sec and sec.class_teacher_user_id:
+        first = student.full_name.split()[0]
+        notify.staff_users(db, tenant_id=student.tenant_id, school_id=student.school_id, user_ids=[sec.class_teacher_user_id],
+                           title=f"{first} {OUTCOME_TEXT[v.outcome]} from the sick room",
+                           body=f"{student.full_name} {OUTCOME_TEXT[v.outcome]} at {when} ({v.complaint}).")
 
 
 def update_visit(db: Session, visit_id: int, school_id: int, data: VisitUpdate) -> ClinicVisit:
@@ -364,3 +416,48 @@ def dashboard(db: Session, school_id: int) -> dict:
 
 def parent_student(db: Session, parent_user_id: int, student_id: int) -> Student:
     return require_linked_child(db, parent_user_id, student_id)
+
+
+
+def report(db: Session, school_id: int, month: str) -> dict:
+    """A month of the sick room: visits by complaint and outcome, children
+    who came often, check-ups done, vaccines given, and vaccines overdue."""
+    from calendar import monthrange
+
+    try:
+        y, m = (int(x) for x in month.split("-"))
+        first = date(y, m, 1)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="month must look like 2026-09")
+    last = date(y, m, monthrange(y, m)[1])
+    start = datetime.combine(first, time.min, timezone.utc) - timedelta(hours=6)
+    end = datetime.combine(last, time.max, timezone.utc) + timedelta(hours=6)
+    visits = [v for v in db.execute(select(ClinicVisit).where(
+        ClinicVisit.school_id == school_id, ClinicVisit.visited_at >= start, ClinicVisit.visited_at <= end)).scalars()
+        if first <= v.visited_at.date() <= last]
+    complaints: dict[str, int] = {}
+    for v in visits:
+        k = v.complaint.strip().lower().rstrip(".")
+        complaints[k] = complaints.get(k, 0) + 1
+    outcomes = {o.value: sum(1 for v in visits if v.outcome == o) for o in ClinicOutcome}
+    per_child: dict[int, int] = {}
+    for v in visits:
+        per_child[v.student_id] = per_child.get(v.student_id, 0) + 1
+    often = sorted(((n, sid) for sid, n in per_child.items() if n >= 3), reverse=True)[:15]
+    names = {s.id: s for s in db.execute(select(Student).where(Student.id.in_([sid for _, sid in often] or [-1]))).scalars()}
+    labels = section_labels(db, {s.section_id for s in names.values()})
+    checkups = db.execute(select(func.count(HealthCheckup.id)).join(Student, Student.id == HealthCheckup.student_id).where(
+        Student.school_id == school_id, HealthCheckup.checked_on.between(first, last))).scalar()
+    given = db.execute(select(func.count(Immunization.id)).join(Student, Student.id == Immunization.student_id).where(
+        Student.school_id == school_id, Immunization.given_on.between(first, last))).scalar()
+    overdue = db.execute(select(func.count(Immunization.id)).join(Student, Student.id == Immunization.student_id).where(
+        Student.school_id == school_id, Student.is_active.is_(True), Immunization.next_due_on < date.today(),
+        Immunization.given_on.is_(None) | (Immunization.next_due_on > Immunization.given_on))).scalar()
+    return {
+        "month": month, "visits": len(visits), "children": len(per_child),
+        "complaints": [{"complaint": k, "visits": n} for k, n in sorted(complaints.items(), key=lambda x: -x[1])[:12]],
+        "outcomes": outcomes,
+        "frequent": [{"student_id": sid, "student_name": names[sid].full_name, "section_label": labels.get(names[sid].section_id), "visits": n}
+                     for n, sid in often if sid in names],
+        "checkups": checkups, "vaccines_given": given, "vaccines_overdue": overdue,
+    }

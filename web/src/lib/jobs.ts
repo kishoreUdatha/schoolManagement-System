@@ -136,7 +136,7 @@ export const JOBS: Job[] = [
     title: "Health & clinic",
     items: [
       [216, "Health dashboard"], [217, "Medical profiles"], [218, "Clinic visits"], [219, "Medication & first aid"],
-      [220, "Immunisation & allergies"], [225, "Emergency contacts"],
+      [220, "Immunisation & allergies"], [225, "Emergency contacts"], [1071, "Check-ups"], [1107, "Health report"],
     ],
   },
   {

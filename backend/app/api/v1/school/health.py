@@ -136,3 +136,9 @@ def add_immunization(student_id: int, payload: ImmunizationIn, current_user: Hea
 def delete_immunization(imm_id: int, current_user: HealthStaff, db: Db):
     svc.delete_row(db, Immunization, imm_id, current_user.school_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+
+@router.get("/report", summary="A month of the sick room: visits, outcomes, frequent visitors, check-ups, vaccines")
+def health_report(current_user: HealthStaff, db: Db, month: Optional[str] = Query(None, pattern=r"^\d{4}-\d{2}$")):
+    return svc.report(db, current_user.school_id, month or date.today().strftime("%Y-%m"))
