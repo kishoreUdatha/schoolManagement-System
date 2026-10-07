@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-from app.core.deps import ExamSetup, ExamStaff, ResultApprover
+from app.core.deps import ExamReader, ExamSetup, ExamStaff, ResultApprover
 from app.database import get_db
 from app.schemas.exam import (
     MarksWindowIn,
@@ -47,7 +47,7 @@ def create(
     summary="List exams (filter by academic year)",
 )
 def list_(
-    current_user: ExamStaff,
+    current_user: ExamReader,
     db: Annotated[Session, Depends(get_db)],
     academic_year_id: Optional[int] = Query(None),
 ):
@@ -62,7 +62,7 @@ def list_(
 @router.get("/{exam_id}", response_model=ExamRead)
 def get(
     exam_id: int,
-    current_user: ExamStaff,
+    current_user: ExamReader,
     db: Annotated[Session, Depends(get_db)],
 ):
     e = exam_service.get_exam(db, exam_id, current_user.school_id)

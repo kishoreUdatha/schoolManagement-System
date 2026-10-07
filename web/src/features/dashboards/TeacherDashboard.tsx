@@ -170,6 +170,7 @@ export function TeacherDashboard() {
           </Panel>
         </div>
         <aside>
+          <MyDuties />
           <Panel title="Coming up">
             {upcoming.length ? (
               upcoming.map((h) => <DateRow key={h.id} day={h.due_date} title={h.title} sub={`Homework due · ${h.subject_name} · ${h.class_name}`} href="/homework/homework-list" />)
@@ -180,5 +181,40 @@ export function TeacherDashboard() {
         </aside>
       </div>
     </>
+  );
+}
+
+type Duties = {
+  cover: { date: string; period: string; start_time: string; end_time: string; class_label: string; subject: string; absent_teacher: string | null; note: string | null }[];
+  invigilation: { date: string; start_time: string | null; duration_minutes: number | null; exam: string; paper: string; room: string; is_chief: boolean }[];
+};
+
+/** Lessons to cover for an absent colleague this week, and exam rooms to watch: set by the office. */
+function MyDuties() {
+  const r = useApi<Duties>("/api/v1/teacher/dashboard/duties");
+  const d = r.data;
+  const hm = (t: string | null) => (t ? t.slice(0, 5) : "");
+  const none = d && !d.cover.length && !d.invigilation.length;
+  return (
+    <Panel title="My duties" sub="Cover and exam duty">
+      {d?.cover.map((c, i) => (
+        <DateRow
+          key={`c${i}`}
+          day={c.date}
+          title={`Cover: ${c.class_label} ${c.subject}`}
+          sub={`${c.period} · ${hm(c.start_time)}–${hm(c.end_time)}${c.absent_teacher ? ` · for ${c.absent_teacher}` : ""}${c.note ? ` · ${c.note}` : ""}`}
+          href="/timetable/teacher-timetable"
+        />
+      ))}
+      {d?.invigilation.map((x, i) => (
+        <DateRow
+          key={`i${i}`}
+          day={x.date}
+          title={`Exam duty: ${x.room}${x.is_chief ? " (chief)" : ""}`}
+          sub={`${x.exam} · ${x.paper}${x.start_time ? ` · ${hm(x.start_time)}` : ""}${x.duration_minutes ? ` · ${x.duration_minutes} min` : ""}`}
+        />
+      ))}
+      {!d || none ? <Empty>{r.loading ? "Loading…" : r.error ?? "No cover or exam duty this week."}</Empty> : null}
+    </Panel>
   );
 }

@@ -419,6 +419,8 @@ ReportReader = Annotated[
 # marks are never signed off just for having entered them.
 ExamStaff = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="exams.manage"))]
 ExamSetup = Annotated[User, Depends(allow_job(UserRole.school_admin, permission="exams.manage"))]
+# reading which exams there are: the exam office, and teachers (report card remarks, their own papers)
+ExamReader = Annotated[User, Depends(allow_job(UserRole.school_admin, UserRole.principal, UserRole.teacher, permission="exams.manage"))]
 ResultApprover = Annotated[
     User, Depends(allow_job(UserRole.school_admin, UserRole.principal, permission="exams.approve_results"))
 ]

@@ -44,13 +44,14 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
   Student: [[36, "Dashboard", "grid"], [131, "My homework", "book"], [59, "My academics", "cap"], [60, "My attendance", "check"], [125, "My timetable", "calendar"], [61, "Exams & results", "chart"], [62, "My fees", "money"], [67, "My library", "book"], [63, "My documents", "file"], [246, "School events", "calendar"], [57, "My profile", "users"]],
   // A teacher's day first, then the work that groups: the notification centre
   // is a tab of Messages, so it is not listed twice.
+  // One entry per page group; the group's other pages are its tabs (ROLE_TABS).
   Teacher: [
     [35, "Dashboard", "grid"], [1096, "My classes & students", "cap"], [110, "Mark attendance", "check"], [126, "My timetable", "calendar"],
-    { title: "Homework & assignments", icon: "file", items: [[128, "Homework"], [134, "Assignments"]] },
-    { title: "Teaching", icon: "book", items: [[102, "Lesson plans"], [106, "Teaching resources"], [1021, "Rubrics"]] },
-    { title: "Marks & tests", icon: "chart", items: [[145, "Marks entry"], [1022, "Question bank"], [1023, "Online tests"]] },
-    { title: "Notes on students", icon: "message", items: [[1094, "Behaviour notes"], [1095, "Weekly reports"]] },
-    [253, "Messages", "message"], [1097, "My profile", "users"],
+    { title: "Teaching", icon: "book", items: [[102, "Lesson plans & syllabus"], [1021, "Rubrics"]] },
+    { title: "Homework & tests", icon: "file", items: [[128, "Homework"], [134, "Assignments"], [1023, "Online tests"]] },
+    { title: "Marks & report cards", icon: "chart", items: [[145, "Marks entry"], [1051, "Report card remarks"]] },
+    { title: "Class teacher", icon: "users", items: [[115, "Student leave"], [251, "Parent-teacher meetings"], [1094, "Behaviour notes"], [1095, "Weekly reports"]] },
+    [253, "Messages", "message"], [1091, "My leave & records", "calendar"], [1093, "My library", "book"],
   ],
   Parent: [[37, "Dashboard", "grid"], [57, "My children", "cap"], [60, "Attendance", "check"], [61, "Exams & results", "chart"], [131, "Homework", "book"], [78, "Payments & receipts", "money"], [251, "Parent-teacher meeting", "calendar"], [253, "Messages", "message"], [296, "Notifications", "bell"], [73, "My profile", "users"]],
   "Super Admin": [[9, "Platform overview", "grid"], [10, "Organizations", "building"], [13, "Subscription plans", "file"], [14, "Billing", "money"], [15, "Usage & limits", "chart"], [16, "Platform users", "users"], [17, "Support tickets", "message"], [18, "Service health", "check"], [19, "Announcements", "bell"], [1083, "Integrations", "settings"], [20, "Platform settings", "settings"]],
@@ -81,6 +82,12 @@ const ROLE_NAV: Record<string, RoleEntry[]> = {
  * role's tab rows hold only screens already in its menu.
  */
 const ROLE_TABS: Record<string, number[]> = {
+  Teacher: [
+    102, 105, 106, // lesson plans, syllabus coverage, resources
+    1023, 1022, // online tests, question bank
+    251, 250, // PTM slots, and setting one up for the class
+    1091, 1090, 1092, 1097, // my leave, attendance, payslips, profile
+  ],
   Principal: [
     117, 118, 119, 113, 223, 224, 221, 222, // students: attendance, corrections, discipline, counselling
     98, 100, 101, 102, 104, 105, 106, 123, 125, 126, 120, 108, 107, // teaching: curriculum, timetables
